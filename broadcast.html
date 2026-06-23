@@ -47,101 +47,113 @@
             position: relative;
         }
 
-        /* ── 통합 상단 바 (2P 개체용) ── */
-        @keyframes slideDownFade {
+        /* ── 스코어보드 스타일 상단 바 (2P 개체용) ── */
+        @keyframes scoreboardSlideIn {
             from {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateX(-40px);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateX(0);
             }
         }
 
         .top-bar {
             position: absolute;
-            top: 30px;
-            left: 5%;
-            right: 5%;
+            top: 24px;
+            left: 24px;
+            right: auto;
             z-index: 20;
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 20px 40px;
             display: flex;
-            align-items: center;
+            align-items: stretch;
             gap: 0;
             overflow: hidden;
-            max-height: 160px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-            animation: slideDownFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+            border-radius: 6px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+            animation: scoreboardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        /* 좌측 주황색 악센트 스트라이프 */
+        .top-bar .accent-bar {
+            width: 5px;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, #FF6B00, #FFA800);
+        }
+
+        /* 이름 영역 (어두운 배경) */
+        .top-bar .name-section {
+            display: flex;
+            align-items: center;
+            padding: 10px 22px 10px 16px;
+            background: rgba(10, 15, 28, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
         }
 
         .top-bar .name {
-            font-size: 52px;
-            font-weight: 900;
-            flex-shrink: 0;
-            margin-right: 18px;
-            background: linear-gradient(135deg, #FF6B00, #FFA800);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 2px 10px rgba(255, 107, 0, 0.2);
+            font-size: 30px;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
         }
 
-        .top-bar .sub {
-            font-size: 46px;
-            font-weight: 600;
-            color: #F8FAFC;
-            opacity: 0.85;
-            flex-shrink: 0;
-            margin-right: 24px;
-        }
-
-        /* 세로 구분선 */
+        /* 구분선 */
         .top-bar .sep {
             width: 1px;
-            height: 48px;
-            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.05));
+            background: rgba(255, 255, 255, 0.12);
             flex-shrink: 0;
-            margin-right: 24px;
         }
 
-        /* 특성들 */
+        /* 특성 필 영역 (약간 밝은 배경) */
         .top-bar .traits {
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-            height: 52px;
+            display: flex;
+            align-items: center;
+            padding: 10px 18px;
+            gap: 6px;
+            background: rgba(20, 28, 46, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            flex-wrap: nowrap;
         }
 
         .top-bar .traits-track {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             white-space: nowrap;
-            position: absolute;
-            top: 50%;
-            left: 0;
-            transform: translate3d(0, -50%, 0);
-            will-change: transform;
         }
 
-        .top-bar .t {
-            font-size: 38px;
+        /* pill 배지 스타일 */
+        .top-bar .pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 17px;
             font-weight: 600;
-            color: #E2E8F0;
-            opacity: 0.9;
             white-space: nowrap;
+            background: rgba(255, 255, 255, 0.08);
+            color: #CBD5E1;
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        .top-bar .dot {
-            font-size: 14px;
-            color: #FF6B00;
-            opacity: 0.6;
-            margin: 0 6px;
+        .top-bar .pill.pill-accent {
+            background: rgba(255, 107, 0, 0.15);
+            color: #FFA800;
+            border-color: rgba(255, 107, 0, 0.2);
+        }
+
+        .top-bar .pill.pill-info {
+            background: rgba(56, 189, 248, 0.12);
+            color: #7DD3FC;
+            border-color: rgba(56, 189, 248, 0.15);
+        }
+
+        /* sub 클래스는 더 이상 사용하지 않지만 호환성을 위해 숨김 */
+        .top-bar .sub {
+            display: none;
         }
 
         /* ── 우측 사진 스택 ── */
@@ -643,12 +655,15 @@
 
     <div class="broadcast" id="broadcast">
         <div class="top-bar" id="top-bar">
-            <span class="name" id="info-name"></span>
-            <span class="sub" id="info-sub"></span>
+            <div class="accent-bar"></div>
+            <div class="name-section">
+                <span class="name" id="info-name"></span>
+            </div>
             <span class="sep"></span>
             <div class="traits" id="info-traits">
                 <div class="traits-track" id="traits-track"></div>
             </div>
+            <span class="sub" id="info-sub" style="display:none;"></span>
         </div>
 
         <div class="photo-stack" id="photo-stack">
@@ -1425,9 +1440,8 @@
 
             const displayName = item.displayName || item.name || "";
             document.getElementById("info-name").textContent = displayName;
-            const infoSubParts = [];
-            if (item.company) infoSubParts.push(item.company);
-            document.getElementById("info-sub").textContent = infoSubParts.join(' · ');
+            // 페이지2 상단 바에서 업체명 표시 제거
+            document.getElementById("info-sub").textContent = '';
 
             // 호스트 카드 데이터 렌더링
             document.getElementById("hc-name").textContent = displayName;
@@ -1485,52 +1499,45 @@
             stack.classList.remove('two-photos', 'three-photos');
             if (visCount === 2) stack.classList.add('two-photos');
 
-            // 특성 — checklist/note가 바뀔 때만 마퀴 재구성 (애니메이션 리셋 방지)
+            // 특성 — checklist/note가 바뀔 때만 pill 배지 재구성
             const traitsKey = (item.checklist || "") + "|" + (item.note || "");
             if (traitsKey !== window._lastTraitsKey) {
                 window._lastTraitsKey = traitsKey;
 
                 const track = document.getElementById("traits-track");
                 track.innerHTML = "";
-                track.classList.remove("scroll");
                 if (window._marqueeRaf) { cancelAnimationFrame(window._marqueeRaf); window._marqueeRaf = null; }
 
                 const cl = parseChecklist(item.checklist || "");
                 const gm = { M: "수컷", F: "암컷", U: "미구분" };
                 const yn = { O: "O", X: "X" };
 
-                const items = [];
-                if (cl.gender) items.push(gm[cl.gender] || cl.gender);
-                if (cl.weight) items.push(cl.weight + "g");
-                if (cl.birth) items.push(cl.birth);
-                if (cl.spot) items.push("점:" + (yn[cl.spot] || cl.spot));
-                if (cl.pin) items.push("풀핀:" + (yn[cl.pin] || cl.pin));
-                if (cl.size) items.push("도살:" + (GRADE[cl.size] || cl.size));
-                if (cl.wall) items.push("월높이:" + (GRADE[cl.wall] || cl.wall));
-                if (cl.color) items.push("색감:" + (GRADE[cl.color] || cl.color));
-                if (cl.activity) items.push("활동성:" + (GRADE[cl.activity] || cl.activity));
-                if (cl.feed) items.push("먹이:" + (GRADE[cl.feed] || cl.feed));
-                if (cl.structure) items.push("체형:" + (GRADE[cl.structure] || cl.structure));
-                if (cl.memo) items.push(cl.memo);
-                if (item.note) items.push(item.note);
-
-                function buildItems(container) {
-                    items.forEach((text, i) => {
-                        if (i > 0) {
-                            const dot = document.createElement("span");
-                            dot.className = "dot";
-                            dot.textContent = "·";
-                            container.appendChild(dot);
-                        }
-                        const el = document.createElement("span");
-                        el.className = "t";
-                        el.textContent = text;
-                        container.appendChild(el);
-                    });
+                // pill 배지 생성 함수 (type: 'accent' | 'info' | '' )
+                function addPill(container, text, type) {
+                    const el = document.createElement("span");
+                    el.className = 'pill' + (type ? ' pill-' + type : '');
+                    el.textContent = text;
+                    container.appendChild(el);
                 }
 
-                buildItems(track);
+                // 기본 정보 (악센트 컬러)
+                if (cl.gender) addPill(track, gm[cl.gender] || cl.gender, 'accent');
+                if (cl.weight) addPill(track, cl.weight + 'g', 'accent');
+                // 출생일 (info 컬러)
+                if (cl.birth) addPill(track, cl.birth, 'info');
+                // 체크 항목들 (기본 컬러)
+                if (cl.spot) addPill(track, '점:' + (yn[cl.spot] || cl.spot), '');
+                if (cl.pin) addPill(track, '풀핀:' + (yn[cl.pin] || cl.pin), '');
+                if (cl.size) addPill(track, '도살:' + (GRADE[cl.size] || cl.size), '');
+                if (cl.wall) addPill(track, '월높이:' + (GRADE[cl.wall] || cl.wall), '');
+                if (cl.color) addPill(track, '색감:' + (GRADE[cl.color] || cl.color), '');
+                if (cl.activity) addPill(track, '활동성:' + (GRADE[cl.activity] || cl.activity), '');
+                if (cl.feed) addPill(track, '먹이:' + (GRADE[cl.feed] || cl.feed), '');
+                if (cl.structure) addPill(track, '체형:' + (GRADE[cl.structure] || cl.structure), '');
+                if (cl.memo) addPill(track, cl.memo, '');
+                if (item.note) addPill(track, item.note, '');
 
+                // 호스트 모드 특성 트랙 (page 1 용) — 비워두기
                 const hcTrack = document.getElementById("hc-traits-track");
                 if (hcTrack) {
                     hcTrack.innerHTML = "";
@@ -1538,30 +1545,6 @@
                     const hcTraitsEl = hcTrack.closest('.hc-traits');
                     if (hcTraitsEl) hcTraitsEl.classList.remove('has-items');
                 }
-
-                // 넘치면 단방향 스크롤 (오른쪽 밖 → 왼쪽 밖 → 리셋)
-                setTimeout(() => {
-                    const container = document.getElementById("info-traits");
-                    if (track.scrollWidth > container.clientWidth) {
-                        track.classList.add("scroll");
-                        const viewW = container.clientWidth;
-                        const textW = track.scrollWidth;
-                        const speed = 60;
-                        let x = viewW;
-                        let lastTime = null;
-
-                        function step(ts) {
-                            if (!lastTime) lastTime = ts;
-                            const dt = (ts - lastTime) / 1000;
-                            lastTime = ts;
-                            x -= speed * dt;
-                            if (x < -textW) x = viewW;
-                            track.style.transform = `translate3d(${x}px, -50%, 0)`;
-                            window._marqueeRaf = requestAnimationFrame(step);
-                        }
-                        window._marqueeRaf = requestAnimationFrame(step);
-                    }
-                }, 100);
             }
         }
 
