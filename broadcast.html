@@ -605,9 +605,6 @@
         // URL 파라미터 확인 후 host-mode 적용 (일반 웹)
         const urlParams = new URLSearchParams(window.location.search);
         const isHostMode = urlParams.get('mode') === 'host' || urlParams.get('page') === '1';
-        if (isHostMode) {
-            document.body.classList.add('host-mode');
-        }
 
         // 구글 앱스 스크립트 웹앱 환경 전용 파라미터 읽기
         if (typeof google !== 'undefined' && google.script && google.script.url) {
@@ -615,15 +612,21 @@
                 const isHost = location.parameter.mode === 'host' || location.parameter.page === '1';
                 if (isHost) {
                     document.body.classList.add('host-mode');
-                    maybeRefreshHostConfig(true);
                 }
-                if (!isHost) loadHostConfig();
             });
         }
 
-        // 호스트 모드일 때 설정 시트에서 룰/티커 로드
-        if (isHostMode) maybeRefreshHostConfig(true);
-        if (!isHostMode) loadHostConfig();
+        // DOM 파싱 완료 후 데이터 로드 시작
+        window.addEventListener('DOMContentLoaded', () => {
+            if (isHostMode) {
+                document.body.classList.add('host-mode');
+            }
+            if (isHostMode) {
+                maybeRefreshHostConfig(true);
+            } else {
+                loadHostConfig();
+            }
+        });
 
         // [키워드] → 기본 강조색(cyan), [키워드:red] → 지정 색상
         function renderColorMarkup(text) {
@@ -1168,6 +1171,42 @@
                     lastJson = '';
                     render(lastRenderedItem);
                 }
+                
+                // 티커(자막 바) 및 배너 글로벌 보이기/숨기기 및 위치 제어
+                const bottomBar = document.querySelector('.hc-bottom-bar');
+                if (bottomBar) {
+                    if (cfg.ticker_show === '0') {
+                        bottomBar.style.setProperty('display', 'none', 'important');
+                    } else {
+                        bottomBar.style.removeProperty('display');
+                        
+                        // 티커 위치 적용
+                        if (cfg.ticker_top) {
+                            bottomBar.style.top = cfg.ticker_top;
+                            bottomBar.style.bottom = 'auto';
+                        } else {
+                            bottomBar.style.bottom = '0';
+                            bottomBar.style.top = 'auto';
+                        }
+                        if (cfg.ticker_left) {
+                            bottomBar.style.left = cfg.ticker_left;
+                            bottomBar.style.right = 'auto';
+                        } else {
+                            bottomBar.style.left = '0';
+                            bottomBar.style.right = '0';
+                        }
+                    }
+                }
+
+                const bannerContainer = document.querySelector('.hc-banner-float');
+                if (bannerContainer) {
+                    if (cfg.banner_show === '0') {
+                        bannerContainer.style.setProperty('display', 'none', 'important');
+                    } else {
+                        bannerContainer.style.removeProperty('display');
+                    }
+                }
+
                 if (!document.body.classList.contains('host-mode')) return;
                 // 룰 → 개별 필 박스 생성 (라벨 없이 값만)
                 const stackEl = document.getElementById('hc-rules-stack');
@@ -1211,7 +1250,7 @@
                 }
                 stackEl.style.display = rules.length > 0 ? 'flex' : 'none';
                 renderTickerCards(cfg);
-            }).getHostConfig();
+            }).getConfigMap();
         }
 
         function maybeRefreshHostConfig(force) {

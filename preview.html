@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>방송 화면 실시간 미리보기 및 배너 배치기 - CDCUP</title>
+    <title>방송 화면 실시간 미리보기 및 배치기 - CDCUP</title>
     <script src="supabase-bridge.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
@@ -18,6 +18,7 @@
             --accent: #2563EB;
             --accent-hover: #1D4ED8;
             --green: #10B981;
+            --red: #EF4444;
             --font: 'Pretendard Variable', 'Pretendard', sans-serif;
         }
 
@@ -122,7 +123,7 @@
             position: absolute;
             top: 0;
             left: 0;
-            pointer-events: none; /* Let clicks pass to the overlay */
+            pointer-events: none;
             z-index: 1;
         }
 
@@ -138,26 +139,36 @@
             pointer-events: auto;
         }
 
-        /* Draggable Banner representation */
-        .draggable-banner {
+        /* Draggable elements */
+        .draggable-element {
             position: absolute;
-            width: 25%; /* Responsive width simulation */
-            aspect-ratio: 4 / 3; /* Fallback aspect ratio */
-            background: rgba(37, 99, 235, 0.25);
-            border: 2px dashed var(--accent);
-            border-radius: 8px;
             cursor: move;
             z-index: 20;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #fff;
             font-size: 11px;
             font-weight: 700;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-            box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
-            transition: border-color 0.2s, background-color 0.2s;
             user-select: none;
+            transition: opacity 0.3s;
+        }
+
+        .draggable-element.hidden-state {
+            opacity: 0.25 !important;
+            border-style: dotted !important;
+            background: rgba(239, 68, 68, 0.1) !important;
+            border-color: var(--red) !important;
+        }
+
+        /* 🖼️ Draggable Banner */
+        .draggable-banner {
+            width: 25%;
+            aspect-ratio: 4 / 3;
+            background: rgba(37, 99, 235, 0.25);
+            border: 2px dashed var(--accent);
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
         }
 
         .draggable-banner:hover {
@@ -165,19 +176,30 @@
             background: rgba(37, 99, 235, 0.35);
         }
 
-        .draggable-banner:active {
-            border-style: solid;
-            border-color: var(--green);
-            background: rgba(16, 185, 129, 0.2);
-            box-shadow: 0 0 16px rgba(16, 185, 129, 0.5);
+        /* 📢 Draggable Ticker (Zamak Bar) */
+        .draggable-ticker {
+            width: 100%;
+            height: 12%; /* Simulates actual ticker ratio */
+            background: rgba(16, 185, 129, 0.25);
+            border: 2px dashed var(--green);
+            border-radius: 4px;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
         }
 
-        .draggable-banner .banner-label {
+        .draggable-ticker:hover {
+            border-color: #34D399;
+            background: rgba(16, 185, 129, 0.35);
+        }
+
+        .element-label {
             pointer-events: none;
-            background: rgba(15, 23, 42, 0.8);
+            background: rgba(15, 23, 42, 0.85);
             padding: 4px 8px;
             border-radius: 4px;
             border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* ══ Status Bar & Helper controls ══ */
@@ -188,19 +210,73 @@
             border-radius: 12px;
             padding: 16px;
             display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .control-row {
+            display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 12px;
+            width: 100%;
         }
 
         .status-txt {
-            font-size: 13px;
+            font-size: 12px;
             color: var(--text2);
         }
 
         .status-txt strong {
             color: var(--text);
+        }
+
+        .toggle-switch-group {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .switch-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .switch-input {
+            width: 38px;
+            height: 20px;
+            appearance: none;
+            background: #475569;
+            border-radius: 20px;
+            position: relative;
+            outline: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .switch-input:checked {
+            background-color: var(--green);
+        }
+
+        .switch-input::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .switch-input:checked::before {
+            transform: translateX(18px);
         }
 
         .actions-row {
@@ -220,11 +296,11 @@
         }
 
         .btn-action.save {
-            background-color: var(--green);
+            background-color: var(--accent);
         }
 
         .btn-action.save:hover {
-            background-color: #059669;
+            background-color: var(--accent-hover);
         }
 
         .btn-action.reset {
@@ -265,14 +341,14 @@
 <body>
     <div class="header-bar">
         <div class="title-area">
-            <h1 id="page-title">📺 방송 화면 미리보기 & 배너 조정</h1>
-            <p>배너 이미지를 원하는 위치로 드래그해서 놓으면 실제 방송(OBS) 화면에 즉시 반영됩니다.</p>
+            <h1 id="page-title">📺 방송 자막 및 배너 위치 에디터</h1>
+            <p>배너와 자막 바를 드래그해서 배치하고 화면 표시 여부(ON/OFF)를 즉석에서 켜고 끌 수 있습니다.</p>
         </div>
         <div class="nav-links">
             <a href="index.html" class="btn-nav">⬅️ 개체 관리</a>
             <a href="settings.html" class="btn-nav">⚙️ 설정</a>
-            <a href="preview.html?page=1" id="btn-tab-p1" class="btn-nav">진행용 (1P) 에디터</a>
-            <a href="preview.html?page=2" id="btn-tab-p2" class="btn-nav">개체용 (2P) 에디터</a>
+            <a href="preview.html?page=1" id="btn-tab-p1" class="btn-nav">1P (진행용) 배치기</a>
+            <a href="preview.html?page=2" id="btn-tab-p2" class="btn-nav">2P (개체용) 배치기</a>
         </div>
     </div>
 
@@ -284,22 +360,43 @@
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
-                <!-- Draggable banner target -->
-                <div class="draggable-banner" id="draggable-banner">
-                    <span class="banner-label">🖼️ 롤링 배너 드래그</span>
+                <!-- 1. Draggable Banner -->
+                <div class="draggable-element draggable-banner" id="draggable-banner" data-type="banner">
+                    <div class="element-label">🖼️ 롤링 배너</div>
+                </div>
+
+                <!-- 2. Draggable Ticker (Zamak Bar) -->
+                <div class="draggable-element draggable-ticker" id="draggable-ticker" data-type="ticker">
+                    <div class="element-label">📢 공지사항 자막 (티커)</div>
                 </div>
             </div>
         </div>
 
-        <!-- Coordinates Status / Control Bar -->
+        <!-- Coordinates Status & Live Control Bar -->
         <div class="control-panel">
-            <div class="status-txt">
-                현재 좌표: Top <strong id="val-top">0%</strong>, Left <strong id="val-left">0%</strong>
-                <span id="save-status" style="margin-left: 10px; color: var(--green); display: none;">✓ 저장 완료</span>
+            <div class="control-row" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                <div class="toggle-switch-group">
+                    <div class="switch-container">
+                        <span>📢 자막 노출</span>
+                        <input type="checkbox" id="toggle-ticker-show" class="switch-input" checked onchange="toggleShowState('ticker')">
+                    </div>
+                    <div class="switch-container">
+                        <span>🖼️ 배너 노출</span>
+                        <input type="checkbox" id="toggle-banner-show" class="switch-input" checked onchange="toggleShowState('banner')">
+                    </div>
+                </div>
+                <div class="actions-row">
+                    <button class="btn-action reset" onclick="resetPositions()">기본 좌표 복구</button>
+                    <button class="btn-action save" onclick="saveCoordinates(false)">💾 현재 상태 전체 저장</button>
+                </div>
             </div>
-            <div class="actions-row">
-                <button class="btn-action reset" onclick="resetPosition()">기본 위치로</button>
-                <button class="btn-action save" onclick="saveCoordinates()">💾 좌표 즉시 저장</button>
+
+            <div class="control-row">
+                <div class="status-txt">
+                    배너 좌표: Top <strong id="banner-val-top">0%</strong>, Left <strong id="banner-val-left">0%</strong> | 
+                    자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong>
+                    <span id="save-status" style="margin-left: 10px; color: var(--green); display: none;">✓ 저장 완료</span>
+                </div>
             </div>
         </div>
     </div>
@@ -311,30 +408,40 @@
         const params = new URLSearchParams(window.location.search);
         const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
 
-        // Set Nav Active
+        // Set Nav Active and iframe source
+        const frame = document.getElementById('broadcast-frame');
         if (pageNum === '1') {
             document.getElementById('btn-tab-p1').classList.add('active');
-            document.getElementById('page-title').textContent = "📺 진행용 (1P) 실시간 배너 조정 에디터";
-            document.getElementById('broadcast-frame').src = "broadcast.html?page=1";
+            document.getElementById('page-title').textContent = "📺 진행용 (1P) 실시간 레이아웃 배치기";
+            frame.src = "broadcast.html?page=1";
         } else {
             document.getElementById('btn-tab-p2').classList.add('active');
-            document.getElementById('page-title').textContent = "📺 개체용 (2P) 실시간 배너 조정 에디터";
-            document.getElementById('broadcast-frame').src = "broadcast.html?page=2"; // Force page=2 syntax compatibility
+            document.getElementById('page-title').textContent = "📺 개체용 (2P) 실시간 레이아웃 배치기";
+            frame.src = "broadcast.html"; // Default page2 layout
         }
 
-        // Draggable Logic
+        // Draggables Configuration
         const container = document.getElementById('screen-container');
-        const banner = document.getElementById('draggable-banner');
         const dragOverlay = document.getElementById('drag-overlay');
+        const elements = {
+            banner: {
+                el: document.getElementById('draggable-banner'),
+                top: "10%",
+                left: "74%",
+                show: "1"
+            },
+            ticker: {
+                el: document.getElementById('draggable-ticker'),
+                top: "88%",
+                left: "0%",
+                show: "1"
+            }
+        };
 
+        let activeDragKey = null;
         let isDragging = false;
         let startX = 0;
         let startY = 0;
-        let bannerX = 0;
-        let bannerY = 0;
-
-        let pctTop = "10%";
-        let pctLeft = "74%"; // defaults
 
         function toast(msg) {
             const t = document.getElementById('toast');
@@ -343,143 +450,176 @@
             setTimeout(() => { t.classList.remove('show'); }, 2000);
         }
 
-        // Load current config coordinates
-        function loadCurrentPosition() {
+        // Load configuration from database
+        function loadConfigurations() {
             google.script.run.withSuccessHandler(function(cfg) {
                 if (!cfg) return;
-                
-                // Get saved positions or defaults
-                let topVal = cfg.banner_top || '10%';
-                let leftVal = cfg.banner_left || '74%';
 
-                // Convert to percentage numbers
-                pctTop = topVal;
-                pctLeft = leftVal;
+                // Load Banner values
+                elements.banner.top = cfg.banner_top || '10%';
+                elements.banner.left = cfg.banner_left || '74%';
+                elements.banner.show = cfg.banner_show !== undefined ? String(cfg.banner_show) : '1';
 
-                applyBannerStyles(topVal, leftVal);
-                updateLabels(topVal, leftVal);
+                // Load Ticker values
+                elements.ticker.top = cfg.ticker_top || '88%';
+                elements.ticker.left = cfg.ticker_left || '0%';
+                elements.ticker.show = cfg.ticker_show !== undefined ? String(cfg.ticker_show) : '1';
+
+                // Apply states visually
+                applyVisualState('banner');
+                applyVisualState('ticker');
+
+                // Update switch checkboxes
+                document.getElementById('toggle-banner-show').checked = elements.banner.show === "1";
+                document.getElementById('toggle-ticker-show').checked = elements.ticker.show === "1";
+
+                updateLabelReadouts();
+
+                // Apply custom sizes if set in config
+                if (cfg.banner_maxwidth) elements.banner.el.style.width = cfg.banner_maxwidth;
+                if (cfg.banner_maxheight) elements.banner.el.style.height = cfg.banner_maxheight;
             }).getConfigMap();
         }
 
-        function applyBannerStyles(top, left) {
-            banner.style.top = top;
-            banner.style.left = left;
-            banner.style.right = 'auto';
-            banner.style.bottom = 'auto';
+        function applyVisualState(key) {
+            const data = elements[key];
+            data.el.style.top = data.top;
+            data.el.style.left = data.left;
+            data.el.style.bottom = 'auto';
+            data.el.style.right = 'auto';
+
+            if (data.show === "0") {
+                data.el.classList.add('hidden-state');
+            } else {
+                data.el.classList.remove('hidden-state');
+            }
         }
 
-        function updateLabels(top, left) {
-            document.getElementById('val-top').textContent = top;
-            document.getElementById('val-left').textContent = left;
+        function updateLabelReadouts() {
+            document.getElementById('banner-val-top').textContent = elements.banner.top;
+            document.getElementById('banner-val-left').textContent = elements.banner.left;
+            document.getElementById('ticker-val-top').textContent = elements.ticker.top;
+            document.getElementById('ticker-val-left').textContent = elements.ticker.left;
         }
 
-        // Mouse & Touch events for Drag
-        banner.addEventListener('mousedown', startDrag);
+        // Drag Setup
+        Object.keys(elements).forEach(key => {
+            const el = elements[key].el;
+            el.addEventListener('mousedown', (e) => startDrag(e, key));
+            el.addEventListener('touchstart', (e) => startDrag(e, key), { passive: true });
+        });
+
         window.addEventListener('mousemove', drag);
-        window.addEventListener('mouseup', endDrag);
-
-        banner.addEventListener('touchstart', startDrag, { passive: true });
         window.addEventListener('touchmove', drag, { passive: false });
+
+        window.addEventListener('mouseup', endDrag);
         window.addEventListener('touchend', endDrag);
 
-        function startDrag(e) {
+        function startDrag(e, key) {
             isDragging = true;
+            activeDragKey = key;
+
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            // Get current bounding client rect of banner & container
-            const bannerRect = banner.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
-
-            // Set dragging offsets
-            startX = clientX - bannerRect.left;
-            startY = clientY - bannerRect.top;
+            const elRect = elements[key].el.getBoundingClientRect();
+            startX = clientX - elRect.left;
+            startY = clientY - elRect.top;
         }
 
         function drag(e) {
-            if (!isDragging) return;
-            if (e.cancelable) e.preventDefault(); // Prevent scroll while dragging on mobile
+            if (!isDragging || !activeDragKey) return;
+            if (e.cancelable) e.preventDefault();
 
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
             const containerRect = container.getBoundingClientRect();
+            const el = elements[activeDragKey].el;
 
-            // Calculate x, y relative to container
             let x = clientX - containerRect.left - startX;
             let y = clientY - containerRect.top - startY;
 
-            // Restrict bounds
-            const maxX = containerRect.width - banner.offsetWidth;
-            const maxY = containerRect.height - banner.offsetHeight;
+            // Constrain
+            const maxX = containerRect.width - el.offsetWidth;
+            const maxY = containerRect.height - el.offsetHeight;
 
             x = Math.max(0, Math.min(x, maxX));
             y = Math.max(0, Math.min(y, maxY));
 
-            // Convert to percentage
+            // Convert relative to percentages
             const pctX = (x / containerRect.width) * 100;
             const pctY = (y / containerRect.height) * 100;
 
-            pctLeft = pctX.toFixed(1) + "%";
-            pctTop = pctY.toFixed(1) + "%";
+            elements[activeDragKey].left = pctX.toFixed(1) + "%";
+            elements[activeDragKey].top = pctY.toFixed(1) + "%";
 
-            applyBannerStyles(pctTop, pctLeft);
-            updateLabels(pctTop, pctLeft);
+            applyVisualState(activeDragKey);
+            updateLabelReadouts();
         }
 
         function endDrag() {
             if (!isDragging) return;
             isDragging = false;
-            
-            // Auto save when drag ends
-            saveCoordinates(true);
+            saveCoordinates(true); // Auto-save coordinates on drag release
+            activeDragKey = null;
+        }
+
+        // Toggle visibility state for banner or ticker
+        function toggleShowState(key) {
+            const checkbox = document.getElementById(`toggle-${key}-show`);
+            elements[key].show = checkbox.checked ? "1" : "0";
+            applyVisualState(key);
+            saveCoordinates(false);
         }
 
         function saveCoordinates(isAuto = false) {
             const configMap = {
-                banner_top: pctTop,
-                banner_left: pctLeft,
-                banner_right: 'auto', // Clean up right/bottom to prevent layout conflict
-                banner_bottom: 'auto'
+                banner_top: elements.banner.top,
+                banner_left: elements.banner.left,
+                banner_right: 'auto',
+                banner_bottom: 'auto',
+                banner_show: elements.banner.show,
+                
+                ticker_top: elements.ticker.top,
+                ticker_left: elements.ticker.left,
+                ticker_show: elements.ticker.show
             };
 
             google.script.run.withSuccessHandler(function() {
-                // Show temporary save checkmark
+                // Flash Save status indicator
                 const indicator = document.getElementById('save-status');
                 indicator.style.display = 'inline';
-                setTimeout(() => { indicator.style.display = 'none'; }, 1500);
+                setTimeout(() => { indicator.style.display = 'none'; }, 1200);
 
-                if (!isAuto) toast("💾 배너 위치 좌표가 영구 저장되었습니다!");
+                if (!isAuto) toast("💾 방송 배치 정보 및 가시성 설정이 성공적으로 저장되었습니다!");
 
-                // Reload iframe to reflect changes
-                const iframe = document.getElementById('broadcast-frame');
-                iframe.src = iframe.src;
+                // Reload iframe inside visual screen simulator to show real result
+                frame.contentWindow.location.reload();
             }).updateConfigs(configMap);
         }
 
-        function resetPosition() {
-            pctTop = "10%";
-            pctLeft = "74%";
-            applyBannerStyles(pctTop, pctLeft);
-            updateLabels(pctTop, pctLeft);
+        function resetPositions() {
+            elements.banner.top = "10%";
+            elements.banner.left = "74%";
+            elements.banner.show = "1";
+
+            elements.ticker.top = "88%";
+            elements.ticker.left = "0%";
+            elements.ticker.show = "1";
+
+            document.getElementById('toggle-banner-show').checked = true;
+            document.getElementById('toggle-ticker-show').checked = true;
+
+            applyVisualState('banner');
+            applyVisualState('ticker');
+            updateLabelReadouts();
             saveCoordinates();
         }
 
-        // Initial Load
+        // Initial Initialization
         window.addEventListener('DOMContentLoaded', () => {
-            loadCurrentPosition();
-            
-            // Add custom scale/size adjustment to reflect real banner aspect ratio if provided
-            google.script.run.withSuccessHandler(function(cfg) {
-                if (!cfg) return;
-                // If custom maxwidth is set, resize visual editor helper accordingly
-                if (cfg.banner_maxwidth) {
-                    banner.style.width = cfg.banner_maxwidth;
-                }
-                if (cfg.banner_maxheight) {
-                    banner.style.height = cfg.banner_maxheight;
-                }
-            }).getConfigMap();
+            loadConfigurations();
         });
     </script>
 </body>
