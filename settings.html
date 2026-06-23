@@ -242,11 +242,15 @@
         .qtoggle .dot.on { background:var(--green); box-shadow:0 0 6px var(--green); }
         .qtoggle .dot.off { background:var(--red); box-shadow:0 0 6px var(--red); }
         .qtoggle span { font-size:12px; font-weight:600; color:var(--text2); }
-        .banner-slot { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
-        .banner-slot input { flex:1; }
+        .banner-slot { display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
+        .banner-slot input[type=text] { flex:1; min-width:0; }
         .banner-thumb { width:48px; height:36px; border-radius:6px; object-fit:cover; border:1px solid var(--input-border); background:var(--input-bg); flex-shrink:0; }
         .banner-thumb.empty { display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--text3); }
         .banner-slot .slot-del { width:28px; height:28px; border-radius:6px; border:1px solid var(--input-border); background:transparent; color:var(--red); font-size:14px; cursor:pointer; flex-shrink:0; }
+        .banner-dropzone { width:100%; padding:12px; border:2px dashed var(--input-border); border-radius:8px; text-align:center; font-size:11px; color:var(--text3); cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
+        .banner-dropzone:hover, .banner-dropzone.drag-over { border-color:var(--accent); color:var(--accent); background:rgba(37,99,235,0.06); }
+        .banner-dropzone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+        .banner-dropzone .uploading { color:var(--accent); font-weight:700; }
         .add-slot-btn { width:100%; padding:8px; border:1.5px dashed var(--input-border); border-radius:8px; background:transparent; color:var(--text3); font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; }
         .add-slot-btn:hover { border-color:var(--accent); color:var(--accent); }
         .rule-slot { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
@@ -459,22 +463,94 @@
         }
 
         // ── Banner Slots ──
+        // ── Supabase Storage Upload ──
+        const SB_URL = 'https://iuwqjeecwepqyqqlzprf.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1d3FqZWVjd2VwcXlxcWx6cHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTA3OTIsImV4cCI6MjA5Nzc4Njc5Mn0.psiAk4cqzjHqT6gP46m6nQM97nNsLEgc-a7K8BEAd_Y';
+
+        async function uploadToSupabase(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            const fname = 'banner_' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.' + ext;
+            const uploadUrl = SB_URL + '/storage/v1/object/banners/' + fname;
+            const resp = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'apikey': SB_KEY,
+                    'Authorization': 'Bearer ' + SB_KEY,
+                    'Content-Type': file.type,
+                    'x-upsert': 'true',
+                },
+                body: file,
+            });
+            if (!resp.ok) throw new Error('Upload failed: ' + resp.status);
+            return SB_URL + '/storage/v1/object/public/banners/' + fname;
+        }
+
         function addBannerSlot(url) {
             const list = document.getElementById('banner-list');
             const idx = list.children.length + 1;
             const div = document.createElement('div');
             div.className = 'banner-slot';
             const hasUrl = url && url.trim();
-            div.innerHTML = '<img class="banner-thumb ' + (hasUrl?'':'empty') + '" src="' + (hasUrl?url:'') + '" onerror="this.className=\'banner-thumb empty\';this.src=\'\';this.textContent=\'🖼\'" alt="">'
-                + '<input type="text" class="cfg-banner-url" data-key="banner' + idx + '" placeholder="배너 ' + idx + ' 이미지 URL" value="' + (url||'') + '">'
-                + '<button class="slot-del" onclick="this.parentElement.remove()">✕</button>';
-            const input = div.querySelector('input');
-            const thumb = div.querySelector('img');
+
+            // Row 1: thumb + input + delete
+            const row1 = document.createElement('div');
+            row1.style.cssText = 'display:flex;gap:8px;align-items:center;width:100%';
+            row1.innerHTML = '<img class="banner-thumb ' + (hasUrl?'':'empty') + '" src="' + (hasUrl?url:'') + '" onerror="this.className=\'banner-thumb empty\';this.src=\'\';this.textContent=\'🖼\'" alt="">'
+                + '<input type="text" class="cfg-banner-url" data-key="banner' + idx + '" placeholder="배너 ' + idx + ' URL 또는 파일 드롭" value="' + (url||'') + '">'
+                + '<button class="slot-del" onclick="this.closest(\'.banner-slot\').remove()">✕</button>';
+
+            // Row 2: dropzone
+            const dropzone = document.createElement('div');
+            dropzone.className = 'banner-dropzone';
+            dropzone.innerHTML = '📂 이미지를 여기에 드래그하거나 클릭해서 업로드<input type="file" accept="image/*">';
+
+            div.appendChild(row1);
+            div.appendChild(dropzone);
+
+            const input = row1.querySelector('input[type=text]');
+            const thumb = row1.querySelector('img');
+            const fileInput = dropzone.querySelector('input[type=file]');
+
+            // URL input → thumb preview
             input.addEventListener('input', function() {
                 const v = this.value.trim();
                 if (v) { thumb.src = v; thumb.className = 'banner-thumb'; }
                 else { thumb.src = ''; thumb.className = 'banner-thumb empty'; thumb.textContent = '🖼'; }
             });
+
+            // File upload handler
+            async function handleFile(file) {
+                if (!file || !file.type.startsWith('image/')) { toast('이미지 파일만 업로드 가능합니다', true); return; }
+                if (file.size > 5 * 1024 * 1024) { toast('5MB 이하 파일만 가능합니다', true); return; }
+                dropzone.innerHTML = '<span class="uploading">업로드 중...</span>';
+                try {
+                    const publicUrl = await uploadToSupabase(file);
+                    input.value = publicUrl;
+                    thumb.src = publicUrl;
+                    thumb.className = 'banner-thumb';
+                    dropzone.innerHTML = '✅ 업로드 완료! 다른 이미지로 교체하려면 클릭<input type="file" accept="image/*">';
+                    dropzone.querySelector('input[type=file]').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+                    toast('배너 이미지 업로드 완료!');
+                } catch(e) {
+                    dropzone.innerHTML = '❌ 업로드 실패 — 다시 시도<input type="file" accept="image/*">';
+                    dropzone.querySelector('input[type=file]').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+                    toast('업로드 실패: ' + e.message, true);
+                }
+            }
+
+            // File input change
+            fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+            // Drag and drop
+            dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+            dropzone.addEventListener('drop', e => {
+                e.preventDefault();
+                dropzone.classList.remove('drag-over');
+                const file = e.dataTransfer.files[0];
+                if (file) handleFile(file);
+            });
+
             list.appendChild(div);
         }
 
