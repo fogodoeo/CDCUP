@@ -454,6 +454,18 @@
             setTimeout(() => { t.classList.remove('show'); }, 2000);
         }
 
+        function convertViewportToPercent(val) {
+            if (!val) return '';
+            const raw = String(val).trim().toLowerCase();
+            if (raw.endsWith('vw')) {
+                return parseFloat(raw.replace('vw', '')) + '%';
+            }
+            if (raw.endsWith('vh')) {
+                return parseFloat(raw.replace('vh', '')) + '%';
+            }
+            return val;
+        }
+
         // Load configuration from database
         function loadConfigurations() {
             google.script.run.withSuccessHandler(function(cfg) {
@@ -481,12 +493,12 @@
 
                 // Apply custom sizes if set in config
                 if (cfg.banner_maxwidth) {
-                    elements.banner.el.style.width = cfg.banner_maxwidth;
+                    elements.banner.el.style.width = convertViewportToPercent(cfg.banner_maxwidth);
                 } else {
                     elements.banner.el.style.width = '15%'; // Default compact size if not custom sized
                 }
                 if (cfg.banner_maxheight) {
-                    elements.banner.el.style.height = cfg.banner_maxheight;
+                    elements.banner.el.style.height = convertViewportToPercent(cfg.banner_maxheight);
                 } else {
                     elements.banner.el.style.height = 'auto';
                 }
