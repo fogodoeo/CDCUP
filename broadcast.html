@@ -1026,10 +1026,10 @@
         }
 
         function applyBannerPlacement(container, layout) {
-            container.style.left = 'auto';
-            container.style.right = 'auto';
-            container.style.top = 'auto';
-            container.style.bottom = 'auto';
+            container.style.removeProperty('left');
+            container.style.removeProperty('right');
+            container.style.removeProperty('top');
+            container.style.removeProperty('bottom');
 
             if (layout.right) {
                 container.style.right = layout.right;
