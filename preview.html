@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>방송 화면 실시간 미리보기 및 배너 배치기 - CDCUP</title>
+    <script src="supabase-bridge.js"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0F172A;
+            --card-bg: #1E293B;
+            --border: #334155;
+            --text: #F8FAFC;
+            --text2: #94A3B8;
+            --accent: #2563EB;
+            --accent-hover: #1D4ED8;
+            --green: #10B981;
+            --font: 'Pretendard Variable', 'Pretendard', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            padding: 16px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        .header-bar {
+            width: 100%;
+            max-width: 1080px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .title-area h1 {
+            font-size: 18px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title-area p {
+            font-size: 12px;
+            color: var(--text2);
+            margin-top: 4px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .btn-nav {
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .btn-nav:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-nav.active {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ══ Studio Screen Container (16:9) ══ */
+        .workspace {
+            width: 100%;
+            max-width: 1080px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .screen-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            border: 4px solid #1E293B;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+
+        /* The actual live broadcast screen loaded in iframe */
+        .broadcast-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none; /* Let clicks pass to the overlay */
+            z-index: 1;
+        }
+
+        /* Transparent drag overlay */
+        .drag-overlay {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.15);
+            pointer-events: auto;
+        }
+
+        /* Draggable Banner representation */
+        .draggable-banner {
+            position: absolute;
+            width: 25%; /* Responsive width simulation */
+            aspect-ratio: 4 / 3; /* Fallback aspect ratio */
+            background: rgba(37, 99, 235, 0.25);
+            border: 2px dashed var(--accent);
+            border-radius: 8px;
+            cursor: move;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+            transition: border-color 0.2s, background-color 0.2s;
+            user-select: none;
+        }
+
+        .draggable-banner:hover {
+            border-color: #3B82F6;
+            background: rgba(37, 99, 235, 0.35);
+        }
+
+        .draggable-banner:active {
+            border-style: solid;
+            border-color: var(--green);
+            background: rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.5);
+        }
+
+        .draggable-banner .banner-label {
+            pointer-events: none;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        /* ══ Status Bar & Helper controls ══ */
+        .control-panel {
+            width: 100%;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .status-txt {
+            font-size: 13px;
+            color: var(--text2);
+        }
+
+        .status-txt strong {
+            color: var(--text);
+        }
+
+        .actions-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+            transition: background-color 0.2s;
+        }
+
+        .btn-action.save {
+            background-color: var(--green);
+        }
+
+        .btn-action.save:hover {
+            background-color: #059669;
+        }
+
+        .btn-action.reset {
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-action.reset:hover {
+            background-color: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--accent);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header-bar">
+        <div class="title-area">
+            <h1 id="page-title">📺 방송 화면 미리보기 & 배너 조정</h1>
+            <p>배너 이미지를 원하는 위치로 드래그해서 놓으면 실제 방송(OBS) 화면에 즉시 반영됩니다.</p>
+        </div>
+        <div class="nav-links">
+            <a href="index.html" class="btn-nav">⬅️ 개체 관리</a>
+            <a href="settings.html" class="btn-nav">⚙️ 설정</a>
+            <a href="preview.html?page=1" id="btn-tab-p1" class="btn-nav">진행용 (1P) 에디터</a>
+            <a href="preview.html?page=2" id="btn-tab-p2" class="btn-nav">개체용 (2P) 에디터</a>
+        </div>
+    </div>
+
+    <div class="workspace">
+        <!-- 16:9 OBS screen simulation -->
+        <div class="screen-container" id="screen-container">
+            <!-- Actual broadcast page inside -->
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html"></iframe>
+            
+            <!-- Draggable wrapper layer -->
+            <div class="drag-overlay" id="drag-overlay">
+                <!-- Draggable banner target -->
+                <div class="draggable-banner" id="draggable-banner">
+                    <span class="banner-label">🖼️ 롤링 배너 드래그</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coordinates Status / Control Bar -->
+        <div class="control-panel">
+            <div class="status-txt">
+                현재 좌표: Top <strong id="val-top">0%</strong>, Left <strong id="val-left">0%</strong>
+                <span id="save-status" style="margin-left: 10px; color: var(--green); display: none;">✓ 저장 완료</span>
+            </div>
+            <div class="actions-row">
+                <button class="btn-action reset" onclick="resetPosition()">기본 위치로</button>
+                <button class="btn-action save" onclick="saveCoordinates()">💾 좌표 즉시 저장</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // URL Parameter Parsing (page=1 or page=2)
+        const params = new URLSearchParams(window.location.search);
+        const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
+
+        // Set Nav Active
+        if (pageNum === '1') {
+            document.getElementById('btn-tab-p1').classList.add('active');
+            document.getElementById('page-title').textContent = "📺 진행용 (1P) 실시간 배너 조정 에디터";
+            document.getElementById('broadcast-frame').src = "broadcast.html?page=1";
+        } else {
+            document.getElementById('btn-tab-p2').classList.add('active');
+            document.getElementById('page-title').textContent = "📺 개체용 (2P) 실시간 배너 조정 에디터";
+            document.getElementById('broadcast-frame').src = "broadcast.html?page=2"; // Force page=2 syntax compatibility
+        }
+
+        // Draggable Logic
+        const container = document.getElementById('screen-container');
+        const banner = document.getElementById('draggable-banner');
+        const dragOverlay = document.getElementById('drag-overlay');
+
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let bannerX = 0;
+        let bannerY = 0;
+
+        let pctTop = "10%";
+        let pctLeft = "74%"; // defaults
+
+        function toast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => { t.classList.remove('show'); }, 2000);
+        }
+
+        // Load current config coordinates
+        function loadCurrentPosition() {
+            google.script.run.withSuccessHandler(function(cfg) {
+                if (!cfg) return;
+                
+                // Get saved positions or defaults
+                let topVal = cfg.banner_top || '10%';
+                let leftVal = cfg.banner_left || '74%';
+
+                // Convert to percentage numbers
+                pctTop = topVal;
+                pctLeft = leftVal;
+
+                applyBannerStyles(topVal, leftVal);
+                updateLabels(topVal, leftVal);
+            }).getConfigMap();
+        }
+
+        function applyBannerStyles(top, left) {
+            banner.style.top = top;
+            banner.style.left = left;
+            banner.style.right = 'auto';
+            banner.style.bottom = 'auto';
+        }
+
+        function updateLabels(top, left) {
+            document.getElementById('val-top').textContent = top;
+            document.getElementById('val-left').textContent = left;
+        }
+
+        // Mouse & Touch events for Drag
+        banner.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', drag);
+        window.addEventListener('mouseup', endDrag);
+
+        banner.addEventListener('touchstart', startDrag, { passive: true });
+        window.addEventListener('touchmove', drag, { passive: false });
+        window.addEventListener('touchend', endDrag);
+
+        function startDrag(e) {
+            isDragging = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            // Get current bounding client rect of banner & container
+            const bannerRect = banner.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // Set dragging offsets
+            startX = clientX - bannerRect.left;
+            startY = clientY - bannerRect.top;
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            if (e.cancelable) e.preventDefault(); // Prevent scroll while dragging on mobile
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const containerRect = container.getBoundingClientRect();
+
+            // Calculate x, y relative to container
+            let x = clientX - containerRect.left - startX;
+            let y = clientY - containerRect.top - startY;
+
+            // Restrict bounds
+            const maxX = containerRect.width - banner.offsetWidth;
+            const maxY = containerRect.height - banner.offsetHeight;
+
+            x = Math.max(0, Math.min(x, maxX));
+            y = Math.max(0, Math.min(y, maxY));
+
+            // Convert to percentage
+            const pctX = (x / containerRect.width) * 100;
+            const pctY = (y / containerRect.height) * 100;
+
+            pctLeft = pctX.toFixed(1) + "%";
+            pctTop = pctY.toFixed(1) + "%";
+
+            applyBannerStyles(pctTop, pctLeft);
+            updateLabels(pctTop, pctLeft);
+        }
+
+        function endDrag() {
+            if (!isDragging) return;
+            isDragging = false;
+            
+            // Auto save when drag ends
+            saveCoordinates(true);
+        }
+
+        function saveCoordinates(isAuto = false) {
+            const configMap = {
+                banner_top: pctTop,
+                banner_left: pctLeft,
+                banner_right: 'auto', // Clean up right/bottom to prevent layout conflict
+                banner_bottom: 'auto'
+            };
+
+            google.script.run.withSuccessHandler(function() {
+                // Show temporary save checkmark
+                const indicator = document.getElementById('save-status');
+                indicator.style.display = 'inline';
+                setTimeout(() => { indicator.style.display = 'none'; }, 1500);
+
+                if (!isAuto) toast("💾 배너 위치 좌표가 영구 저장되었습니다!");
+
+                // Reload iframe to reflect changes
+                const iframe = document.getElementById('broadcast-frame');
+                iframe.src = iframe.src;
+            }).updateConfigs(configMap);
+        }
+
+        function resetPosition() {
+            pctTop = "10%";
+            pctLeft = "74%";
+            applyBannerStyles(pctTop, pctLeft);
+            updateLabels(pctTop, pctLeft);
+            saveCoordinates();
+        }
+
+        // Initial Load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCurrentPosition();
+            
+            // Add custom scale/size adjustment to reflect real banner aspect ratio if provided
+            google.script.run.withSuccessHandler(function(cfg) {
+                if (!cfg) return;
+                // If custom maxwidth is set, resize visual editor helper accordingly
+                if (cfg.banner_maxwidth) {
+                    banner.style.width = cfg.banner_maxwidth;
+                }
+                if (cfg.banner_maxheight) {
+                    banner.style.height = cfg.banner_maxheight;
+                }
+            }).getConfigMap();
+        });
+    </script>
+</body>
+
+</html>

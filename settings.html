@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>시스템 설정 - CDCUP</title>
+    <script src="supabase-bridge.js"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0F172A;
+            --bg-accent: #1E293B;
+            --card-bg: #1E293B;
+            --text: #F8FAFC;
+            --text2: #94A3B8;
+            --text3: #64748B;
+            --accent: #2563EB;
+            --accent-hover: #1D4ED8;
+            --green: #10B981;
+            --red: #EF4444;
+            --input-bg: #0F172A;
+            --input-border: #334155;
+            --font: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            padding: 16px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-bottom: 60px;
+        }
+
+        /* ══ Header & Quick Navigation ══ */
+        .header {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-bottom: 1px solid var(--input-border);
+            padding-bottom: 16px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: transform 0.2s, background-color 0.2s;
+            color: #fff;
+        }
+
+        .nav-btn.main {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text);
+        }
+
+        .nav-btn.p1 {
+            background: linear-gradient(135deg, #FF4B2B, #FF416C);
+            box-shadow: 0 2px 4px rgba(255, 75, 43, 0.2);
+        }
+
+        .nav-btn.p2 {
+            background: linear-gradient(135deg, #2563EB, #3B82F6);
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* ══ Cards & Sections ══ */
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 14px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid var(--input-border);
+            padding-bottom: 10px;
+            margin-bottom: 4px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .form-row > * {
+            flex: 1;
+        }
+
+        label {
+            font-size: 11px;
+            color: var(--text2);
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"],
+        textarea {
+            width: 100%;
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 10px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: inherit;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        textarea:focus {
+            border-color: var(--accent);
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        /* ══ Buttons ══ */
+        .btn {
+            width: 100%;
+            padding: 11px;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .btn.primary {
+            background-color: var(--accent);
+            color: #fff;
+        }
+
+        .btn.primary:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn.success {
+            background-color: var(--green);
+            color: #fff;
+        }
+
+        .btn.success:hover {
+            background-color: #059669;
+        }
+
+        .btn.secondary {
+            background-color: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--input-border);
+            color: var(--text);
+        }
+
+        .btn.secondary:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* ══ Toast ══ */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--accent);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 1000;
+            pointer-events: none;
+            text-align: center;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- ══ Header Navigation ══ -->
+        <div class="header">
+            <div class="header-top">
+                <h1>시스템 및 방송 설정</h1>
+                <div class="nav-links" style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                    <a href="index.html" class="nav-btn main" style="padding: 7px 10px; font-size: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);">
+                        <span>⬅️</span> 목록
+                    </a>
+                    <span style="color:var(--text3); font-size:12px; margin:0 2px;">|</span>
+                    <a href="preview.html?page=1" class="nav-btn" style="padding: 7px 10px; font-size: 10px; background: #FF4B2B; box-shadow: 0 1px 3px rgba(255,75,43,0.3);">
+                        <span>🎨</span> 1P 배치기
+                    </a>
+                    <a href="broadcast.html?page=1" target="_blank" class="nav-btn" style="padding: 7px 10px; font-size: 10px; background: rgba(255,75,43,0.15); border: 1px solid #FF4B2B; color: #FF4B2B;">
+                        <span>📺</span> 1P 화면
+                    </a>
+                    <span style="color:var(--text3); font-size:12px; margin:0 2px;">|</span>
+                    <a href="preview.html?page=2" class="nav-btn" style="padding: 7px 10px; font-size: 10px; background: #2563EB; box-shadow: 0 1px 3px rgba(37,99,235,0.3);">
+                        <span>🎨</span> 2P 배치기
+                    </a>
+                    <a href="broadcast.html" target="_blank" class="nav-btn" style="padding: 7px 10px; font-size: 10px; background: rgba(37,99,235,0.15); border: 1px solid #2563EB; color: #3B82F6;">
+                        <span>📺</span> 2P 화면
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ 1. 관리자 비밀번호 설정 ══ -->
+        <div class="card">
+            <div class="card-title">🔑 비밀번호 보안 설정</div>
+            <div id="pw-status" style="font-size: 12px; color: var(--text2);">비밀번호 상태 확인 중...</div>
+            <div id="pw-cur-wrap" style="display: none;" class="form-group">
+                <label>현재 비밀번호</label>
+                <input type="password" id="pw-current" placeholder="현재 사용 중인 비밀번호">
+            </div>
+            <div class="form-group">
+                <label>새 비밀번호</label>
+                <input type="password" id="pw-new" placeholder="변경할 새 비밀번호">
+            </div>
+            <button onclick="savePw()" class="btn primary">비밀번호 변경하기</button>
+        </div>
+
+        <!-- ══ 2. 경매 진행 제어 ══ -->
+        <div class="card">
+            <div class="card-title">⚡ 경매 진행 및 연동 제어</div>
+            <div class="form-row">
+                <button class="btn secondary" onclick="doShuffle()">🔄 순서 균등 분산 배정</button>
+                <button class="btn secondary" id="btn-photo-toggle-web" onclick="toggleBroadcastPhotos()">📸 방송 사진: 로딩중</button>
+            </div>
+        </div>
+
+        <!-- ══ 3. 공지사항 (티커) 설정 ══ -->
+        <div class="card">
+            <div class="card-title">📢 방송 자막(티커) 설정</div>
+            <div class="form-group">
+                <label>티커 자막 내용 (여러 개 입력 시 줄바꿈으로 구분)</label>
+                <textarea id="cfg-ticker" rows="4" placeholder="예: [안내] 입찰은 밴드 댓글로 참여해 주세요.&#10;[규정] 호가 단위를 준수해 주세요."></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>LIVE 배지 문구</label>
+                    <input type="text" id="cfg-badge-text" placeholder="LIVE">
+                </div>
+                <div class="form-group">
+                    <label>티커 롤링 간격 (ms)</label>
+                    <input type="number" id="cfg-ticker-interval" placeholder="4200">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>티커 배경 그라데이션 (CSS 스타일)</label>
+                <input type="text" id="cfg-ticker-bg" placeholder="linear-gradient(90deg, #1e3c72, #2a5298)">
+            </div>
+        </div>
+
+        <!-- ══ 4. 롤링 이미지 배너 설정 ══ -->
+        <div class="card">
+            <div class="card-title">🖼️ 이미지 배너 롤링 설정</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>배너 롤링 주기 (ms)</label>
+                    <input type="number" id="cfg-banner-interval" placeholder="5000">
+                </div>
+                <div class="form-group">
+                    <label>투명도 (0.0 ~ 1.0)</label>
+                    <input type="text" id="cfg-banner-opacity" placeholder="0.93">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Top 여백 (예: 24px)</label>
+                    <input type="text" id="cfg-banner-top" placeholder="24px">
+                </div>
+                <div class="form-group">
+                    <label>Bottom 여백 (예: 4%)</label>
+                    <input type="text" id="cfg-banner-bottom" placeholder="4%">
+                </div>
+                <div class="form-group">
+                    <label>Left 여백</label>
+                    <input type="text" id="cfg-banner-left" placeholder="10px">
+                </div>
+                <div class="form-group">
+                    <label>Right 여백</label>
+                    <input type="text" id="cfg-banner-right" placeholder="1%">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>최대 가로 너비 (Max Width)</label>
+                    <input type="text" id="cfg-banner-maxwidth" placeholder="42vw">
+                </div>
+                <div class="form-group">
+                    <label>최대 세로 높이 (Max Height)</label>
+                    <input type="text" id="cfg-banner-maxheight" placeholder="auto">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>배너 이미지 주소 목록 (1번 ~ 5번)</label>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <input type="text" class="cfg-banner-url" data-key="banner1" placeholder="배너 1 이미지 URL">
+                    <input type="text" class="cfg-banner-url" data-key="banner2" placeholder="배너 2 이미지 URL">
+                    <input type="text" class="cfg-banner-url" data-key="banner3" placeholder="배너 3 이미지 URL">
+                    <input type="text" class="cfg-banner-url" data-key="banner4" placeholder="배너 4 이미지 URL">
+                    <input type="text" class="cfg-banner-url" data-key="banner5" placeholder="배너 5 이미지 URL">
+                </div>
+            </div>
+
+            <button onclick="saveBroadcastSettings()" class="btn success" style="margin-top: 10px;">📺 방송 설정 전체 저장하기</button>
+        </div>
+    </div>
+
+    <!-- ══ Toast Notification ══ -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ── 토스트 유틸 ──
+        function toast(msg, isError) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.borderColor = isError ? 'var(--red)' : 'var(--accent)';
+            t.classList.add('show');
+            setTimeout(() => { t.classList.remove('show'); }, 3000);
+        }
+
+        // ── 1. 비밀번호 설정 핸들러 ──
+        function loadPwStatus() {
+            google.script.run.withSuccessHandler(r => {
+                const st = document.getElementById('pw-status');
+                const curWrap = document.getElementById('pw-cur-wrap');
+                if (r.isSet) {
+                    st.innerHTML = '<b style="color:var(--green);">비밀번호 설정됨</b> — 변경하려면 현재 비밀번호를 입력하세요';
+                    curWrap.style.display = 'block';
+                } else {
+                    st.innerHTML = '<b style="color:var(--red);">비밀번호 미설정</b> — 새 비밀번호를 설정하세요';
+                    curWrap.style.display = 'none';
+                }
+            }).getAdminPwStatus();
+        }
+
+        function savePw() {
+            const cur = document.getElementById('pw-current').value;
+            const nw = document.getElementById('pw-new').value;
+            if (!nw) { toast('새 비밀번호를 입력하세요', true); return; }
+            google.script.run.withSuccessHandler(r => {
+                if (r.success) {
+                    toast('비밀번호 설정 완료');
+                    document.getElementById('pw-current').value = '';
+                    document.getElementById('pw-new').value = '';
+                    loadPwStatus();
+                } else {
+                    toast('❌ ' + (r.error || '오류'), true);
+                }
+            }).withFailureHandler(e => toast('오류: ' + e.message, true))
+                .setAdminPw(cur, nw);
+        }
+
+        // ── 2. 경매 진행 관리 ──
+        function doShuffle() {
+            if (!confirm("모든 경매 개체의 순서(num)를 고르게 섞으시겠습니까?")) return;
+            toast("순서 섞는 중...");
+            google.script.run.withSuccessHandler(function(r) {
+                if (r && !r.success) { toast("실패: " + r.error, true); }
+                else { toast("순서 배정이 정상 완료되었습니다!"); }
+            }).shuffleRoundRobin();
+        }
+
+        let _webPhotoShow = true;
+        function loadPhotoToggleState() {
+            google.script.run.withSuccessHandler(function(hidden) {
+                _webPhotoShow = (hidden !== "1");
+                const btn = document.getElementById('btn-photo-toggle-web');
+                if (_webPhotoShow) {
+                    btn.textContent = "📸 방송 사진: ON";
+                    btn.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+                    btn.style.borderColor = "var(--green)";
+                    btn.style.color = "var(--green)";
+                } else {
+                    btn.textContent = "📸 방송 사진: OFF";
+                    btn.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+                    btn.style.borderColor = "var(--red)";
+                    btn.style.color = "var(--red)";
+                }
+            }).getHiddenPhotos();
+        }
+
+        function toggleBroadcastPhotos() {
+            const nextShow = !_webPhotoShow;
+            const val = nextShow ? "0" : "1";
+            toast("방송 사진 설정을 변경하는 중...");
+            google.script.run.withSuccessHandler(function() {
+                _webPhotoShow = nextShow;
+                loadPhotoToggleState();
+                toast(_webPhotoShow ? "방송 사진 노출 활성화" : "방송 사진 노출 비활성화");
+            }).setHiddenPhotos(val);
+        }
+
+        // ── 3 & 4. 방송 세부 설정 핸들러 ──
+        function loadBroadcastSettings() {
+            google.script.run.withSuccessHandler(function(cfg) {
+                if (!cfg) return;
+                document.getElementById('cfg-ticker').value = cfg.ticker || '';
+                document.getElementById('cfg-badge-text').value = cfg.badge_text || 'LIVE';
+                document.getElementById('cfg-ticker-interval').value = cfg.ticker_interval || '4200';
+                document.getElementById('cfg-ticker-bg').value = cfg.ticker_background || '';
+                
+                document.getElementById('cfg-banner-interval').value = cfg.banner_interval || '5000';
+                document.getElementById('cfg-banner-opacity').value = cfg.banner_opacity || '0.93';
+                document.getElementById('cfg-banner-top').value = cfg.banner_top || '';
+                document.getElementById('cfg-banner-bottom').value = cfg.banner_bottom || '';
+                document.getElementById('cfg-banner-left').value = cfg.banner_left || '';
+                document.getElementById('cfg-banner-right').value = cfg.banner_right || '';
+                document.getElementById('cfg-banner-maxwidth').value = cfg.banner_maxwidth || '';
+                document.getElementById('cfg-banner-maxheight').value = cfg.banner_maxheight || '';
+
+                const inputs = document.querySelectorAll('.cfg-banner-url');
+                inputs.forEach(input => {
+                    const key = input.getAttribute('data-key');
+                    input.value = cfg[key] || '';
+                });
+            }).getConfigMap();
+        }
+
+        function saveBroadcastSettings() {
+            const configMap = {
+                ticker: document.getElementById('cfg-ticker').value,
+                badge_text: document.getElementById('cfg-badge-text').value,
+                ticker_interval: document.getElementById('cfg-ticker-interval').value,
+                ticker_background: document.getElementById('cfg-ticker-bg').value,
+                
+                banner_interval: document.getElementById('cfg-banner-interval').value,
+                banner_opacity: document.getElementById('cfg-banner-opacity').value,
+                banner_top: document.getElementById('cfg-banner-top').value,
+                banner_bottom: document.getElementById('cfg-banner-bottom').value,
+                banner_left: document.getElementById('cfg-banner-left').value,
+                banner_right: document.getElementById('cfg-banner-right').value,
+                banner_maxwidth: document.getElementById('cfg-banner-maxwidth').value,
+                banner_maxheight: document.getElementById('cfg-banner-maxheight').value,
+            };
+
+            const inputs = document.querySelectorAll('.cfg-banner-url');
+            inputs.forEach(input => {
+                const key = input.getAttribute('data-key');
+                configMap[key] = input.value;
+            });
+
+            toast('설정을 저장 중입니다...');
+            google.script.run.withSuccessHandler(function() {
+                toast('📺 방송 화면 설정이 저장되었습니다!');
+            }).updateConfigs(configMap);
+        }
+
+        // 초기화
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPwStatus();
+            loadPhotoToggleState();
+            loadBroadcastSettings();
+        });
+    </script>
+</body>
+
+</html>
