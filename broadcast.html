@@ -356,12 +356,16 @@
             display: grid;
         }
 
-        .hc-banner-float .banner-img {
+        /* ── 이미지 배너 래퍼 및 블러 레이어 ── */
+        .hc-banner-float .banner-item-wrap {
             grid-area: 1 / 1;
-            max-height: 50vh;
-            max-width: 42vw;
-            border-radius: 32px;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+            width: var(--banner-w, 42vw);
+            height: var(--banner-h, 50vh);
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             opacity: 0;
             transform: scale(0.92);
             filter: blur(8px);
@@ -371,16 +375,42 @@
             pointer-events: none;
         }
 
-        .hc-banner-float .banner-img.show {
+        .hc-banner-float .banner-item-wrap.show {
             opacity: var(--banner-opacity, 0.93);
             transform: scale(1);
             filter: blur(0);
         }
 
-        .hc-banner-float .banner-img.exit {
+        .hc-banner-float .banner-item-wrap.exit {
             opacity: 0;
             transform: scale(1.04);
             filter: blur(6px);
+        }
+
+        /* 여백을 채우는 백그라운드 블러 이미지 */
+        .hc-banner-float .banner-bg-blur {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            filter: blur(28px) brightness(0.6);
+            transform: scale(1.15);
+            z-index: 1;
+            opacity: 0.85;
+        }
+
+        /* 전면에 표시되는 선명한 원본 이미지 */
+        .hc-banner-float .banner-img-main {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            z-index: 2;
         }
 
         .hc-rules-card {
@@ -1101,38 +1131,38 @@
             }
         }
 
-        function startBannerRotation(imgs, interval) {
+        function startBannerRotation(wraps, interval) {
             if (window._bannerRotateTimer) {
                 clearInterval(window._bannerRotateTimer);
                 window._bannerRotateTimer = null;
             }
 
-            if (!imgs.length) {
+            if (!wraps.length) {
                 window._bannerCurrentIdx = 0;
                 return;
             }
 
             const currentIdx = typeof window._bannerCurrentIdx === 'number' ? window._bannerCurrentIdx : 0;
-            window._bannerCurrentIdx = Math.max(0, Math.min(currentIdx, imgs.length - 1));
+            window._bannerCurrentIdx = Math.max(0, Math.min(currentIdx, wraps.length - 1));
 
-            imgs.forEach(function (img, idx) {
-                img.classList.toggle('show', idx === window._bannerCurrentIdx && img.style.display !== 'none');
+            wraps.forEach(function (wrap, idx) {
+                wrap.classList.toggle('show', idx === window._bannerCurrentIdx && wrap.style.display !== 'none');
             });
 
-            if (imgs.length <= 1) return;
+            if (wraps.length <= 1) return;
 
             window._bannerRotateTimer = setInterval(function () {
                 const prevIdx = window._bannerCurrentIdx;
-                let nextIdx = (prevIdx + 1) % imgs.length;
+                let nextIdx = (prevIdx + 1) % wraps.length;
                 let guard = 0;
-                while (imgs[nextIdx].style.display === 'none' && guard < imgs.length) {
-                    nextIdx = (nextIdx + 1) % imgs.length;
+                while (wraps[nextIdx].style.display === 'none' && guard < wraps.length) {
+                    nextIdx = (nextIdx + 1) % wraps.length;
                     guard += 1;
                 }
-                imgs[prevIdx].classList.remove('show');
-                imgs[prevIdx].classList.add('exit');
-                setTimeout(() => imgs[prevIdx].classList.remove('exit'), 800);
-                imgs[nextIdx].classList.add('show');
+                wraps[prevIdx].classList.remove('show');
+                wraps[prevIdx].classList.add('exit');
+                setTimeout(() => wraps[prevIdx].classList.remove('exit'), 800);
+                wraps[nextIdx].classList.add('show');
                 window._bannerCurrentIdx = nextIdx;
             }, interval);
         }
@@ -1177,16 +1207,16 @@
 
             const imageKey = JSON.stringify({ urls: urls, maxW: maxW, maxH: maxH });
             const state = window._bannerRenderState || {};
-            const imgs = Array.from(container.querySelectorAll('.banner-img'));
+            const wraps = Array.from(container.querySelectorAll('.banner-item-wrap'));
 
-            if (state.imageKey === imageKey && imgs.length === urls.length) {
-                imgs.forEach(function (img) {
-                    img.style.maxWidth = maxW;
-                    img.style.maxHeight = maxH;
+            if (state.imageKey === imageKey && wraps.length === urls.length) {
+                wraps.forEach(function (wrap) {
+                    wrap.style.setProperty('--banner-w', maxW);
+                    wrap.style.setProperty('--banner-h', maxH);
                 });
 
                 if (state.interval !== interval) {
-                    startBannerRotation(imgs, interval);
+                    startBannerRotation(wraps, interval);
                 }
 
                 window._bannerRenderState = {
@@ -1203,26 +1233,37 @@
             container.innerHTML = '';
             window._bannerCurrentIdx = 0;
 
-            const nextImgs = [];
+            const nextWraps = [];
             urls.forEach(function (url, i) {
-                const img = document.createElement('img');
-                img.className = 'banner-img';
-                img.src = url;
-                img.style.maxWidth = maxW;
-                img.style.maxHeight = maxH;
-                img.onload = function () {
-                    if (i === 0 && window._bannerCurrentIdx === 0) img.classList.add('show');
+                const wrap = document.createElement('div');
+                wrap.className = 'banner-item-wrap';
+                wrap.style.setProperty('--banner-w', maxW);
+                wrap.style.setProperty('--banner-h', maxH);
+
+                const blurBg = document.createElement('div');
+                blurBg.className = 'banner-bg-blur';
+                blurBg.style.backgroundImage = 'url(' + JSON.stringify(url) + ')';
+
+                const mainImg = document.createElement('img');
+                mainImg.className = 'banner-img-main';
+                mainImg.src = url;
+
+                wrap.appendChild(blurBg);
+                wrap.appendChild(mainImg);
+
+                mainImg.onload = function () {
+                    if (i === 0 && window._bannerCurrentIdx === 0) wrap.classList.add('show');
                 };
-                img.onerror = function () { img.style.display = 'none'; };
-                container.appendChild(img);
-                nextImgs.push(img);
+                mainImg.onerror = function () { wrap.style.display = 'none'; };
+                container.appendChild(wrap);
+                nextWraps.push(wrap);
             });
 
-            if (nextImgs.length > 0) {
-                requestAnimationFrame(() => nextImgs[0].classList.add('show'));
+            if (nextWraps.length > 0) {
+                requestAnimationFrame(() => nextWraps[0].classList.add('show'));
             }
 
-            startBannerRotation(nextImgs, interval);
+            startBannerRotation(nextWraps, interval);
             window._bannerRenderState = {
                 imageKey: imageKey,
                 interval: interval
