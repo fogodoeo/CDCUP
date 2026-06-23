@@ -2447,6 +2447,96 @@
                     <button class="admin-btn" id="btn-photo-toggle-web" onclick="toggleBroadcastPhotos()">방송 사진
                         ON</button>
                 </div>
+
+                <div class="admin-section" style="margin-top:20px; border-top:1px solid var(--input-border); padding-top:20px;">
+                    <h3>방송 화면 설정</h3>
+                    
+                    <!-- 티커/공지 설정 -->
+                    <div style="background:var(--card-bg, #f9f9f9); border:1px solid var(--input-border); border-radius:12px; padding:16px; margin-bottom:16px; box-sizing:border-box;">
+                        <h4 style="margin:0 0 12px 0; font-size:13px; color:var(--text); display:flex; align-items:center; gap:6px;">
+                            <span>📢</span> 공지사항 (티커) 설정
+                        </h4>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <div>
+                                <label style="font-size:11px; color:var(--text2); font-weight:600; display:block; margin-bottom:4px;">티커 내용 (줄바꿈 가능)</label>
+                                <textarea id="cfg-ticker" rows="3" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:12px; box-sizing:border-box; resize:vertical; font-family:inherit;"></textarea>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <div style="flex:1;">
+                                    <label style="font-size:11px; color:var(--text2); font-weight:600; display:block; margin-bottom:4px;">LIVE 배지 텍스트</label>
+                                    <input type="text" id="cfg-badge-text" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:12px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:1;">
+                                    <label style="font-size:11px; color:var(--text2); font-weight:600; display:block; margin-bottom:4px;">티커 롤링 속도 (ms)</label>
+                                    <input type="number" id="cfg-ticker-interval" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:12px; box-sizing:border-box;">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size:11px; color:var(--text2); font-weight:600; display:block; margin-bottom:4px;">티커 배경 스타일 (CSS 그라데이션)</label>
+                                <input type="text" id="cfg-ticker-bg" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:12px; box-sizing:border-box;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 롤링 배너 설정 -->
+                    <div style="background:var(--card-bg, #f9f9f9); border:1px solid var(--input-border); border-radius:12px; padding:16px; margin-bottom:16px; box-sizing:border-box;">
+                        <h4 style="margin:0 0 12px 0; font-size:13px; color:var(--text); display:flex; align-items:center; gap:6px;">
+                            <span>🖼️</span> 롤링 이미지 배너 설정
+                        </h4>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <div style="display:flex; gap:10px;">
+                                <div style="flex:1;">
+                                    <label style="font-size:11px; color:var(--text2); font-weight:600; display:block; margin-bottom:4px;">롤링 주기 (ms)</label>
+                                    <input type="number" id="cfg-banner-interval" placeholder="5000" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:12px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:1;">
+                                    <label style="font-size:11px; color:var(--text2); font-weight:600; display:block; margin-bottom:4px;">불투명도 (0.0~1.0)</label>
+                                    <input type="text" id="cfg-banner-opacity" placeholder="0.93" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:12px; box-sizing:border-box;">
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <div style="flex:1; min-width:80px;">
+                                    <label style="font-size:10px; color:var(--text2); display:block; margin-bottom:2px;">Top 여백</label>
+                                    <input type="text" id="cfg-banner-top" placeholder="예: 10px" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:6px; padding:6px; color:var(--text); font-size:11px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:1; min-width:80px;">
+                                    <label style="font-size:10px; color:var(--text2); display:block; margin-bottom:2px;">Bottom 여백</label>
+                                    <input type="text" id="cfg-banner-bottom" placeholder="예: 4%" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:6px; padding:6px; color:var(--text); font-size:11px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:1; min-width:80px;">
+                                    <label style="font-size:10px; color:var(--text2); display:block; margin-bottom:2px;">Left 여백</label>
+                                    <input type="text" id="cfg-banner-left" placeholder="예: 10px" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:6px; padding:6px; color:var(--text); font-size:11px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:1; min-width:80px;">
+                                    <label style="font-size:10px; color:var(--text2); display:block; margin-bottom:2px;">Right 여백</label>
+                                    <input type="text" id="cfg-banner-right" placeholder="예: 1%" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:6px; padding:6px; color:var(--text); font-size:11px; box-sizing:border-box;">
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <div style="flex:1;">
+                                    <label style="font-size:11px; color:var(--text2); font-weight:600; display:block; margin-bottom:4px;">최대 가로크기</label>
+                                    <input type="text" id="cfg-banner-maxwidth" placeholder="예: 30vw" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:12px; box-sizing:border-box;">
+                                </div>
+                                <div style="flex:1;">
+                                    <label style="font-size:11px; color:var(--text2); font-weight:600; display:block; margin-bottom:4px;">최대 세로크기</label>
+                                    <input type="text" id="cfg-banner-maxheight" placeholder="예: 40vh" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:12px; box-sizing:border-box;">
+                                </div>
+                            </div>
+                            <div style="margin-top:8px;">
+                                <label style="font-size:11px; color:var(--text2); font-weight:600; display:block; margin-bottom:4px;">배너 이미지 URL 리스트 (1~5번)</label>
+                                <div style="display:flex; flex-direction:column; gap:6px;" id="banner-urls-container">
+                                    <input type="text" class="cfg-banner-url" data-key="banner1" placeholder="배너 1 이미지 주소 (https://...)" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:11px; box-sizing:border-box;">
+                                    <input type="text" class="cfg-banner-url" data-key="banner2" placeholder="배너 2 이미지 주소 (https://...)" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:11px; box-sizing:border-box;">
+                                    <input type="text" class="cfg-banner-url" data-key="banner3" placeholder="배너 3 이미지 주소 (https://...)" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:11px; box-sizing:border-box;">
+                                    <input type="text" class="cfg-banner-url" data-key="banner4" placeholder="배너 4 이미지 주소 (https://...)" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:11px; box-sizing:border-box;">
+                                    <input type="text" class="cfg-banner-url" data-key="banner5" placeholder="배너 5 이미지 주소 (https://...)" style="width:100%; background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px; padding:8px; color:var(--text); font-size:11px; box-sizing:border-box;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="admin-btn" style="background:#059669; color:#fff;" onclick="saveBroadcastSettings()">📺 방송 설정 저장</button>
+                </div>
             </div>
         </div>
     </div>
@@ -2702,7 +2792,10 @@
                 setTimeout(() => { h1.textContent = titles[tab] || tab; h1.style.opacity = '1'; }, 120);
             }
             if (tab === 'list') loadList();
-            if (tab === 'settings') loadPwStatus();
+            if (tab === 'settings') {
+                loadPwStatus();
+                loadBroadcastSettings();
+            }
             if (tab === 'dodosi') { loadDodosiData(); setTimeout(function () { document.getElementById('dodosi-search').focus(); }, 200); }
             if (tab === 'print') loadPrint();
         }
@@ -2737,6 +2830,60 @@
                 }
             }).withFailureHandler(e => toast('오류: ' + e.message, true))
                 .setAdminPw(cur, nw);
+        }
+
+        function loadBroadcastSettings() {
+            google.script.run.withSuccessHandler(function(cfg) {
+                if (!cfg) return;
+                document.getElementById('cfg-ticker').value = cfg.ticker || '';
+                document.getElementById('cfg-badge-text').value = cfg.badge_text || 'LIVE';
+                document.getElementById('cfg-ticker-interval').value = cfg.ticker_interval || '4200';
+                document.getElementById('cfg-ticker-bg').value = cfg.ticker_background || '';
+                
+                document.getElementById('cfg-banner-interval').value = cfg.banner_interval || '5000';
+                document.getElementById('cfg-banner-opacity').value = cfg.banner_opacity || '0.93';
+                document.getElementById('cfg-banner-top').value = cfg.banner_top || '';
+                document.getElementById('cfg-banner-bottom').value = cfg.banner_bottom || '';
+                document.getElementById('cfg-banner-left').value = cfg.banner_left || '';
+                document.getElementById('cfg-banner-right').value = cfg.banner_right || '';
+                document.getElementById('cfg-banner-maxwidth').value = cfg.banner_maxwidth || '';
+                document.getElementById('cfg-banner-maxheight').value = cfg.banner_maxheight || '';
+
+                const inputs = document.querySelectorAll('.cfg-banner-url');
+                inputs.forEach(input => {
+                    const key = input.getAttribute('data-key');
+                    input.value = cfg[key] || '';
+                });
+            }).getConfigMap();
+        }
+
+        function saveBroadcastSettings() {
+            const configMap = {
+                ticker: document.getElementById('cfg-ticker').value,
+                badge_text: document.getElementById('cfg-badge-text').value,
+                ticker_interval: document.getElementById('cfg-ticker-interval').value,
+                ticker_background: document.getElementById('cfg-ticker-bg').value,
+                
+                banner_interval: document.getElementById('cfg-banner-interval').value,
+                banner_opacity: document.getElementById('cfg-banner-opacity').value,
+                banner_top: document.getElementById('cfg-banner-top').value,
+                banner_bottom: document.getElementById('cfg-banner-bottom').value,
+                banner_left: document.getElementById('cfg-banner-left').value,
+                banner_right: document.getElementById('cfg-banner-right').value,
+                banner_maxwidth: document.getElementById('cfg-banner-maxwidth').value,
+                banner_maxheight: document.getElementById('cfg-banner-maxheight').value,
+            };
+
+            const inputs = document.querySelectorAll('.cfg-banner-url');
+            inputs.forEach(input => {
+                const key = input.getAttribute('data-key');
+                configMap[key] = input.value;
+            });
+
+            toast('설정을 저장 중입니다...');
+            google.script.run.withSuccessHandler(function() {
+                toast('📺 방송 화면 설정이 성공적으로 저장되었습니다!');
+            }).updateConfigs(configMap);
         }
 
         // ── 개체 행 추가 ──

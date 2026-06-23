@@ -527,6 +527,29 @@ async function setBannerHidden(hidden) {
     });
 }
 
+async function getConfigMap() {
+    const rows = await _sbFetch('config?select=*');
+    const map = {};
+    if (rows && rows.length > 0) {
+        rows.forEach(r => {
+            map[r.key] = r.value;
+        });
+    }
+    return map;
+}
+
+async function updateConfigs(configMap) {
+    const payloads = Object.keys(configMap).map(k => ({
+        key: k,
+        value: String(configMap[k])
+    }));
+    await _sbFetch('config', {
+        method: 'POST',
+        headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
+        body: JSON.stringify(payloads),
+    });
+}
+
 /**
  * 부모개체 목록 (= GAS getParents)
  */
@@ -561,7 +584,8 @@ if (!google.script.run) {
         getHiddenPhotos, setHiddenPhotos, getHostConfig, setHostConfig,
         uploadPhotos, getBannerHidden, setBannerHidden, getParents,
         getAdminPwStatus, verifyAdmin, setAdminPw, deleteItem, deleteItems,
-        deleteAll, registerBatch, shuffleRoundRobin, registerParent
+        deleteAll, registerBatch, shuffleRoundRobin, registerParent,
+        getConfigMap, updateConfigs
     };
 
     google.script.run = new Proxy({}, {
