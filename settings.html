@@ -429,21 +429,23 @@
         // ── Photo toggle ──
         let _photoShow = true;
         function loadPhotoState() {
-            google.script.run.withSuccessHandler(h => {
-                _photoShow = h !== '1';
+            // hiddenPhotos config key로 사진 표시 상태 확인
+            google.script.run.withSuccessHandler(cfg => {
+                if (!cfg) return;
+                _photoShow = cfg.hiddenPhotos !== '1';
                 const el = document.getElementById('qt-photo');
                 if (el) {
                     el.querySelector('.dot').className = 'dot ' + (_photoShow?'on':'off');
                     el.querySelector('span').textContent = '사진 ' + (_photoShow?'ON':'OFF');
                 }
-            }).getBannerHidden();
+            }).getConfigMap();
         }
         function toggleBroadcastPhotos() {
             _photoShow = !_photoShow;
             google.script.run.withSuccessHandler(() => {
                 loadPhotoState();
                 toast(_photoShow ? '사진 ON' : '사진 OFF');
-            }).setBannerHidden(_photoShow ? '0' : '1');
+            }).updateConfigs({ hiddenPhotos: _photoShow ? '' : '1' });
         }
 
         // ── Shuffle ──
