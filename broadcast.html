@@ -1031,17 +1031,19 @@
             container.style.removeProperty('top');
             container.style.removeProperty('bottom');
 
-            if (layout.right) {
+            const isVal = (val) => val && val !== 'auto' && val !== 'initial' && val !== 'unset';
+
+            if (isVal(layout.right)) {
                 container.style.right = layout.right;
-            } else if (layout.left) {
+            } else if (isVal(layout.left)) {
                 container.style.left = layout.left;
             } else {
                 container.style.right = '1%';
             }
 
-            if (layout.bottom) {
+            if (isVal(layout.bottom)) {
                 container.style.bottom = layout.bottom;
-            } else if (layout.top) {
+            } else if (isVal(layout.top)) {
                 container.style.top = layout.top;
             } else {
                 container.style.bottom = '4%';
