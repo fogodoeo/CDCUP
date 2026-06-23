@@ -51,7 +51,7 @@
         @keyframes scoreboardSlideIn {
             from {
                 opacity: 0;
-                transform: translateX(-40px);
+                transform: translateX(40px);
             }
             to {
                 opacity: 1;
@@ -59,26 +59,44 @@
             }
         }
 
-        .top-bar {
+        /* 스코어보드 래퍼 (라벨 + 바를 묶는 컨테이너) */
+        .scoreboard-wrap {
             position: absolute;
-            top: 24px;
-            left: 24px;
-            right: auto;
+            top: 20px;
+            right: 24px;
+            left: auto;
             z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            animation: scoreboardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        /* 대회명 라벨 (바 위에 표시) */
+        .scoreboard-wrap .top-bar-label {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: rgba(255, 168, 0, 0.85);
+            padding: 0 8px 4px 0;
+        }
+
+        .top-bar {
             display: flex;
             align-items: stretch;
             gap: 0;
             overflow: hidden;
             border-radius: 6px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
-            animation: scoreboardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
-        /* 좌측 주황색 악센트 스트라이프 */
+        /* 우측 주황색 악센트 스트라이프 */
         .top-bar .accent-bar {
             width: 5px;
             flex-shrink: 0;
             background: linear-gradient(180deg, #FF6B00, #FFA800);
+            order: 99; /* 맨 우측으로 이동 */
         }
 
         /* 이름 영역 (어두운 배경) */
@@ -326,6 +344,7 @@
         }
 
         /* ── 호스트 모드 (page=1) 전용 ── */
+        .host-mode .scoreboard-wrap,
         .host-mode .top-bar,
         .host-mode .photo-stack {
             display: none !important;
@@ -654,16 +673,19 @@
     <div class="empty" id="empty">경매 대기중...</div>
 
     <div class="broadcast" id="broadcast">
-        <div class="top-bar" id="top-bar">
-            <div class="accent-bar"></div>
-            <div class="name-section">
-                <span class="name" id="info-name"></span>
+        <div class="scoreboard-wrap" id="scoreboard-wrap">
+            <span class="top-bar-label">CRE WORLD CUP</span>
+            <div class="top-bar" id="top-bar">
+                <div class="name-section">
+                    <span class="name" id="info-name"></span>
+                </div>
+                <span class="sep"></span>
+                <div class="traits" id="info-traits">
+                    <div class="traits-track" id="traits-track"></div>
+                </div>
+                <div class="accent-bar"></div>
+                <span class="sub" id="info-sub" style="display:none;"></span>
             </div>
-            <span class="sep"></span>
-            <div class="traits" id="info-traits">
-                <div class="traits-track" id="traits-track"></div>
-            </div>
-            <span class="sub" id="info-sub" style="display:none;"></span>
         </div>
 
         <div class="photo-stack" id="photo-stack">
