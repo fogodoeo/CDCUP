@@ -603,6 +603,22 @@
                 if (file) handleFile(file);
             });
 
+            // Clipboard Paste (Ctrl+V) Support
+            div.addEventListener('paste', async function(e) {
+                const items = (e.clipboardData || window.clipboardData).items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (file) {
+                            e.preventDefault();
+                            await handleFile(file);
+                            break;
+                        }
+                    }
+                }
+            });
+
             list.appendChild(div);
         }
 
