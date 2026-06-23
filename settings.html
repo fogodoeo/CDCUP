@@ -470,7 +470,7 @@
         async function uploadToSupabase(file) {
             const ext = file.name.split('.').pop().toLowerCase();
             const fname = 'banner_' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + '.' + ext;
-            const uploadUrl = SB_URL + '/storage/v1/object/banners/' + fname;
+            const uploadUrl = SB_URL + '/storage/v1/object/banner/' + fname;
             const resp = await fetch(uploadUrl, {
                 method: 'POST',
                 headers: {
@@ -482,7 +482,7 @@
                 body: file,
             });
             if (!resp.ok) throw new Error('Upload failed: ' + resp.status);
-            return SB_URL + '/storage/v1/object/public/banners/' + fname;
+            return SB_URL + '/storage/v1/object/public/banner/' + fname;
         }
 
         function addBannerSlot(url) {
