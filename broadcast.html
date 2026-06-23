@@ -104,7 +104,7 @@
             display: flex;
             align-items: center;
             padding: 10px 22px 10px 16px;
-            background: rgba(10, 15, 28, var(--sb-opacity, 0.88));
+            background: rgba(10, 15, 28, 0.88);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
         }
@@ -130,7 +130,7 @@
             align-items: center;
             padding: 10px 18px;
             gap: 6px;
-            background: rgba(20, 28, 46, var(--sb-opacity, 0.85));
+            background: rgba(20, 28, 46, 0.85);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             flex-wrap: nowrap;
@@ -1326,11 +1326,23 @@
                 if (sbWrap) {
                     if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
                     if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
-                    if (cfg.scoreboard_label_fontsize) sbWrap.style.setProperty('--sb-label-size', cfg.scoreboard_label_fontsize + 'px');
-                    if (cfg.scoreboard_opacity) sbWrap.style.setProperty('--sb-opacity', cfg.scoreboard_opacity);
+                    // 대회명 라벨 폰트 크기 (직접 스타일)
                     const labelEl = sbWrap.querySelector('.top-bar-label');
-                    if (labelEl && cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
-                        labelEl.textContent = cfg.scoreboard_label;
+                    if (labelEl) {
+                        if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
+                        if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
+                            labelEl.textContent = cfg.scoreboard_label;
+                        }
+                    }
+                    // 박스 투명도 (직접 background 스타일)
+                    if (cfg.scoreboard_opacity) {
+                        const op = parseFloat(cfg.scoreboard_opacity);
+                        if (!isNaN(op)) {
+                            const nameSection = sbWrap.querySelector('.name-section');
+                            const traitsSection = sbWrap.querySelector('.traits');
+                            if (nameSection) nameSection.style.background = 'rgba(10, 15, 28, ' + op + ')';
+                            if (traitsSection) traitsSection.style.background = 'rgba(20, 28, 46, ' + op + ')';
+                        }
                     }
                 }
                 
@@ -1684,11 +1696,21 @@
                 if (sbWrap) {
                     if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
                     if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
-                    if (cfg.scoreboard_label_fontsize) sbWrap.style.setProperty('--sb-label-size', cfg.scoreboard_label_fontsize + 'px');
-                    if (cfg.scoreboard_opacity) sbWrap.style.setProperty('--sb-opacity', cfg.scoreboard_opacity);
                     const labelEl = sbWrap.querySelector('.top-bar-label');
-                    if (labelEl && cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
-                        labelEl.textContent = cfg.scoreboard_label;
+                    if (labelEl) {
+                        if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
+                        if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
+                            labelEl.textContent = cfg.scoreboard_label;
+                        }
+                    }
+                    if (cfg.scoreboard_opacity) {
+                        const op = parseFloat(cfg.scoreboard_opacity);
+                        if (!isNaN(op)) {
+                            const nameSection = sbWrap.querySelector('.name-section');
+                            const traitsSection = sbWrap.querySelector('.traits');
+                            if (nameSection) nameSection.style.background = 'rgba(10, 15, 28, ' + op + ')';
+                            if (traitsSection) traitsSection.style.background = 'rgba(20, 28, 46, ' + op + ')';
+                        }
                     }
                 }
 
