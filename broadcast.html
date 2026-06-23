@@ -307,21 +307,29 @@
 
         .hc-banner-float .banner-img {
             grid-area: 1 / 1;
-            /* align-self and justify-self removed so they use center center */
             max-height: 50vh;
             max-width: 42vw;
             border-radius: 32px;
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
             opacity: 0;
-            transform: scale(0.96);
-            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-                transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: scale(0.92);
+            filter: blur(8px);
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.7s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none;
         }
 
         .hc-banner-float .banner-img.show {
             opacity: var(--banner-opacity, 0.93);
             transform: scale(1);
+            filter: blur(0);
+        }
+
+        .hc-banner-float .banner-img.exit {
+            opacity: 0;
+            transform: scale(1.04);
+            filter: blur(6px);
         }
 
         .hc-rules-card {
@@ -515,15 +523,24 @@
             border: none;
             box-shadow: none;
             opacity: 0;
-            transform: translateY(10px);
+            transform: translateY(24px) scale(0.97);
+            filter: blur(6px);
             transition:
-                opacity 0.45s ease,
-                transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+                opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.55s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .ticker-card.show {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
+
+        .ticker-card.exit {
+            opacity: 0;
+            transform: translateY(-18px) scale(0.97);
+            filter: blur(4px);
         }
 
         .ticker-card-text {
@@ -807,9 +824,10 @@
                 if (activeCard) {
                     const oldCard = activeCard;
                     oldCard.classList.remove('show');
+                    oldCard.classList.add('exit');
                     setTimeout(() => {
                         if (oldCard.parentNode) oldCard.parentNode.removeChild(oldCard);
-                    }, 650);
+                    }, 700);
                 }
                 activeCard = card;
             }
@@ -1059,6 +1077,8 @@
                     guard += 1;
                 }
                 imgs[prevIdx].classList.remove('show');
+                imgs[prevIdx].classList.add('exit');
+                setTimeout(() => imgs[prevIdx].classList.remove('exit'), 800);
                 imgs[nextIdx].classList.add('show');
                 window._bannerCurrentIdx = nextIdx;
             }, interval);
@@ -1504,6 +1524,101 @@
                 }
             };
         } catch (e) { }
+
+        // ── PostMessage 수신: 설정/프리뷰에서 실시간 반영 ──
+        window.addEventListener('message', function(e) {
+            if (!e.data || !e.data.type) return;
+
+            if (e.data.type === 'configUpdate') {
+                // 전체 config 맵 갱신 → 티커/배너/룰 즉시 반영
+                const cfg = e.data.config || {};
+                const bottomBar = document.querySelector('.hc-bottom-bar');
+                const bannerContainer = document.querySelector('.hc-banner-float');
+
+                // 티커 show/hide
+                if (bottomBar) {
+                    if (cfg.ticker_show === '0') {
+                        bottomBar.style.setProperty('display', 'none', 'important');
+                    } else {
+                        bottomBar.style.removeProperty('display');
+                        if (cfg.ticker_top) {
+                            bottomBar.style.top = cfg.ticker_top;
+                            bottomBar.style.bottom = 'auto';
+                        } else {
+                            bottomBar.style.bottom = '0';
+                            bottomBar.style.top = 'auto';
+                        }
+                        if (cfg.ticker_left) {
+                            bottomBar.style.left = cfg.ticker_left;
+                        } else {
+                            bottomBar.style.left = '0';
+                        }
+                        bottomBar.style.right = '0';
+                    }
+                }
+
+                // 배너 show/hide
+                if (bannerContainer) {
+                    if (cfg.banner_show === '0') {
+                        bannerContainer.classList.remove('banner-active');
+                        bannerContainer.dataset.bannerHiddenByToggle = '1';
+                    } else {
+                        delete bannerContainer.dataset.bannerHiddenByToggle;
+                    }
+                }
+
+                // 티커 카드 및 배너 렌더링
+                renderTickerCards(cfg);
+
+                // 호스트 모드 전용: 룰 카드 렌더
+                if (document.body.classList.contains('host-mode')) {
+                    const stackEl = document.getElementById('hc-rules-stack');
+                    if (stackEl) {
+                        stackEl.innerHTML = '';
+                        if (cfg.rules_position === 'top') {
+                            stackEl.classList.add('hc-rules-top');
+                        } else {
+                            stackEl.classList.remove('hc-rules-top');
+                        }
+                        const rules = [];
+                        for (let i = 1; i <= 10; i++) {
+                            const value = cfg['rule' + i] || cfg['rule' + i + '_value'];
+                            if (value) rules.push(value);
+                        }
+                        if (rules.length > 0) {
+                            const card = document.createElement('div');
+                            card.className = 'hc-rules-card';
+                            rules.forEach(text => {
+                                const row = document.createElement('div');
+                                row.className = 'hc-rule-row';
+                                const m = text.match(/^\[([^\]]+?)(?::([^\]]+))?\]\s*(.*)$/);
+                                if (m) {
+                                    const labelSpan = document.createElement('span');
+                                    labelSpan.className = 'hc-rule-label';
+                                    labelSpan.textContent = m[1];
+                                    if (m[2]) labelSpan.style.color = m[2];
+                                    const valueSpan = document.createElement('span');
+                                    valueSpan.className = 'hc-rule-value';
+                                    valueSpan.textContent = m[3];
+                                    row.appendChild(labelSpan);
+                                    row.appendChild(valueSpan);
+                                } else {
+                                    row.innerHTML = renderColorMarkup(text);
+                                }
+                                card.appendChild(row);
+                            });
+                            stackEl.appendChild(card);
+                        }
+                        stackEl.style.display = rules.length > 0 ? 'flex' : 'none';
+                    }
+                }
+            }
+
+            if (e.data.type === 'forceRefresh') {
+                loadHostConfig();
+                smartRefresh();
+            }
+        });
     </script>
 </body>
 

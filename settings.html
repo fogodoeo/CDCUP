@@ -20,6 +20,7 @@
             --accent-hover: #1D4ED8;
             --green: #10B981;
             --red: #EF4444;
+            --orange: #F59E0B;
             --input-bg: #0F172A;
             --input-border: #334155;
             --font: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -227,28 +228,36 @@
         }
 
         /* ══ Toast ══ */
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid var(--accent);
-            color: #fff;
-            padding: 12px 24px;
-            border-radius: 50px;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 1000;
-            pointer-events: none;
-            text-align: center;
-        }
-
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
+        .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px); background:rgba(15,23,42,0.95); border:1px solid var(--accent); color:#fff; padding:12px 24px; border-radius:50px; font-size:13px; font-weight:600; box-shadow:0 10px 15px -3px rgba(0,0,0,0.3); transition:transform 0.3s cubic-bezier(0.16,1,0.3,1); z-index:1000; pointer-events:none; text-align:center; }
+        .toast.show { transform:translateX(-50%) translateY(0); }
+        .preview-wrap { width:100%; aspect-ratio:16/9; background:#000; border-radius:10px; overflow:hidden; border:2px solid var(--input-border); position:relative; }
+        .preview-wrap iframe { width:100%; height:100%; border:none; }
+        .preview-tabs { display:flex; gap:6px; margin-bottom:8px; }
+        .preview-tabs button { flex:1; padding:8px; border:1px solid var(--input-border); border-radius:8px; background:transparent; color:var(--text2); font-size:12px; font-weight:700; cursor:pointer; transition:all .2s; }
+        .preview-tabs button.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+        .quick-toggles { display:flex; gap:8px; flex-wrap:wrap; }
+        .qtoggle { flex:1; min-width:120px; padding:10px 12px; border-radius:10px; border:1px solid var(--input-border); background:rgba(255,255,255,0.03); cursor:pointer; display:flex; align-items:center; gap:8px; transition:all .2s; }
+        .qtoggle:hover { background:rgba(255,255,255,0.06); }
+        .qtoggle .dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; transition:background .2s; }
+        .qtoggle .dot.on { background:var(--green); box-shadow:0 0 6px var(--green); }
+        .qtoggle .dot.off { background:var(--red); box-shadow:0 0 6px var(--red); }
+        .qtoggle span { font-size:12px; font-weight:600; color:var(--text2); }
+        .banner-slot { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+        .banner-slot input { flex:1; }
+        .banner-thumb { width:48px; height:36px; border-radius:6px; object-fit:cover; border:1px solid var(--input-border); background:var(--input-bg); flex-shrink:0; }
+        .banner-thumb.empty { display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--text3); }
+        .banner-slot .slot-del { width:28px; height:28px; border-radius:6px; border:1px solid var(--input-border); background:transparent; color:var(--red); font-size:14px; cursor:pointer; flex-shrink:0; }
+        .add-slot-btn { width:100%; padding:8px; border:1.5px dashed var(--input-border); border-radius:8px; background:transparent; color:var(--text3); font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; }
+        .add-slot-btn:hover { border-color:var(--accent); color:var(--accent); }
+        .rule-slot { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+        .rule-slot input { flex:1; }
+        .rule-slot .slot-del { width:28px; height:28px; border-radius:6px; border:1px solid var(--input-border); background:transparent; color:var(--red); font-size:14px; cursor:pointer; flex-shrink:0; }
+        .section-desc { font-size:11px; color:var(--text3); margin-bottom:8px; line-height:1.5; }
+        .color-row { display:flex; gap:8px; align-items:center; }
+        .color-row input[type=color] { width:36px; height:36px; border:none; border-radius:8px; cursor:pointer; background:transparent; padding:0; }
+        .save-fab { position:fixed; bottom:20px; right:20px; width:56px; height:56px; border-radius:50%; background:var(--green); border:none; color:#fff; font-size:22px; cursor:pointer; box-shadow:0 4px 16px rgba(16,185,129,0.4); z-index:999; transition:transform .2s; display:flex; align-items:center; justify-content:center; }
+        .save-fab:hover { transform:scale(1.1); }
+        .save-fab:active { transform:scale(0.95); }
     </style>
 </head>
 
@@ -280,256 +289,329 @@
             </div>
         </div>
 
-        <!-- ══ 1. 관리자 비밀번호 설정 ══ -->
+        <!-- ══ 실시간 미리보기 ══ -->
         <div class="card">
-            <div class="card-title">🔑 비밀번호 보안 설정</div>
-            <div id="pw-status" style="font-size: 12px; color: var(--text2);">비밀번호 상태 확인 중...</div>
-            <div id="pw-cur-wrap" style="display: none;" class="form-group">
-                <label>현재 비밀번호</label>
-                <input type="password" id="pw-current" placeholder="현재 사용 중인 비밀번호">
+            <div class="card-title">📺 실시간 방송 미리보기</div>
+            <div class="preview-tabs">
+                <button class="active" onclick="switchPreview(1,this)">1P 진행용</button>
+                <button onclick="switchPreview(2,this)">2P 개체용</button>
             </div>
-            <div class="form-group">
-                <label>새 비밀번호</label>
-                <input type="password" id="pw-new" placeholder="변경할 새 비밀번호">
-            </div>
-            <button onclick="savePw()" class="btn primary">비밀번호 변경하기</button>
+            <div class="preview-wrap"><iframe id="preview-frame" src="broadcast.html?page=1"></iframe></div>
         </div>
 
-        <!-- ══ 2. 경매 진행 제어 ══ -->
+        <!-- ══ 빠른 제어 ══ -->
         <div class="card">
-            <div class="card-title">⚡ 경매 진행 및 연동 제어</div>
-            <div class="form-row">
-                <button class="btn secondary" onclick="doShuffle()">🔄 순서 균등 분산 배정</button>
-                <button class="btn secondary" id="btn-photo-toggle-web" onclick="toggleBroadcastPhotos()">📸 방송 사진: 로딩중</button>
+            <div class="card-title">⚡ 빠른 제어</div>
+            <div class="quick-toggles">
+                <div class="qtoggle" onclick="quickToggle('ticker')" id="qt-ticker"><div class="dot on"></div><span>자막 ON</span></div>
+                <div class="qtoggle" onclick="quickToggle('banner')" id="qt-banner"><div class="dot on"></div><span>배너 ON</span></div>
+                <div class="qtoggle" onclick="toggleBroadcastPhotos()" id="qt-photo"><div class="dot on"></div><span>사진 ON</span></div>
+                <div class="qtoggle" onclick="doShuffle()"><div class="dot" style="background:var(--orange)"></div><span>순서 섞기</span></div>
             </div>
         </div>
 
-        <!-- ══ 3. 공지사항 (티커) 설정 ══ -->
+        <!-- ══ 공지사항 (티커) 설정 ══ -->
         <div class="card">
-            <div class="card-title">📢 방송 자막(티커) 설정</div>
+            <div class="card-title">📢 공지사항 자막 (티커)</div>
+            <div class="section-desc">줄바꿈으로 여러 문장을 구분하면 롤링됩니다. <b>[텍스트:#색상]</b> 형식으로 색상 강조 가능.</div>
             <div class="form-group">
-                <label>티커 자막 내용 (여러 개 입력 시 줄바꿈으로 구분)</label>
-                <textarea id="cfg-ticker" rows="4" placeholder="예: [안내] 입찰은 밴드 댓글로 참여해 주세요.&#10;[규정] 호가 단위를 준수해 주세요."></textarea>
+                <textarea id="cfg-ticker" rows="4" placeholder="[안내:#FFB84D] 입찰은 밴드 댓글로 참여해 주세요&#10;[규정:#7CF0FF] 호가 단위를 준수해 주세요"></textarea>
             </div>
             <div class="form-row">
-                <div class="form-group">
-                    <label>LIVE 배지 문구</label>
-                    <input type="text" id="cfg-badge-text" placeholder="LIVE">
-                </div>
-                <div class="form-group">
-                    <label>티커 롤링 간격 (ms)</label>
-                    <input type="number" id="cfg-ticker-interval" placeholder="4200">
-                </div>
+                <div class="form-group"><label>롤링 간격 (ms)</label><input type="number" id="cfg-ticker-interval" placeholder="4200"></div>
+                <div class="form-group"><label>LIVE 배지</label><input type="text" id="cfg-badge-text" placeholder="LIVE"></div>
             </div>
             <div class="form-group">
-                <label>티커 배경 그라데이션 (CSS 스타일)</label>
-                <input type="text" id="cfg-ticker-bg" placeholder="linear-gradient(90deg, #1e3c72, #2a5298)">
+                <label>배경 스타일</label>
+                <input type="text" id="cfg-ticker-bg" placeholder="linear-gradient(135deg, rgba(17,30,56,0.94), rgba(7,9,15,0.98))">
             </div>
         </div>
 
-        <!-- ══ 4. 롤링 이미지 배너 설정 ══ -->
+        <!-- ══ 롤링 배너 설정 ══ -->
         <div class="card">
-            <div class="card-title">🖼️ 이미지 배너 롤링 설정</div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>배너 롤링 주기 (ms)</label>
-                    <input type="number" id="cfg-banner-interval" placeholder="5000">
-                </div>
-                <div class="form-group">
-                    <label>투명도 (0.0 ~ 1.0)</label>
-                    <input type="text" id="cfg-banner-opacity" placeholder="0.93">
-                </div>
+            <div class="card-title">🖼️ 롤링 이미지 배너</div>
+            <div class="section-desc">이미지 URL을 입력하면 방송 화면에 롤링 배너로 표시됩니다.</div>
+            <div id="banner-list"></div>
+            <button class="add-slot-btn" onclick="addBannerSlot()">+ 배너 추가</button>
+            <div class="form-row" style="margin-top:12px">
+                <div class="form-group"><label>롤링 주기 (ms)</label><input type="number" id="cfg-banner-interval" placeholder="5000"></div>
+                <div class="form-group"><label>투명도</label><input type="text" id="cfg-banner-opacity" placeholder="0.93"></div>
             </div>
             <div class="form-row">
-                <div class="form-group">
-                    <label>Top 여백 (예: 24px)</label>
-                    <input type="text" id="cfg-banner-top" placeholder="24px">
-                </div>
-                <div class="form-group">
-                    <label>Bottom 여백 (예: 4%)</label>
-                    <input type="text" id="cfg-banner-bottom" placeholder="4%">
-                </div>
-                <div class="form-group">
-                    <label>Left 여백</label>
-                    <input type="text" id="cfg-banner-left" placeholder="10px">
-                </div>
-                <div class="form-group">
-                    <label>Right 여백</label>
-                    <input type="text" id="cfg-banner-right" placeholder="1%">
-                </div>
+                <div class="form-group"><label>최대 가로</label><input type="text" id="cfg-banner-maxwidth" placeholder="42vw"></div>
+                <div class="form-group"><label>최대 세로</label><input type="text" id="cfg-banner-maxheight" placeholder="auto"></div>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>최대 가로 너비 (Max Width)</label>
-                    <input type="text" id="cfg-banner-maxwidth" placeholder="42vw">
-                </div>
-                <div class="form-group">
-                    <label>최대 세로 높이 (Max Height)</label>
-                    <input type="text" id="cfg-banner-maxheight" placeholder="auto">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>배너 이미지 주소 목록 (1번 ~ 5번)</label>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                    <input type="text" class="cfg-banner-url" data-key="banner1" placeholder="배너 1 이미지 URL">
-                    <input type="text" class="cfg-banner-url" data-key="banner2" placeholder="배너 2 이미지 URL">
-                    <input type="text" class="cfg-banner-url" data-key="banner3" placeholder="배너 3 이미지 URL">
-                    <input type="text" class="cfg-banner-url" data-key="banner4" placeholder="배너 4 이미지 URL">
-                    <input type="text" class="cfg-banner-url" data-key="banner5" placeholder="배너 5 이미지 URL">
-                </div>
-            </div>
-
-            <button onclick="saveBroadcastSettings()" class="btn success" style="margin-top: 10px;">📺 방송 설정 전체 저장하기</button>
         </div>
+
+        <!-- ══ 안내사항 (룰) 설정 ══ -->
+        <div class="card">
+            <div class="card-title">📋 방송 안내사항 (룰 카드)</div>
+            <div class="section-desc"><b>[라벨]</b> 내용 형식으로 입력하면 라벨이 강조 표시됩니다. 예: <b>[호가] 1만원 단위</b></div>
+            <div id="rule-list"></div>
+            <button class="add-slot-btn" onclick="addRuleSlot()">+ 안내사항 추가</button>
+            <div class="form-group" style="margin-top:10px">
+                <label>위치</label>
+                <div class="form-row">
+                    <button class="btn secondary" id="rules-pos-top" onclick="setRulesPos('top')" style="flex:1">상단</button>
+                    <button class="btn secondary" id="rules-pos-bottom" onclick="setRulesPos('bottom')" style="flex:1">하단</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ 비밀번호 ══ -->
+        <div class="card">
+            <div class="card-title">🔑 비밀번호 설정</div>
+            <div id="pw-status" style="font-size:12px;color:var(--text2)">확인 중...</div>
+            <div id="pw-cur-wrap" style="display:none" class="form-group"><label>현재 비밀번호</label><input type="password" id="pw-current"></div>
+            <div class="form-group"><label>새 비밀번호</label><input type="password" id="pw-new" placeholder="새 비밀번호"></div>
+            <button onclick="savePw()" class="btn primary">비밀번호 변경</button>
+        </div>
+
+        <div style="height:80px"></div>
     </div>
 
-    <!-- ══ Toast Notification ══ -->
     <div class="toast" id="toast"></div>
+    <button class="save-fab" onclick="saveBroadcastSettings()" title="전체 저장">💾</button>
 
     <script>
-        // ── 토스트 유틸 ──
+        let _cfg = {};
+        let _toggleStates = { ticker: '1', banner: '1' };
+        let _bannerCount = 5;
+        let _rulesPos = 'top';
+
         function toast(msg, isError) {
             const t = document.getElementById('toast');
             t.textContent = msg;
-            t.style.borderColor = isError ? 'var(--red)' : 'var(--accent)';
+            t.style.borderColor = isError ? 'var(--red)' : 'var(--green)';
             t.classList.add('show');
-            setTimeout(() => { t.classList.remove('show'); }, 3000);
+            setTimeout(() => t.classList.remove('show'), 3000);
         }
 
-        // ── 1. 비밀번호 설정 핸들러 ──
+        // ── Preview ──
+        function switchPreview(page, btn) {
+            document.querySelectorAll('.preview-tabs button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('preview-frame').src = page === 1 ? 'broadcast.html?page=1' : 'broadcast.html';
+        }
+
+        function pushToPreview() {
+            try {
+                const frame = document.getElementById('preview-frame');
+                if (frame && frame.contentWindow) {
+                    frame.contentWindow.postMessage({ type: 'configUpdate', config: buildConfigMap() }, '*');
+                }
+            } catch(e) {}
+        }
+
+        // ── Quick Toggles ──
+        function quickToggle(key) {
+            const cur = _toggleStates[key];
+            _toggleStates[key] = cur === '1' ? '0' : '1';
+            updateToggleUI();
+            const map = {};
+            map[key + '_show'] = _toggleStates[key];
+            google.script.run.withSuccessHandler(() => {
+                toast(key === 'ticker' ? '자막 ' : '배너 ' + (_toggleStates[key]==='1'?'ON':'OFF'));
+                pushToPreview();
+            }).updateConfigs(map);
+        }
+
+        function updateToggleUI() {
+            ['ticker','banner'].forEach(key => {
+                const el = document.getElementById('qt-' + key);
+                if (!el) return;
+                const on = _toggleStates[key] === '1';
+                el.querySelector('.dot').className = 'dot ' + (on ? 'on' : 'off');
+                el.querySelector('span').textContent = (key==='ticker'?'자막':'배너') + (on?' ON':' OFF');
+            });
+        }
+
+        // ── Photo toggle ──
+        let _photoShow = true;
+        function loadPhotoState() {
+            google.script.run.withSuccessHandler(h => {
+                _photoShow = h !== '1';
+                const el = document.getElementById('qt-photo');
+                if (el) {
+                    el.querySelector('.dot').className = 'dot ' + (_photoShow?'on':'off');
+                    el.querySelector('span').textContent = '사진 ' + (_photoShow?'ON':'OFF');
+                }
+            }).getBannerHidden();
+        }
+        function toggleBroadcastPhotos() {
+            _photoShow = !_photoShow;
+            google.script.run.withSuccessHandler(() => {
+                loadPhotoState();
+                toast(_photoShow ? '사진 ON' : '사진 OFF');
+            }).setBannerHidden(_photoShow ? '0' : '1');
+        }
+
+        // ── Shuffle ──
+        function doShuffle() {
+            if (!confirm('순서를 균등 분산하시겠습니까?')) return;
+            toast('순서 섞는 중...');
+            google.script.run.withSuccessHandler(r => {
+                if (r && !r.success) toast('실패: ' + r.error, true);
+                else toast('순서 배정 완료!');
+            }).shuffleRoundRobin();
+        }
+
+        // ── Banner Slots ──
+        function addBannerSlot(url) {
+            const list = document.getElementById('banner-list');
+            const idx = list.children.length + 1;
+            const div = document.createElement('div');
+            div.className = 'banner-slot';
+            const hasUrl = url && url.trim();
+            div.innerHTML = '<img class="banner-thumb ' + (hasUrl?'':'empty') + '" src="' + (hasUrl?url:'') + '" onerror="this.className=\'banner-thumb empty\';this.src=\'\';this.textContent=\'🖼\'" alt="">'
+                + '<input type="text" class="cfg-banner-url" data-key="banner' + idx + '" placeholder="배너 ' + idx + ' 이미지 URL" value="' + (url||'') + '">'
+                + '<button class="slot-del" onclick="this.parentElement.remove()">✕</button>';
+            const input = div.querySelector('input');
+            const thumb = div.querySelector('img');
+            input.addEventListener('input', function() {
+                const v = this.value.trim();
+                if (v) { thumb.src = v; thumb.className = 'banner-thumb'; }
+                else { thumb.src = ''; thumb.className = 'banner-thumb empty'; thumb.textContent = '🖼'; }
+            });
+            list.appendChild(div);
+        }
+
+        // ── Rule Slots ──
+        function addRuleSlot(val) {
+            const list = document.getElementById('rule-list');
+            const div = document.createElement('div');
+            div.className = 'rule-slot';
+            div.innerHTML = '<input type="text" placeholder="[라벨] 내용 (예: [호가] 1만원 단위)" value="' + (val||'') + '">'
+                + '<button class="slot-del" onclick="this.parentElement.remove()">✕</button>';
+            list.appendChild(div);
+        }
+
+        function setRulesPos(pos) {
+            _rulesPos = pos;
+            document.getElementById('rules-pos-top').style.background = pos==='top' ? 'var(--accent)' : '';
+            document.getElementById('rules-pos-top').style.color = pos==='top' ? '#fff' : '';
+            document.getElementById('rules-pos-bottom').style.background = pos!=='top' ? 'var(--accent)' : '';
+            document.getElementById('rules-pos-bottom').style.color = pos!=='top' ? '#fff' : '';
+        }
+
+        // ── Password ──
         function loadPwStatus() {
             google.script.run.withSuccessHandler(r => {
                 const st = document.getElementById('pw-status');
-                const curWrap = document.getElementById('pw-cur-wrap');
                 if (r.isSet) {
-                    st.innerHTML = '<b style="color:var(--green);">비밀번호 설정됨</b> — 변경하려면 현재 비밀번호를 입력하세요';
-                    curWrap.style.display = 'block';
+                    st.innerHTML = '<b style="color:var(--green)">설정됨</b>';
+                    document.getElementById('pw-cur-wrap').style.display = 'block';
                 } else {
-                    st.innerHTML = '<b style="color:var(--red);">비밀번호 미설정</b> — 새 비밀번호를 설정하세요';
-                    curWrap.style.display = 'none';
+                    st.innerHTML = '<b style="color:var(--red)">미설정</b>';
                 }
             }).getAdminPwStatus();
         }
-
         function savePw() {
             const cur = document.getElementById('pw-current').value;
             const nw = document.getElementById('pw-new').value;
             if (!nw) { toast('새 비밀번호를 입력하세요', true); return; }
             google.script.run.withSuccessHandler(r => {
-                if (r.success) {
-                    toast('비밀번호 설정 완료');
-                    document.getElementById('pw-current').value = '';
-                    document.getElementById('pw-new').value = '';
-                    loadPwStatus();
-                } else {
-                    toast('❌ ' + (r.error || '오류'), true);
-                }
-            }).withFailureHandler(e => toast('오류: ' + e.message, true))
-                .setAdminPw(cur, nw);
+                if (r.success) { toast('비밀번호 변경 완료'); loadPwStatus(); }
+                else toast(r.error || '오류', true);
+            }).setAdminPw(cur, nw);
         }
 
-        // ── 2. 경매 진행 관리 ──
-        function doShuffle() {
-            if (!confirm("모든 경매 개체의 순서(num)를 고르게 섞으시겠습니까?")) return;
-            toast("순서 섞는 중...");
-            google.script.run.withSuccessHandler(function(r) {
-                if (r && !r.success) { toast("실패: " + r.error, true); }
-                else { toast("순서 배정이 정상 완료되었습니다!"); }
-            }).shuffleRoundRobin();
-        }
-
-        let _webPhotoShow = true;
-        function loadPhotoToggleState() {
-            google.script.run.withSuccessHandler(function(hidden) {
-                _webPhotoShow = (hidden !== "1");
-                const btn = document.getElementById('btn-photo-toggle-web');
-                if (_webPhotoShow) {
-                    btn.textContent = "📸 방송 사진: ON";
-                    btn.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
-                    btn.style.borderColor = "var(--green)";
-                    btn.style.color = "var(--green)";
-                } else {
-                    btn.textContent = "📸 방송 사진: OFF";
-                    btn.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
-                    btn.style.borderColor = "var(--red)";
-                    btn.style.color = "var(--red)";
-                }
-            }).getHiddenPhotos();
-        }
-
-        function toggleBroadcastPhotos() {
-            const nextShow = !_webPhotoShow;
-            const val = nextShow ? "0" : "1";
-            toast("방송 사진 설정을 변경하는 중...");
-            google.script.run.withSuccessHandler(function() {
-                _webPhotoShow = nextShow;
-                loadPhotoToggleState();
-                toast(_webPhotoShow ? "방송 사진 노출 활성화" : "방송 사진 노출 비활성화");
-            }).setHiddenPhotos(val);
-        }
-
-        // ── 3 & 4. 방송 세부 설정 핸들러 ──
-        function loadBroadcastSettings() {
-            google.script.run.withSuccessHandler(function(cfg) {
-                if (!cfg) return;
-                document.getElementById('cfg-ticker').value = cfg.ticker || '';
-                document.getElementById('cfg-badge-text').value = cfg.badge_text || 'LIVE';
-                document.getElementById('cfg-ticker-interval').value = cfg.ticker_interval || '4200';
-                document.getElementById('cfg-ticker-bg').value = cfg.ticker_background || '';
-                
-                document.getElementById('cfg-banner-interval').value = cfg.banner_interval || '5000';
-                document.getElementById('cfg-banner-opacity').value = cfg.banner_opacity || '0.93';
-                document.getElementById('cfg-banner-top').value = cfg.banner_top || '';
-                document.getElementById('cfg-banner-bottom').value = cfg.banner_bottom || '';
-                document.getElementById('cfg-banner-left').value = cfg.banner_left || '';
-                document.getElementById('cfg-banner-right').value = cfg.banner_right || '';
-                document.getElementById('cfg-banner-maxwidth').value = cfg.banner_maxwidth || '';
-                document.getElementById('cfg-banner-maxheight').value = cfg.banner_maxheight || '';
-
-                const inputs = document.querySelectorAll('.cfg-banner-url');
-                inputs.forEach(input => {
-                    const key = input.getAttribute('data-key');
-                    input.value = cfg[key] || '';
-                });
-            }).getConfigMap();
-        }
-
-        function saveBroadcastSettings() {
-            const configMap = {
+        // ── Build Config Map ──
+        function buildConfigMap() {
+            const m = {
                 ticker: document.getElementById('cfg-ticker').value,
                 badge_text: document.getElementById('cfg-badge-text').value,
                 ticker_interval: document.getElementById('cfg-ticker-interval').value,
                 ticker_background: document.getElementById('cfg-ticker-bg').value,
-                
                 banner_interval: document.getElementById('cfg-banner-interval').value,
                 banner_opacity: document.getElementById('cfg-banner-opacity').value,
-                banner_top: document.getElementById('cfg-banner-top').value,
-                banner_bottom: document.getElementById('cfg-banner-bottom').value,
-                banner_left: document.getElementById('cfg-banner-left').value,
-                banner_right: document.getElementById('cfg-banner-right').value,
                 banner_maxwidth: document.getElementById('cfg-banner-maxwidth').value,
                 banner_maxheight: document.getElementById('cfg-banner-maxheight').value,
+                ticker_show: _toggleStates.ticker,
+                banner_show: _toggleStates.banner,
+                rules_position: _rulesPos,
             };
-
-            const inputs = document.querySelectorAll('.cfg-banner-url');
-            inputs.forEach(input => {
-                const key = input.getAttribute('data-key');
-                configMap[key] = input.value;
+            // banners
+            document.querySelectorAll('.cfg-banner-url').forEach((input, i) => {
+                m['banner' + (i+1)] = input.value;
             });
+            // clear old banner keys beyond current count
+            const bc = document.querySelectorAll('.cfg-banner-url').length;
+            for (let i = bc+1; i <= 10; i++) m['banner'+i] = '';
+            // rules
+            document.querySelectorAll('.rule-slot input').forEach((input, i) => {
+                m['rule' + (i+1)] = input.value;
+            });
+            const rc = document.querySelectorAll('.rule-slot input').length;
+            for (let i = rc+1; i <= 10; i++) m['rule'+i] = '';
+            return m;
+        }
 
-            toast('설정을 저장 중입니다...');
-            google.script.run.withSuccessHandler(function() {
-                toast('📺 방송 화면 설정이 저장되었습니다!');
+        // ── Save All ──
+        function saveBroadcastSettings() {
+            const fab = document.querySelector('.save-fab');
+            fab.textContent = '⏳';
+            fab.style.pointerEvents = 'none';
+            const configMap = buildConfigMap();
+            google.script.run.withSuccessHandler(() => {
+                fab.textContent = '✓';
+                fab.style.background = 'var(--green)';
+                toast('전체 설정이 저장되었습니다!');
+                pushToPreview();
+                setTimeout(() => { fab.textContent = '💾'; fab.style.pointerEvents = ''; }, 1500);
+            }).withFailureHandler(e => {
+                fab.textContent = '💾';
+                fab.style.pointerEvents = '';
+                toast('저장 실패: ' + e.message, true);
             }).updateConfigs(configMap);
         }
 
-        // 초기화
+        // ── Load All ──
+        function loadAll() {
+            google.script.run.withSuccessHandler(cfg => {
+                if (!cfg) return;
+                _cfg = cfg;
+                document.getElementById('cfg-ticker').value = cfg.ticker || '';
+                document.getElementById('cfg-badge-text').value = cfg.badge_text || 'LIVE';
+                document.getElementById('cfg-ticker-interval').value = cfg.ticker_interval || '4200';
+                document.getElementById('cfg-ticker-bg').value = cfg.ticker_background || '';
+                document.getElementById('cfg-banner-interval').value = cfg.banner_interval || '5000';
+                document.getElementById('cfg-banner-opacity').value = cfg.banner_opacity || '0.93';
+                document.getElementById('cfg-banner-maxwidth').value = cfg.banner_maxwidth || '';
+                document.getElementById('cfg-banner-maxheight').value = cfg.banner_maxheight || '';
+                // toggle states
+                _toggleStates.ticker = cfg.ticker_show !== undefined ? String(cfg.ticker_show) : '1';
+                _toggleStates.banner = cfg.banner_show !== undefined ? String(cfg.banner_show) : '1';
+                updateToggleUI();
+                // banners with thumbnails
+                const bannerList = document.getElementById('banner-list');
+                bannerList.innerHTML = '';
+                let hasBanner = false;
+                for (let i = 1; i <= 10; i++) {
+                    const url = cfg['banner'+i] || '';
+                    if (url || i <= 3) { addBannerSlot(url); hasBanner = true; }
+                }
+                if (!hasBanner) { addBannerSlot(''); addBannerSlot(''); addBannerSlot(''); }
+                // rules
+                const ruleList = document.getElementById('rule-list');
+                ruleList.innerHTML = '';
+                let hasRule = false;
+                for (let i = 1; i <= 10; i++) {
+                    const v = cfg['rule'+i] || '';
+                    if (v) { addRuleSlot(v); hasRule = true; }
+                }
+                if (!hasRule) { addRuleSlot(''); }
+                // rules position
+                _rulesPos = cfg.rules_position || 'top';
+                setRulesPos(_rulesPos);
+            }).getConfigMap();
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             loadPwStatus();
-            loadPhotoToggleState();
-            loadBroadcastSettings();
+            loadPhotoState();
+            loadAll();
         });
     </script>
 </body>
-
 </html>
