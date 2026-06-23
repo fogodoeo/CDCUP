@@ -298,12 +298,11 @@
             display: none;
             position: absolute;
             z-index: 60;
+            place-items: center center;
         }
 
-        .host-mode .hc-banner-float {
+        .hc-banner-float.banner-active {
             display: grid;
-            place-items: center center;
-            /* Align items to the center of the grid */
         }
 
         .hc-banner-float .banner-img {
@@ -1089,20 +1088,19 @@
 
             applyBannerPlacement(container, layout);
             container.style.setProperty('--banner-opacity', bannerOpacity);
-
-            if (bannerHidden || !urls.length) {
+            const bannerShowOff = cfg.banner_show === '0' || container.dataset.bannerHiddenByToggle === '1';
+            if (bannerHidden || bannerShowOff || !urls.length) {
                 if (window._bannerRotateTimer) {
                     clearInterval(window._bannerRotateTimer);
                     window._bannerRotateTimer = null;
                 }
                 container.innerHTML = '';
-                container.style.display = 'none';
+                container.classList.remove('banner-active');
                 window._bannerRenderState = null;
                 window._bannerCurrentIdx = 0;
                 return;
             }
-            container.style.display = 'grid';
-            container.style.placeItems = 'center center';
+            container.classList.add('banner-active');
 
             const imageKey = JSON.stringify({ urls: urls, maxW: maxW, maxH: maxH });
             const state = window._bannerRenderState || {};
@@ -1190,25 +1188,29 @@
                         }
                         if (cfg.ticker_left) {
                             bottomBar.style.left = cfg.ticker_left;
-                            bottomBar.style.right = 'auto';
                         } else {
                             bottomBar.style.left = '0';
-                            bottomBar.style.right = '0';
                         }
+                        bottomBar.style.right = '0';
                     }
                 }
 
                 const bannerContainer = document.querySelector('.hc-banner-float');
                 if (bannerContainer) {
                     if (cfg.banner_show === '0') {
-                        bannerContainer.style.setProperty('display', 'none', 'important');
+                        bannerContainer.classList.remove('banner-active');
+                        bannerContainer.dataset.bannerHiddenByToggle = '1';
                     } else {
+                        delete bannerContainer.dataset.bannerHiddenByToggle;
                         bannerContainer.style.removeProperty('display');
                     }
                 }
 
+                // 티커 카드 및 이미지 배너 렌더링 (page 1, 2 공통)
+                renderTickerCards(cfg);
+
                 if (!document.body.classList.contains('host-mode')) return;
-                // 룰 → 개별 필 박스 생성 (라벨 없이 값만)
+                // 룰 → 개별 필 박스 생성 (라벨 없이 값만) — host mode 전용
                 const stackEl = document.getElementById('hc-rules-stack');
                 stackEl.innerHTML = '';
                 // rules_position 설정: 'top'이면 헤더 바로 아래에서 아래로 깔림
@@ -1249,7 +1251,6 @@
                     stackEl.appendChild(card);
                 }
                 stackEl.style.display = rules.length > 0 ? 'flex' : 'none';
-                renderTickerCards(cfg);
             }).getConfigMap();
         }
 
