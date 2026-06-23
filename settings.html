@@ -355,6 +355,10 @@
                 <div class="form-group"><label>이름 폰트 크기 (px)</label><input type="number" id="cfg-scoreboard-name-fontsize" placeholder="30"></div>
                 <div class="form-group"><label>특성 폰트 크기 (px)</label><input type="number" id="cfg-scoreboard-pill-fontsize" placeholder="17"></div>
             </div>
+            <div class="form-row">
+                <div class="form-group"><label>대회명 폰트 크기 (px)</label><input type="number" id="cfg-scoreboard-label-fontsize" placeholder="14"></div>
+                <div class="form-group"><label>박스 투명도 (0~1)</label><input type="text" id="cfg-scoreboard-opacity" placeholder="0.88"></div>
+            </div>
             <div class="form-group"><label>대회명 문구</label><input type="text" id="cfg-scoreboard-label" placeholder="CRE WORLD CUP"></div>
         </div>
 
@@ -689,6 +693,8 @@
                 rules_position: _rulesPos,
                 scoreboard_name_fontsize: document.getElementById('cfg-scoreboard-name-fontsize').value,
                 scoreboard_pill_fontsize: document.getElementById('cfg-scoreboard-pill-fontsize').value,
+                scoreboard_label_fontsize: document.getElementById('cfg-scoreboard-label-fontsize').value,
+                scoreboard_opacity: document.getElementById('cfg-scoreboard-opacity').value,
                 scoreboard_label: document.getElementById('cfg-scoreboard-label').value,
             };
             // banners
@@ -767,6 +773,8 @@
                 // scoreboard
                 document.getElementById('cfg-scoreboard-name-fontsize').value = cfg.scoreboard_name_fontsize || '';
                 document.getElementById('cfg-scoreboard-pill-fontsize').value = cfg.scoreboard_pill_fontsize || '';
+                document.getElementById('cfg-scoreboard-label-fontsize').value = cfg.scoreboard_label_fontsize || '';
+                document.getElementById('cfg-scoreboard-opacity').value = cfg.scoreboard_opacity || '';
                 document.getElementById('cfg-scoreboard-label').value = cfg.scoreboard_label || '';
             }).getConfigMap();
         }
