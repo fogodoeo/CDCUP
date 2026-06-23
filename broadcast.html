@@ -47,60 +47,80 @@
             position: relative;
         }
 
-        /* ── 통합 상단 바 ── */
+        /* ── 통합 상단 바 (2P 개체용) ── */
+        @keyframes slideDownFade {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .top-bar {
             position: absolute;
-            top: 24px;
-            left: 8%;
-            right: 8%;
+            top: 30px;
+            left: 5%;
+            right: 5%;
             z-index: 20;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 17px 34px 17px 144px;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 20px 40px;
             display: flex;
             align-items: center;
             gap: 0;
             overflow: hidden;
-            max-height: 144px;
+            max-height: 160px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            animation: slideDownFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         .top-bar .name {
-            font-size: 50px;
+            font-size: 52px;
             font-weight: 900;
             flex-shrink: 0;
-            margin-right: 16px;
+            margin-right: 18px;
+            background: linear-gradient(135deg, #FF6B00, #FFA800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(255, 107, 0, 0.2);
         }
 
         .top-bar .sub {
-            font-size: 48px;
+            font-size: 46px;
             font-weight: 600;
-            opacity: 0.6;
+            color: #F8FAFC;
+            opacity: 0.85;
             flex-shrink: 0;
-            margin-right: 20px;
+            margin-right: 24px;
         }
 
         /* 세로 구분선 */
         .top-bar .sep {
             width: 1px;
-            height: 43px;
-            background: rgba(255, 255, 255, 0.2);
+            height: 48px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.05));
             flex-shrink: 0;
-            margin-right: 20px;
+            margin-right: 24px;
         }
 
-        /* 특성들: 같은 줄에 자연스럽게 이어짐 */
+        /* 특성들 */
         .top-bar .traits {
             flex: 1;
             overflow: hidden;
             position: relative;
-            height: 48px;
+            height: 52px;
         }
 
         .top-bar .traits-track {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             white-space: nowrap;
             position: absolute;
             top: 50%;
@@ -109,22 +129,44 @@
             will-change: transform;
         }
 
-        /* .scroll 클래스는 JS에서 동적 애니메이션과 함께 적용됨 */
-
         .top-bar .t {
-            font-size: 40px;
+            font-size: 38px;
             font-weight: 600;
-            opacity: 0.85;
+            color: #E2E8F0;
+            opacity: 0.9;
             white-space: nowrap;
         }
 
         .top-bar .dot {
-            font-size: 11px;
-            opacity: 0.3;
-            margin: 0 4px;
+            font-size: 14px;
+            color: #FF6B00;
+            opacity: 0.6;
+            margin: 0 6px;
         }
 
         /* ── 우측 사진 스택 ── */
+        @keyframes photoSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) translateX(var(--page2-photo-peek));
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) translateX(var(--page2-photo-peek));
+            }
+        }
+
+        @keyframes photoSlideUpNoPeek {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .photo-stack {
             --page2-photo-max-height: 50vh;
             --page2-photo-max-width: 42vw;
@@ -132,14 +174,14 @@
             --page2-photo-two-max-width: 41vw;
             --page2-photo-three-max-height: 30vh;
             --page2-photo-three-max-width: 38vw;
-            --page2-photo-peek: 14%;
+            --page2-photo-peek: 8%;
             position: absolute;
-            right: 0.5%;
-            bottom: 0;
+            right: 1.5%;
+            bottom: 2%;
             display: flex;
             flex-direction: column-reverse;
             align-items: flex-end;
-            gap: 0;
+            gap: 16px;
             z-index: 10;
         }
 
@@ -154,7 +196,12 @@
             height: var(--page2-photo-max-height);
             flex: 0 0 auto;
             transform: translateX(var(--page2-photo-peek));
-            transition: transform 0.3s ease;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+        }
+
+        .sub-photo.visible {
+            display: block;
+            animation: photoSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         .sub-photo img {
@@ -163,26 +210,30 @@
             height: 100%;
             max-height: 100%;
             max-width: 100%;
-            border-radius: 228px 30px 30px 30px;
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
             object-fit: cover;
             object-position: center center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.75);
             transition: width 0.3s, height 0.3s;
         }
 
         /* 2개일 때 80% 축소 */
         .photo-stack.two-photos {
-            left: 1.5%;
-            right: 0.5%;
+            left: 2%;
+            right: 2%;
             flex-direction: row-reverse;
             justify-content: space-between;
             align-items: flex-end;
-            gap: 0;
+            gap: 16px;
         }
 
         .photo-stack.two-photos .sub-photo {
             transform: none;
+        }
+
+        .photo-stack.two-photos .sub-photo.visible {
+            animation: photoSlideUpNoPeek 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         .photo-stack.two-photos .sub-photo.slot-primary {
@@ -196,47 +247,47 @@
         }
 
         .photo-stack.two-photos .sub-photo.slot-secondary img {
-            border-radius: 30px 228px 30px 30px;
+            border-radius: 32px;
         }
 
         .photo-stack.two-photos .sub-photo.slot-secondary .label {
             left: auto !important;
-            right: 12px !important;
+            right: 16px !important;
         }
 
-        /* 3개일 때 축소 */
+        /* 사진 라벨 */
         .sub-photo .label {
             position: absolute;
-            left: 12px !important;
+            left: 16px !important;
             right: auto !important;
-            bottom: 12px !important;
+            bottom: 16px !important;
             top: auto !important;
             display: inline-flex;
             align-items: center;
             width: auto;
-            max-width: calc(100% - 24px);
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            font-size: 38px;
+            max-width: calc(100% - 32px);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #F8FAFC;
+            font-size: 36px;
             font-weight: 800;
-            padding: 7px 12px;
-            border-radius: 9px;
+            padding: 8px 16px;
+            border-radius: 12px;
             line-height: 1.15;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         }
 
         .photo-stack.two-photos .sub-photo .label {
-            font-size: 36px;
-        }
-
-        .photo-stack.three-photos .sub-photo .label {
             font-size: 34px;
         }
 
-        .sub-photo.visible {
-            display: block;
+        .photo-stack.three-photos .sub-photo .label {
+            font-size: 32px;
         }
 
         /* 사진 토글 버튼 */
