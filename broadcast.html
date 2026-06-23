@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="supabase-bridge.js"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            background: transparent;
+            width: 100vw;
+            height: 100vh;
+            font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
+            overflow: hidden;
+            color: #FFFFFF;
+        }
+
+        .empty {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 20px;
+        }
+
+        .broadcast {
+            display: none;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* ── 통합 상단 바 ── */
+        .top-bar {
+            position: absolute;
+            top: 24px;
+            left: 8%;
+            right: 8%;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 17px 34px 17px 144px;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            overflow: hidden;
+            max-height: 144px;
+        }
+
+        .top-bar .name {
+            font-size: 50px;
+            font-weight: 900;
+            flex-shrink: 0;
+            margin-right: 16px;
+        }
+
+        .top-bar .sub {
+            font-size: 48px;
+            font-weight: 600;
+            opacity: 0.6;
+            flex-shrink: 0;
+            margin-right: 20px;
+        }
+
+        /* 세로 구분선 */
+        .top-bar .sep {
+            width: 1px;
+            height: 43px;
+            background: rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+            margin-right: 20px;
+        }
+
+        /* 특성들: 같은 줄에 자연스럽게 이어짐 */
+        .top-bar .traits {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            height: 48px;
+        }
+
+        .top-bar .traits-track {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translate3d(0, -50%, 0);
+            will-change: transform;
+        }
+
+        /* .scroll 클래스는 JS에서 동적 애니메이션과 함께 적용됨 */
+
+        .top-bar .t {
+            font-size: 40px;
+            font-weight: 600;
+            opacity: 0.85;
+            white-space: nowrap;
+        }
+
+        .top-bar .dot {
+            font-size: 11px;
+            opacity: 0.3;
+            margin: 0 4px;
+        }
+
+        /* ── 우측 사진 스택 ── */
+        .photo-stack {
+            --page2-photo-max-height: 50vh;
+            --page2-photo-max-width: 42vw;
+            --page2-photo-two-max-height: 44vh;
+            --page2-photo-two-max-width: 41vw;
+            --page2-photo-three-max-height: 30vh;
+            --page2-photo-three-max-width: 38vw;
+            --page2-photo-peek: 14%;
+            position: absolute;
+            right: 0.5%;
+            bottom: 0;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: flex-end;
+            gap: 0;
+            z-index: 10;
+        }
+
+        .photo-stack.config-pending .sub-photo {
+            visibility: hidden;
+        }
+
+        .sub-photo {
+            position: relative;
+            display: none;
+            width: var(--page2-photo-max-width);
+            height: var(--page2-photo-max-height);
+            flex: 0 0 auto;
+            transform: translateX(var(--page2-photo-peek));
+            transition: transform 0.3s ease;
+        }
+
+        .sub-photo img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            max-width: 100%;
+            border-radius: 228px 30px 30px 30px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            object-fit: cover;
+            object-position: center center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+            transition: width 0.3s, height 0.3s;
+        }
+
+        /* 2개일 때 80% 축소 */
+        .photo-stack.two-photos {
+            left: 1.5%;
+            right: 0.5%;
+            flex-direction: row-reverse;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 0;
+        }
+
+        .photo-stack.two-photos .sub-photo {
+            transform: none;
+        }
+
+        .photo-stack.two-photos .sub-photo.slot-primary {
+            transform: translateX(var(--page2-photo-peek));
+            z-index: 2;
+        }
+
+        .photo-stack.two-photos .sub-photo.slot-secondary {
+            transform: translateX(calc(-1 * var(--page2-photo-peek)));
+            z-index: 1;
+        }
+
+        .photo-stack.two-photos .sub-photo.slot-secondary img {
+            border-radius: 30px 228px 30px 30px;
+        }
+
+        .photo-stack.two-photos .sub-photo.slot-secondary .label {
+            left: auto !important;
+            right: 12px !important;
+        }
+
+        /* 3개일 때 축소 */
+        .sub-photo .label {
+            position: absolute;
+            left: 12px !important;
+            right: auto !important;
+            bottom: 12px !important;
+            top: auto !important;
+            display: inline-flex;
+            align-items: center;
+            width: auto;
+            max-width: calc(100% - 24px);
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            font-size: 38px;
+            font-weight: 800;
+            padding: 7px 12px;
+            border-radius: 9px;
+            line-height: 1.15;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .photo-stack.two-photos .sub-photo .label {
+            font-size: 36px;
+        }
+
+        .photo-stack.three-photos .sub-photo .label {
+            font-size: 34px;
+        }
+
+        .sub-photo.visible {
+            display: block;
+        }
+
+        /* 사진 토글 버튼 */
+        .photo-toggle {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(6px);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            opacity: 0.15;
+            transition: opacity 0.3s;
+        }
+
+        .photo-toggle:hover {
+            opacity: 1;
+        }
+
+        /* ── 호스트 모드 (page=1) 전용 ── */
+        .host-mode .top-bar,
+        .host-mode .photo-stack {
+            display: none !important;
+        }
+
+        .host-mode .empty {
+            display: none !important;
+        }
+
+        /* 개별 룰 필 스택 (우측 하단) */
+        .hc-rules-stack {
+            display: none;
+            position: absolute;
+            bottom: 12%;
+            right: 1%;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            z-index: 50;
+        }
+
+        .host-mode .hc-rules-stack {
+            display: none !important;
+        }
+
+        .hc-rules-stack.hc-rules-top {
+            bottom: auto;
+            top: 30%;
+        }
+
+        /* 이미지 배너 (우하단 플로팅) */
+        .hc-banner-float {
+            display: none;
+            position: absolute;
+            z-index: 60;
+        }
+
+        .host-mode .hc-banner-float {
+            display: grid;
+            place-items: center center;
+            /* Align items to the center of the grid */
+        }
+
+        .hc-banner-float .banner-img {
+            grid-area: 1 / 1;
+            /* align-self and justify-self removed so they use center center */
+            max-height: 50vh;
+            max-width: 42vw;
+            border-radius: 32px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+            opacity: 0;
+            transform: scale(0.96);
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+                transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .hc-banner-float .banner-img.show {
+            opacity: var(--banner-opacity, 0.93);
+            transform: scale(1);
+        }
+
+        .hc-rules-card {
+            background: rgba(10, 10, 12, 0.90);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            min-width: 280px;
+        }
+
+        .hc-rule-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 24px;
+            font-size: 38px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9);
+            white-space: nowrap;
+        }
+
+        .hc-rule-row+.hc-rule-row {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .hc-rule-label {
+            color: #FF6B00;
+            font-weight: 800;
+            flex-shrink: 0;
+            min-width: 3.5em;
+        }
+
+        .hc-rule-value {
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+        }
+
+        /* 헤더: 화면 상단 우측 */
+        .hc-header {
+            display: none;
+            position: absolute;
+            top: 3%;
+            right: 1%;
+            align-items: center;
+            z-index: 50;
+            background: rgba(10, 10, 12, 0.92);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 20px;
+            padding: 26px 38px 26px 120px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+        }
+
+        .host-mode .hc-header {
+            display: none !important;
+        }
+
+        .hc-photo {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            background: #111;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 0 5px rgba(255, 255, 255, 0.06);
+            position: absolute;
+            left: -54px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+        }
+
+        .hc-titles {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .hc-name {
+            font-size: 70px;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+            color: #fff;
+            max-width: 540px;
+        }
+
+        .hc-sub {
+            font-size: 48px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.4);
+            margin-top: 4px;
+            letter-spacing: 0.3px;
+        }
+
+        .hc-traits {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+        }
+
+        .hc-traits.has-items {
+            display: flex;
+        }
+
+        .host-mode .hc-traits {
+            display: none !important;
+            position: absolute;
+            top: 18%;
+            right: 1%;
+            width: auto;
+            min-width: 300px;
+            max-width: 50%;
+            background: rgba(10, 10, 12, 0.88);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 0 24px;
+            z-index: 50;
+        }
+
+        .hc-traits .t {
+            font-size: 48px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        /* 하단 배너 바 */
+        .hc-bottom-bar {
+            --ticker-shell-bg: rgba(4, 6, 10, 0.68);
+            display: none;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            min-height: 90px;
+            padding: 14px 44px 16px;
+            align-items: center;
+            justify-content: center;
+            background: var(--ticker-shell-bg);
+            background-size: cover;
+            background-position: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+            z-index: 50;
+        }
+
+        .hc-bottom-bar.visible {
+            display: flex;
+        }
+
+        .hc-bottom-bar::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg,
+                    rgba(255, 255, 255, 0.03) 0%,
+                    rgba(0, 0, 0, 0.08) 100%);
+            pointer-events: none;
+        }
+
+        .ticker-card-stage {
+            position: relative;
+            width: 100%;
+            min-height: 52px;
+            z-index: 1;
+        }
+
+        .ticker-card {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8px;
+            border-radius: 0;
+            background: none;
+            border: none;
+            box-shadow: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition:
+                opacity 0.45s ease,
+                transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .ticker-card.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .ticker-card-text {
+            width: min(1500px, 100%);
+            font-size: 40px;
+            font-weight: 700;
+            line-height: 1.28;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.98);
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.32);
+            letter-spacing: -0.015em;
+            word-break: keep-all;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="empty" id="empty">경매 대기중...</div>
+
+    <div class="broadcast" id="broadcast">
+        <div class="top-bar" id="top-bar">
+            <span class="name" id="info-name"></span>
+            <span class="sub" id="info-sub"></span>
+            <span class="sep"></span>
+            <div class="traits" id="info-traits">
+                <div class="traits-track" id="traits-track"></div>
+            </div>
+        </div>
+
+        <div class="photo-stack" id="photo-stack">
+            <div class="sub-photo" id="slot-sire">
+                <span class="label">부</span>
+                <img id="img-sire">
+            </div>
+            <div class="sub-photo" id="slot-dam">
+                <span class="label">모</span>
+                <img id="img-dam">
+            </div>
+            <div class="sub-photo" id="slot-sibling">
+                <span class="label">동배</span>
+                <img id="img-sibling">
+            </div>
+        </div>
+
+        <!-- 호스트 뷰: 상단 우측 헤더 -->
+        <div class="hc-header" id="hc-header-float">
+            <img class="hc-photo" id="hc-photo" src="" alt="">
+            <div class="hc-titles">
+                <span class="hc-name" id="hc-name"></span>
+                <span class="hc-sub" id="hc-sub"></span>
+            </div>
+        </div>
+
+        <!-- 호스트 뷰: 특성 스크롤 바 (헤더 아래 독립) -->
+        <div class="hc-traits" id="hc-traits-container">
+            <div class="traits-track" id="hc-traits-track"></div>
+        </div>
+
+        <!-- 호스트 뷰: 우측 하단 개별 필 스택 (안내사항) -->
+        <div class="hc-rules-stack" id="hc-rules-stack"></div>
+
+        <!-- 호스트 뷰: 우하단 이미지 배너 -->
+        <div class="hc-banner-float" id="hc-banner-float"></div>
+
+        <!-- 호스트 뷰: 하단 티커 바 -->
+        <div class="hc-bottom-bar">
+            <div class="ticker-card-stage" id="hc-ticker-stage"></div>
+        </div>
+    </div>
+
+    <script>
+        let lastJson = "";
+        let hiddenPhotos = [];
+        let lastRenderedItem = null;
+        let page2PhotoConfigReady = false;
+        const GRADE = { "1": "낮음", "2": "보통", "3": "양호", "4": "우수", "5": "최상" };
+
+        // URL 파라미터 확인 후 host-mode 적용 (일반 웹)
+        const urlParams = new URLSearchParams(window.location.search);
+        const isHostMode = urlParams.get('mode') === 'host' || urlParams.get('page') === '1';
+        if (isHostMode) {
+            document.body.classList.add('host-mode');
+        }
+
+        // 구글 앱스 스크립트 웹앱 환경 전용 파라미터 읽기
+        if (typeof google !== 'undefined' && google.script && google.script.url) {
+            google.script.url.getLocation(function (location) {
+                const isHost = location.parameter.mode === 'host' || location.parameter.page === '1';
+                if (isHost) {
+                    document.body.classList.add('host-mode');
+                    maybeRefreshHostConfig(true);
+                }
+                if (!isHost) loadHostConfig();
+            });
+        }
+
+        // 호스트 모드일 때 설정 시트에서 룰/티커 로드
+        if (isHostMode) maybeRefreshHostConfig(true);
+        if (!isHostMode) loadHostConfig();
+
+        // [키워드] → 기본 강조색(cyan), [키워드:red] → 지정 색상
+        function renderColorMarkup(text) {
+            return text.replace(/\[([^\]]+?)(?::([^\]]+))?\]/g, function (_, word, color) {
+                const c = color || '#FF6B00';
+                return '<span style="color:' + c + ';font-weight:800;">' + word + '</span>';
+            });
+        }
+
+        function splitTickerMessages(raw) {
+            const text = String(raw || '').replace(/\r/g, '').trim();
+            if (!text) return [];
+
+            const newlineParts = text.split(/\n+/).map(v => v.trim()).filter(Boolean);
+            if (newlineParts.length > 1) return newlineParts;
+
+            const pipeParts = text.split('||').map(v => v.trim()).filter(Boolean);
+            if (pipeParts.length > 1) return pipeParts;
+
+            return [text];
+        }
+
+        function resetTickerMotion() {
+            if (window._tickerRaf) {
+                cancelAnimationFrame(window._tickerRaf);
+                window._tickerRaf = null;
+            }
+            if (window._tickerRotateTimer) {
+                clearInterval(window._tickerRotateTimer);
+                window._tickerRotateTimer = null;
+            }
+        }
+
+        function applyTickerBackground(bottomBar, bgValue) {
+            bottomBar.style.backgroundImage = '';
+            bottomBar.style.background = '';
+
+            const raw = String(bgValue || '').trim();
+            if (!raw) {
+                bottomBar.style.setProperty('--ticker-shell-bg', 'rgba(4, 6, 10, 0.68)');
+                return;
+            }
+
+            if (/^https?:\/\//i.test(raw)) {
+                bottomBar.style.backgroundImage =
+                    'linear-gradient(90deg, rgba(6, 10, 18, 0.72), rgba(8, 13, 21, 0.46), rgba(6, 10, 18, 0.72)), url("' + raw + '")';
+                bottomBar.style.setProperty('--ticker-shell-bg', 'rgba(4, 6, 10, 0.52)');
+                return;
+            }
+
+            if (/^url\(/i.test(raw)) {
+                bottomBar.style.backgroundImage =
+                    'linear-gradient(90deg, rgba(6, 10, 18, 0.72), rgba(8, 13, 21, 0.46), rgba(6, 10, 18, 0.72)), ' + raw;
+                bottomBar.style.setProperty('--ticker-shell-bg', 'rgba(4, 6, 10, 0.52)');
+                return;
+            }
+
+            bottomBar.style.setProperty('--ticker-shell-bg', raw);
+        }
+
+        function renderTickerCardsLegacy(cfg) {
+            const bottomBar = document.querySelector('.hc-bottom-bar');
+            const stage = document.getElementById('hc-ticker-stage');
+
+            const existingTickerChildren = stage.children.length;
+
+            // 텍스트 티커
+            const tickerRaw = cfg.ticker_cards || cfg.ticker || '';
+            const messages = splitTickerMessages(tickerRaw);
+            const interval = Math.max(parseInt(cfg.ticker_interval, 10) || 4200, 1800);
+            const bgValue = cfg.ticker_background || cfg.ticker_bg || '';
+            const tickerKey = JSON.stringify({
+                messages: messages,
+                interval: interval,
+                bg: String(bgValue || '').trim()
+            });
+
+            applyTickerBackground(bottomBar, bgValue);
+
+            if (!messages.length) {
+                resetTickerMotion();
+                stage.innerHTML = '';
+                bottomBar.classList.remove('visible');
+                window._tickerRenderState = null;
+            } else {
+                bottomBar.classList.add('visible');
+                if (window._tickerRenderState === tickerKey && existingTickerChildren > 0) {
+                    renderImageBanners(cfg);
+                    return;
+                }
+                resetTickerMotion();
+                stage.innerHTML = '';
+                let activeCard = null;
+                let index = -1;
+
+                function showLegacyTickerCard() {
+                    index = (index + 1) % messages.length;
+                    const card = document.createElement('div');
+                    card.className = 'ticker-card';
+                    const text = document.createElement('div');
+                    text.className = 'ticker-card-text';
+                    text.innerHTML = renderColorMarkup(messages[index]);
+                    card.appendChild(text);
+                    stage.appendChild(card);
+                    requestAnimationFrame(() => card.classList.add('show'));
+                    if (activeCard) {
+                        const oldCard = activeCard;
+                        oldCard.classList.remove('show');
+                        setTimeout(() => {
+                            if (oldCard.parentNode) oldCard.parentNode.removeChild(oldCard);
+                        }, 650);
+                    }
+                    activeCard = card;
+                }
+                showLegacyTickerCard();
+                if (messages.length > 1) {
+                    window._tickerRotateTimer = setInterval(showLegacyTickerCard, interval);
+                }
+                window._tickerRenderState = tickerKey;
+            }
+
+            // 이미지 배너 (우하단 플로팅) — 텍스트 티커와 독립 동작
+            renderImageBanners(cfg);
+        }
+
+        // 우하단 이미지 배너 로테이션
+        function buildTickerRenderKey(messages, interval, bgValue) {
+            return JSON.stringify({
+                messages: messages,
+                interval: interval,
+                bg: String(bgValue || '').trim()
+            });
+        }
+
+        renderTickerCards = function (cfg) {
+            const bottomBar = document.querySelector('.hc-bottom-bar');
+            const stage = document.getElementById('hc-ticker-stage');
+            if (!bottomBar || !stage) return;
+
+            const tickerRaw = cfg.ticker_cards || cfg.ticker || '';
+            const messages = splitTickerMessages(tickerRaw);
+            const interval = Math.max(parseInt(cfg.ticker_interval, 10) || 4200, 1800);
+            const bgValue = cfg.ticker_background || cfg.ticker_bg || '';
+            const tickerKey = buildTickerRenderKey(messages, interval, bgValue);
+
+            applyTickerBackground(bottomBar, bgValue);
+
+            if (!messages.length) {
+                resetTickerMotion();
+                stage.innerHTML = '';
+                bottomBar.classList.remove('visible');
+                window._tickerRenderState = null;
+                renderImageBanners(cfg);
+                return;
+            }
+
+            bottomBar.classList.add('visible');
+            if (window._tickerRenderState === tickerKey && stage.children.length > 0) {
+                renderImageBanners(cfg);
+                return;
+            }
+
+            resetTickerMotion();
+            stage.innerHTML = '';
+
+            let activeCard = null;
+            let index = -1;
+
+            function showNextCard() {
+                index = (index + 1) % messages.length;
+                const card = document.createElement('div');
+                card.className = 'ticker-card';
+                const text = document.createElement('div');
+                text.className = 'ticker-card-text';
+                text.innerHTML = renderColorMarkup(messages[index]);
+                card.appendChild(text);
+                stage.appendChild(card);
+                requestAnimationFrame(() => card.classList.add('show'));
+                if (activeCard) {
+                    const oldCard = activeCard;
+                    oldCard.classList.remove('show');
+                    setTimeout(() => {
+                        if (oldCard.parentNode) oldCard.parentNode.removeChild(oldCard);
+                    }, 650);
+                }
+                activeCard = card;
+            }
+
+            showNextCard();
+            if (messages.length > 1) {
+                window._tickerRotateTimer = setInterval(showNextCard, interval);
+            }
+            window._tickerRenderState = tickerKey;
+
+            renderImageBanners(cfg);
+        };
+
+        function normalizeCssLength(value) {
+            const raw = String(value == null ? '' : value).trim();
+            if (!raw) return '';
+
+            const compact = raw.replace(/\s+/g, '');
+            if (/^-?(?:\d+|\d*\.\d+)$/.test(compact)) {
+                return compact === '0' || compact === '-0' ? '0' : compact + 'px';
+            }
+
+            if (/^-?(?:\d+|\d*\.\d+)(px|%|vw|vh|vmin|vmax|rem|em|svw|svh|lvw|lvh|dvw|dvh)$/i.test(compact)) {
+                return compact;
+            }
+
+            if (/^(auto|initial|inherit|unset)$/i.test(compact)) {
+                return compact.toLowerCase();
+            }
+
+            if (/^(calc|min|max|clamp)\(.+\)$/i.test(compact)) {
+                return compact;
+            }
+
+            return raw;
+        }
+
+        function normalizeViewportSize(value, viewportUnit) {
+            const raw = String(value == null ? '' : value).trim();
+            if (!raw) return '';
+
+            const compact = raw.replace(/\s+/g, '');
+            if (/^-?(?:\d+|\d*\.\d+)$/.test(compact)) {
+                if (compact === '0' || compact === '-0') return '0';
+                const numeric = parseFloat(compact);
+                if (Math.abs(numeric) <= 100) return compact + viewportUnit;
+                return compact + 'px';
+            }
+
+            return normalizeCssLength(raw);
+        }
+
+        function normalizeOpacity(value, fallback) {
+            const raw = String(value == null ? '' : value).trim();
+            const fallbackValue = typeof fallback === 'number' ? fallback : 0.93;
+            if (!raw) return String(fallbackValue);
+
+            let numeric = NaN;
+            if (/^-?(?:\d+|\d*\.\d+)%$/.test(raw)) {
+                numeric = parseFloat(raw) / 100;
+            } else if (/^-?(?:\d+|\d*\.\d+)$/.test(raw)) {
+                numeric = parseFloat(raw);
+                if (numeric > 1 && numeric <= 100) numeric = numeric / 100;
+            }
+
+            if (!Number.isFinite(numeric)) return String(fallbackValue);
+            if (numeric < 0) numeric = 0;
+            if (numeric > 1) numeric = 1;
+            return String(numeric);
+        }
+
+        function applyPage2PhotoConfig(cfg) {
+            const stack = document.getElementById('photo-stack');
+            if (!stack) return;
+
+            const maxW = normalizeViewportSize(cfg.page2_photo_maxwidth, 'vw') || '42vw';
+            const maxH = normalizeViewportSize(cfg.page2_photo_maxheight, 'vh') || '50vh';
+            const twoMaxW = normalizeViewportSize(cfg.page2_photo_two_maxwidth, 'vw') || '41vw';
+            const twoMaxH = normalizeViewportSize(cfg.page2_photo_two_maxheight, 'vh') || '44vh';
+            const threeMaxW = normalizeViewportSize(cfg.page2_photo_three_maxwidth, 'vw') || '38vw';
+            const threeMaxH = normalizeViewportSize(cfg.page2_photo_three_maxheight, 'vh') || '30vh';
+            const peek = normalizeCssLength(cfg.page2_photo_peek) || '14%';
+
+            stack.style.setProperty('--page2-photo-max-width', maxW);
+            stack.style.setProperty('--page2-photo-max-height', maxH);
+            stack.style.setProperty('--page2-photo-two-max-width', twoMaxW);
+            stack.style.setProperty('--page2-photo-two-max-height', twoMaxH);
+            stack.style.setProperty('--page2-photo-three-max-width', threeMaxW);
+            stack.style.setProperty('--page2-photo-three-max-height', threeMaxH);
+            stack.style.setProperty('--page2-photo-peek', peek);
+        }
+
+        function renderImageBannersLegacy(cfg) {
+            const container = document.getElementById('hc-banner-float');
+            if (!container) return;
+
+            // 기존 배너 타이머 정리
+            if (window._bannerRotateTimer) {
+                clearInterval(window._bannerRotateTimer);
+                window._bannerRotateTimer = null;
+            }
+            container.innerHTML = '';
+
+            // 이미지 배너 URL 수집 (banner1 ~ banner10)
+            const urls = [];
+            for (let i = 1; i <= 10; i++) {
+                const url = (cfg['banner' + i] || '').trim();
+                if (url) urls.push(url);
+            }
+
+            if (!urls.length) return;
+
+            const interval = Math.max(parseInt(cfg.banner_interval, 10) || 5000, 2000);
+            const left = normalizeCssLength(cfg.banner_left);
+            const right = normalizeCssLength(cfg.banner_right);
+            const top = normalizeCssLength(cfg.banner_top);
+            const bottom = normalizeCssLength(cfg.banner_bottom);
+
+            // 좌우 설정: left가 있으면 left 사용, 아니면 right 사용
+            if (cfg.banner_left) {
+                container.style.left = cfg.banner_left;
+                container.style.right = 'auto';
+            } else {
+                container.style.right = cfg.banner_right || '1%';
+                container.style.left = 'auto';
+            }
+
+            // 상하 설정: top이 있으면 top 사용, 아니면 bottom 사용
+            if (cfg.banner_top) {
+                container.style.top = cfg.banner_top;
+                container.style.bottom = 'auto';
+            } else {
+                container.style.bottom = cfg.banner_bottom || '4%';
+                container.style.top = 'auto';
+            }
+
+            container.style.left = 'auto';
+            container.style.right = 'auto';
+            container.style.top = 'auto';
+            container.style.bottom = 'auto';
+
+            if (right) {
+                container.style.right = right;
+            } else if (left) {
+                container.style.left = left;
+            } else {
+                container.style.right = '1%';
+            }
+
+            if (bottom) {
+                container.style.bottom = bottom;
+            } else if (top) {
+                container.style.top = top;
+            } else {
+                container.style.bottom = '4%';
+            }
+
+            const maxW = normalizeCssLength(cfg.banner_maxwidth) || '42vw';
+            const maxH = normalizeCssLength(cfg.banner_maxheight) || '50vh';
+
+            // 이미지 프리로드 & DOM 구성
+            const imgs = [];
+
+            urls.forEach(function (url, i) {
+                const img = document.createElement('img');
+                img.className = 'banner-img';
+                img.src = url;
+                img.style.maxWidth = maxW;
+                img.style.maxHeight = maxH;
+                img.onload = function () {
+                    if (i === 0) img.classList.add('show');
+                };
+                img.onerror = function () { img.style.display = 'none'; };
+                container.appendChild(img);
+                imgs.push(img);
+            });
+
+            // 첫 번째 이미지 즉시 show (캐시 대비)
+            if (imgs.length > 0) {
+                requestAnimationFrame(() => imgs[0].classList.add('show'));
+            }
+
+            // 로테이션 (2개 이상일 때)
+            if (imgs.length > 1) {
+                let currentIdx = 0;
+                window._bannerRotateTimer = setInterval(function () {
+                    const prevIdx = currentIdx;
+                    currentIdx = (currentIdx + 1) % imgs.length;
+                    if (imgs[currentIdx].style.display === 'none') {
+                        currentIdx = (currentIdx + 1) % imgs.length;
+                    }
+                    imgs[prevIdx].classList.remove('show');
+                    imgs[currentIdx].classList.add('show');
+                }, interval);
+            }
+        }
+
+        function applyBannerPlacement(container, layout) {
+            container.style.left = 'auto';
+            container.style.right = 'auto';
+            container.style.top = 'auto';
+            container.style.bottom = 'auto';
+
+            if (layout.right) {
+                container.style.right = layout.right;
+            } else if (layout.left) {
+                container.style.left = layout.left;
+            } else {
+                container.style.right = '1%';
+            }
+
+            if (layout.bottom) {
+                container.style.bottom = layout.bottom;
+            } else if (layout.top) {
+                container.style.top = layout.top;
+            } else {
+                container.style.bottom = '4%';
+            }
+        }
+
+        function startBannerRotation(imgs, interval) {
+            if (window._bannerRotateTimer) {
+                clearInterval(window._bannerRotateTimer);
+                window._bannerRotateTimer = null;
+            }
+
+            if (!imgs.length) {
+                window._bannerCurrentIdx = 0;
+                return;
+            }
+
+            const currentIdx = typeof window._bannerCurrentIdx === 'number' ? window._bannerCurrentIdx : 0;
+            window._bannerCurrentIdx = Math.max(0, Math.min(currentIdx, imgs.length - 1));
+
+            imgs.forEach(function (img, idx) {
+                img.classList.toggle('show', idx === window._bannerCurrentIdx && img.style.display !== 'none');
+            });
+
+            if (imgs.length <= 1) return;
+
+            window._bannerRotateTimer = setInterval(function () {
+                const prevIdx = window._bannerCurrentIdx;
+                let nextIdx = (prevIdx + 1) % imgs.length;
+                let guard = 0;
+                while (imgs[nextIdx].style.display === 'none' && guard < imgs.length) {
+                    nextIdx = (nextIdx + 1) % imgs.length;
+                    guard += 1;
+                }
+                imgs[prevIdx].classList.remove('show');
+                imgs[nextIdx].classList.add('show');
+                window._bannerCurrentIdx = nextIdx;
+            }, interval);
+        }
+
+        renderImageBanners = function (cfg) {
+            const container = document.getElementById('hc-banner-float');
+            if (!container) return;
+
+            const urls = [];
+            for (let i = 1; i <= 10; i++) {
+                const url = (cfg['banner' + i] || '').trim();
+                if (url) urls.push(url);
+            }
+
+            const interval = Math.max(parseInt(cfg.banner_interval, 10) || 5000, 2000);
+            const layout = {
+                left: normalizeCssLength(cfg.banner_left),
+                right: normalizeCssLength(cfg.banner_right),
+                top: normalizeCssLength(cfg.banner_top),
+                bottom: normalizeCssLength(cfg.banner_bottom)
+            };
+            const maxW = normalizeCssLength(cfg.banner_maxwidth) || '42vw';
+            const maxH = normalizeCssLength(cfg.banner_maxheight) || '50vh';
+            const bannerHidden = ['1', 'true', 'yes', 'on'].indexOf(String(cfg.banner_hidden || '').trim().toLowerCase()) >= 0;
+            const bannerOpacity = normalizeOpacity(cfg.banner_opacity, 0.93);
+
+            applyBannerPlacement(container, layout);
+            container.style.setProperty('--banner-opacity', bannerOpacity);
+
+            if (bannerHidden || !urls.length) {
+                if (window._bannerRotateTimer) {
+                    clearInterval(window._bannerRotateTimer);
+                    window._bannerRotateTimer = null;
+                }
+                container.innerHTML = '';
+                container.style.display = 'none';
+                window._bannerRenderState = null;
+                window._bannerCurrentIdx = 0;
+                return;
+            }
+            container.style.display = 'grid';
+            container.style.placeItems = 'center center';
+
+            const imageKey = JSON.stringify({ urls: urls, maxW: maxW, maxH: maxH });
+            const state = window._bannerRenderState || {};
+            const imgs = Array.from(container.querySelectorAll('.banner-img'));
+
+            if (state.imageKey === imageKey && imgs.length === urls.length) {
+                imgs.forEach(function (img) {
+                    img.style.maxWidth = maxW;
+                    img.style.maxHeight = maxH;
+                });
+
+                if (state.interval !== interval) {
+                    startBannerRotation(imgs, interval);
+                }
+
+                window._bannerRenderState = {
+                    imageKey: imageKey,
+                    interval: interval
+                };
+                return;
+            }
+
+            if (window._bannerRotateTimer) {
+                clearInterval(window._bannerRotateTimer);
+                window._bannerRotateTimer = null;
+            }
+            container.innerHTML = '';
+            window._bannerCurrentIdx = 0;
+
+            const nextImgs = [];
+            urls.forEach(function (url, i) {
+                const img = document.createElement('img');
+                img.className = 'banner-img';
+                img.src = url;
+                img.style.maxWidth = maxW;
+                img.style.maxHeight = maxH;
+                img.onload = function () {
+                    if (i === 0 && window._bannerCurrentIdx === 0) img.classList.add('show');
+                };
+                img.onerror = function () { img.style.display = 'none'; };
+                container.appendChild(img);
+                nextImgs.push(img);
+            });
+
+            if (nextImgs.length > 0) {
+                requestAnimationFrame(() => nextImgs[0].classList.add('show'));
+            }
+
+            startBannerRotation(nextImgs, interval);
+            window._bannerRenderState = {
+                imageKey: imageKey,
+                interval: interval
+            };
+        };
+
+        function loadHostConfig() {
+            if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+            google.script.run.withSuccessHandler(function (cfg) {
+                if (!cfg) return;
+                const hadPage2PhotoConfig = page2PhotoConfigReady;
+                applyPage2PhotoConfig(cfg);
+                page2PhotoConfigReady = true;
+                const photoStack = document.getElementById('photo-stack');
+                if (photoStack) photoStack.classList.remove('config-pending');
+                if (!document.body.classList.contains('host-mode') && !hadPage2PhotoConfig && lastRenderedItem) {
+                    lastJson = '';
+                    render(lastRenderedItem);
+                }
+                if (!document.body.classList.contains('host-mode')) return;
+                // 룰 → 개별 필 박스 생성 (라벨 없이 값만)
+                const stackEl = document.getElementById('hc-rules-stack');
+                stackEl.innerHTML = '';
+                // rules_position 설정: 'top'이면 헤더 바로 아래에서 아래로 깔림
+                if (cfg.rules_position === 'top') {
+                    stackEl.classList.add('hc-rules-top');
+                } else {
+                    stackEl.classList.remove('hc-rules-top');
+                }
+                // 룰 → 단일 카드 안에 행으로 구성
+                const rules = [];
+                for (let i = 1; i <= 10; i++) {
+                    const value = cfg['rule' + i] || cfg['rule' + i + '_value'];
+                    if (value) rules.push(value);
+                }
+                if (rules.length > 0) {
+                    const card = document.createElement('div');
+                    card.className = 'hc-rules-card';
+                    rules.forEach(text => {
+                        const row = document.createElement('div');
+                        row.className = 'hc-rule-row';
+                        // [라벨] 나머지 → 라벨 + 값 분리
+                        const m = text.match(/^\[([^\]]+?)(?::([^\]]+))?\]\s*(.*)$/);
+                        if (m) {
+                            const labelSpan = document.createElement('span');
+                            labelSpan.className = 'hc-rule-label';
+                            labelSpan.textContent = m[1];
+                            if (m[2]) labelSpan.style.color = m[2];
+                            const valueSpan = document.createElement('span');
+                            valueSpan.className = 'hc-rule-value';
+                            valueSpan.textContent = m[3];
+                            row.appendChild(labelSpan);
+                            row.appendChild(valueSpan);
+                        } else {
+                            row.innerHTML = renderColorMarkup(text);
+                        }
+                        card.appendChild(row);
+                    });
+                    stackEl.appendChild(card);
+                }
+                stackEl.style.display = rules.length > 0 ? 'flex' : 'none';
+                renderTickerCards(cfg);
+            }).getHostConfig();
+        }
+
+        function maybeRefreshHostConfig(force) {
+            const now = Date.now();
+            const lastSyncAt = window._lastHostConfigSyncAt || 0;
+            const minInterval = hasActive ? 1500 : 3000;
+            if (!force && now - lastSyncAt < minInterval) return;
+            window._lastHostConfigSyncAt = now;
+            loadHostConfig();
+        }
+
+
+        function render(item) {
+            const json = JSON.stringify(item);
+            if (json === lastJson) return;
+            lastJson = json;
+
+            const empty = document.getElementById("empty");
+            const bc = document.getElementById("broadcast");
+            const topBar = document.getElementById("top-bar");
+            const photoStack = document.getElementById("photo-stack");
+            const isHost = document.body.classList.contains('host-mode');
+
+            if (!item) {
+                if (topBar) topBar.style.removeProperty("display");
+                if (photoStack) photoStack.style.removeProperty("display");
+                if (isHost) {
+                    empty.style.display = "none";
+                    bc.style.display = "block";
+                    document.getElementById("hc-name").textContent = "";
+                    document.getElementById("hc-sub").textContent = "";
+                    const hcPhoto = document.getElementById("hc-photo");
+                    hcPhoto.removeAttribute("src");
+                    hcPhoto.style.display = "none";
+                    const hcHeader = document.getElementById("hc-header-float");
+                    if (hcHeader) hcHeader.style.paddingLeft = '32px';
+                    const hcTraitsEl = document.getElementById("hc-traits-container");
+                    if (hcTraitsEl) hcTraitsEl.classList.remove("has-items");
+                } else {
+                    empty.style.display = "";
+                    bc.style.display = "none";
+                }
+                return;
+            }
+
+            empty.style.display = "none";
+            bc.style.display = "block";
+            if (topBar) {
+                if (isHost) topBar.style.removeProperty("display");
+                else topBar.style.display = "flex";
+            }
+            if (photoStack) {
+                if (isHost) photoStack.style.removeProperty("display");
+                else photoStack.style.display = "flex";
+                photoStack.classList.toggle('config-pending', !isHost && !page2PhotoConfigReady);
+            }
+
+            const displayName = item.displayName || item.name || "";
+            document.getElementById("info-name").textContent = displayName;
+            const infoSubParts = [];
+            if (item.company) infoSubParts.push(item.company);
+            document.getElementById("info-sub").textContent = infoSubParts.join(' · ');
+
+            // 호스트 카드 데이터 렌더링
+            document.getElementById("hc-name").textContent = displayName;
+            const subParts = [];
+            if (item.company) subParts.push(item.company);
+            document.getElementById("hc-sub").textContent = subParts.join(' · ');
+
+            // 서버에서 받은 개별 사진 숨김 플래그
+            if (Array.isArray(item.hiddenPhotos)) hiddenPhotos = item.hiddenPhotos;
+
+            const hcPhoto = document.getElementById("hc-photo");
+            const hcHeader = document.getElementById("hc-header-float");
+            const itemPhotoHidden = hiddenPhotos.indexOf('item') >= 0;
+            if (item.photoItem && !itemPhotoHidden) {
+                hcPhoto.src = item.photoItem;
+                hcPhoto.style.display = "block";
+                if (hcHeader) hcHeader.style.paddingLeft = '120px';
+            } else {
+                hcPhoto.removeAttribute("src");
+                hcPhoto.style.display = "none";
+                if (hcHeader) hcHeader.style.paddingLeft = '32px';
+            }
+
+            // 사진 — hiddenPhotos에 포함된 키는 숨김
+            const subs = { sire: "photoSire", dam: "photoDam", sibling: "photoSibling" };
+            const subLabels = {
+                sire: item.sireName ? ("부 · " + item.sireName) : "부",
+                dam: item.damName ? ("모 · " + item.damName) : "모",
+                sibling: item.siblingName ? ("동배 · " + item.siblingName) : "동배"
+            };
+            const visibleSubKeys = [];
+            for (const [key, field] of Object.entries(subs)) {
+                const isHidden = hiddenPhotos.indexOf(key) >= 0;
+                if (item[field] && !isHidden) visibleSubKeys.push(key);
+            }
+            const activeSubKeys = visibleSubKeys.slice(0, 2);
+            for (const [key, field] of Object.entries(subs)) {
+                const slot = document.getElementById("slot-" + key);
+                const img = document.getElementById("img-" + key);
+                const label = slot.querySelector(".label");
+                const visibleIndex = activeSubKeys.indexOf(key);
+                slot.classList.remove("visible", "slot-primary", "slot-secondary");
+                if (visibleIndex >= 0) {
+                    img.src = item[field];
+                    if (label) label.textContent = subLabels[key];
+                    slot.classList.add("visible");
+                    slot.classList.add(visibleIndex === 0 ? "slot-primary" : "slot-secondary");
+                } else {
+                    img.removeAttribute("src");
+                }
+            }
+            // 사진 수에 따라 축소 클래스 적용
+            const visCount = activeSubKeys.length;
+            const stack = document.getElementById('photo-stack');
+            stack.classList.remove('two-photos', 'three-photos');
+            if (visCount === 2) stack.classList.add('two-photos');
+
+            // 특성 — checklist/note가 바뀔 때만 마퀴 재구성 (애니메이션 리셋 방지)
+            const traitsKey = (item.checklist || "") + "|" + (item.note || "");
+            if (traitsKey !== window._lastTraitsKey) {
+                window._lastTraitsKey = traitsKey;
+
+                const track = document.getElementById("traits-track");
+                track.innerHTML = "";
+                track.classList.remove("scroll");
+                if (window._marqueeRaf) { cancelAnimationFrame(window._marqueeRaf); window._marqueeRaf = null; }
+
+                const cl = parseChecklist(item.checklist || "");
+                const gm = { M: "수컷", F: "암컷", U: "미구분" };
+                const yn = { O: "O", X: "X" };
+
+                const items = [];
+                if (cl.gender) items.push(gm[cl.gender] || cl.gender);
+                if (cl.weight) items.push(cl.weight + "g");
+                if (cl.birth) items.push(cl.birth);
+                if (cl.spot) items.push("점:" + (yn[cl.spot] || cl.spot));
+                if (cl.pin) items.push("풀핀:" + (yn[cl.pin] || cl.pin));
+                if (cl.size) items.push("도살:" + (GRADE[cl.size] || cl.size));
+                if (cl.wall) items.push("월높이:" + (GRADE[cl.wall] || cl.wall));
+                if (cl.color) items.push("색감:" + (GRADE[cl.color] || cl.color));
+                if (cl.activity) items.push("활동성:" + (GRADE[cl.activity] || cl.activity));
+                if (cl.feed) items.push("먹이:" + (GRADE[cl.feed] || cl.feed));
+                if (cl.structure) items.push("체형:" + (GRADE[cl.structure] || cl.structure));
+                if (cl.memo) items.push(cl.memo);
+                if (item.note) items.push(item.note);
+
+                function buildItems(container) {
+                    items.forEach((text, i) => {
+                        if (i > 0) {
+                            const dot = document.createElement("span");
+                            dot.className = "dot";
+                            dot.textContent = "·";
+                            container.appendChild(dot);
+                        }
+                        const el = document.createElement("span");
+                        el.className = "t";
+                        el.textContent = text;
+                        container.appendChild(el);
+                    });
+                }
+
+                buildItems(track);
+
+                const hcTrack = document.getElementById("hc-traits-track");
+                if (hcTrack) {
+                    hcTrack.innerHTML = "";
+                    hcTrack.classList.remove("scroll");
+                    const hcTraitsEl = hcTrack.closest('.hc-traits');
+                    if (hcTraitsEl) hcTraitsEl.classList.remove('has-items');
+                }
+
+                // 넘치면 단방향 스크롤 (오른쪽 밖 → 왼쪽 밖 → 리셋)
+                setTimeout(() => {
+                    const container = document.getElementById("info-traits");
+                    if (track.scrollWidth > container.clientWidth) {
+                        track.classList.add("scroll");
+                        const viewW = container.clientWidth;
+                        const textW = track.scrollWidth;
+                        const speed = 60;
+                        let x = viewW;
+                        let lastTime = null;
+
+                        function step(ts) {
+                            if (!lastTime) lastTime = ts;
+                            const dt = (ts - lastTime) / 1000;
+                            lastTime = ts;
+                            x -= speed * dt;
+                            if (x < -textW) x = viewW;
+                            track.style.transform = `translate3d(${x}px, -50%, 0)`;
+                            window._marqueeRaf = requestAnimationFrame(step);
+                        }
+                        window._marqueeRaf = requestAnimationFrame(step);
+                    }
+                }, 100);
+            }
+        }
+
+        function parseChecklist(str) {
+            const cl = {};
+            if (!str) return cl;
+            str.split("|").forEach(pair => {
+                const idx = pair.indexOf(":");
+                if (idx > 0) cl[pair.substring(0, idx).trim()] = pair.substring(idx + 1).trim();
+            });
+            return cl;
+        }
+
+        let hasActive = false;
+        function smartRefresh() {
+            if (document.hidden) return;
+            maybeRefreshHostConfig(false);
+            google.script.run
+                .withSuccessHandler(function (item) {
+                    hasActive = !!item;
+                    render(item);
+                })
+                .withFailureHandler(err => console.log("err", err))
+                .getActiveItem();
+        }
+        smartRefresh();
+        let _pollTimer = null;
+        function startAdaptivePoll() {
+            if (_pollTimer) clearInterval(_pollTimer);
+            _pollTimer = setInterval(smartRefresh, hasActive ? 2500 : 6000);
+        }
+        startAdaptivePoll();
+        const _origRender = render;
+        render = function (item) {
+            const wasActive = hasActive;
+            hasActive = !!item;
+            lastRenderedItem = item ? JSON.parse(JSON.stringify(item)) : null;
+            _origRender(item);
+            if (wasActive !== hasActive) startAdaptivePoll();
+        };
+
+        // 브라우저 내 즉시 동기 (웹 → 방송)
+        try {
+            const bc = new BroadcastChannel('auction-photos');
+            bc.onmessage = function (e) {
+                if (e.data && e.data.type === 'hiddenPhotos') {
+                    hiddenPhotos = e.data.hidden || [];
+                    lastJson = '';
+                    if (lastRenderedItem) {
+                        render(Object.assign({}, lastRenderedItem, { hiddenPhotos: hiddenPhotos.slice() }));
+                    } else {
+                        smartRefresh();
+                    }
+                }
+            };
+        } catch (e) { }
+    </script>
+</body>
+
+</html>

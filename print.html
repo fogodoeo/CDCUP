@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="supabase-bridge.js"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: #fff;
+            color: #111;
+            padding: 20px;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 24px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: #f5f5f5;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .tab-btn.active {
+            background: #111;
+            color: #fff;
+            border-color: #111;
+        }
+
+        .print-btn {
+            padding: 10px 24px;
+            border: 2px solid #2563EB;
+            border-radius: 8px;
+            background: #2563EB;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        .print-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .header {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .header .meta {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .header .meta .count {
+            color: #555;
+            margin-left: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13pt;
+        }
+
+        th {
+            background: #f0f0f0;
+            padding: 6px 4px;
+            text-align: center;
+            font-weight: 800;
+            border: 1px solid #ccc;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        th .resize-handle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            cursor: col-resize;
+            background: transparent;
+        }
+
+        th .resize-handle:hover {
+            background: #2563EB;
+        }
+
+        td {
+            padding: 3px 4px;
+            border: 1px solid #ddd;
+            vertical-align: middle;
+        }
+
+        .col-num {
+            width: 1%;
+            white-space: nowrap;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .col-name {
+            width: 1%;
+            white-space: nowrap;
+            font-weight: 700;
+        }
+
+        .col-company {
+            width: 1%;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .col-price {
+            width: 1%;
+            white-space: nowrap;
+            text-align: right;
+            font-weight: 700;
+        }
+
+        .col-info {
+            color: #444;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .col-result-price {
+            width: 1%;
+            white-space: nowrap;
+            text-align: right;
+            font-weight: 800;
+            color: #C84A31;
+        }
+
+        .col-winner {
+            width: 1%;
+            white-space: nowrap;
+            text-align: center;
+            font-weight: 700;
+            color: #093687;
+        }
+
+        .col-phone {
+            width: 1%;
+            white-space: nowrap;
+            text-align: center;
+            font-size: 12pt;
+            color: #333;
+            letter-spacing: 0.5px;
+        }
+
+        .col-ship {
+            width: 1%;
+            white-space: nowrap;
+            text-align: center;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .col-name-sm {
+            width: 1%;
+            white-space: nowrap;
+            font-weight: 700;
+            font-size: 12pt;
+        }
+
+        .col-status {
+            width: 1%;
+            white-space: nowrap;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .status-sold {
+            color: #C84A31;
+        }
+
+        .status-unsold {
+            color: #888;
+        }
+
+        .status-wait {
+            color: #aaa;
+        }
+
+        tr:nth-child(even) td {
+            background: #fafafa;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #888;
+            font-size: 16px;
+        }
+
+        .company-section {
+            margin-top: 10px;
+            page-break-inside: avoid;
+        }
+
+        .company-title {
+            font-size: 12pt;
+            font-weight: 900;
+            margin-bottom: 2px;
+        }
+
+        .company-title .sub {
+            font-size: 11pt;
+            font-weight: 500;
+            color: #666;
+            margin-left: 12px;
+        }
+
+        /* 업체 필터 */
+        .company-filter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .company-filter select {
+            padding: 8px 14px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: inherit;
+            background: #fff;
+            cursor: pointer;
+            min-width: 160px;
+        }
+
+        .company-filter select:focus {
+            border-color: #2563EB;
+            outline: none;
+        }
+
+        .company-filter .filter-info {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .company-filter .multi-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: #FEF3C7;
+            color: #92400E;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        /* 다중 구매자 연결선 */
+        .company-view-wrapper {
+            position: relative;
+        }
+
+        .conn-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .conn-v {
+            width: 2px;
+        }
+
+        .conn-h {
+            height: 2px;
+            width: 8px;
+        }
+
+        .multi-buyer-row td {
+            background: #FFF7ED !important;
+        }
+
+        /* 선택 업체 행 강조 */
+        .selected-company-row td {
+            font-weight: 800;
+        }
+
+        .other-company-row td {
+            color: #999;
+        }
+
+        .other-company-row .col-winner,
+        .other-company-row .col-result-price {
+            color: #999;
+        }
+
+        /* 인쇄 최적화 */
+        @media print {
+            @page {
+                size: portrait;
+                margin: 8mm 5mm;
+            }
+
+            .tab-bar {
+                display: none !important;
+            }
+
+            body {
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .header {
+                margin-bottom: 10px;
+            }
+
+            .header h1 {
+                font-size: 16pt;
+            }
+
+            .header .meta {
+                font-size: 10pt;
+            }
+
+            table {
+                font-size: 10pt;
+                width: 100% !important;
+                table-layout: auto !important;
+                margin: 0;
+            }
+
+            th,
+            td {
+                width: auto !important;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .resize-handle {
+                display: none !important;
+            }
+
+            td,
+            th {
+                padding: 3px 4px;
+            }
+
+            th {
+                font-size: 9pt;
+                padding: 4px 3px;
+            }
+
+            .col-name-sm {
+                font-size: 10pt;
+            }
+
+            .col-phone {
+                font-size: 10pt;
+                letter-spacing: 0;
+            }
+
+            tr {
+                page-break-inside: avoid;
+            }
+
+            .company-section {
+                page-break-inside: avoid;
+                margin-top: 8px;
+            }
+
+            .company-title {
+                font-size: 13pt;
+            }
+
+            .company-title .sub {
+                font-size: 9pt;
+            }
+
+            .company-filter {
+                display: none !important;
+            }
+
+            .conn-line {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="showTab('list')">경매 리스트</button>
+        <button class="tab-btn" onclick="showTab('results')">낙찰 결과</button>
+        <button class="tab-btn" onclick="showTab('company')">업체별 낙찰결과</button>
+        <span style="display:flex;align-items:center;gap:6px;margin-left:16px;font-size:12px;color:#666;">
+            글씨 <input type="range" id="ctrl-font" min="7" max="16" value="13" style="width:80px;"
+                oninput="applySettings()"><span id="lbl-font">13</span>pt
+            &nbsp;행높이 <input type="range" id="ctrl-pad" min="1" max="8" value="3" style="width:60px;"
+                oninput="applySettings()"><span id="lbl-pad">3</span>px
+        </span>
+        <button class="print-btn" onclick="window.print()">인쇄</button>
+    </div>
+
+    <div class="tab-content active" id="tab-list">
+        <div class="header">
+            <h1>경매 리스트</h1>
+            <div class="meta"><span id="list-date"></span><span class="count" id="list-count"></span></div>
+        </div>
+        <div id="list-body">
+            <div class="loading">불러오는 중...</div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-results">
+        <div class="header">
+            <h1>낙찰 결과</h1>
+            <div class="meta"><span id="result-date"></span><span class="count" id="result-count"></span></div>
+        </div>
+        <div id="result-body">
+            <div class="loading">불러오는 중...</div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="tab-company">
+        <div class="company-filter" id="company-filter" style="display:none;">
+            <select id="company-select" onchange="onCompanyFilterChange()">
+                <option value="">전체</option>
+            </select>
+            <span class="filter-info" id="filter-info"></span>
+        </div>
+        <div id="company-body">
+            <div class="loading">불러오는 중...</div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(name) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + name).classList.add('active');
+            event.target.classList.add('active');
+            setTimeout(initResize, 50);
+            if (name === 'company') {
+                setTimeout(function () { drawConnectionLines(window._phoneRowMap, window._phoneColors); }, 100);
+            }
+        }
+
+        function fmtPrice(v) {
+            if (!v && v !== 0) return '';
+            v = parseFloat(v);
+            if (isNaN(v)) return String(v);
+            return v === Math.floor(v) ? Math.floor(v) + '만' : v + '만';
+        }
+
+        function parseChecklist(str) {
+            var cl = {};
+            if (!str) return cl;
+            str.split('|').forEach(function (pair) {
+                var idx = pair.indexOf(':');
+                if (idx > 0) cl[pair.substring(0, idx).trim()] = pair.substring(idx + 1).trim();
+            });
+            return cl;
+        }
+        function truncatePrintName(name, maxChars) {
+            var chars = Array.from(String(name || ''));
+            if (chars.length <= maxChars) return chars.join('');
+            return chars.slice(0, Math.max(0, maxChars - 1)).join('') + '…';
+        }
+
+        function traitsStr(cl) {
+            var gm = { M: '수컷', F: '암컷', U: '미구분' };
+            var yn = { O: '있음', X: '없음' };
+            var gr = { '1': '낮음', '2': '보통', '3': '양호', '4': '우수', '5': '최상' };
+            var parts = [];
+            if (cl.gender) parts.push(gm[cl.gender] || cl.gender);
+            if (cl.weight) parts.push(cl.weight + 'g');
+            if (cl.birth) parts.push(cl.birth);
+            if (cl.spot) parts.push('점:' + (yn[cl.spot] || cl.spot));
+            if (cl.pin) parts.push('풀핀:' + (yn[cl.pin] || cl.pin));
+            ['도살:size', '월높이:wall', '색감:color', '활동성:activity', '먹이:feed', '체형:structure'].forEach(function (s) {
+                var p = s.split(':');
+                if (cl[p[1]]) parts.push(p[0] + ':' + (gr[cl[p[1]]] || cl[p[1]]));
+            });
+            if (cl.memo) parts.push(cl.memo);
+            return parts.join(' / ');
+        }
+
+        function parseWinner(str) {
+            if (!str) return { name: '', phone: '' };
+            var s = str.replace(/[\[\]]/g, '').trim();
+            var m = s.match(/01[0-9][\-\.\s]?\d{3,4}[\-\.\s]?\d{4}/);
+            if (m) {
+                var phone = m[0].replace(/[\-\.\s]/g, '');
+                var rest = s.replace(m[0], '').replace(/[\/,\.]/g, ' ').replace(/\s+/g, ' ').trim();
+                rest = rest.replace(/\(\s*\)/g, '').trim();
+                return { name: rest, phone: phone };
+            }
+            if (s.indexOf('/') >= 0) {
+                var parts = s.split('/').map(function (p) { return p.trim(); });
+                var phoneIdx = -1;
+                for (var i = 0; i < parts.length; i++) {
+                    if (parts[i].replace(/[\-\.\s]/g, '').match(/^\d{7,}$/)) { phoneIdx = i; break; }
+                }
+                if (phoneIdx >= 0) {
+                    var ph = parts.splice(phoneIdx, 1)[0].replace(/[\-\.\s]/g, '');
+                    return { name: parts.join(' / '), phone: ph };
+                }
+                return { name: s, phone: '' };
+            }
+            var words = s.split(/\s+/);
+            for (var j = 0; j < words.length; j++) {
+                if (words[j].replace(/[\-\.\s]/g, '').match(/^\d{7,}$/)) {
+                    var ph2 = words.splice(j, 1)[0].replace(/[\-\.\s]/g, '');
+                    return { name: words.join(' '), phone: ph2 };
+                }
+            }
+            return { name: s, phone: '' };
+        }
+
+        function fmtPhone(raw) {
+            var ph = (raw || '').replace(/[^0-9]/g, '');
+            if (ph.length === 8) ph = '010' + ph;
+            if (ph.length === 11) return ph.slice(0, 3) + '-' + ph.slice(3, 7) + '-' + ph.slice(7);
+            if (ph.length === 10) return ph.slice(0, 3) + '-' + ph.slice(3, 6) + '-' + ph.slice(6);
+            return ph;
+        }
+
+        var headersAll = '<th>번호</th><th>이름</th><th>업체</th><th>시작가</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
+        var headersList = '<th>번호</th><th>이름</th><th>업체</th><th>시작가</th><th>정보</th>';
+
+        function buildResultRow(it, showCompany) {
+            var st = it.status || '';
+            var statusCls = '', statusText = '';
+            if (st.indexOf('낙찰') >= 0) { statusCls = 'status-sold'; statusText = '낙찰'; }
+            else if (st.indexOf('유찰') >= 0) { statusCls = 'status-unsold'; statusText = '유찰'; }
+            else if (st.indexOf('취소') >= 0) { statusCls = 'status-unsold'; statusText = '취소'; }
+            else if (st.indexOf('진행') >= 0) { statusCls = ''; statusText = '진행중'; }
+            var w = parseWinner(it.winner);
+            var shortName = truncatePrintName(it.name, 10);
+            var r = '<tr>';
+            r += '<td class="col-num">' + (it.num || '') + '</td>';
+            r += '<td class="col-name-sm">' + shortName + '</td>';
+            if (showCompany) r += '<td class="col-company">' + (it.company || '') + '</td>';
+            r += '<td class="col-price">' + fmtPrice(it.startPrice) + '</td>';
+            r += '<td class="col-result-price">' + (it.soldPrice ? fmtPrice(it.soldPrice) : '') + '</td>';
+            r += '<td class="col-winner">' + w.name + '</td>';
+            r += '<td class="col-phone">' + fmtPhone(w.phone) + '</td>';
+            r += '<td class="col-ship"></td>';
+            r += '<td class="col-status ' + statusCls + '">' + statusText + '</td>';
+            r += '</tr>';
+            return r;
+        }
+
+        function renderAll(items) {
+            var today = new Date();
+            var dateStr = today.getFullYear() + '.' + (today.getMonth() + 1) + '.' + today.getDate();
+            var sold = items.filter(function (it) { return it.status && it.status.indexOf('낙찰') >= 0; });
+            var unsold = items.filter(function (it) { return it.status && it.status.indexOf('유찰') >= 0; });
+            var totalSales = 0;
+            sold.forEach(function (it) { totalSales += parseFloat(it.soldPrice || 0) || 0; });
+
+            // ── 탭1: 경매 리스트 ──
+            document.getElementById('list-date').textContent = dateStr;
+            document.getElementById('list-count').textContent = '총 ' + items.length + '개체';
+            var lhtml = '<table><thead><tr>' + headersList + '</tr></thead><tbody>';
+            items.forEach(function (it) {
+                var cl = parseChecklist(it.checklist);
+                var infoParts = [];
+                var traits = traitsStr(cl);
+                if (traits) infoParts.push(traits);
+                if (it.note) infoParts.push(it.note);
+                var info = infoParts.join(' / ');
+                var shortName = truncatePrintName(it.name, 10);
+                lhtml += '<tr>';
+                lhtml += '<td class="col-num">' + (it.num || '') + '</td>';
+                lhtml += '<td class="col-name">' + shortName + '</td>';
+                lhtml += '<td class="col-company">' + (it.company || '') + '</td>';
+                lhtml += '<td class="col-price">' + fmtPrice(it.startPrice) + '</td>';
+                lhtml += '<td class="col-info">' + info + '</td>';
+                lhtml += '</tr>';
+            });
+            lhtml += '</tbody></table>';
+            document.getElementById('list-body').innerHTML = lhtml;
+
+            // ── 탭2: 낙찰 결과 ──
+            document.getElementById('result-date').textContent = dateStr;
+            document.getElementById('result-count').textContent =
+                '낙찰 ' + sold.length + '건 / 유찰 ' + unsold.length + '건 / 전체 ' + items.length + '건  ·  총매출 ' + fmtPrice(totalSales);
+            var rhtml = '<table><thead><tr>' + headersAll + '</tr></thead><tbody>';
+            items.forEach(function (it) { rhtml += buildResultRow(it, true); });
+            rhtml += '</tbody></table>';
+            document.getElementById('result-body').innerHTML = rhtml;
+
+            // ── 탭3: 업체별 ──
+            window._allItems = items;
+            window._dateStr = dateStr;
+            window._totalSales = totalSales;
+
+            var companyOrder = [];
+            items.forEach(function (it) {
+                var c = (it.company || '').trim() || '(업체 미입력)';
+                if (companyOrder.indexOf(c) < 0) companyOrder.push(c);
+            });
+            window._companyOrder = companyOrder;
+
+            var sel = document.getElementById('company-select');
+            sel.innerHTML = '<option value="">전체</option>';
+            companyOrder.forEach(function (c) {
+                sel.innerHTML += '<option value="' + c + '">' + c + '</option>';
+            });
+            document.getElementById('company-filter').style.display = 'flex';
+            renderCompanyView('');
+            setTimeout(initResize, 100);
+        }
+
+        // 데이터 로드
+        google.script.run
+            .withSuccessHandler(renderAll)
+            .withFailureHandler(function (err) {
+                document.getElementById('result-body').innerHTML = '<div class="loading" style="color:red">오류: ' + err.message + '</div>';
+            })
+            .getItems();
+
+        function applySettings() {
+            var fs = document.getElementById('ctrl-font').value;
+            var pd = document.getElementById('ctrl-pad').value;
+            document.getElementById('lbl-font').textContent = fs;
+            document.getElementById('lbl-pad').textContent = pd;
+            document.querySelectorAll('table').forEach(function (t) { t.style.fontSize = fs + 'pt'; });
+            document.querySelectorAll('td').forEach(function (d) { d.style.padding = pd + 'px 4px'; });
+        }
+
+        // ── 컬럼 리사이즈 ──
+        function initResize() {
+            document.querySelectorAll('.tab-content.active table').forEach(function (tbl) {
+                Array.from(tbl.querySelectorAll('thead th')).forEach(function (th) {
+                    if (th.querySelector('.resize-handle')) return;
+                    var handle = document.createElement('div');
+                    handle.className = 'resize-handle';
+                    th.appendChild(handle);
+                    handle.addEventListener('mousedown', function (e) {
+                        e.preventDefault(); e.stopPropagation();
+                        var colIdx = Array.from(th.parentNode.children).indexOf(th);
+                        lockTable(tbl);
+                        var startX = e.pageX, startW = th.offsetWidth;
+                        function onMove(ev) { th.style.width = Math.max(10, startW + ev.pageX - startX) + 'px'; }
+                        function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+                        document.addEventListener('mousemove', onMove);
+                        document.addEventListener('mouseup', onUp);
+                    });
+                    handle.addEventListener('dblclick', function (e) {
+                        e.preventDefault();
+                        var colIdx = Array.from(th.parentNode.children).indexOf(th);
+                        lockTable(tbl);
+                        th.style.width = measureColumnWidth(tbl, colIdx) + 'px';
+                    });
+                });
+            });
+        }
+
+        function lockTable(tbl) {
+            if (tbl.dataset.locked) return;
+            var allTh = Array.from(tbl.querySelectorAll('thead th'));
+            var widths = allTh.map(function (h) { return h.offsetWidth; });
+            tbl.style.width = tbl.offsetWidth + 'px';
+            tbl.style.tableLayout = 'fixed';
+            allTh.forEach(function (h, i) { h.style.width = widths[i] + 'px'; });
+            tbl.dataset.locked = '1';
+        }
+
+        function measureColumnWidth(tbl, colIdx) {
+            var span = document.createElement('span');
+            span.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:inherit;padding:0 8px;';
+            document.body.appendChild(span);
+            var maxW = 0;
+            var th = tbl.querySelectorAll('thead th')[colIdx];
+            if (th) { span.textContent = th.textContent; maxW = Math.max(maxW, span.offsetWidth); }
+            tbl.querySelectorAll('tbody tr').forEach(function (tr) {
+                var td = tr.children[colIdx];
+                if (td) { span.textContent = td.textContent; maxW = Math.max(maxW, span.offsetWidth); }
+            });
+            document.body.removeChild(span);
+            return Math.max(maxW + 4, 20);
+        }
+
+        // ── 업체 필터 ──
+        function onCompanyFilterChange() {
+            renderCompanyView(document.getElementById('company-select').value);
+            setTimeout(initResize, 100);
+        }
+
+        // ── 업체별 뷰 ──
+        var MULTI_COLORS = ['#2563EB', '#DC2626', '#059669', '#D97706', '#7C3AED', '#DB2777', '#0891B2', '#4F46E5'];
+
+        function renderCompanyView(selectedCompany) {
+            var items = window._allItems || [];
+            var dateStr = window._dateStr || '';
+            var totalSales = window._totalSales || 0;
+            var companyOrder = window._companyOrder || [];
+
+            // 전화번호 기준 구매자 그룹핑
+            var soldItems = items.filter(function (it) { return it.status && it.status.indexOf('낙찰') >= 0; });
+            var buyerMap = {};
+            soldItems.forEach(function (it) {
+                var w = parseWinner(it.winner);
+                var phone = (w.phone || '').replace(/[^0-9]/g, '');
+                if (!phone) return;
+                if (!buyerMap[phone]) buyerMap[phone] = [];
+                buyerMap[phone].push(it);
+            });
+
+            // 2개 이상 업체에서 구매한 사람
+            var multiPhones = {};
+            Object.keys(buyerMap).forEach(function (phone) {
+                var companies = {};
+                buyerMap[phone].forEach(function (it) {
+                    companies[(it.company || '').trim() || '(업체 미입력)'] = true;
+                });
+                if (Object.keys(companies).length >= 2) multiPhones[phone] = true;
+            });
+
+            var multiCount = Object.keys(multiPhones).length;
+            document.getElementById('filter-info').innerHTML = multiCount > 0
+                ? '<span class="multi-badge">⚠ 다중구매 ' + multiCount + '명</span>' : '';
+
+            // 색상 매핑
+            var phoneColors = {};
+            var ci = 0;
+            Object.keys(multiPhones).forEach(function (ph) {
+                phoneColors[ph] = MULTI_COLORS[ci % MULTI_COLORS.length]; ci++;
+            });
+
+            // 업체별 그룹핑
+            var companyMap = {};
+            items.forEach(function (it) {
+                var c = (it.company || '').trim() || '(업체 미입력)';
+                if (!companyMap[c]) companyMap[c] = [];
+                companyMap[c].push(it);
+            });
+
+            // ── 단일 테이블 렌더링 (전체 & 필터 공통) ──
+            var chtml = '<div style="font-size:10pt;color:#666;margin-bottom:8px;">'
+                + dateStr + ' · ' + companyOrder.length + '개 업체 / 전체 ' + items.length + '건 · 총매출 ' + fmtPrice(totalSales)
+                + '</div>';
+
+            chtml += '<div class="company-view-wrapper" id="company-wrapper">';
+            chtml += '<table id="company-filtered-table">';
+            chtml += '<thead><tr><th>업체</th><th>번호</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th></tr></thead>';
+            chtml += '<tbody>';
+
+            var rowIndex = 0;
+            var phoneRowMap = {};
+
+            // 표시할 업체 목록 결정
+            var displayCompanies = selectedCompany ? [selectedCompany] : companyOrder;
+            // 선택 업체가 있으면, 관련 다른 업체도 추가
+            var relatedCompanies = [];
+            if (selectedCompany) {
+                var selItems = companyMap[selectedCompany] || [];
+                selItems.forEach(function (it) {
+                    var w = parseWinner(it.winner);
+                    var phone = (w.phone || '').replace(/[^0-9]/g, '');
+                    if (phone && multiPhones[phone]) {
+                        buyerMap[phone].forEach(function (bi) {
+                            var bc = (bi.company || '').trim() || '(업체 미입력)';
+                            if (bc !== selectedCompany && relatedCompanies.indexOf(bc) < 0) {
+                                relatedCompanies.push(bc);
+                            }
+                        });
+                    }
+                });
+                displayCompanies = displayCompanies.concat(relatedCompanies);
+            }
+
+            displayCompanies.forEach(function (company) {
+                var list = companyMap[company] || [];
+                if (list.length === 0) return;
+
+                var companySold = list.filter(function (it) { return it.status && it.status.indexOf('낙찰') >= 0; });
+                var companySales = 0;
+                companySold.forEach(function (it) { companySales += parseFloat(it.soldPrice || 0) || 0; });
+
+                var isOther = selectedCompany && company !== selectedCompany;
+
+                list.forEach(function (it, idx) {
+                    var w = parseWinner(it.winner);
+                    var phone = (w.phone || '').replace(/[^0-9]/g, '');
+                    var isMulti = phone && multiPhones[phone];
+
+                    if (isMulti) {
+                        if (!phoneRowMap[phone]) phoneRowMap[phone] = [];
+                        phoneRowMap[phone].push(rowIndex);
+                    }
+
+                    var clsList = [];
+                    if (isMulti) clsList.push('multi-buyer-row');
+                    if (isOther) clsList.push('other-company-row');
+                    else if (selectedCompany) clsList.push('selected-company-row');
+
+                    var st = it.status || '';
+                    var statusCls = '', statusText = '';
+                    if (st.indexOf('낙찰') >= 0) { statusCls = 'status-sold'; statusText = '낙찰'; }
+                    else if (st.indexOf('유찰') >= 0) { statusCls = 'status-unsold'; statusText = '유찰'; }
+                    else if (st.indexOf('취소') >= 0) { statusCls = 'status-unsold'; statusText = '취소'; }
+
+                    chtml += '<tr' + (clsList.length ? ' class="' + clsList.join(' ') + '"' : '') + ' data-phone="' + phone + '">';
+                    if (idx === 0) {
+                        var compStyle = isOther
+                            ? 'vertical-align:top;border-right:2px solid #eee;color:#999;'
+                            : 'font-weight:900;vertical-align:top;border-right:2px solid #ddd;';
+                        chtml += '<td class="col-company" rowspan="' + list.length + '" style="' + compStyle + '">'
+                            + company + '<br><span style="font-size:9pt;font-weight:500;color:#888;">' + fmtPrice(companySales) + '</span></td>';
+                    }
+                    chtml += '<td class="col-num">' + (it.num || '') + '</td>';
+                    chtml += '<td class="col-name-sm">' + truncatePrintName(it.name, 10) + '</td>';
+                    chtml += '<td class="col-result-price">' + (it.soldPrice ? fmtPrice(it.soldPrice) : '') + '</td>';
+                    chtml += '<td class="col-winner">' + w.name + '</td>';
+                    chtml += '<td class="col-phone">' + fmtPhone(w.phone) + '</td>';
+                    chtml += '<td class="col-ship"></td>';
+                    chtml += '<td class="col-status ' + statusCls + '">' + statusText + '</td>';
+                    chtml += '</tr>';
+                    rowIndex++;
+                });
+            });
+
+            chtml += '</tbody></table></div>';
+            document.getElementById('company-body').innerHTML = chtml;
+
+            // 연결선 데이터 저장 (탭 전환 시 다시 그리기용)
+            window._phoneRowMap = phoneRowMap;
+            window._phoneColors = phoneColors;
+
+            // 탭이 보일 때만 연결선 그리기
+            var companyTab = document.getElementById('tab-company');
+            if (companyTab && companyTab.classList.contains('active')) {
+                setTimeout(function () { drawConnectionLines(phoneRowMap, phoneColors); }, 150);
+            }
+        }
+
+        // ── div 기반 연결선 ──
+        function drawConnectionLines(phoneRowMap, phoneColors) {
+            var wrapper = document.getElementById('company-wrapper');
+            var table = document.getElementById('company-filtered-table');
+            if (!wrapper || !table) return;
+
+            wrapper.querySelectorAll('.conn-line').forEach(function (el) { el.remove(); });
+
+            var wrapperRect = wrapper.getBoundingClientRect();
+            var trs = table.querySelectorAll('tbody tr');
+            var phoneKeys = Object.keys(phoneRowMap);
+
+            // 낙찰자 컬럼(th[4])의 왼쪽 X
+            var winnerX = 0;
+            var ths = table.querySelectorAll('thead th');
+            if (ths[4]) {
+                winnerX = ths[4].getBoundingClientRect().left - wrapperRect.left - 6;
+            }
+
+            var xStep = Math.min(10, Math.max(4, 30 / Math.max(phoneKeys.length, 1)));
+
+            phoneKeys.forEach(function (phone, pIdx) {
+                var rows = phoneRowMap[phone];
+                if (rows.length < 2) return;
+
+                var color = phoneColors[phone] || '#2563EB';
+                var x = winnerX - (phoneKeys.length - pIdx) * xStep;
+
+                var positions = [];
+                rows.forEach(function (rIdx) {
+                    if (rIdx < trs.length) {
+                        var trRect = trs[rIdx].getBoundingClientRect();
+                        positions.push(trRect.top - wrapperRect.top + trRect.height / 2);
+                    }
+                });
+                if (positions.length < 2) return;
+
+                var topY = positions[0], bottomY = positions[positions.length - 1];
+
+                // 세로선
+                var vLine = document.createElement('div');
+                vLine.className = 'conn-line conn-v';
+                vLine.style.cssText = 'left:' + x + 'px;top:' + topY + 'px;height:' + (bottomY - topY) + 'px;background:' + color + ';';
+                wrapper.appendChild(vLine);
+
+                // 가로 눈금
+                positions.forEach(function (y) {
+                    var hLine = document.createElement('div');
+                    hLine.className = 'conn-line conn-h';
+                    hLine.style.cssText = 'left:' + x + 'px;top:' + (y - 1) + 'px;width:8px;background:' + color + ';';
+                    wrapper.appendChild(hLine);
+                });
+            });
+        }
+    </script>
+</body>
+
+</html>
