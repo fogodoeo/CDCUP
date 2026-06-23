@@ -74,7 +74,7 @@
 
         /* 대회명 라벨 (바 위에 표시) */
         .scoreboard-wrap .top-bar-label {
-            font-size: 10px;
+            font-size: var(--sb-label-size, 14px);
             font-weight: 700;
             letter-spacing: 0.18em;
             text-transform: uppercase;
@@ -110,7 +110,7 @@
         }
 
         .top-bar .name {
-            font-size: 30px;
+            font-size: var(--sb-name-size, 30px);
             font-weight: 800;
             color: #FFFFFF;
             letter-spacing: -0.01em;
@@ -149,7 +149,7 @@
             align-items: center;
             padding: 3px 10px;
             border-radius: 4px;
-            font-size: 17px;
+            font-size: var(--sb-pill-size, 17px);
             font-weight: 600;
             white-space: nowrap;
             background: rgba(255, 255, 255, 0.08);
@@ -1320,6 +1320,17 @@
                     lastJson = '';
                     render(lastRenderedItem);
                 }
+
+                // 스코어보드 폰트 크기 및 대회명 적용
+                const sbWrap = document.getElementById('scoreboard-wrap');
+                if (sbWrap) {
+                    if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
+                    if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
+                    const labelEl = sbWrap.querySelector('.top-bar-label');
+                    if (labelEl && cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
+                        labelEl.textContent = cfg.scoreboard_label;
+                    }
+                }
                 
                 // 티커(자막 바) 및 배너 글로벌 보이기/숨기기 및 위치 제어
                 const bottomBar = document.querySelector('.hc-bottom-bar');
@@ -1663,6 +1674,17 @@
                         bannerContainer.dataset.bannerHiddenByToggle = '1';
                     } else {
                         delete bannerContainer.dataset.bannerHiddenByToggle;
+                    }
+                }
+
+                // 스코어보드 폰트 크기 및 대회명 실시간 반영
+                const sbWrap = document.getElementById('scoreboard-wrap');
+                if (sbWrap) {
+                    if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
+                    if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
+                    const labelEl = sbWrap.querySelector('.top-bar-label');
+                    if (labelEl && cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
+                        labelEl.textContent = cfg.scoreboard_label;
                     }
                 }
 
