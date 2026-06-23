@@ -430,14 +430,18 @@
         const elements = {
             banner: {
                 el: document.getElementById('draggable-banner'),
-                top: "10%",
-                left: "74%",
+                top: "auto",
+                left: "auto",
+                right: "1%",
+                bottom: "4%",
                 show: "1"
             },
             ticker: {
                 el: document.getElementById('draggable-ticker'),
-                top: "88%",
-                left: "0%",
+                top: "auto",
+                left: "auto",
+                right: "auto",
+                bottom: "4%",
                 show: "1"
             }
         };
@@ -472,13 +476,17 @@
                 if (!cfg) return;
 
                 // Load Banner values
-                elements.banner.top = cfg.banner_top || '10%';
-                elements.banner.left = cfg.banner_left || '74%';
+                elements.banner.top = cfg.banner_top || 'auto';
+                elements.banner.left = cfg.banner_left || 'auto';
+                elements.banner.right = cfg.banner_right || 'auto';
+                elements.banner.bottom = cfg.banner_bottom || 'auto';
                 elements.banner.show = cfg.banner_show !== undefined ? String(cfg.banner_show) : '1';
 
                 // Load Ticker values
-                elements.ticker.top = cfg.ticker_top || '88%';
-                elements.ticker.left = cfg.ticker_left || '0%';
+                elements.ticker.top = cfg.ticker_top || 'auto';
+                elements.ticker.left = cfg.ticker_left || 'auto';
+                elements.ticker.right = cfg.ticker_right || 'auto';
+                elements.ticker.bottom = cfg.ticker_bottom || 'auto';
                 elements.ticker.show = cfg.ticker_show !== undefined ? String(cfg.ticker_show) : '1';
 
                 // Apply states visually
@@ -491,16 +499,16 @@
 
                 updateLabelReadouts();
 
-                // Apply custom sizes if set in config
+                // Apply custom sizes if set in config (aligning default size with broadcast.html: 42vw, 50vh)
                 if (cfg.banner_maxwidth) {
                     elements.banner.el.style.width = convertViewportToPercent(cfg.banner_maxwidth);
                 } else {
-                    elements.banner.el.style.width = '15%'; // Default compact size if not custom sized
+                    elements.banner.el.style.width = '42%'; // Default 42% (translates from 42vw)
                 }
                 if (cfg.banner_maxheight) {
                     elements.banner.el.style.height = convertViewportToPercent(cfg.banner_maxheight);
                 } else {
-                    elements.banner.el.style.height = 'auto';
+                    elements.banner.el.style.height = '50%'; // Default 50% (translates from 50vh)
                 }
 
                 // Load first banner image as preview inside drag box
@@ -534,10 +542,28 @@
 
         function applyVisualState(key) {
             const data = elements[key];
-            data.el.style.top = data.top;
-            data.el.style.left = data.left;
-            data.el.style.bottom = 'auto';
-            data.el.style.right = 'auto';
+            data.el.style.removeProperty('left');
+            data.el.style.removeProperty('right');
+            data.el.style.removeProperty('top');
+            data.el.style.removeProperty('bottom');
+
+            const isVal = (val) => val && val !== 'auto' && val !== 'initial' && val !== 'unset';
+
+            if (isVal(data.right)) {
+                data.el.style.right = data.right;
+            } else if (isVal(data.left)) {
+                data.el.style.left = data.left;
+            } else {
+                data.el.style.left = '0%';
+            }
+
+            if (isVal(data.bottom)) {
+                data.el.style.bottom = data.bottom;
+            } else if (isVal(data.top)) {
+                data.el.style.top = data.top;
+            } else {
+                data.el.style.top = '0%';
+            }
 
             if (data.show === "0") {
                 data.el.classList.add('hidden-state');
@@ -547,10 +573,18 @@
         }
 
         function updateLabelReadouts() {
-            document.getElementById('banner-val-top').textContent = elements.banner.top;
-            document.getElementById('banner-val-left').textContent = elements.banner.left;
-            document.getElementById('ticker-val-top').textContent = elements.ticker.top;
-            document.getElementById('ticker-val-left').textContent = elements.ticker.left;
+            const b = elements.banner;
+            const t = elements.ticker;
+            
+            const bXStr = b.right !== 'auto' ? `Right ${b.right}` : `Left ${b.left}`;
+            const bYStr = b.bottom !== 'auto' ? `Bottom ${b.bottom}` : `Top ${b.top}`;
+            const tXStr = t.right !== 'auto' ? `Right ${t.right}` : `Left ${t.left}`;
+            const tYStr = t.bottom !== 'auto' ? `Bottom ${t.bottom}` : `Top ${t.top}`;
+
+            document.getElementById('banner-val-top').textContent = bYStr;
+            document.getElementById('banner-val-left').textContent = bXStr;
+            document.getElementById('ticker-val-top').textContent = tYStr;
+            document.getElementById('ticker-val-left').textContent = tXStr;
         }
 
         // Drag Setup
@@ -598,12 +632,27 @@
             x = Math.max(0, Math.min(x, maxX));
             y = Math.max(0, Math.min(y, maxY));
 
-            // Convert relative to percentages
-            const pctX = (x / containerRect.width) * 100;
-            const pctY = (y / containerRect.height) * 100;
+            // Dynamic boundary switching based on center point
+            const centerX = x + el.offsetWidth / 2;
+            const centerY = y + el.offsetHeight / 2;
 
-            elements[activeDragKey].left = pctX.toFixed(1) + "%";
-            elements[activeDragKey].top = pctY.toFixed(1) + "%";
+            if (centerX > containerRect.width / 2) {
+                const rightPx = containerRect.width - (x + el.offsetWidth);
+                elements[activeDragKey].right = ((rightPx / containerRect.width) * 100).toFixed(1) + "%";
+                elements[activeDragKey].left = 'auto';
+            } else {
+                elements[activeDragKey].left = ((x / containerRect.width) * 100).toFixed(1) + "%";
+                elements[activeDragKey].right = 'auto';
+            }
+
+            if (centerY > containerRect.height / 2) {
+                const bottomPx = containerRect.height - (y + el.offsetHeight);
+                elements[activeDragKey].bottom = ((bottomPx / containerRect.height) * 100).toFixed(1) + "%";
+                elements[activeDragKey].top = 'auto';
+            } else {
+                elements[activeDragKey].top = ((y / containerRect.height) * 100).toFixed(1) + "%";
+                elements[activeDragKey].bottom = 'auto';
+            }
 
             applyVisualState(activeDragKey);
             updateLabelReadouts();
@@ -628,12 +677,14 @@
             const configMap = {
                 banner_top: elements.banner.top,
                 banner_left: elements.banner.left,
-                banner_right: 'auto',
-                banner_bottom: 'auto',
+                banner_right: elements.banner.right,
+                banner_bottom: elements.banner.bottom,
                 banner_show: elements.banner.show,
                 
                 ticker_top: elements.ticker.top,
                 ticker_left: elements.ticker.left,
+                ticker_right: elements.ticker.right,
+                ticker_bottom: elements.ticker.bottom,
                 ticker_show: elements.ticker.show
             };
 
@@ -651,12 +702,16 @@
         }
 
         function resetPositions() {
-            elements.banner.top = "10%";
-            elements.banner.left = "74%";
+            elements.banner.top = "auto";
+            elements.banner.left = "auto";
+            elements.banner.right = "1%";
+            elements.banner.bottom = "4%";
             elements.banner.show = "1";
 
-            elements.ticker.top = "88%";
-            elements.ticker.left = "0%";
+            elements.ticker.top = "auto";
+            elements.ticker.left = "auto";
+            elements.ticker.right = "auto";
+            elements.ticker.bottom = "4%";
             elements.ticker.show = "1";
 
             document.getElementById('toggle-banner-show').checked = true;
