@@ -526,7 +526,10 @@
                 },
                 body: file,
             });
-            if (!resp.ok) throw new Error('Upload failed: ' + resp.status);
+            if (!resp.ok) {
+                const errText = await resp.text();
+                throw new Error(`Upload failed (${resp.status}): ${errText}`);
+            }
             return SB_URL + '/storage/v1/object/public/banner/' + fname;
         }
 
@@ -568,7 +571,10 @@
                 if (file.size > 25 * 1024 * 1024) { toast('25MB 이하 이미지 파일만 업로드 가능합니다', true); return; }
                 dropzone.innerHTML = '<span class="uploading">이미지 리사이징 중...</span>';
                 try {
+                    console.log('Original file size:', (file.size / 1024).toFixed(1) + 'KB');
                     const resizedFile = await resizeImage(file);
+                    console.log('Resized file size:', (resizedFile.size / 1024).toFixed(1) + 'KB');
+                    
                     dropzone.innerHTML = '<span class="uploading">업로드 중...</span>';
                     const publicUrl = await uploadToSupabase(resizedFile);
                     input.value = publicUrl;
@@ -578,6 +584,7 @@
                     dropzone.querySelector('input[type=file]').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
                     toast('배너 이미지 업로드 완료!');
                 } catch(e) {
+                    console.error('Upload process failed:', e);
                     dropzone.innerHTML = '❌ 업로드 실패 — 다시 시도<input type="file" accept="image/*">';
                     dropzone.querySelector('input[type=file]').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
                     toast('업로드 실패: ' + e.message, true);
