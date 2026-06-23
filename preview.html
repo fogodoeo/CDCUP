@@ -163,17 +163,20 @@
 
         /* 🖼️ Draggable Banner */
         .draggable-banner {
-            width: 25%;
-            aspect-ratio: 4 / 3;
-            background: rgba(37, 99, 235, 0.25);
+            width: auto;
+            height: auto;
+            max-width: 42%;
+            max-height: 50%;
+            background: rgba(37, 99, 235, 0.15);
             border: 2px dashed var(--accent);
             border-radius: 8px;
             box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+            overflow: hidden;
         }
 
         .draggable-banner:hover {
             border-color: #3B82F6;
-            background: rgba(37, 99, 235, 0.35);
+            background: rgba(37, 99, 235, 0.25);
         }
 
         /* 📢 Draggable Ticker (Zamak Bar) */
@@ -362,7 +365,8 @@
             <div class="drag-overlay" id="drag-overlay">
                 <!-- 1. Draggable Banner -->
                 <div class="draggable-element draggable-banner" id="draggable-banner" data-type="banner">
-                    <div class="element-label">🖼️ 롤링 배너</div>
+                    <img id="draggable-banner-preview" style="width:100%; height:100%; object-fit:contain; border-radius:6px; pointer-events:none; display:none;" alt="">
+                    <div class="element-label" id="draggable-banner-label">🖼️ 롤링 배너</div>
                 </div>
 
                 <!-- 2. Draggable Ticker (Zamak Bar) -->
@@ -476,8 +480,43 @@
                 updateLabelReadouts();
 
                 // Apply custom sizes if set in config
-                if (cfg.banner_maxwidth) elements.banner.el.style.width = cfg.banner_maxwidth;
-                if (cfg.banner_maxheight) elements.banner.el.style.height = cfg.banner_maxheight;
+                if (cfg.banner_maxwidth) {
+                    elements.banner.el.style.width = cfg.banner_maxwidth;
+                } else {
+                    elements.banner.el.style.width = '15%'; // Default compact size if not custom sized
+                }
+                if (cfg.banner_maxheight) {
+                    elements.banner.el.style.height = cfg.banner_maxheight;
+                } else {
+                    elements.banner.el.style.height = 'auto';
+                }
+
+                // Load first banner image as preview inside drag box
+                const banner1 = (cfg.banner1 || '').trim();
+                const bannerPreviewImg = document.getElementById('draggable-banner-preview');
+                const bannerLabel = document.getElementById('draggable-banner-label');
+                if (banner1) {
+                    bannerPreviewImg.src = banner1;
+                    bannerPreviewImg.style.display = 'block';
+                    // Style label as a small indicator
+                    bannerLabel.style.position = 'absolute';
+                    bannerLabel.style.bottom = '2px';
+                    bannerLabel.style.left = '50%';
+                    bannerLabel.style.transform = 'translateX(-50%)';
+                    bannerLabel.style.background = 'rgba(15,23,42,0.8)';
+                    bannerLabel.style.fontSize = '8px';
+                    bannerLabel.style.padding = '1px 4px';
+                    bannerLabel.style.whiteSpace = 'nowrap';
+                    bannerLabel.style.border = 'none';
+                    bannerLabel.textContent = '🖼️ 롤링 배너';
+                } else {
+                    bannerPreviewImg.style.display = 'none';
+                    bannerLabel.style.position = 'static';
+                    bannerLabel.style.transform = 'none';
+                    bannerLabel.textContent = '🖼️ 롤링 배너 (이미지 없음)';
+                    elements.banner.el.style.width = '150px';
+                    elements.banner.el.style.height = '100px';
+                }
             }).getConfigMap();
         }
 
