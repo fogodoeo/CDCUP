@@ -47,131 +47,101 @@
             position: relative;
         }
 
-        /* ── 스코어보드 스타일 상단 바 (2P 개체용) ── */
-        @keyframes scoreboardSlideIn {
+        /* ── 통합 상단 바 (2P 개체용) ── */
+        @keyframes slideDownFade {
             from {
                 opacity: 0;
-                transform: translateX(40px);
+                transform: translateY(-20px);
             }
             to {
                 opacity: 1;
-                transform: translateX(0);
+                transform: translateY(0);
             }
         }
 
-        /* 스코어보드 래퍼 (라벨 + 바를 묶는 컨테이너) */
-        .scoreboard-wrap {
-            position: absolute;
-            top: 20px;
-            right: 24px;
-            left: auto;
-            z-index: 20;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            animation: scoreboardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        /* 대회명 라벨 (바 위에 표시) */
-        .scoreboard-wrap .top-bar-label {
-            font-size: var(--sb-label-size, 14px);
-            font-weight: 700;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            color: rgba(255, 168, 0, 0.85);
-            padding: 0 8px 4px 0;
-        }
-
         .top-bar {
-            display: flex;
-            align-items: stretch;
-            gap: 0;
-            overflow: hidden;
-            border-radius: 6px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
-        }
-
-        /* 우측 주황색 악센트 스트라이프 */
-        .top-bar .accent-bar {
-            width: 5px;
-            flex-shrink: 0;
-            background: linear-gradient(180deg, #FF6B00, #FFA800);
-            order: 99; /* 맨 우측으로 이동 */
-        }
-
-        /* 이름 영역 (어두운 배경) */
-        .top-bar .name-section {
+            position: absolute;
+            top: 30px;
+            left: 5%;
+            right: 5%;
+            z-index: 20;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 20px 40px;
             display: flex;
             align-items: center;
-            padding: 10px 22px 10px 16px;
-            background: rgba(10, 15, 28, 0.88);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            gap: 0;
+            overflow: hidden;
+            max-height: 160px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            animation: slideDownFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
 
         .top-bar .name {
-            font-size: var(--sb-name-size, 30px);
-            font-weight: 800;
-            color: #FFFFFF;
-            letter-spacing: -0.01em;
-            white-space: nowrap;
+            font-size: 52px;
+            font-weight: 900;
+            flex-shrink: 0;
+            margin-right: 18px;
+            background: linear-gradient(135deg, #FF6B00, #FFA800);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(255, 107, 0, 0.2);
         }
 
-        /* 구분선 */
+        .top-bar .sub {
+            font-size: 46px;
+            font-weight: 600;
+            color: #F8FAFC;
+            opacity: 0.85;
+            flex-shrink: 0;
+            margin-right: 24px;
+        }
+
+        /* 세로 구분선 */
         .top-bar .sep {
             width: 1px;
-            background: rgba(255, 255, 255, 0.12);
+            height: 48px;
+            background: linear-gradient(to bottom, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.05));
             flex-shrink: 0;
+            margin-right: 24px;
         }
 
-        /* 특성 필 영역 (약간 밝은 배경) */
+        /* 특성들 */
         .top-bar .traits {
-            display: flex;
-            align-items: center;
-            padding: 10px 18px;
-            gap: 6px;
-            background: rgba(20, 28, 46, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            flex-wrap: nowrap;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            height: 52px;
         }
 
         .top-bar .traits-track {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             white-space: nowrap;
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translate3d(0, -50%, 0);
+            will-change: transform;
         }
 
-        /* pill 배지 스타일 */
-        .top-bar .pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 3px 10px;
-            border-radius: 4px;
-            font-size: var(--sb-pill-size, 17px);
+        .top-bar .t {
+            font-size: 38px;
             font-weight: 600;
+            color: #E2E8F0;
+            opacity: 0.9;
             white-space: nowrap;
-            background: rgba(255, 255, 255, 0.08);
-            color: #CBD5E1;
-            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        .top-bar .pill.pill-accent {
-            background: rgba(255, 107, 0, 0.15);
-            color: #FFA800;
-            border-color: rgba(255, 107, 0, 0.2);
-        }
-
-        .top-bar .pill.pill-info {
-            background: rgba(56, 189, 248, 0.12);
-            color: #7DD3FC;
-            border-color: rgba(56, 189, 248, 0.15);
-        }
-
-        /* sub 클래스는 더 이상 사용하지 않지만 호환성을 위해 숨김 */
-        .top-bar .sub {
-            display: none;
+        .top-bar .dot {
+            font-size: 14px;
+            color: #FF6B00;
+            opacity: 0.6;
+            margin: 0 6px;
         }
 
         /* ── 우측 사진 스택 ── */
@@ -344,7 +314,6 @@
         }
 
         /* ── 호스트 모드 (page=1) 전용 ── */
-        .host-mode .scoreboard-wrap,
         .host-mode .top-bar,
         .host-mode .photo-stack {
             display: none !important;
@@ -352,63 +321,6 @@
 
         .host-mode .empty {
             display: none !important;
-        }
-
-        /* 진행자 네임택 (page 1 전용) */
-        .host-nametag-container {
-            display: none;
-            position: absolute;
-            bottom: 6%;
-            left: 3%;
-            z-index: 60;
-            gap: 28px;
-        }
-        .host-mode .host-nametag-container {
-            display: flex;
-        }
-        .host-nametag {
-            display: flex;
-            align-items: stretch;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            animation: fadeInUp 0.5s ease-out;
-        }
-        .host-nametag .nt-accent {
-            width: 5px;
-            flex-shrink: 0;
-            background: linear-gradient(180deg, #FF6B00, #FFA800);
-        }
-        .host-nametag .nt-body {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 20px 10px 14px;
-            background: rgba(10, 15, 28, 0.9);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-        }
-        .host-nametag .nt-name {
-            font-size: 22px;
-            font-weight: 800;
-            color: #FFFFFF;
-            white-space: nowrap;
-            letter-spacing: -0.01em;
-        }
-        .host-nametag .nt-role {
-            font-size: 12px;
-            font-weight: 600;
-            color: #FFA800;
-            background: rgba(255, 168, 0, 0.12);
-            padding: 3px 10px;
-            border-radius: 4px;
-            white-space: nowrap;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
         }
 
         /* 개별 룰 필 스택 (우측 하단) */
@@ -424,7 +336,7 @@
         }
 
         .host-mode .hc-rules-stack {
-            display: none !important;
+            /* position controlled via config (nametag_*/rules_*) */
         }
 
         .hc-rules-stack.hc-rules-top {
@@ -557,7 +469,7 @@
         }
 
         .host-mode .hc-header {
-            display: none !important;
+            display: flex !important;
         }
 
         .hc-photo {
@@ -730,18 +642,12 @@
     <div class="empty" id="empty">경매 대기중...</div>
 
     <div class="broadcast" id="broadcast">
-        <div class="scoreboard-wrap" id="scoreboard-wrap">
-            <span class="top-bar-label">CRE WORLD CUP</span>
-            <div class="top-bar" id="top-bar">
-                <div class="name-section">
-                    <span class="name" id="info-name"></span>
-                </div>
-                <span class="sep"></span>
-                <div class="traits" id="info-traits">
-                    <div class="traits-track" id="traits-track"></div>
-                </div>
-                <div class="accent-bar"></div>
-                <span class="sub" id="info-sub" style="display:none;"></span>
+        <div class="top-bar" id="top-bar">
+            <span class="name" id="info-name"></span>
+            <span class="sub" id="info-sub"></span>
+            <span class="sep"></span>
+            <div class="traits" id="info-traits">
+                <div class="traits-track" id="traits-track"></div>
             </div>
         </div>
 
@@ -776,24 +682,6 @@
 
         <!-- 호스트 뷰: 우측 하단 개별 필 스택 (안내사항) -->
         <div class="hc-rules-stack" id="hc-rules-stack"></div>
-
-        <!-- 호스트 뷰: 진행자 네임택 -->
-        <div class="host-nametag-container" id="host-nametag-container">
-            <div class="host-nametag" id="host-nametag-1" style="display:none;">
-                <div class="nt-accent"></div>
-                <div class="nt-body">
-                    <span class="nt-name" id="nt-name-1"></span>
-                    <span class="nt-role" id="nt-role-1"></span>
-                </div>
-            </div>
-            <div class="host-nametag" id="host-nametag-2" style="display:none;">
-                <div class="nt-accent"></div>
-                <div class="nt-body">
-                    <span class="nt-name" id="nt-name-2"></span>
-                    <span class="nt-role" id="nt-role-2"></span>
-                </div>
-            </div>
-        </div>
 
         <!-- 호스트 뷰: 우하단 이미지 배너 -->
         <div class="hc-banner-float" id="hc-banner-float"></div>
@@ -1134,12 +1022,28 @@
             if (!urls.length) return;
 
             const interval = Math.max(parseInt(cfg.banner_interval, 10) || 5000, 2000);
-            // 페이지별 독립 배너 위치 키 (page2는 p2_ 접두사)
-            const bp = isHostMode ? '' : 'p2_';
-            const left = normalizeCssLength(cfg[bp + 'banner_left']);
-            const right = normalizeCssLength(cfg[bp + 'banner_right']);
-            const top = normalizeCssLength(cfg[bp + 'banner_top']);
-            const bottom = normalizeCssLength(cfg[bp + 'banner_bottom']);
+            const left = normalizeCssLength(cfg.banner_left);
+            const right = normalizeCssLength(cfg.banner_right);
+            const top = normalizeCssLength(cfg.banner_top);
+            const bottom = normalizeCssLength(cfg.banner_bottom);
+
+            // 좌우 설정: left가 있으면 left 사용, 아니면 right 사용
+            if (cfg.banner_left) {
+                container.style.left = cfg.banner_left;
+                container.style.right = 'auto';
+            } else {
+                container.style.right = cfg.banner_right || '1%';
+                container.style.left = 'auto';
+            }
+
+            // 상하 설정: top이 있으면 top 사용, 아니면 bottom 사용
+            if (cfg.banner_top) {
+                container.style.top = cfg.banner_top;
+                container.style.bottom = 'auto';
+            } else {
+                container.style.bottom = cfg.banner_bottom || '4%';
+                container.style.top = 'auto';
+            }
 
             container.style.left = 'auto';
             container.style.right = 'auto';
@@ -1166,38 +1070,52 @@
             const maxH = normalizeCssLength(cfg.banner_maxheight) || '50vh';
 
             // 이미지 프리로드 & DOM 구성
-            const imgs = [];
+            const wraps = [];
 
             urls.forEach(function (url, i) {
-                const img = document.createElement('img');
-                img.className = 'banner-img';
-                img.src = url;
-                img.style.maxWidth = maxW;
-                img.style.maxHeight = maxH;
-                img.onload = function () {
-                    if (i === 0) img.classList.add('show');
+                const wrap = document.createElement('div');
+                wrap.className = 'banner-item-wrap';
+                wrap.style.setProperty('--banner-w', maxW);
+                wrap.style.setProperty('--banner-h', maxH);
+
+                const blurBg = document.createElement('div');
+                blurBg.className = 'banner-bg-blur';
+                blurBg.style.backgroundImage = 'url(' + JSON.stringify(url) + ')';
+
+                const mainImg = document.createElement('img');
+                mainImg.className = 'banner-img-main';
+                mainImg.src = url;
+
+                wrap.appendChild(blurBg);
+                wrap.appendChild(mainImg);
+
+                mainImg.onload = function () {
+                    if (i === 0) wrap.classList.add('show');
                 };
-                img.onerror = function () { img.style.display = 'none'; };
-                container.appendChild(img);
-                imgs.push(img);
+                mainImg.onerror = function () { wrap.style.display = 'none'; };
+                container.appendChild(wrap);
+                wraps.push(wrap);
             });
 
             // 첫 번째 이미지 즉시 show (캐시 대비)
-            if (imgs.length > 0) {
-                requestAnimationFrame(() => imgs[0].classList.add('show'));
+            if (wraps.length > 0) {
+                requestAnimationFrame(() => wraps[0].classList.add('show'));
             }
 
             // 로테이션 (2개 이상일 때)
-            if (imgs.length > 1) {
+            if (wraps.length > 1) {
                 let currentIdx = 0;
                 window._bannerRotateTimer = setInterval(function () {
                     const prevIdx = currentIdx;
-                    currentIdx = (currentIdx + 1) % imgs.length;
-                    if (imgs[currentIdx].style.display === 'none') {
-                        currentIdx = (currentIdx + 1) % imgs.length;
+                    let nextIdx = (prevIdx + 1) % wraps.length;
+                    if (wraps[nextIdx].style.display === 'none') {
+                        nextIdx = (nextIdx + 1) % wraps.length;
                     }
-                    imgs[prevIdx].classList.remove('show');
-                    imgs[currentIdx].classList.add('show');
+                    wraps[prevIdx].classList.remove('show');
+                    wraps[prevIdx].classList.add('exit');
+                    setTimeout(() => wraps[prevIdx].classList.remove('exit'), 800);
+                    wraps[nextIdx].classList.add('show');
+                    currentIdx = nextIdx;
                 }, interval);
             }
         }
@@ -1227,38 +1145,38 @@
             }
         }
 
-        function startBannerRotation(wraps, interval) {
+        function startBannerRotation(imgs, interval) {
             if (window._bannerRotateTimer) {
                 clearInterval(window._bannerRotateTimer);
                 window._bannerRotateTimer = null;
             }
 
-            if (!wraps.length) {
+            if (!imgs.length) {
                 window._bannerCurrentIdx = 0;
                 return;
             }
 
             const currentIdx = typeof window._bannerCurrentIdx === 'number' ? window._bannerCurrentIdx : 0;
-            window._bannerCurrentIdx = Math.max(0, Math.min(currentIdx, wraps.length - 1));
+            window._bannerCurrentIdx = Math.max(0, Math.min(currentIdx, imgs.length - 1));
 
-            wraps.forEach(function (wrap, idx) {
-                wrap.classList.toggle('show', idx === window._bannerCurrentIdx && wrap.style.display !== 'none');
+            imgs.forEach(function (img, idx) {
+                img.classList.toggle('show', idx === window._bannerCurrentIdx && img.style.display !== 'none');
             });
 
-            if (wraps.length <= 1) return;
+            if (imgs.length <= 1) return;
 
             window._bannerRotateTimer = setInterval(function () {
                 const prevIdx = window._bannerCurrentIdx;
-                let nextIdx = (prevIdx + 1) % wraps.length;
+                let nextIdx = (prevIdx + 1) % imgs.length;
                 let guard = 0;
-                while (wraps[nextIdx].style.display === 'none' && guard < wraps.length) {
-                    nextIdx = (nextIdx + 1) % wraps.length;
+                while (imgs[nextIdx].style.display === 'none' && guard < imgs.length) {
+                    nextIdx = (nextIdx + 1) % imgs.length;
                     guard += 1;
                 }
-                wraps[prevIdx].classList.remove('show');
-                wraps[prevIdx].classList.add('exit');
-                setTimeout(() => wraps[prevIdx].classList.remove('exit'), 800);
-                wraps[nextIdx].classList.add('show');
+                imgs[prevIdx].classList.remove('show');
+                imgs[prevIdx].classList.add('exit');
+                setTimeout(() => imgs[prevIdx].classList.remove('exit'), 800);
+                imgs[nextIdx].classList.add('show');
                 window._bannerCurrentIdx = nextIdx;
             }, interval);
         }
@@ -1274,13 +1192,11 @@
             }
 
             const interval = Math.max(parseInt(cfg.banner_interval, 10) || 5000, 2000);
-            // 페이지별 독립 배너 위치 키 (page2는 p2_ 접두사)
-            const bp = isHostMode ? '' : 'p2_';
             const layout = {
-                left: normalizeCssLength(cfg[bp + 'banner_left']),
-                right: normalizeCssLength(cfg[bp + 'banner_right']),
-                top: normalizeCssLength(cfg[bp + 'banner_top']),
-                bottom: normalizeCssLength(cfg[bp + 'banner_bottom'])
+                left: normalizeCssLength(cfg.banner_left),
+                right: normalizeCssLength(cfg.banner_right),
+                top: normalizeCssLength(cfg.banner_top),
+                bottom: normalizeCssLength(cfg.banner_bottom)
             };
             const maxW = normalizeCssLength(cfg.banner_maxwidth) || '42vw';
             const maxH = normalizeCssLength(cfg.banner_maxheight) || '50vh';
@@ -1289,7 +1205,7 @@
 
             applyBannerPlacement(container, layout);
             container.style.setProperty('--banner-opacity', bannerOpacity);
-            const bannerShowOff = cfg[bp + 'banner_show'] === '0' || container.dataset.bannerHiddenByToggle === '1';
+            const bannerShowOff = cfg.banner_show === '0' || container.dataset.bannerHiddenByToggle === '1';
             if (bannerHidden || bannerShowOff || !urls.length) {
                 if (window._bannerRotateTimer) {
                     clearInterval(window._bannerRotateTimer);
@@ -1381,53 +1297,25 @@
                     lastJson = '';
                     render(lastRenderedItem);
                 }
-
-                // 스코어보드 폰트 크기, 투명도, 대회명 적용
-                const sbWrap = document.getElementById('scoreboard-wrap');
-                if (sbWrap) {
-                    if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
-                    if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
-                    // 대회명 라벨 폰트 크기 (직접 스타일)
-                    const labelEl = sbWrap.querySelector('.top-bar-label');
-                    if (labelEl) {
-                        if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
-                        if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
-                            labelEl.textContent = cfg.scoreboard_label;
-                        }
-                    }
-                    // 박스 투명도 (직접 background 스타일)
-                    if (cfg.scoreboard_opacity) {
-                        const op = parseFloat(cfg.scoreboard_opacity);
-                        if (!isNaN(op)) {
-                            const nameSection = sbWrap.querySelector('.name-section');
-                            const traitsSection = sbWrap.querySelector('.traits');
-                            if (nameSection) nameSection.style.background = 'rgba(10, 15, 28, ' + op + ')';
-                            if (traitsSection) traitsSection.style.background = 'rgba(20, 28, 46, ' + op + ')';
-                        }
-                    }
-                }
                 
-                // 페이지별 독립 배너/티커 위치 키 접두사
-                const lp = document.body.classList.contains('host-mode') ? '' : 'p2_';
-
-                // 티커(자막 바) 위치 적용
+                // 티커(자막 바) 및 배너 글로벌 보이기/숨기기 및 위치 제어
                 const bottomBar = document.querySelector('.hc-bottom-bar');
                 if (bottomBar) {
-                    if (cfg[lp + 'ticker_show'] === '0') {
+                    if (cfg.ticker_show === '0') {
                         bottomBar.style.setProperty('display', 'none', 'important');
                     } else {
                         bottomBar.style.removeProperty('display');
                         
                         // 티커 위치 적용
-                        if (cfg[lp + 'ticker_top']) {
-                            bottomBar.style.top = cfg[lp + 'ticker_top'];
+                        if (cfg.ticker_top) {
+                            bottomBar.style.top = cfg.ticker_top;
                             bottomBar.style.bottom = 'auto';
                         } else {
                             bottomBar.style.bottom = '0';
                             bottomBar.style.top = 'auto';
                         }
-                        if (cfg[lp + 'ticker_left']) {
-                            bottomBar.style.left = cfg[lp + 'ticker_left'];
+                        if (cfg.ticker_left) {
+                            bottomBar.style.left = cfg.ticker_left;
                         } else {
                             bottomBar.style.left = '0';
                         }
@@ -1437,7 +1325,7 @@
 
                 const bannerContainer = document.querySelector('.hc-banner-float');
                 if (bannerContainer) {
-                    if (cfg[lp + 'banner_show'] === '0') {
+                    if (cfg.banner_show === '0') {
                         bannerContainer.classList.remove('banner-active');
                         bannerContainer.dataset.bannerHiddenByToggle = '1';
                     } else {
@@ -1449,29 +1337,47 @@
                 // 티커 카드 및 이미지 배너 렌더링 (page 1, 2 공통)
                 renderTickerCards(cfg);
 
-                if (!document.body.classList.contains('host-mode')) return;
-
-                // 진행자 네임택 위치 및 가시성 적용
-                const ntContainer = document.getElementById('host-nametag-container');
-                if (ntContainer) {
-                    ntContainer.style.left = 'auto';
-                    ntContainer.style.right = 'auto';
-                    ntContainer.style.top = 'auto';
-                    ntContainer.style.bottom = 'auto';
-                    const ntRight = cfg.nametag_right;
-                    const ntLeft = cfg.nametag_left;
-                    const ntTop = cfg.nametag_top;
-                    const ntBottom = cfg.nametag_bottom;
-                    if (ntRight && ntRight !== 'auto') { ntContainer.style.right = ntRight; }
-                    else if (ntLeft && ntLeft !== 'auto') { ntContainer.style.left = ntLeft; }
-                    else { ntContainer.style.left = '3%'; }
-                    if (ntBottom && ntBottom !== 'auto') { ntContainer.style.bottom = ntBottom; }
-                    else if (ntTop && ntTop !== 'auto') { ntContainer.style.top = ntTop; }
-                    else { ntContainer.style.bottom = '6%'; }
+                // 네임택(hc-header) 위치 및 show/hide
+                const hcHeaderEl = document.getElementById('hc-header-float');
+                if (hcHeaderEl) {
                     if (cfg.nametag_show === '0') {
-                        ntContainer.style.display = 'none';
+                        hcHeaderEl.style.setProperty('display', 'none', 'important');
+                    } else {
+                        hcHeaderEl.style.removeProperty('display');
+                        hcHeaderEl.style.removeProperty('left');
+                        hcHeaderEl.style.removeProperty('right');
+                        hcHeaderEl.style.removeProperty('top');
+                        hcHeaderEl.style.removeProperty('bottom');
+                        const ntIsVal = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
+                        if (ntIsVal(cfg.nametag_right)) { hcHeaderEl.style.right = cfg.nametag_right; }
+                        else if (ntIsVal(cfg.nametag_left)) { hcHeaderEl.style.left = cfg.nametag_left; }
+                        else { hcHeaderEl.style.right = '1%'; }
+                        if (ntIsVal(cfg.nametag_bottom)) { hcHeaderEl.style.bottom = cfg.nametag_bottom; }
+                        else if (ntIsVal(cfg.nametag_top)) { hcHeaderEl.style.top = cfg.nametag_top; }
+                        else { hcHeaderEl.style.top = '3%'; }
                     }
                 }
+
+                // 룰카드(hc-rules-stack) 위치 및 show/hide
+                const rulesStackEl = document.getElementById('hc-rules-stack');
+                if (rulesStackEl) {
+                    rulesStackEl.style.removeProperty('left');
+                    rulesStackEl.style.removeProperty('right');
+                    rulesStackEl.style.removeProperty('top');
+                    rulesStackEl.style.removeProperty('bottom');
+                    const rsIsVal = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
+                    if (rsIsVal(cfg.rules_right)) { rulesStackEl.style.right = cfg.rules_right; }
+                    else if (rsIsVal(cfg.rules_left)) { rulesStackEl.style.left = cfg.rules_left; }
+                    else { rulesStackEl.style.right = '1%'; }
+                    if (rsIsVal(cfg.rules_bottom)) { rulesStackEl.style.bottom = cfg.rules_bottom; }
+                    else if (rsIsVal(cfg.rules_top)) { rulesStackEl.style.top = cfg.rules_top; }
+                    else { rulesStackEl.style.bottom = '12%'; }
+                    if (cfg.rules_show === '0') {
+                        rulesStackEl.style.setProperty('display', 'none', 'important');
+                    }
+                }
+
+                if (!document.body.classList.contains('host-mode')) return;
                 // 룰 → 개별 필 박스 생성 (라벨 없이 값만) — host mode 전용
                 const stackEl = document.getElementById('hc-rules-stack');
                 stackEl.innerHTML = '';
@@ -1513,25 +1419,6 @@
                     stackEl.appendChild(card);
                 }
                 stackEl.style.display = rules.length > 0 ? 'flex' : 'none';
-
-                // 진행자 네임택 렌더링
-                for (let i = 1; i <= 2; i++) {
-                    const name = (cfg['host_name' + i] || '').trim();
-                    const role = (cfg['host_role' + i] || '').trim();
-                    const tag = document.getElementById('host-nametag-' + i);
-                    const nameEl = document.getElementById('nt-name-' + i);
-                    const roleEl = document.getElementById('nt-role-' + i);
-                    if (tag) {
-                        if (name) {
-                            nameEl.textContent = name;
-                            roleEl.textContent = role;
-                            roleEl.style.display = role ? '' : 'none';
-                            tag.style.display = 'flex';
-                        } else {
-                            tag.style.display = 'none';
-                        }
-                    }
-                }
             }).getConfigMap();
         }
 
@@ -1592,8 +1479,9 @@
 
             const displayName = item.displayName || item.name || "";
             document.getElementById("info-name").textContent = displayName;
-            // 페이지2 상단 바에서 업체명 표시 제거
-            document.getElementById("info-sub").textContent = '';
+            const infoSubParts = [];
+            if (item.company) infoSubParts.push(item.company);
+            document.getElementById("info-sub").textContent = infoSubParts.join(' · ');
 
             // 호스트 카드 데이터 렌더링
             document.getElementById("hc-name").textContent = displayName;
@@ -1651,45 +1539,52 @@
             stack.classList.remove('two-photos', 'three-photos');
             if (visCount === 2) stack.classList.add('two-photos');
 
-            // 특성 — checklist/note가 바뀔 때만 pill 배지 재구성
+            // 특성 — checklist/note가 바뀔 때만 마퀴 재구성 (애니메이션 리셋 방지)
             const traitsKey = (item.checklist || "") + "|" + (item.note || "");
             if (traitsKey !== window._lastTraitsKey) {
                 window._lastTraitsKey = traitsKey;
 
                 const track = document.getElementById("traits-track");
                 track.innerHTML = "";
+                track.classList.remove("scroll");
                 if (window._marqueeRaf) { cancelAnimationFrame(window._marqueeRaf); window._marqueeRaf = null; }
 
                 const cl = parseChecklist(item.checklist || "");
                 const gm = { M: "수컷", F: "암컷", U: "미구분" };
                 const yn = { O: "O", X: "X" };
 
-                // pill 배지 생성 함수 (type: 'accent' | 'info' | '' )
-                function addPill(container, text, type) {
-                    const el = document.createElement("span");
-                    el.className = 'pill' + (type ? ' pill-' + type : '');
-                    el.textContent = text;
-                    container.appendChild(el);
+                const items = [];
+                if (cl.gender) items.push(gm[cl.gender] || cl.gender);
+                if (cl.weight) items.push(cl.weight + "g");
+                if (cl.birth) items.push(cl.birth);
+                if (cl.spot) items.push("점:" + (yn[cl.spot] || cl.spot));
+                if (cl.pin) items.push("풀핀:" + (yn[cl.pin] || cl.pin));
+                if (cl.size) items.push("도살:" + (GRADE[cl.size] || cl.size));
+                if (cl.wall) items.push("월높이:" + (GRADE[cl.wall] || cl.wall));
+                if (cl.color) items.push("색감:" + (GRADE[cl.color] || cl.color));
+                if (cl.activity) items.push("활동성:" + (GRADE[cl.activity] || cl.activity));
+                if (cl.feed) items.push("먹이:" + (GRADE[cl.feed] || cl.feed));
+                if (cl.structure) items.push("체형:" + (GRADE[cl.structure] || cl.structure));
+                if (cl.memo) items.push(cl.memo);
+                if (item.note) items.push(item.note);
+
+                function buildItems(container) {
+                    items.forEach((text, i) => {
+                        if (i > 0) {
+                            const dot = document.createElement("span");
+                            dot.className = "dot";
+                            dot.textContent = "·";
+                            container.appendChild(dot);
+                        }
+                        const el = document.createElement("span");
+                        el.className = "t";
+                        el.textContent = text;
+                        container.appendChild(el);
+                    });
                 }
 
-                // 기본 정보 (악센트 컬러)
-                if (cl.gender) addPill(track, gm[cl.gender] || cl.gender, 'accent');
-                if (cl.weight) addPill(track, cl.weight + 'g', 'accent');
-                // 출생일 (info 컬러)
-                if (cl.birth) addPill(track, cl.birth, 'info');
-                // 체크 항목들 (기본 컬러)
-                if (cl.spot) addPill(track, '점:' + (yn[cl.spot] || cl.spot), '');
-                if (cl.pin) addPill(track, '풀핀:' + (yn[cl.pin] || cl.pin), '');
-                if (cl.size) addPill(track, '도살:' + (GRADE[cl.size] || cl.size), '');
-                if (cl.wall) addPill(track, '월높이:' + (GRADE[cl.wall] || cl.wall), '');
-                if (cl.color) addPill(track, '색감:' + (GRADE[cl.color] || cl.color), '');
-                if (cl.activity) addPill(track, '활동성:' + (GRADE[cl.activity] || cl.activity), '');
-                if (cl.feed) addPill(track, '먹이:' + (GRADE[cl.feed] || cl.feed), '');
-                if (cl.structure) addPill(track, '체형:' + (GRADE[cl.structure] || cl.structure), '');
-                if (cl.memo) addPill(track, cl.memo, '');
-                if (item.note) addPill(track, item.note, '');
+                buildItems(track);
 
-                // 호스트 모드 특성 트랙 (page 1 용) — 비워두기
                 const hcTrack = document.getElementById("hc-traits-track");
                 if (hcTrack) {
                     hcTrack.innerHTML = "";
@@ -1697,6 +1592,30 @@
                     const hcTraitsEl = hcTrack.closest('.hc-traits');
                     if (hcTraitsEl) hcTraitsEl.classList.remove('has-items');
                 }
+
+                // 넘치면 단방향 스크롤 (오른쪽 밖 → 왼쪽 밖 → 리셋)
+                setTimeout(() => {
+                    const container = document.getElementById("info-traits");
+                    if (track.scrollWidth > container.clientWidth) {
+                        track.classList.add("scroll");
+                        const viewW = container.clientWidth;
+                        const textW = track.scrollWidth;
+                        const speed = 60;
+                        let x = viewW;
+                        let lastTime = null;
+
+                        function step(ts) {
+                            if (!lastTime) lastTime = ts;
+                            const dt = (ts - lastTime) / 1000;
+                            lastTime = ts;
+                            x -= speed * dt;
+                            if (x < -textW) x = viewW;
+                            track.style.transform = `translate3d(${x}px, -50%, 0)`;
+                            window._marqueeRaf = requestAnimationFrame(step);
+                        }
+                        window._marqueeRaf = requestAnimationFrame(step);
+                    }
+                }, 100);
             }
         }
 
@@ -1763,23 +1682,22 @@
                 const cfg = e.data.config || {};
                 const bottomBar = document.querySelector('.hc-bottom-bar');
                 const bannerContainer = document.querySelector('.hc-banner-float');
-                const lp = document.body.classList.contains('host-mode') ? '' : 'p2_';
 
                 // 티커 show/hide
                 if (bottomBar) {
-                    if (cfg[lp + 'ticker_show'] === '0') {
+                    if (cfg.ticker_show === '0') {
                         bottomBar.style.setProperty('display', 'none', 'important');
                     } else {
                         bottomBar.style.removeProperty('display');
-                        if (cfg[lp + 'ticker_top']) {
-                            bottomBar.style.top = cfg[lp + 'ticker_top'];
+                        if (cfg.ticker_top) {
+                            bottomBar.style.top = cfg.ticker_top;
                             bottomBar.style.bottom = 'auto';
                         } else {
                             bottomBar.style.bottom = '0';
                             bottomBar.style.top = 'auto';
                         }
-                        if (cfg[lp + 'ticker_left']) {
-                            bottomBar.style.left = cfg[lp + 'ticker_left'];
+                        if (cfg.ticker_left) {
+                            bottomBar.style.left = cfg.ticker_left;
                         } else {
                             bottomBar.style.left = '0';
                         }
@@ -1789,7 +1707,7 @@
 
                 // 배너 show/hide
                 if (bannerContainer) {
-                    if (cfg[lp + 'banner_show'] === '0') {
+                    if (cfg.banner_show === '0') {
                         bannerContainer.classList.remove('banner-active');
                         bannerContainer.dataset.bannerHiddenByToggle = '1';
                     } else {
@@ -1797,31 +1715,48 @@
                     }
                 }
 
-                // 스코어보드 폰트 크기, 투명도, 대회명 실시간 반영
-                const sbWrap = document.getElementById('scoreboard-wrap');
-                if (sbWrap) {
-                    if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
-                    if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
-                    const labelEl = sbWrap.querySelector('.top-bar-label');
-                    if (labelEl) {
-                        if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
-                        if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
-                            labelEl.textContent = cfg.scoreboard_label;
-                        }
-                    }
-                    if (cfg.scoreboard_opacity) {
-                        const op = parseFloat(cfg.scoreboard_opacity);
-                        if (!isNaN(op)) {
-                            const nameSection = sbWrap.querySelector('.name-section');
-                            const traitsSection = sbWrap.querySelector('.traits');
-                            if (nameSection) nameSection.style.background = 'rgba(10, 15, 28, ' + op + ')';
-                            if (traitsSection) traitsSection.style.background = 'rgba(20, 28, 46, ' + op + ')';
-                        }
+                // 티커 카드 및 배너 렌더링
+                renderTickerCards(cfg);
+
+                // 네임택(hc-header) 위치 및 show/hide
+                const hcHeaderEl2 = document.getElementById('hc-header-float');
+                if (hcHeaderEl2) {
+                    if (cfg.nametag_show === '0') {
+                        hcHeaderEl2.style.setProperty('display', 'none', 'important');
+                    } else {
+                        hcHeaderEl2.style.removeProperty('display');
+                        hcHeaderEl2.style.removeProperty('left');
+                        hcHeaderEl2.style.removeProperty('right');
+                        hcHeaderEl2.style.removeProperty('top');
+                        hcHeaderEl2.style.removeProperty('bottom');
+                        const ntv = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
+                        if (ntv(cfg.nametag_right)) { hcHeaderEl2.style.right = cfg.nametag_right; }
+                        else if (ntv(cfg.nametag_left)) { hcHeaderEl2.style.left = cfg.nametag_left; }
+                        else { hcHeaderEl2.style.right = '1%'; }
+                        if (ntv(cfg.nametag_bottom)) { hcHeaderEl2.style.bottom = cfg.nametag_bottom; }
+                        else if (ntv(cfg.nametag_top)) { hcHeaderEl2.style.top = cfg.nametag_top; }
+                        else { hcHeaderEl2.style.top = '3%'; }
                     }
                 }
 
-                // 티커 카드 및 배너 렌더링
-                renderTickerCards(cfg);
+                // 룰카드(hc-rules-stack) 위치 및 show/hide
+                const rulesStackEl2 = document.getElementById('hc-rules-stack');
+                if (rulesStackEl2) {
+                    rulesStackEl2.style.removeProperty('left');
+                    rulesStackEl2.style.removeProperty('right');
+                    rulesStackEl2.style.removeProperty('top');
+                    rulesStackEl2.style.removeProperty('bottom');
+                    const rsv = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
+                    if (rsv(cfg.rules_right)) { rulesStackEl2.style.right = cfg.rules_right; }
+                    else if (rsv(cfg.rules_left)) { rulesStackEl2.style.left = cfg.rules_left; }
+                    else { rulesStackEl2.style.right = '1%'; }
+                    if (rsv(cfg.rules_bottom)) { rulesStackEl2.style.bottom = cfg.rules_bottom; }
+                    else if (rsv(cfg.rules_top)) { rulesStackEl2.style.top = cfg.rules_top; }
+                    else { rulesStackEl2.style.bottom = '12%'; }
+                    if (cfg.rules_show === '0') {
+                        rulesStackEl2.style.setProperty('display', 'none', 'important');
+                    }
+                }
 
                 // 호스트 모드 전용: 룰 카드 렌더
                 if (document.body.classList.contains('host-mode')) {

@@ -161,6 +161,36 @@
             border-color: var(--red) !important;
         }
 
+        /* 🏷️ Draggable Nametag (PAGE1 only) */
+        .draggable-nametag {
+            width: 28%;
+            height: 14%;
+            background: rgba(168, 85, 247, 0.15);
+            border: 2px dashed #A855F7;
+            border-radius: 12px;
+            box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+        }
+
+        .draggable-nametag:hover {
+            border-color: #C084FC;
+            background: rgba(168, 85, 247, 0.25);
+        }
+
+        /* 📋 Draggable Rules Card (PAGE1 only) */
+        .draggable-rules {
+            width: 20%;
+            height: 28%;
+            background: rgba(245, 158, 11, 0.15);
+            border: 2px dashed #F59E0B;
+            border-radius: 12px;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+        }
+
+        .draggable-rules:hover {
+            border-color: #FBBF24;
+            background: rgba(245, 158, 11, 0.25);
+        }
+
         /* 🖼️ Draggable Banner */
         .draggable-banner {
             width: auto;
@@ -192,22 +222,6 @@
         .draggable-ticker:hover {
             border-color: #34D399;
             background: rgba(16, 185, 129, 0.35);
-        }
-
-        /* 🎤 Draggable Nametag (1P 전용) */
-        .draggable-nametag {
-            width: auto;
-            height: auto;
-            padding: 8px 14px;
-            background: rgba(255, 168, 0, 0.15);
-            border: 2px dashed #FFA800;
-            border-radius: 6px;
-            box-shadow: 0 0 12px rgba(255, 168, 0, 0.3);
-            white-space: nowrap;
-        }
-        .draggable-nametag:hover {
-            border-color: #FFD600;
-            background: rgba(255, 168, 0, 0.25);
         }
 
         .element-label {
@@ -391,9 +405,14 @@
                     <div class="element-label">📢 공지사항 자막 (티커)</div>
                 </div>
 
-                <!-- 3. Draggable Nametag (1P 전용) -->
+                <!-- 3. Draggable Nametag (PAGE1 only) -->
                 <div class="draggable-element draggable-nametag" id="draggable-nametag" data-type="nametag" style="display:none;">
-                    <div class="element-label">🎤 진행자 네임택</div>
+                    <div class="element-label">🏷️ 네임택 (이름표)</div>
+                </div>
+
+                <!-- 4. Draggable Rules Card (PAGE1 only) -->
+                <div class="draggable-element draggable-rules" id="draggable-rules" data-type="rules" style="display:none;">
+                    <div class="element-label">📋 룰 카드 (안내사항)</div>
                 </div>
             </div>
         </div>
@@ -410,9 +429,13 @@
                         <span>🖼️ 배너 노출</span>
                         <input type="checkbox" id="toggle-banner-show" class="switch-input" checked onchange="toggleShowState('banner')">
                     </div>
-                    <div class="switch-container" id="toggle-nametag-wrap" style="display:none;">
-                        <span>🎤 네임택 노출</span>
+                    <div class="switch-container" id="toggle-nametag-group" style="display:none;">
+                        <span>🏷️ 네임택 노출</span>
                         <input type="checkbox" id="toggle-nametag-show" class="switch-input" checked onchange="toggleShowState('nametag')">
+                    </div>
+                    <div class="switch-container" id="toggle-rules-group" style="display:none;">
+                        <span>📋 룰카드 노출</span>
+                        <input type="checkbox" id="toggle-rules-show" class="switch-input" checked onchange="toggleShowState('rules')">
                     </div>
                 </div>
                 <div class="actions-row">
@@ -425,7 +448,8 @@
                 <div class="status-txt">
                     배너 좌표: Top <strong id="banner-val-top">0%</strong>, Left <strong id="banner-val-left">0%</strong> | 
                     자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong>
-                    <span id="nametag-pos-label" style="display:none;"> | 네임택: Top <strong id="nametag-val-top">0%</strong>, Left <strong id="nametag-val-left">0%</strong></span>
+                    <span id="nametag-coords" style="display:none;"> | 네임택: Top <strong id="nametag-val-top">0%</strong>, Left <strong id="nametag-val-left">0%</strong></span>
+                    <span id="rules-coords" style="display:none;"> | 룰카드: Top <strong id="rules-val-top">0%</strong>, Left <strong id="rules-val-left">0%</strong></span>
                     <span id="save-status" style="margin-left: 10px; color: var(--green); display: none;">✓ 저장 완료</span>
                 </div>
             </div>
@@ -438,7 +462,6 @@
         // URL Parameter Parsing (page=1 or page=2)
         const params = new URLSearchParams(window.location.search);
         const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
-        const cfgPrefix = pageNum === '1' ? '' : 'p2_'; // 페이지2는 p2_ 접두사 사용
 
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
@@ -450,6 +473,16 @@
             document.getElementById('btn-tab-p2').classList.add('active');
             document.getElementById('page-title').textContent = "📺 개체용 (2P) 실시간 레이아웃 배치기";
             frame.src = "broadcast.html"; // Default page2 layout
+        }
+
+        // PAGE1 전용 요소 표시
+        if (pageNum === '1') {
+            document.getElementById('draggable-nametag').style.display = '';
+            document.getElementById('draggable-rules').style.display = '';
+            document.getElementById('toggle-nametag-group').style.display = '';
+            document.getElementById('toggle-rules-group').style.display = '';
+            document.getElementById('nametag-coords').style.display = '';
+            document.getElementById('rules-coords').style.display = '';
         }
 
         // Draggables Configuration
@@ -471,22 +504,27 @@
                 right: "auto",
                 bottom: "4%",
                 show: "1"
-            },
-            nametag: {
-                el: document.getElementById('draggable-nametag'),
-                top: "auto",
-                left: "3%",
-                right: "auto",
-                bottom: "6%",
-                show: "1"
             }
         };
 
-        // 1P일 때만 네임택 드래그 요소 표시
+        // PAGE1 전용 드래그 요소 추가
         if (pageNum === '1') {
-            elements.nametag.el.style.display = '';
-            document.getElementById('toggle-nametag-wrap').style.display = '';
-            document.getElementById('nametag-pos-label').style.display = '';
+            elements.nametag = {
+                el: document.getElementById('draggable-nametag'),
+                top: "3%",
+                left: "auto",
+                right: "1%",
+                bottom: "auto",
+                show: "1"
+            };
+            elements.rules = {
+                el: document.getElementById('draggable-rules'),
+                top: "auto",
+                left: "auto",
+                right: "1%",
+                bottom: "12%",
+                show: "1"
+            };
         }
 
         let activeDragKey = null;
@@ -518,38 +556,49 @@
             google.script.run.withSuccessHandler(function(cfg) {
                 if (!cfg) return;
 
-                // Load Banner values (페이지별 독립 키)
-                elements.banner.top = cfg[cfgPrefix + 'banner_top'] || 'auto';
-                elements.banner.left = cfg[cfgPrefix + 'banner_left'] || 'auto';
-                elements.banner.right = cfg[cfgPrefix + 'banner_right'] || 'auto';
-                elements.banner.bottom = cfg[cfgPrefix + 'banner_bottom'] || 'auto';
-                elements.banner.show = cfg[cfgPrefix + 'banner_show'] !== undefined ? String(cfg[cfgPrefix + 'banner_show']) : '1';
+                // Load Banner values
+                elements.banner.top = cfg.banner_top || 'auto';
+                elements.banner.left = cfg.banner_left || 'auto';
+                elements.banner.right = cfg.banner_right || 'auto';
+                elements.banner.bottom = cfg.banner_bottom || 'auto';
+                elements.banner.show = cfg.banner_show !== undefined ? String(cfg.banner_show) : '1';
 
-                // Load Ticker values (페이지별 독립 키)
-                elements.ticker.top = cfg[cfgPrefix + 'ticker_top'] || 'auto';
-                elements.ticker.left = cfg[cfgPrefix + 'ticker_left'] || 'auto';
-                elements.ticker.right = cfg[cfgPrefix + 'ticker_right'] || 'auto';
-                elements.ticker.bottom = cfg[cfgPrefix + 'ticker_bottom'] || 'auto';
-                elements.ticker.show = cfg[cfgPrefix + 'ticker_show'] !== undefined ? String(cfg[cfgPrefix + 'ticker_show']) : '1';
+                // Load Ticker values
+                elements.ticker.top = cfg.ticker_top || 'auto';
+                elements.ticker.left = cfg.ticker_left || 'auto';
+                elements.ticker.right = cfg.ticker_right || 'auto';
+                elements.ticker.bottom = cfg.ticker_bottom || 'auto';
+                elements.ticker.show = cfg.ticker_show !== undefined ? String(cfg.ticker_show) : '1';
 
-                // Load Nametag values (1P 전용)
-                if (pageNum === '1') {
-                    elements.nametag.top = cfg.nametag_top || 'auto';
-                    elements.nametag.left = cfg.nametag_left || '3%';
-                    elements.nametag.right = cfg.nametag_right || 'auto';
-                    elements.nametag.bottom = cfg.nametag_bottom || '6%';
+                // Load Nametag values (PAGE1 only)
+                if (elements.nametag) {
+                    elements.nametag.top = cfg.nametag_top || '3%';
+                    elements.nametag.left = cfg.nametag_left || 'auto';
+                    elements.nametag.right = cfg.nametag_right || '1%';
+                    elements.nametag.bottom = cfg.nametag_bottom || 'auto';
                     elements.nametag.show = cfg.nametag_show !== undefined ? String(cfg.nametag_show) : '1';
-                    applyVisualState('nametag');
-                    document.getElementById('toggle-nametag-show').checked = elements.nametag.show === "1";
+                }
+
+                // Load Rules values (PAGE1 only)
+                if (elements.rules) {
+                    elements.rules.top = cfg.rules_top || 'auto';
+                    elements.rules.left = cfg.rules_left || 'auto';
+                    elements.rules.right = cfg.rules_right || '1%';
+                    elements.rules.bottom = cfg.rules_bottom || '12%';
+                    elements.rules.show = cfg.rules_show !== undefined ? String(cfg.rules_show) : '1';
                 }
 
                 // Apply states visually
                 applyVisualState('banner');
                 applyVisualState('ticker');
+                if (elements.nametag) applyVisualState('nametag');
+                if (elements.rules) applyVisualState('rules');
 
                 // Update switch checkboxes
                 document.getElementById('toggle-banner-show').checked = elements.banner.show === "1";
                 document.getElementById('toggle-ticker-show').checked = elements.ticker.show === "1";
+                if (elements.nametag) document.getElementById('toggle-nametag-show').checked = elements.nametag.show === "1";
+                if (elements.rules) document.getElementById('toggle-rules-show').checked = elements.rules.show === "1";
 
                 updateLabelReadouts();
 
@@ -646,12 +695,19 @@
             document.getElementById('ticker-val-top').textContent = tYStr;
             document.getElementById('ticker-val-left').textContent = tXStr;
 
-            if (pageNum === '1') {
+            if (elements.nametag) {
                 const n = elements.nametag;
                 const nXStr = n.right !== 'auto' ? `Right ${n.right}` : `Left ${n.left}`;
                 const nYStr = n.bottom !== 'auto' ? `Bottom ${n.bottom}` : `Top ${n.top}`;
                 document.getElementById('nametag-val-top').textContent = nYStr;
                 document.getElementById('nametag-val-left').textContent = nXStr;
+            }
+            if (elements.rules) {
+                const r = elements.rules;
+                const rXStr = r.right !== 'auto' ? `Right ${r.right}` : `Left ${r.left}`;
+                const rYStr = r.bottom !== 'auto' ? `Bottom ${r.bottom}` : `Top ${r.top}`;
+                document.getElementById('rules-val-top').textContent = rYStr;
+                document.getElementById('rules-val-left').textContent = rXStr;
             }
         }
 
@@ -742,23 +798,34 @@
         }
 
         function saveCoordinates(isAuto = false) {
-            const configMap = {};
-            configMap[cfgPrefix + 'banner_top'] = elements.banner.top;
-            configMap[cfgPrefix + 'banner_left'] = elements.banner.left;
-            configMap[cfgPrefix + 'banner_right'] = elements.banner.right;
-            configMap[cfgPrefix + 'banner_bottom'] = elements.banner.bottom;
-            configMap[cfgPrefix + 'banner_show'] = elements.banner.show;
-            configMap[cfgPrefix + 'ticker_top'] = elements.ticker.top;
-            configMap[cfgPrefix + 'ticker_left'] = elements.ticker.left;
-            configMap[cfgPrefix + 'ticker_right'] = elements.ticker.right;
-            configMap[cfgPrefix + 'ticker_bottom'] = elements.ticker.bottom;
-            configMap[cfgPrefix + 'ticker_show'] = elements.ticker.show;
-            if (pageNum === '1') {
+            const configMap = {
+                banner_top: elements.banner.top,
+                banner_left: elements.banner.left,
+                banner_right: elements.banner.right,
+                banner_bottom: elements.banner.bottom,
+                banner_show: elements.banner.show,
+                
+                ticker_top: elements.ticker.top,
+                ticker_left: elements.ticker.left,
+                ticker_right: elements.ticker.right,
+                ticker_bottom: elements.ticker.bottom,
+                ticker_show: elements.ticker.show
+            };
+
+            // PAGE1 전용: 네임택/룰카드 좌표 저장
+            if (elements.nametag) {
                 configMap.nametag_top = elements.nametag.top;
                 configMap.nametag_left = elements.nametag.left;
                 configMap.nametag_right = elements.nametag.right;
                 configMap.nametag_bottom = elements.nametag.bottom;
                 configMap.nametag_show = elements.nametag.show;
+            }
+            if (elements.rules) {
+                configMap.rules_top = elements.rules.top;
+                configMap.rules_left = elements.rules.left;
+                configMap.rules_right = elements.rules.right;
+                configMap.rules_bottom = elements.rules.bottom;
+                configMap.rules_show = elements.rules.show;
             }
 
             google.script.run.withSuccessHandler(function() {
@@ -787,18 +854,27 @@
             elements.ticker.bottom = "4%";
             elements.ticker.show = "1";
 
-            if (pageNum === '1') {
-                elements.nametag.top = "auto";
-                elements.nametag.left = "3%";
-                elements.nametag.right = "auto";
-                elements.nametag.bottom = "6%";
+            document.getElementById('toggle-banner-show').checked = true;
+            document.getElementById('toggle-ticker-show').checked = true;
+
+            if (elements.nametag) {
+                elements.nametag.top = "3%";
+                elements.nametag.left = "auto";
+                elements.nametag.right = "1%";
+                elements.nametag.bottom = "auto";
                 elements.nametag.show = "1";
                 document.getElementById('toggle-nametag-show').checked = true;
                 applyVisualState('nametag');
             }
-
-            document.getElementById('toggle-banner-show').checked = true;
-            document.getElementById('toggle-ticker-show').checked = true;
+            if (elements.rules) {
+                elements.rules.top = "auto";
+                elements.rules.left = "auto";
+                elements.rules.right = "1%";
+                elements.rules.bottom = "12%";
+                elements.rules.show = "1";
+                document.getElementById('toggle-rules-show').checked = true;
+                applyVisualState('rules');
+            }
 
             applyVisualState('banner');
             applyVisualState('ticker');
