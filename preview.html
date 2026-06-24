@@ -412,6 +412,7 @@
         // URL Parameter Parsing (page=1 or page=2)
         const params = new URLSearchParams(window.location.search);
         const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
+        const cfgPrefix = pageNum === '1' ? '' : 'p2_'; // 페이지2는 p2_ 접두사 사용
 
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
@@ -476,19 +477,19 @@
             google.script.run.withSuccessHandler(function(cfg) {
                 if (!cfg) return;
 
-                // Load Banner values
-                elements.banner.top = cfg.banner_top || 'auto';
-                elements.banner.left = cfg.banner_left || 'auto';
-                elements.banner.right = cfg.banner_right || 'auto';
-                elements.banner.bottom = cfg.banner_bottom || 'auto';
-                elements.banner.show = cfg.banner_show !== undefined ? String(cfg.banner_show) : '1';
+                // Load Banner values (페이지별 독립 키)
+                elements.banner.top = cfg[cfgPrefix + 'banner_top'] || 'auto';
+                elements.banner.left = cfg[cfgPrefix + 'banner_left'] || 'auto';
+                elements.banner.right = cfg[cfgPrefix + 'banner_right'] || 'auto';
+                elements.banner.bottom = cfg[cfgPrefix + 'banner_bottom'] || 'auto';
+                elements.banner.show = cfg[cfgPrefix + 'banner_show'] !== undefined ? String(cfg[cfgPrefix + 'banner_show']) : '1';
 
-                // Load Ticker values
-                elements.ticker.top = cfg.ticker_top || 'auto';
-                elements.ticker.left = cfg.ticker_left || 'auto';
-                elements.ticker.right = cfg.ticker_right || 'auto';
-                elements.ticker.bottom = cfg.ticker_bottom || 'auto';
-                elements.ticker.show = cfg.ticker_show !== undefined ? String(cfg.ticker_show) : '1';
+                // Load Ticker values (페이지별 독립 키)
+                elements.ticker.top = cfg[cfgPrefix + 'ticker_top'] || 'auto';
+                elements.ticker.left = cfg[cfgPrefix + 'ticker_left'] || 'auto';
+                elements.ticker.right = cfg[cfgPrefix + 'ticker_right'] || 'auto';
+                elements.ticker.bottom = cfg[cfgPrefix + 'ticker_bottom'] || 'auto';
+                elements.ticker.show = cfg[cfgPrefix + 'ticker_show'] !== undefined ? String(cfg[cfgPrefix + 'ticker_show']) : '1';
 
                 // Apply states visually
                 applyVisualState('banner');
@@ -681,19 +682,17 @@
         }
 
         function saveCoordinates(isAuto = false) {
-            const configMap = {
-                banner_top: elements.banner.top,
-                banner_left: elements.banner.left,
-                banner_right: elements.banner.right,
-                banner_bottom: elements.banner.bottom,
-                banner_show: elements.banner.show,
-                
-                ticker_top: elements.ticker.top,
-                ticker_left: elements.ticker.left,
-                ticker_right: elements.ticker.right,
-                ticker_bottom: elements.ticker.bottom,
-                ticker_show: elements.ticker.show
-            };
+            const configMap = {};
+            configMap[cfgPrefix + 'banner_top'] = elements.banner.top;
+            configMap[cfgPrefix + 'banner_left'] = elements.banner.left;
+            configMap[cfgPrefix + 'banner_right'] = elements.banner.right;
+            configMap[cfgPrefix + 'banner_bottom'] = elements.banner.bottom;
+            configMap[cfgPrefix + 'banner_show'] = elements.banner.show;
+            configMap[cfgPrefix + 'ticker_top'] = elements.ticker.top;
+            configMap[cfgPrefix + 'ticker_left'] = elements.ticker.left;
+            configMap[cfgPrefix + 'ticker_right'] = elements.ticker.right;
+            configMap[cfgPrefix + 'ticker_bottom'] = elements.ticker.bottom;
+            configMap[cfgPrefix + 'ticker_show'] = elements.ticker.show;
 
             google.script.run.withSuccessHandler(function() {
                 // Flash Save status indicator

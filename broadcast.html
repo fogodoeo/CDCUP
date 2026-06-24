@@ -1059,28 +1059,12 @@
             if (!urls.length) return;
 
             const interval = Math.max(parseInt(cfg.banner_interval, 10) || 5000, 2000);
-            const left = normalizeCssLength(cfg.banner_left);
-            const right = normalizeCssLength(cfg.banner_right);
-            const top = normalizeCssLength(cfg.banner_top);
-            const bottom = normalizeCssLength(cfg.banner_bottom);
-
-            // 좌우 설정: left가 있으면 left 사용, 아니면 right 사용
-            if (cfg.banner_left) {
-                container.style.left = cfg.banner_left;
-                container.style.right = 'auto';
-            } else {
-                container.style.right = cfg.banner_right || '1%';
-                container.style.left = 'auto';
-            }
-
-            // 상하 설정: top이 있으면 top 사용, 아니면 bottom 사용
-            if (cfg.banner_top) {
-                container.style.top = cfg.banner_top;
-                container.style.bottom = 'auto';
-            } else {
-                container.style.bottom = cfg.banner_bottom || '4%';
-                container.style.top = 'auto';
-            }
+            // 페이지별 독립 배너 위치 키 (page2는 p2_ 접두사)
+            const bp = isHostMode ? '' : 'p2_';
+            const left = normalizeCssLength(cfg[bp + 'banner_left']);
+            const right = normalizeCssLength(cfg[bp + 'banner_right']);
+            const top = normalizeCssLength(cfg[bp + 'banner_top']);
+            const bottom = normalizeCssLength(cfg[bp + 'banner_bottom']);
 
             container.style.left = 'auto';
             container.style.right = 'auto';
@@ -1346,24 +1330,27 @@
                     }
                 }
                 
-                // 티커(자막 바) 및 배너 글로벌 보이기/숨기기 및 위치 제어
+                // 페이지별 독립 배너/티커 위치 키 접두사
+                const lp = document.body.classList.contains('host-mode') ? '' : 'p2_';
+
+                // 티커(자막 바) 위치 적용
                 const bottomBar = document.querySelector('.hc-bottom-bar');
                 if (bottomBar) {
-                    if (cfg.ticker_show === '0') {
+                    if (cfg[lp + 'ticker_show'] === '0') {
                         bottomBar.style.setProperty('display', 'none', 'important');
                     } else {
                         bottomBar.style.removeProperty('display');
                         
                         // 티커 위치 적용
-                        if (cfg.ticker_top) {
-                            bottomBar.style.top = cfg.ticker_top;
+                        if (cfg[lp + 'ticker_top']) {
+                            bottomBar.style.top = cfg[lp + 'ticker_top'];
                             bottomBar.style.bottom = 'auto';
                         } else {
                             bottomBar.style.bottom = '0';
                             bottomBar.style.top = 'auto';
                         }
-                        if (cfg.ticker_left) {
-                            bottomBar.style.left = cfg.ticker_left;
+                        if (cfg[lp + 'ticker_left']) {
+                            bottomBar.style.left = cfg[lp + 'ticker_left'];
                         } else {
                             bottomBar.style.left = '0';
                         }
@@ -1373,7 +1360,7 @@
 
                 const bannerContainer = document.querySelector('.hc-banner-float');
                 if (bannerContainer) {
-                    if (cfg.banner_show === '0') {
+                    if (cfg[lp + 'banner_show'] === '0') {
                         bannerContainer.classList.remove('banner-active');
                         bannerContainer.dataset.bannerHiddenByToggle = '1';
                     } else {
@@ -1658,22 +1645,23 @@
                 const cfg = e.data.config || {};
                 const bottomBar = document.querySelector('.hc-bottom-bar');
                 const bannerContainer = document.querySelector('.hc-banner-float');
+                const lp = document.body.classList.contains('host-mode') ? '' : 'p2_';
 
                 // 티커 show/hide
                 if (bottomBar) {
-                    if (cfg.ticker_show === '0') {
+                    if (cfg[lp + 'ticker_show'] === '0') {
                         bottomBar.style.setProperty('display', 'none', 'important');
                     } else {
                         bottomBar.style.removeProperty('display');
-                        if (cfg.ticker_top) {
-                            bottomBar.style.top = cfg.ticker_top;
+                        if (cfg[lp + 'ticker_top']) {
+                            bottomBar.style.top = cfg[lp + 'ticker_top'];
                             bottomBar.style.bottom = 'auto';
                         } else {
                             bottomBar.style.bottom = '0';
                             bottomBar.style.top = 'auto';
                         }
-                        if (cfg.ticker_left) {
-                            bottomBar.style.left = cfg.ticker_left;
+                        if (cfg[lp + 'ticker_left']) {
+                            bottomBar.style.left = cfg[lp + 'ticker_left'];
                         } else {
                             bottomBar.style.left = '0';
                         }
@@ -1683,7 +1671,7 @@
 
                 // 배너 show/hide
                 if (bannerContainer) {
-                    if (cfg.banner_show === '0') {
+                    if (cfg[lp + 'banner_show'] === '0') {
                         bannerContainer.classList.remove('banner-active');
                         bannerContainer.dataset.bannerHiddenByToggle = '1';
                     } else {
