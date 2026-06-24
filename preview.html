@@ -194,6 +194,22 @@
             background: rgba(16, 185, 129, 0.35);
         }
 
+        /* 🎤 Draggable Nametag (1P 전용) */
+        .draggable-nametag {
+            width: auto;
+            height: auto;
+            padding: 8px 14px;
+            background: rgba(255, 168, 0, 0.15);
+            border: 2px dashed #FFA800;
+            border-radius: 6px;
+            box-shadow: 0 0 12px rgba(255, 168, 0, 0.3);
+            white-space: nowrap;
+        }
+        .draggable-nametag:hover {
+            border-color: #FFD600;
+            background: rgba(255, 168, 0, 0.25);
+        }
+
         .element-label {
             pointer-events: none;
             background: rgba(15, 23, 42, 0.85);
@@ -374,6 +390,11 @@
                 <div class="draggable-element draggable-ticker" id="draggable-ticker" data-type="ticker">
                     <div class="element-label">📢 공지사항 자막 (티커)</div>
                 </div>
+
+                <!-- 3. Draggable Nametag (1P 전용) -->
+                <div class="draggable-element draggable-nametag" id="draggable-nametag" data-type="nametag" style="display:none;">
+                    <div class="element-label">🎤 진행자 네임택</div>
+                </div>
             </div>
         </div>
 
@@ -389,6 +410,10 @@
                         <span>🖼️ 배너 노출</span>
                         <input type="checkbox" id="toggle-banner-show" class="switch-input" checked onchange="toggleShowState('banner')">
                     </div>
+                    <div class="switch-container" id="toggle-nametag-wrap" style="display:none;">
+                        <span>🎤 네임택 노출</span>
+                        <input type="checkbox" id="toggle-nametag-show" class="switch-input" checked onchange="toggleShowState('nametag')">
+                    </div>
                 </div>
                 <div class="actions-row">
                     <button class="btn-action reset" onclick="resetPositions()">기본 좌표 복구</button>
@@ -400,6 +425,7 @@
                 <div class="status-txt">
                     배너 좌표: Top <strong id="banner-val-top">0%</strong>, Left <strong id="banner-val-left">0%</strong> | 
                     자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong>
+                    <span id="nametag-pos-label" style="display:none;"> | 네임택: Top <strong id="nametag-val-top">0%</strong>, Left <strong id="nametag-val-left">0%</strong></span>
                     <span id="save-status" style="margin-left: 10px; color: var(--green); display: none;">✓ 저장 완료</span>
                 </div>
             </div>
@@ -445,8 +471,23 @@
                 right: "auto",
                 bottom: "4%",
                 show: "1"
+            },
+            nametag: {
+                el: document.getElementById('draggable-nametag'),
+                top: "auto",
+                left: "3%",
+                right: "auto",
+                bottom: "6%",
+                show: "1"
             }
         };
+
+        // 1P일 때만 네임택 드래그 요소 표시
+        if (pageNum === '1') {
+            elements.nametag.el.style.display = '';
+            document.getElementById('toggle-nametag-wrap').style.display = '';
+            document.getElementById('nametag-pos-label').style.display = '';
+        }
 
         let activeDragKey = null;
         let isDragging = false;
@@ -490,6 +531,17 @@
                 elements.ticker.right = cfg[cfgPrefix + 'ticker_right'] || 'auto';
                 elements.ticker.bottom = cfg[cfgPrefix + 'ticker_bottom'] || 'auto';
                 elements.ticker.show = cfg[cfgPrefix + 'ticker_show'] !== undefined ? String(cfg[cfgPrefix + 'ticker_show']) : '1';
+
+                // Load Nametag values (1P 전용)
+                if (pageNum === '1') {
+                    elements.nametag.top = cfg.nametag_top || 'auto';
+                    elements.nametag.left = cfg.nametag_left || '3%';
+                    elements.nametag.right = cfg.nametag_right || 'auto';
+                    elements.nametag.bottom = cfg.nametag_bottom || '6%';
+                    elements.nametag.show = cfg.nametag_show !== undefined ? String(cfg.nametag_show) : '1';
+                    applyVisualState('nametag');
+                    document.getElementById('toggle-nametag-show').checked = elements.nametag.show === "1";
+                }
 
                 // Apply states visually
                 applyVisualState('banner');
@@ -593,6 +645,14 @@
             document.getElementById('banner-val-left').textContent = bXStr;
             document.getElementById('ticker-val-top').textContent = tYStr;
             document.getElementById('ticker-val-left').textContent = tXStr;
+
+            if (pageNum === '1') {
+                const n = elements.nametag;
+                const nXStr = n.right !== 'auto' ? `Right ${n.right}` : `Left ${n.left}`;
+                const nYStr = n.bottom !== 'auto' ? `Bottom ${n.bottom}` : `Top ${n.top}`;
+                document.getElementById('nametag-val-top').textContent = nYStr;
+                document.getElementById('nametag-val-left').textContent = nXStr;
+            }
         }
 
         // Drag Setup
@@ -693,6 +753,13 @@
             configMap[cfgPrefix + 'ticker_right'] = elements.ticker.right;
             configMap[cfgPrefix + 'ticker_bottom'] = elements.ticker.bottom;
             configMap[cfgPrefix + 'ticker_show'] = elements.ticker.show;
+            if (pageNum === '1') {
+                configMap.nametag_top = elements.nametag.top;
+                configMap.nametag_left = elements.nametag.left;
+                configMap.nametag_right = elements.nametag.right;
+                configMap.nametag_bottom = elements.nametag.bottom;
+                configMap.nametag_show = elements.nametag.show;
+            }
 
             google.script.run.withSuccessHandler(function() {
                 // Flash Save status indicator
@@ -719,6 +786,16 @@
             elements.ticker.right = "auto";
             elements.ticker.bottom = "4%";
             elements.ticker.show = "1";
+
+            if (pageNum === '1') {
+                elements.nametag.top = "auto";
+                elements.nametag.left = "3%";
+                elements.nametag.right = "auto";
+                elements.nametag.bottom = "6%";
+                elements.nametag.show = "1";
+                document.getElementById('toggle-nametag-show').checked = true;
+                applyVisualState('nametag');
+            }
 
             document.getElementById('toggle-banner-show').checked = true;
             document.getElementById('toggle-ticker-show').checked = true;

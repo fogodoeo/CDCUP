@@ -1274,11 +1274,13 @@
             }
 
             const interval = Math.max(parseInt(cfg.banner_interval, 10) || 5000, 2000);
+            // 페이지별 독립 배너 위치 키 (page2는 p2_ 접두사)
+            const bp = isHostMode ? '' : 'p2_';
             const layout = {
-                left: normalizeCssLength(cfg.banner_left),
-                right: normalizeCssLength(cfg.banner_right),
-                top: normalizeCssLength(cfg.banner_top),
-                bottom: normalizeCssLength(cfg.banner_bottom)
+                left: normalizeCssLength(cfg[bp + 'banner_left']),
+                right: normalizeCssLength(cfg[bp + 'banner_right']),
+                top: normalizeCssLength(cfg[bp + 'banner_top']),
+                bottom: normalizeCssLength(cfg[bp + 'banner_bottom'])
             };
             const maxW = normalizeCssLength(cfg.banner_maxwidth) || '42vw';
             const maxH = normalizeCssLength(cfg.banner_maxheight) || '50vh';
@@ -1287,7 +1289,7 @@
 
             applyBannerPlacement(container, layout);
             container.style.setProperty('--banner-opacity', bannerOpacity);
-            const bannerShowOff = cfg.banner_show === '0' || container.dataset.bannerHiddenByToggle === '1';
+            const bannerShowOff = cfg[bp + 'banner_show'] === '0' || container.dataset.bannerHiddenByToggle === '1';
             if (bannerHidden || bannerShowOff || !urls.length) {
                 if (window._bannerRotateTimer) {
                     clearInterval(window._bannerRotateTimer);
@@ -1448,6 +1450,28 @@
                 renderTickerCards(cfg);
 
                 if (!document.body.classList.contains('host-mode')) return;
+
+                // 진행자 네임택 위치 및 가시성 적용
+                const ntContainer = document.getElementById('host-nametag-container');
+                if (ntContainer) {
+                    ntContainer.style.left = 'auto';
+                    ntContainer.style.right = 'auto';
+                    ntContainer.style.top = 'auto';
+                    ntContainer.style.bottom = 'auto';
+                    const ntRight = cfg.nametag_right;
+                    const ntLeft = cfg.nametag_left;
+                    const ntTop = cfg.nametag_top;
+                    const ntBottom = cfg.nametag_bottom;
+                    if (ntRight && ntRight !== 'auto') { ntContainer.style.right = ntRight; }
+                    else if (ntLeft && ntLeft !== 'auto') { ntContainer.style.left = ntLeft; }
+                    else { ntContainer.style.left = '3%'; }
+                    if (ntBottom && ntBottom !== 'auto') { ntContainer.style.bottom = ntBottom; }
+                    else if (ntTop && ntTop !== 'auto') { ntContainer.style.top = ntTop; }
+                    else { ntContainer.style.bottom = '6%'; }
+                    if (cfg.nametag_show === '0') {
+                        ntContainer.style.display = 'none';
+                    }
+                }
                 // 룰 → 개별 필 박스 생성 (라벨 없이 값만) — host mode 전용
                 const stackEl = document.getElementById('hc-rules-stack');
                 stackEl.innerHTML = '';
