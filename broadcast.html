@@ -845,7 +845,7 @@
         }
 
         function splitTickerMessages(raw) {
-            const text = String(raw || '').replace(//g, '').trim();
+            const text = String(raw || '').replace(/\r/g, '').trim();
             if (!text) return [];
 
             const newlineParts = text.split(/\n+/).map(v => v.trim()).filter(Boolean);
