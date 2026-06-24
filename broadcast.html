@@ -1001,13 +1001,14 @@
         }
 
         // 우하단 이미지 배너 로테이션
-        function buildTickerRenderKey(messages, interval, bgValue, sponsors, logoSize) {
+        function buildTickerRenderKey(messages, interval, bgValue, sponsors, logoSize, fontSize) {
             return JSON.stringify({
                 messages: messages,
                 interval: interval,
                 bg: String(bgValue || '').trim(),
                 sponsors: sponsors,
-                logoSize: logoSize
+                logoSize: logoSize,
+                fontSize: fontSize
             });
         }
 
@@ -1029,7 +1030,8 @@
             }
 
             const logoSize = parseInt(cfg.ticker_sponsor_size, 10) || 46;
-            const tickerKey = buildTickerRenderKey(messages, interval, bgValue, sponsors, logoSize);
+            const fontSize = parseInt(cfg.ticker_fontsize, 10) || 40;
+            const tickerKey = buildTickerRenderKey(messages, interval, bgValue, sponsors, logoSize, fontSize);
 
             applyTickerBackground(bottomBar, bgValue);
 
@@ -1106,6 +1108,7 @@
                 card.className = 'ticker-card';
                 const text = document.createElement('div');
                 text.className = 'ticker-card-text';
+                text.style.fontSize = fontSize + 'px';
                 text.innerHTML = renderColorMarkup(messages[index]);
                 card.appendChild(text);
                 stage.appendChild(card);

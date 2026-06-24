@@ -325,6 +325,7 @@
                 <div class="form-group"><label>롤링 간격 (ms)</label><input type="number" id="cfg-ticker-interval" placeholder="4200"></div>
                 <div class="form-group"><label>LIVE 배지</label><input type="text" id="cfg-badge-text" placeholder="LIVE"></div>
                 <div class="form-group"><label>로고 크기 (px)</label><input type="number" id="cfg-ticker-sponsor-size" placeholder="46"></div>
+                <div class="form-group"><label>자막 폰트 크기 (px)</label><input type="number" id="cfg-ticker-fontsize" placeholder="40"></div>
             </div>
             <div class="form-group">
                 <label>배경 스타일</label>
@@ -802,6 +803,7 @@
                 banner_maxwidth: document.getElementById('cfg-banner-maxwidth').value,
                 banner_maxheight: document.getElementById('cfg-banner-maxheight').value,
                 ticker_sponsor_size: document.getElementById('cfg-ticker-sponsor-size').value,
+                ticker_fontsize: document.getElementById('cfg-ticker-fontsize').value,
                 ticker_show: _toggleStates.ticker,
                 banner_show: _toggleStates.banner,
                 rules_position: _rulesPos,
@@ -867,6 +869,7 @@
                 document.getElementById('cfg-badge-text').value = cfg.badge_text || 'LIVE';
                 document.getElementById('cfg-ticker-interval').value = cfg.ticker_interval || '4200';
                 document.getElementById('cfg-ticker-sponsor-size').value = cfg.ticker_sponsor_size || '';
+                document.getElementById('cfg-ticker-fontsize').value = cfg.ticker_fontsize || '';
                 document.getElementById('cfg-ticker-bg').value = cfg.ticker_background || '';
                 document.getElementById('cfg-banner-interval').value = cfg.banner_interval || '5000';
                 document.getElementById('cfg-banner-opacity').value = cfg.banner_opacity || '0.93';
