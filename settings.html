@@ -359,6 +359,9 @@
                 <div class="form-group"><label>진행자 1 역할</label><input type="text" id="cfg-host-role1" placeholder="예: MC"></div>
                 <div class="form-group"><label>진행자 2 역할</label><input type="text" id="cfg-host-role2" placeholder="예: 해설"></div>
             </div>
+            <div class="form-row">
+                <div class="form-group"><label>네임택 폰트 크기 (px)</label><input type="number" id="cfg-nametag-font-size" placeholder="22"></div>
+            </div>
         </div>
 
         <!-- ══ 2P 스코어보드 설정 ══ -->
@@ -714,6 +717,7 @@
                 host_name2: document.getElementById('cfg-host-name2').value,
                 host_role1: document.getElementById('cfg-host-role1').value,
                 host_role2: document.getElementById('cfg-host-role2').value,
+                nametag_font_size: document.getElementById('cfg-nametag-font-size').value,
             };
             // banners
             document.querySelectorAll('.cfg-banner-url').forEach((input, i) => {
@@ -799,6 +803,7 @@
                 document.getElementById('cfg-host-name2').value = cfg.host_name2 || '';
                 document.getElementById('cfg-host-role1').value = cfg.host_role1 || '';
                 document.getElementById('cfg-host-role2').value = cfg.host_role2 || '';
+                document.getElementById('cfg-nametag-font-size').value = cfg.nametag_font_size || '';
             }).getConfigMap();
         }
 

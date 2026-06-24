@@ -598,22 +598,32 @@
 
                 // Load Nametag 1 & 2 values (PAGE1 only)
                 if (elements.nametag1) {
+                    const sharedW = cfg.nametag_width || cfg.nametag1_width || '16vw';
+                    const sharedH = cfg.nametag_height || cfg.nametag1_height || '8vh';
+                    const sharedLeft = cfg.nametag_left || cfg.nametag1_left || '3%';
+                    const sharedRight = cfg.nametag_right || cfg.nametag1_right || 'auto';
+
                     elements.nametag1.top = cfg.nametag1_top || 'auto';
-                    elements.nametag1.left = cfg.nametag1_left || '3%';
-                    elements.nametag1.right = cfg.nametag1_right || 'auto';
+                    elements.nametag1.left = sharedLeft;
+                    elements.nametag1.right = sharedRight;
                     elements.nametag1.bottom = cfg.nametag1_bottom || '6%';
                     elements.nametag1.show = cfg.nametag1_show !== undefined ? String(cfg.nametag1_show) : '1';
-                    elements.nametag1.width = cfg.nametag1_width || '16vw';
-                    elements.nametag1.height = cfg.nametag1_height || '8vh';
+                    elements.nametag1.width = sharedW;
+                    elements.nametag1.height = sharedH;
                 }
                 if (elements.nametag2) {
+                    const sharedW = cfg.nametag_width || cfg.nametag2_width || '16vw';
+                    const sharedH = cfg.nametag_height || cfg.nametag2_height || '8vh';
+                    const sharedLeft = cfg.nametag_left || cfg.nametag2_left || '3%';
+                    const sharedRight = cfg.nametag_right || cfg.nametag2_right || 'auto';
+
                     elements.nametag2.top = cfg.nametag2_top || 'auto';
-                    elements.nametag2.left = cfg.nametag2_left || '18%';
-                    elements.nametag2.right = cfg.nametag2_right || 'auto';
-                    elements.nametag2.bottom = cfg.nametag2_bottom || '6%';
+                    elements.nametag2.left = sharedLeft;
+                    elements.nametag2.right = sharedRight;
+                    elements.nametag2.bottom = cfg.nametag2_bottom || '16%';
                     elements.nametag2.show = cfg.nametag2_show !== undefined ? String(cfg.nametag2_show) : '1';
-                    elements.nametag2.width = cfg.nametag2_width || '16vw';
-                    elements.nametag2.height = cfg.nametag2_height || '8vh';
+                    elements.nametag2.width = sharedW;
+                    elements.nametag2.height = sharedH;
                 }
 
                 // Apply states visually
@@ -822,10 +832,16 @@
                 } else if (resizeTarget === 'nametag1' || resizeTarget === 'nametag2') {
                     const newW = Math.max(50, resizeStartW + dx);
                     const newH = Math.max(30, resizeStartH + dy);
-                    elements[resizeTarget].width = ((newW / containerRect.width) * 100).toFixed(1) + 'vw';
-                    elements[resizeTarget].height = ((newH / containerRect.height) * 100).toFixed(1) + 'vh';
-                    elements[resizeTarget].el.style.width = convertToPercent(elements[resizeTarget].width);
-                    elements[resizeTarget].el.style.height = convertToPercent(elements[resizeTarget].height);
+                    const unifiedW = ((newW / containerRect.width) * 100).toFixed(1) + 'vw';
+                    const unifiedH = ((newH / containerRect.height) * 100).toFixed(1) + 'vh';
+                    elements.nametag1.width = unifiedW;
+                    elements.nametag1.height = unifiedH;
+                    elements.nametag2.width = unifiedW;
+                    elements.nametag2.height = unifiedH;
+                    elements.nametag1.el.style.width = convertToPercent(unifiedW);
+                    elements.nametag1.el.style.height = convertToPercent(unifiedH);
+                    elements.nametag2.el.style.width = convertToPercent(unifiedW);
+                    elements.nametag2.el.style.height = convertToPercent(unifiedH);
                 }
                 updateLabelReadouts();
                 return;
@@ -857,6 +873,34 @@
             if (activeDragKey === 'ticker') {
                 elements[activeDragKey].left = 'auto';
                 elements[activeDragKey].right = 'auto';
+            } else if (activeDragKey === 'nametag1' || activeDragKey === 'nametag2') {
+                // Couple horizontal positions
+                let leftVal = 'auto';
+                let rightVal = 'auto';
+                if (centerX > containerRect.width / 2) {
+                    const rightPx = containerRect.width - (x + el.offsetWidth);
+                    rightVal = ((rightPx / containerRect.width) * 100).toFixed(1) + "%";
+                } else {
+                    leftVal = ((x / containerRect.width) * 100).toFixed(1) + "%";
+                }
+                
+                elements.nametag1.left = leftVal;
+                elements.nametag1.right = rightVal;
+                elements.nametag2.left = leftVal;
+                elements.nametag2.right = rightVal;
+                
+                // Vertical position remains independent for active dragged key
+                if (centerY > containerRect.height / 2) {
+                    const bottomPx = containerRect.height - (y + el.offsetHeight);
+                    elements[activeDragKey].bottom = ((bottomPx / containerRect.height) * 100).toFixed(1) + "%";
+                    elements[activeDragKey].top = 'auto';
+                } else {
+                    elements[activeDragKey].top = ((y / containerRect.height) * 100).toFixed(1) + "%";
+                    elements[activeDragKey].bottom = 'auto';
+                }
+                
+                applyVisualState('nametag1');
+                applyVisualState('nametag2');
             } else {
                 if (centerX > containerRect.width / 2) {
                     const rightPx = containerRect.width - (x + el.offsetWidth);
@@ -866,18 +910,18 @@
                     elements[activeDragKey].left = ((x / containerRect.width) * 100).toFixed(1) + "%";
                     elements[activeDragKey].right = 'auto';
                 }
-            }
 
-            if (centerY > containerRect.height / 2) {
-                const bottomPx = containerRect.height - (y + el.offsetHeight);
-                elements[activeDragKey].bottom = ((bottomPx / containerRect.height) * 100).toFixed(1) + "%";
-                elements[activeDragKey].top = 'auto';
-            } else {
-                elements[activeDragKey].top = ((y / containerRect.height) * 100).toFixed(1) + "%";
-                elements[activeDragKey].bottom = 'auto';
-            }
+                if (centerY > containerRect.height / 2) {
+                    const bottomPx = containerRect.height - (y + el.offsetHeight);
+                    elements[activeDragKey].bottom = ((bottomPx / containerRect.height) * 100).toFixed(1) + "%";
+                    elements[activeDragKey].top = 'auto';
+                } else {
+                    elements[activeDragKey].top = ((y / containerRect.height) * 100).toFixed(1) + "%";
+                    elements[activeDragKey].bottom = 'auto';
+                }
 
-            applyVisualState(activeDragKey);
+                applyVisualState(activeDragKey);
+            }
             updateLabelReadouts();
         }
 
@@ -919,24 +963,30 @@
             configMap[cfgPrefix+'ticker_show'] = elements.ticker.show;
             configMap[cfgPrefix+'ticker_height'] = elements.ticker.height;
 
-            // PAGE1 전용: 네임택 1,2 좌표 저장
-            if (elements.nametag1) {
+            // PAGE1 전용: 네임택 1,2 좌표 저장 (수평 및 크기는 공유)
+            if (elements.nametag1 && elements.nametag2) {
+                configMap.nametag_width = elements.nametag1.width;
+                configMap.nametag_height = elements.nametag1.height;
+                configMap.nametag_left = elements.nametag1.left;
+                configMap.nametag_right = elements.nametag1.right;
+
                 configMap.nametag1_top = elements.nametag1.top;
-                configMap.nametag1_left = elements.nametag1.left;
-                configMap.nametag1_right = elements.nametag1.right;
                 configMap.nametag1_bottom = elements.nametag1.bottom;
                 configMap.nametag1_show = elements.nametag1.show;
-                configMap.nametag1_width = elements.nametag1.width;
-                configMap.nametag1_height = elements.nametag1.height;
-            }
-            if (elements.nametag2) {
+
                 configMap.nametag2_top = elements.nametag2.top;
-                configMap.nametag2_left = elements.nametag2.left;
-                configMap.nametag2_right = elements.nametag2.right;
                 configMap.nametag2_bottom = elements.nametag2.bottom;
                 configMap.nametag2_show = elements.nametag2.show;
+
+                // Backwards compatibility
+                configMap.nametag1_width = elements.nametag1.width;
+                configMap.nametag1_height = elements.nametag1.height;
+                configMap.nametag1_left = elements.nametag1.left;
+                configMap.nametag1_right = elements.nametag1.right;
                 configMap.nametag2_width = elements.nametag2.width;
                 configMap.nametag2_height = elements.nametag2.height;
+                configMap.nametag2_left = elements.nametag2.left;
+                configMap.nametag2_right = elements.nametag2.right;
             }
 
             google.script.run.withSuccessHandler(function() {
@@ -986,8 +1036,8 @@
                 applyVisualState('nametag1');
             }
             if (elements.nametag2) {
-                elements.nametag2.top = "auto"; elements.nametag2.left = "18%";
-                elements.nametag2.right = "auto"; elements.nametag2.bottom = "6%";
+                elements.nametag2.top = "auto"; elements.nametag2.left = "3%";
+                elements.nametag2.right = "auto"; elements.nametag2.bottom = "16%";
                 elements.nametag2.show = "1";
                 elements.nametag2.width = "16vw"; elements.nametag2.height = "8vh";
                 elements.nametag2.el.style.width = '16%'; elements.nametag2.el.style.height = '8%';
