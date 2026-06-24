@@ -1001,12 +1001,13 @@
         }
 
         // 우하단 이미지 배너 로테이션
-        function buildTickerRenderKey(messages, interval, bgValue, sponsors) {
+        function buildTickerRenderKey(messages, interval, bgValue, sponsors, logoSize) {
             return JSON.stringify({
                 messages: messages,
                 interval: interval,
                 bg: String(bgValue || '').trim(),
-                sponsors: sponsors
+                sponsors: sponsors,
+                logoSize: logoSize
             });
         }
 
@@ -1027,7 +1028,8 @@
                 if (url.trim()) sponsors.push(url.trim());
             }
 
-            const tickerKey = buildTickerRenderKey(messages, interval, bgValue, sponsors);
+            const logoSize = parseInt(cfg.ticker_sponsor_size, 10) || 46;
+            const tickerKey = buildTickerRenderKey(messages, interval, bgValue, sponsors, logoSize);
 
             applyTickerBackground(bottomBar, bgValue);
 
