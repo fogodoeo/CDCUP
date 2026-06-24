@@ -1476,6 +1476,30 @@
             };
         };
 
+        function syncNametagWidths(cfg) {
+            const tag1 = document.getElementById('host-nametag-1');
+            const tag2 = document.getElementById('host-nametag-2');
+            if (tag1 && tag2) {
+                tag1.style.removeProperty('width');
+                tag2.style.removeProperty('width');
+
+                const isShow1 = (cfg.host_name1 || '').trim() && cfg.nametag1_show !== '0';
+                const isShow2 = (cfg.host_name2 || '').trim() && cfg.nametag2_show !== '0';
+                const ntWidthCfg = cfg.nametag_width || cfg.nametag1_width || cfg.nametag2_width || '';
+                const hasExplicitWidth = ntWidthCfg && ntWidthCfg !== 'auto' && ntWidthCfg !== 'initial' && ntWidthCfg !== 'unset';
+
+                if (isShow1 && isShow2 && !hasExplicitWidth) {
+                    const w1 = tag1.offsetWidth;
+                    const w2 = tag2.offsetWidth;
+                    const maxW = Math.max(w1, w2);
+                    if (maxW > 0) {
+                        tag1.style.width = maxW + 'px';
+                        tag2.style.width = maxW + 'px';
+                    }
+                }
+            }
+        }
+
         function loadHostConfig() {
             if (typeof google === 'undefined' || !google.script || !google.script.run) return;
             google.script.run.withSuccessHandler(function (cfg) {
@@ -1674,6 +1698,7 @@
                         }
                     }
                 }
+                syncNametagWidths(cfg);
             }).getConfigMap();
         }
 
@@ -2056,6 +2081,7 @@
                             }
                         }
                     }
+                    syncNametagWidths(cfg);
                 }
 
                 // 호스트 모드 전용: 룰 카드 렌더
