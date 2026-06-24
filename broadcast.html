@@ -1281,8 +1281,8 @@
                 top: normalizeCssLength(cfg[bp + 'banner_top']),
                 bottom: normalizeCssLength(cfg[bp + 'banner_bottom'])
             };
-            const maxW = normalizeCssLength(cfg.banner_maxwidth) || '42vw';
-            const maxH = normalizeCssLength(cfg.banner_maxheight) || '50vh';
+            const maxW = normalizeCssLength(cfg[bp + 'banner_width']) || normalizeCssLength(cfg.banner_maxwidth) || '42vw';
+            const maxH = normalizeCssLength(cfg[bp + 'banner_height']) || normalizeCssLength(cfg.banner_maxheight) || '50vh';
             const bannerHidden = ['1', 'true', 'yes', 'on'].indexOf(String(cfg.banner_hidden || '').trim().toLowerCase()) >= 0;
             const bannerOpacity = normalizeOpacity(cfg.banner_opacity, 0.93);
 
@@ -1434,6 +1434,11 @@
                         // 티커는 항상 좌우 풀사이즈
                         bottomBar.style.left = '0';
                         bottomBar.style.right = '0';
+                        // 티커 높이 적용
+                        const tH = cfg[lp + 'ticker_height'];
+                        if (tH && tH !== 'auto') {
+                            bottomBar.style.height = tH;
+                        }
                     }
                 }
 
@@ -1785,6 +1790,8 @@
                         }
                         bottomBar.style.left = '0';
                         bottomBar.style.right = '0';
+                        const tH2 = cfg[lp + 'ticker_height'];
+                        if (tH2 && tH2 !== 'auto') bottomBar.style.height = tH2;
                     }
                 }
 

@@ -233,6 +233,29 @@
             gap: 4px;
         }
 
+        /* 리사이즈 핸들 */
+        .resize-handle {
+            position: absolute;
+            z-index: 30;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--accent);
+            border-radius: 3px;
+            pointer-events: auto;
+        }
+        .resize-handle-se {
+            width: 14px; height: 14px;
+            right: -4px; bottom: -4px;
+            cursor: nwse-resize;
+            border-radius: 0 0 6px 0;
+        }
+        .resize-handle-n {
+            width: 40px; height: 10px;
+            top: -4px; left: 50%; transform: translateX(-50%);
+            cursor: ns-resize;
+            border-color: var(--green);
+            border-radius: 4px;
+        }
+
         /* ══ Status Bar & Helper controls ══ */
         .control-panel {
             width: 100%;
@@ -396,11 +419,13 @@
                     <div id="draggable-banner-blur" style="position:absolute; top:0; left:0; width:100%; height:100%; background-size:cover; background-position:center; filter:blur(10px) brightness(0.65); transform:scale(1.1); pointer-events:none; display:none; z-index:0; border-radius:6px;"></div>
                     <img id="draggable-banner-preview" style="width:100%; height:100%; object-fit:contain; border-radius:6px; pointer-events:none; display:none; position:relative; z-index:1;" alt="">
                     <div class="element-label" id="draggable-banner-label" style="z-index:2;">🖼️ 롤링 배너</div>
+                    <div class="resize-handle resize-handle-se" id="resize-banner" title="드래그로 크기 조절"></div>
                 </div>
 
                 <!-- 2. Draggable Ticker (Zamak Bar) -->
                 <div class="draggable-element draggable-ticker" id="draggable-ticker" data-type="ticker">
                     <div class="element-label">📢 공지사항 자막 (티커)</div>
+                    <div class="resize-handle resize-handle-n" id="resize-ticker" title="드래그로 높이 조절"></div>
                 </div>
 
                 <!-- 3. Draggable Nametag 1 (PAGE1 only) -->
@@ -492,19 +517,13 @@
         const elements = {
             banner: {
                 el: document.getElementById('draggable-banner'),
-                top: "auto",
-                left: "auto",
-                right: "1%",
-                bottom: "4%",
-                show: "1"
+                top: "auto", left: "auto", right: "1%", bottom: "4%",
+                show: "1", width: "42%", height: "50%"
             },
             ticker: {
                 el: document.getElementById('draggable-ticker'),
-                top: "auto",
-                left: "auto",
-                right: "auto",
-                bottom: "4%",
-                show: "1"
+                top: "auto", left: "auto", right: "auto", bottom: "4%",
+                show: "1", width: "100%", height: "12%"
             }
         };
 
@@ -522,8 +541,12 @@
 
         let activeDragKey = null;
         let isDragging = false;
+        let isResizing = false;
+        let resizeTarget = null;
         let startX = 0;
         let startY = 0;
+        let resizeStartW = 0;
+        let resizeStartH = 0;
 
         function toast(msg) {
             const t = document.getElementById('toast');
@@ -555,6 +578,8 @@
                 elements.banner.right = cfg[cfgPrefix+'banner_right'] || 'auto';
                 elements.banner.bottom = cfg[cfgPrefix+'banner_bottom'] || 'auto';
                 elements.banner.show = cfg[cfgPrefix+'banner_show'] !== undefined ? String(cfg[cfgPrefix+'banner_show']) : '1';
+                elements.banner.width = convertViewportToPercent(cfg[cfgPrefix+'banner_width'] || cfg.banner_maxwidth) || '42%';
+                elements.banner.height = convertViewportToPercent(cfg[cfgPrefix+'banner_height'] || cfg.banner_maxheight) || '50%';
 
                 // Load Ticker values
                 elements.ticker.top = cfg[cfgPrefix+'ticker_top'] || 'auto';
@@ -562,6 +587,7 @@
                 elements.ticker.right = cfg[cfgPrefix+'ticker_right'] || 'auto';
                 elements.ticker.bottom = cfg[cfgPrefix+'ticker_bottom'] || 'auto';
                 elements.ticker.show = cfg[cfgPrefix+'ticker_show'] !== undefined ? String(cfg[cfgPrefix+'ticker_show']) : '1';
+                elements.ticker.height = cfg[cfgPrefix+'ticker_height'] || '12%';
 
                 // Load Nametag 1 & 2 values (PAGE1 only)
                 if (elements.nametag1) {
@@ -593,17 +619,12 @@
 
                 updateLabelReadouts();
 
-                // Apply custom sizes if set in config (aligning default size with broadcast.html: 42vw, 50vh)
-                if (cfg.banner_maxwidth) {
-                    elements.banner.el.style.width = convertViewportToPercent(cfg.banner_maxwidth);
-                } else {
-                    elements.banner.el.style.width = '42%'; // Default 42% (translates from 42vw)
-                }
-                if (cfg.banner_maxheight) {
-                    elements.banner.el.style.height = convertViewportToPercent(cfg.banner_maxheight);
-                } else {
-                    elements.banner.el.style.height = '50%'; // Default 50% (translates from 50vh)
-                }
+                // Apply custom sizes from saved config
+                elements.banner.el.style.width = elements.banner.width;
+                elements.banner.el.style.height = elements.banner.height;
+                elements.banner.el.style.maxWidth = 'none';
+                elements.banner.el.style.maxHeight = 'none';
+                elements.ticker.el.style.height = elements.ticker.height;
 
                 // Load first banner image as preview inside drag box
                 const banner1 = (cfg.banner1 || '').trim();
@@ -617,7 +638,6 @@
                         bannerBlurBg.style.backgroundImage = 'url(' + JSON.stringify(banner1) + ')';
                         bannerBlurBg.style.display = 'block';
                     }
-                    // Style label as a small indicator
                     bannerLabel.style.position = 'absolute';
                     bannerLabel.style.bottom = '2px';
                     bannerLabel.style.left = '50%';
@@ -634,8 +654,6 @@
                     bannerLabel.style.position = 'static';
                     bannerLabel.style.transform = 'none';
                     bannerLabel.textContent = '🖼️ 롤링 배너 (이미지 없음)';
-                    elements.banner.el.style.width = '150px';
-                    elements.banner.el.style.height = '100px';
                 }
             }).getConfigMap();
         }
@@ -682,9 +700,9 @@
             const tYStr = t.bottom !== 'auto' ? `Bottom ${t.bottom}` : `Top ${t.top}`;
 
             document.getElementById('banner-val-top').textContent = bYStr;
-            document.getElementById('banner-val-left').textContent = bXStr;
+            document.getElementById('banner-val-left').textContent = `${bXStr} (${elements.banner.width}×${elements.banner.height})`;
             document.getElementById('ticker-val-top').textContent = tYStr;
-            document.getElementById('ticker-val-left').textContent = tXStr;
+            document.getElementById('ticker-val-left').textContent = `H ${elements.ticker.height}`;
 
             if (elements.nametag1) {
                 const n = elements.nametag1;
@@ -701,9 +719,35 @@
         // Drag Setup
         Object.keys(elements).forEach(key => {
             const el = elements[key].el;
-            el.addEventListener('mousedown', (e) => startDrag(e, key));
-            el.addEventListener('touchstart', (e) => startDrag(e, key), { passive: true });
+            el.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('resize-handle')) return;
+                startDrag(e, key);
+            });
+            el.addEventListener('touchstart', (e) => {
+                if (e.target.classList.contains('resize-handle')) return;
+                startDrag(e, key);
+            }, { passive: true });
         });
+
+        // Resize Setup
+        const resizeBanner = document.getElementById('resize-banner');
+        const resizeTicker = document.getElementById('resize-ticker');
+
+        function startResize(e, key) {
+            e.stopPropagation();
+            isResizing = true;
+            resizeTarget = key;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            startX = clientX;
+            startY = clientY;
+            resizeStartW = elements[key].el.offsetWidth;
+            resizeStartH = elements[key].el.offsetHeight;
+        }
+        resizeBanner.addEventListener('mousedown', (e) => startResize(e, 'banner'));
+        resizeBanner.addEventListener('touchstart', (e) => startResize(e, 'banner'), { passive: false });
+        resizeTicker.addEventListener('mousedown', (e) => startResize(e, 'ticker'));
+        resizeTicker.addEventListener('touchstart', (e) => startResize(e, 'ticker'), { passive: false });
 
         window.addEventListener('mousemove', drag);
         window.addEventListener('touchmove', drag, { passive: false });
@@ -724,6 +768,32 @@
         }
 
         function drag(e) {
+            if (isResizing && resizeTarget) {
+                if (e.cancelable) e.preventDefault();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const containerRect = container.getBoundingClientRect();
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                if (resizeTarget === 'banner') {
+                    const newW = Math.max(80, resizeStartW + dx);
+                    const newH = Math.max(60, resizeStartH + dy);
+                    elements.banner.width = ((newW / containerRect.width) * 100).toFixed(1) + '%';
+                    elements.banner.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
+                    elements.banner.el.style.width = elements.banner.width;
+                    elements.banner.el.style.height = elements.banner.height;
+                    elements.banner.el.style.maxWidth = 'none';
+                    elements.banner.el.style.maxHeight = 'none';
+                } else if (resizeTarget === 'ticker') {
+                    // 티커는 상단 핸들이므로 위로 드래그 = 높이 증가
+                    const newH = Math.max(40, resizeStartH - dy);
+                    elements.ticker.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
+                    elements.ticker.el.style.height = elements.ticker.height;
+                }
+                updateLabelReadouts();
+                return;
+            }
             if (!isDragging || !activeDragKey) return;
             if (e.cancelable) e.preventDefault();
 
@@ -776,9 +846,15 @@
         }
 
         function endDrag() {
+            if (isResizing) {
+                isResizing = false;
+                resizeTarget = null;
+                saveCoordinates(true);
+                return;
+            }
             if (!isDragging) return;
             isDragging = false;
-            saveCoordinates(true); // Auto-save coordinates on drag release
+            saveCoordinates(true);
             activeDragKey = null;
         }
 
@@ -798,11 +874,14 @@
             configMap[cfgPrefix+'banner_right'] = elements.banner.right;
             configMap[cfgPrefix+'banner_bottom'] = elements.banner.bottom;
             configMap[cfgPrefix+'banner_show'] = elements.banner.show;
+            configMap[cfgPrefix+'banner_width'] = elements.banner.width;
+            configMap[cfgPrefix+'banner_height'] = elements.banner.height;
             configMap[cfgPrefix+'ticker_top'] = elements.ticker.top;
             configMap[cfgPrefix+'ticker_left'] = elements.ticker.left;
             configMap[cfgPrefix+'ticker_right'] = elements.ticker.right;
             configMap[cfgPrefix+'ticker_bottom'] = elements.ticker.bottom;
             configMap[cfgPrefix+'ticker_show'] = elements.ticker.show;
+            configMap[cfgPrefix+'ticker_height'] = elements.ticker.height;
 
             // PAGE1 전용: 네임택 1,2 좌표 저장
             if (elements.nametag1) {
@@ -839,12 +918,20 @@
             elements.banner.right = "1%";
             elements.banner.bottom = "4%";
             elements.banner.show = "1";
+            elements.banner.width = "42%";
+            elements.banner.height = "50%";
+            elements.banner.el.style.width = '42%';
+            elements.banner.el.style.height = '50%';
+            elements.banner.el.style.maxWidth = 'none';
+            elements.banner.el.style.maxHeight = 'none';
 
             elements.ticker.top = "auto";
             elements.ticker.left = "auto";
             elements.ticker.right = "auto";
             elements.ticker.bottom = "4%";
             elements.ticker.show = "1";
+            elements.ticker.height = "12%";
+            elements.ticker.el.style.height = '12%';
 
             document.getElementById('toggle-banner-show').checked = true;
             document.getElementById('toggle-ticker-show').checked = true;
