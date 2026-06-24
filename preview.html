@@ -431,11 +431,13 @@
                 <!-- 3. Draggable Nametag 1 (PAGE1 only) -->
                 <div class="draggable-element draggable-nametag1" id="draggable-nametag1" data-type="nametag1" style="display:none;">
                     <div class="element-label">🏷️ 네임택 1</div>
+                    <div class="resize-handle resize-handle-se" id="resize-nametag1" title="크기 조절" style="border-color: #A855F7;"></div>
                 </div>
 
                 <!-- 4. Draggable Nametag 2 (PAGE1 only) -->
                 <div class="draggable-element draggable-nametag2" id="draggable-nametag2" data-type="nametag2" style="display:none;">
                     <div class="element-label">🏷️ 네임택 2</div>
+                    <div class="resize-handle resize-handle-se" id="resize-nametag2" title="크기 조절" style="border-color: #EC4899;"></div>
                 </div>
             </div>
         </div>
@@ -531,11 +533,13 @@
         if (pageNum === '1') {
             elements.nametag1 = {
                 el: document.getElementById('draggable-nametag1'),
-                top: "auto", left: "3%", right: "auto", bottom: "6%", show: "1"
+                top: "auto", left: "3%", right: "auto", bottom: "6%", show: "1",
+                width: "16vw", height: "8vh"
             };
             elements.nametag2 = {
                 el: document.getElementById('draggable-nametag2'),
-                top: "auto", left: "18%", right: "auto", bottom: "6%", show: "1"
+                top: "auto", left: "18%", right: "auto", bottom: "6%", show: "1",
+                width: "16vw", height: "8vh"
             };
         }
 
@@ -555,14 +559,11 @@
             setTimeout(() => { t.classList.remove('show'); }, 2000);
         }
 
-        function convertViewportToPercent(val) {
+        function convertToPercent(val) {
             if (!val) return '';
             const raw = String(val).trim().toLowerCase();
-            if (raw.endsWith('vw')) {
-                return parseFloat(raw.replace('vw', '')) + '%';
-            }
-            if (raw.endsWith('vh')) {
-                return parseFloat(raw.replace('vh', '')) + '%';
+            if (raw.endsWith('vw') || raw.endsWith('vh')) {
+                return parseFloat(raw) + '%';
             }
             return val;
         }
@@ -578,8 +579,8 @@
                 elements.banner.right = cfg[cfgPrefix+'banner_right'] || 'auto';
                 elements.banner.bottom = cfg[cfgPrefix+'banner_bottom'] || 'auto';
                 elements.banner.show = cfg[cfgPrefix+'banner_show'] !== undefined ? String(cfg[cfgPrefix+'banner_show']) : '1';
-                elements.banner.width = convertViewportToPercent(cfg[cfgPrefix+'banner_width'] || cfg.banner_maxwidth) || '42%';
-                elements.banner.height = convertViewportToPercent(cfg[cfgPrefix+'banner_height'] || cfg.banner_maxheight) || '50%';
+                elements.banner.width = cfg[cfgPrefix+'banner_width'] || cfg.banner_maxwidth || '42vw';
+                elements.banner.height = cfg[cfgPrefix+'banner_height'] || cfg.banner_maxheight || '50vh';
 
                 // Load Ticker values
                 elements.ticker.top = cfg[cfgPrefix+'ticker_top'] || 'auto';
@@ -587,7 +588,7 @@
                 elements.ticker.right = cfg[cfgPrefix+'ticker_right'] || 'auto';
                 elements.ticker.bottom = cfg[cfgPrefix+'ticker_bottom'] || 'auto';
                 elements.ticker.show = cfg[cfgPrefix+'ticker_show'] !== undefined ? String(cfg[cfgPrefix+'ticker_show']) : '1';
-                elements.ticker.height = cfg[cfgPrefix+'ticker_height'] || '12%';
+                elements.ticker.height = cfg[cfgPrefix+'ticker_height'] || '12vh';
 
                 // Load Nametag 1 & 2 values (PAGE1 only)
                 if (elements.nametag1) {
@@ -596,6 +597,8 @@
                     elements.nametag1.right = cfg.nametag1_right || 'auto';
                     elements.nametag1.bottom = cfg.nametag1_bottom || '6%';
                     elements.nametag1.show = cfg.nametag1_show !== undefined ? String(cfg.nametag1_show) : '1';
+                    elements.nametag1.width = cfg.nametag1_width || '16vw';
+                    elements.nametag1.height = cfg.nametag1_height || '8vh';
                 }
                 if (elements.nametag2) {
                     elements.nametag2.top = cfg.nametag2_top || 'auto';
@@ -603,6 +606,8 @@
                     elements.nametag2.right = cfg.nametag2_right || 'auto';
                     elements.nametag2.bottom = cfg.nametag2_bottom || '6%';
                     elements.nametag2.show = cfg.nametag2_show !== undefined ? String(cfg.nametag2_show) : '1';
+                    elements.nametag2.width = cfg.nametag2_width || '16vw';
+                    elements.nametag2.height = cfg.nametag2_height || '8vh';
                 }
 
                 // Apply states visually
@@ -619,12 +624,21 @@
 
                 updateLabelReadouts();
 
-                // Apply custom sizes from saved config
-                elements.banner.el.style.width = elements.banner.width;
-                elements.banner.el.style.height = elements.banner.height;
+                // Apply custom sizes from saved config (vw/vh → % for preview display)
+                elements.banner.el.style.width = convertToPercent(elements.banner.width);
+                elements.banner.el.style.height = convertToPercent(elements.banner.height);
                 elements.banner.el.style.maxWidth = 'none';
                 elements.banner.el.style.maxHeight = 'none';
-                elements.ticker.el.style.height = elements.ticker.height;
+                elements.ticker.el.style.height = convertToPercent(elements.ticker.height);
+                // 네임택 크기 적용
+                if (elements.nametag1) {
+                    elements.nametag1.el.style.width = convertToPercent(elements.nametag1.width);
+                    elements.nametag1.el.style.height = convertToPercent(elements.nametag1.height);
+                }
+                if (elements.nametag2) {
+                    elements.nametag2.el.style.width = convertToPercent(elements.nametag2.width);
+                    elements.nametag2.el.style.height = convertToPercent(elements.nametag2.height);
+                }
 
                 // Load first banner image as preview inside drag box
                 const banner1 = (cfg.banner1 || '').trim();
@@ -707,12 +721,12 @@
             if (elements.nametag1) {
                 const n = elements.nametag1;
                 document.getElementById('nametag1-val-top').textContent = n.bottom !== 'auto' ? `B ${n.bottom}` : `T ${n.top}`;
-                document.getElementById('nametag1-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}`;
+                document.getElementById('nametag1-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}` + ` (${n.width})`;
             }
             if (elements.nametag2) {
                 const n = elements.nametag2;
                 document.getElementById('nametag2-val-top').textContent = n.bottom !== 'auto' ? `B ${n.bottom}` : `T ${n.top}`;
-                document.getElementById('nametag2-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}`;
+                document.getElementById('nametag2-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}` + ` (${n.width})`;
             }
         }
 
@@ -749,6 +763,16 @@
         resizeTicker.addEventListener('mousedown', (e) => startResize(e, 'ticker'));
         resizeTicker.addEventListener('touchstart', (e) => startResize(e, 'ticker'), { passive: false });
 
+        // 네임택 리사이즈 핸들 (PAGE1 only)
+        if (pageNum === '1') {
+            const rn1 = document.getElementById('resize-nametag1');
+            const rn2 = document.getElementById('resize-nametag2');
+            rn1.addEventListener('mousedown', (e) => startResize(e, 'nametag1'));
+            rn1.addEventListener('touchstart', (e) => startResize(e, 'nametag1'), { passive: false });
+            rn2.addEventListener('mousedown', (e) => startResize(e, 'nametag2'));
+            rn2.addEventListener('touchstart', (e) => startResize(e, 'nametag2'), { passive: false });
+        }
+
         window.addEventListener('mousemove', drag);
         window.addEventListener('touchmove', drag, { passive: false });
 
@@ -779,17 +803,23 @@
                 if (resizeTarget === 'banner') {
                     const newW = Math.max(80, resizeStartW + dx);
                     const newH = Math.max(60, resizeStartH + dy);
-                    elements.banner.width = ((newW / containerRect.width) * 100).toFixed(1) + '%';
-                    elements.banner.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
-                    elements.banner.el.style.width = elements.banner.width;
-                    elements.banner.el.style.height = elements.banner.height;
+                    elements.banner.width = ((newW / containerRect.width) * 100).toFixed(1) + 'vw';
+                    elements.banner.height = ((newH / containerRect.height) * 100).toFixed(1) + 'vh';
+                    elements.banner.el.style.width = convertToPercent(elements.banner.width);
+                    elements.banner.el.style.height = convertToPercent(elements.banner.height);
                     elements.banner.el.style.maxWidth = 'none';
                     elements.banner.el.style.maxHeight = 'none';
                 } else if (resizeTarget === 'ticker') {
-                    // 티커는 상단 핸들이므로 위로 드래그 = 높이 증가
                     const newH = Math.max(40, resizeStartH - dy);
-                    elements.ticker.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
-                    elements.ticker.el.style.height = elements.ticker.height;
+                    elements.ticker.height = ((newH / containerRect.height) * 100).toFixed(1) + 'vh';
+                    elements.ticker.el.style.height = convertToPercent(elements.ticker.height);
+                } else if (resizeTarget === 'nametag1' || resizeTarget === 'nametag2') {
+                    const newW = Math.max(50, resizeStartW + dx);
+                    const newH = Math.max(30, resizeStartH + dy);
+                    elements[resizeTarget].width = ((newW / containerRect.width) * 100).toFixed(1) + 'vw';
+                    elements[resizeTarget].height = ((newH / containerRect.height) * 100).toFixed(1) + 'vh';
+                    elements[resizeTarget].el.style.width = convertToPercent(elements[resizeTarget].width);
+                    elements[resizeTarget].el.style.height = convertToPercent(elements[resizeTarget].height);
                 }
                 updateLabelReadouts();
                 return;
@@ -890,6 +920,8 @@
                 configMap.nametag1_right = elements.nametag1.right;
                 configMap.nametag1_bottom = elements.nametag1.bottom;
                 configMap.nametag1_show = elements.nametag1.show;
+                configMap.nametag1_width = elements.nametag1.width;
+                configMap.nametag1_height = elements.nametag1.height;
             }
             if (elements.nametag2) {
                 configMap.nametag2_top = elements.nametag2.top;
@@ -897,6 +929,8 @@
                 configMap.nametag2_right = elements.nametag2.right;
                 configMap.nametag2_bottom = elements.nametag2.bottom;
                 configMap.nametag2_show = elements.nametag2.show;
+                configMap.nametag2_width = elements.nametag2.width;
+                configMap.nametag2_height = elements.nametag2.height;
             }
 
             google.script.run.withSuccessHandler(function() {
@@ -918,8 +952,8 @@
             elements.banner.right = "1%";
             elements.banner.bottom = "4%";
             elements.banner.show = "1";
-            elements.banner.width = "42%";
-            elements.banner.height = "50%";
+            elements.banner.width = "42vw";
+            elements.banner.height = "50vh";
             elements.banner.el.style.width = '42%';
             elements.banner.el.style.height = '50%';
             elements.banner.el.style.maxWidth = 'none';
@@ -930,7 +964,7 @@
             elements.ticker.right = "auto";
             elements.ticker.bottom = "4%";
             elements.ticker.show = "1";
-            elements.ticker.height = "12%";
+            elements.ticker.height = "12vh";
             elements.ticker.el.style.height = '12%';
 
             document.getElementById('toggle-banner-show').checked = true;
@@ -940,6 +974,8 @@
                 elements.nametag1.top = "auto"; elements.nametag1.left = "3%";
                 elements.nametag1.right = "auto"; elements.nametag1.bottom = "6%";
                 elements.nametag1.show = "1";
+                elements.nametag1.width = "16vw"; elements.nametag1.height = "8vh";
+                elements.nametag1.el.style.width = '16%'; elements.nametag1.el.style.height = '8%';
                 document.getElementById('toggle-nametag1-show').checked = true;
                 applyVisualState('nametag1');
             }
@@ -947,6 +983,8 @@
                 elements.nametag2.top = "auto"; elements.nametag2.left = "18%";
                 elements.nametag2.right = "auto"; elements.nametag2.bottom = "6%";
                 elements.nametag2.show = "1";
+                elements.nametag2.width = "16vw"; elements.nametag2.height = "8vh";
+                elements.nametag2.el.style.width = '16%'; elements.nametag2.el.style.height = '8%';
                 document.getElementById('toggle-nametag2-show').checked = true;
                 applyVisualState('nametag2');
             }

@@ -1472,7 +1472,12 @@
                     if (isV(cfg[prefix+'bottom'])) el.style.bottom = cfg[prefix+'bottom'];
                     else if (isV(cfg[prefix+'top'])) el.style.top = cfg[prefix+'top'];
                     else el.style.bottom = defaultBottom;
-                    if (cfg[prefix+'show'] === '0') el.style.setProperty('display','none','important');
+                    if (cfg[prefix+'show'] === '0') el.style.setProperty('display','none','important');\r
+                    // 네임택 크기 적용\r
+                    const ntW = cfg[prefix+'width'];\r
+                    const ntH = cfg[prefix+'height'];\r
+                    if (ntW && ntW !== 'auto') el.style.width = ntW;\r
+                    if (ntH && ntH !== 'auto') el.style.height = ntH;
                 }
                 applyNTPos(document.getElementById('host-nametag-1'), 'nametag1_', '3%', '6%');
                 applyNTPos(document.getElementById('host-nametag-2'), 'nametag2_', '18%', '6%');
