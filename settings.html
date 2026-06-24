@@ -324,6 +324,7 @@
             <div class="form-row">
                 <div class="form-group"><label>롤링 간격 (ms)</label><input type="number" id="cfg-ticker-interval" placeholder="4200"></div>
                 <div class="form-group"><label>LIVE 배지</label><input type="text" id="cfg-badge-text" placeholder="LIVE"></div>
+                <div class="form-group"><label>로고 크기 (px)</label><input type="number" id="cfg-ticker-sponsor-size" placeholder="46"></div>
             </div>
             <div class="form-group">
                 <label>배경 스타일</label>
@@ -506,6 +507,9 @@
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1d3FqZWVjd2VwcXlxcWx6cHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMTA3OTIsImV4cCI6MjA5Nzc4Njc5Mn0.psiAk4cqzjHqT6gP46m6nQM97nNsLEgc-a7K8BEAd_Y';
 
         async function resizeImage(file, maxWidth = 1200, maxHeight = 1200) {
+            const isPng = file.type === 'image/png';
+            const outputType = isPng ? 'image/png' : 'image/jpeg';
+            const ext = isPng ? '.png' : '.jpg';
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -530,18 +534,22 @@
                         canvas.width = width;
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
+                        if (!isPng) {
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, width, height);
+                        }
                         ctx.drawImage(img, 0, 0, width, height);
 
                         canvas.toBlob(
                             (blob) => {
                                 if (blob) {
-                                    resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", { type: 'image/jpeg' }));
+                                    resolve(new File([blob], file.name.replace(/\.[^/.]+$/, "") + ext, { type: outputType }));
                                 } else {
                                     reject(new Error('Canvas to Blob conversion failed'));
                                 }
                             },
-                            'image/jpeg',
-                            0.85
+                            outputType,
+                            isPng ? undefined : 0.85
                         );
                     };
                     img.onerror = () => reject(new Error('Image load error'));
@@ -793,6 +801,7 @@
                 banner_opacity: document.getElementById('cfg-banner-opacity').value,
                 banner_maxwidth: document.getElementById('cfg-banner-maxwidth').value,
                 banner_maxheight: document.getElementById('cfg-banner-maxheight').value,
+                ticker_sponsor_size: document.getElementById('cfg-ticker-sponsor-size').value,
                 ticker_show: _toggleStates.ticker,
                 banner_show: _toggleStates.banner,
                 rules_position: _rulesPos,
@@ -857,6 +866,7 @@
                 document.getElementById('cfg-ticker').value = cfg.ticker || '';
                 document.getElementById('cfg-badge-text').value = cfg.badge_text || 'LIVE';
                 document.getElementById('cfg-ticker-interval').value = cfg.ticker_interval || '4200';
+                document.getElementById('cfg-ticker-sponsor-size').value = cfg.ticker_sponsor_size || '';
                 document.getElementById('cfg-ticker-bg').value = cfg.ticker_background || '';
                 document.getElementById('cfg-banner-interval').value = cfg.banner_interval || '5000';
                 document.getElementById('cfg-banner-opacity').value = cfg.banner_opacity || '0.93';

@@ -1070,11 +1070,13 @@
 
             const N = sponsors.length;
             const leftCount = Math.ceil(N / 2);
+            const logoSize = parseInt(cfg.ticker_sponsor_size, 10) || 46;
 
             for (let i = 0; i < N; i++) {
                 const img = document.createElement('img');
                 img.className = 'ticker-sponsor-img';
                 img.src = sponsors[i];
+                img.style.maxHeight = logoSize + 'px';
                 img.alt = 'Sponsor';
                 img.onerror = () => { img.style.display = 'none'; };
 
@@ -1086,10 +1088,11 @@
             }
 
             // 좌우 패딩 계산 적용 (로고 개수에 비례하여 자막 영역 패딩 설정)
-            // 로고 하나당 평균 너비 90px + 간격 18px = 약 108px. 여백 40px 추가.
+            // 로고 크기에 맞추어 예상 너비를 logoSize * 2 로 계산하고 간격 18px 및 마진 40px 추가
             const rightCount = N - leftCount;
-            const padLeft = leftCount > 0 ? (leftCount * 108) + 40 : 44;
-            const padRight = rightCount > 0 ? (rightCount * 108) + 40 : 44;
+            const estWidth = logoSize * 2;
+            const padLeft = leftCount > 0 ? (leftCount * (estWidth + 18)) + 40 : 44;
+            const padRight = rightCount > 0 ? (rightCount * (estWidth + 18)) + 40 : 44;
             stage.style.paddingLeft = padLeft + 'px';
             stage.style.paddingRight = padRight + 'px';
 
