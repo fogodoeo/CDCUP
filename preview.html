@@ -873,6 +873,15 @@
             if (activeDragKey === 'ticker') {
                 elements[activeDragKey].left = 'auto';
                 elements[activeDragKey].right = 'auto';
+                if (centerY > containerRect.height / 2) {
+                    const bottomPx = containerRect.height - (y + el.offsetHeight);
+                    elements[activeDragKey].bottom = ((bottomPx / containerRect.height) * 100).toFixed(1) + "%";
+                    elements[activeDragKey].top = 'auto';
+                } else {
+                    elements[activeDragKey].top = ((y / containerRect.height) * 100).toFixed(1) + "%";
+                    elements[activeDragKey].bottom = 'auto';
+                }
+                applyVisualState('ticker');
             } else if (activeDragKey === 'nametag1' || activeDragKey === 'nametag2') {
                 // Couple vertical positions
                 let topVal = 'auto';
