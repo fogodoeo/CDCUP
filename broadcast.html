@@ -354,6 +354,63 @@
             display: none !important;
         }
 
+        /* 진행자 네임택 (page 1 전용) */
+        .host-nametag-container {
+            display: none;
+            position: absolute;
+            bottom: 6%;
+            left: 3%;
+            z-index: 60;
+            gap: 28px;
+        }
+        .host-mode .host-nametag-container {
+            display: flex;
+        }
+        .host-nametag {
+            display: flex;
+            align-items: stretch;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            animation: fadeInUp 0.5s ease-out;
+        }
+        .host-nametag .nt-accent {
+            width: 5px;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, #FF6B00, #FFA800);
+        }
+        .host-nametag .nt-body {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px 10px 14px;
+            background: rgba(10, 15, 28, 0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .host-nametag .nt-name {
+            font-size: 22px;
+            font-weight: 800;
+            color: #FFFFFF;
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+        }
+        .host-nametag .nt-role {
+            font-size: 12px;
+            font-weight: 600;
+            color: #FFA800;
+            background: rgba(255, 168, 0, 0.12);
+            padding: 3px 10px;
+            border-radius: 4px;
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* 개별 룰 필 스택 (우측 하단) */
         .hc-rules-stack {
             display: none;
@@ -719,6 +776,24 @@
 
         <!-- 호스트 뷰: 우측 하단 개별 필 스택 (안내사항) -->
         <div class="hc-rules-stack" id="hc-rules-stack"></div>
+
+        <!-- 호스트 뷰: 진행자 네임택 -->
+        <div class="host-nametag-container" id="host-nametag-container">
+            <div class="host-nametag" id="host-nametag-1" style="display:none;">
+                <div class="nt-accent"></div>
+                <div class="nt-body">
+                    <span class="nt-name" id="nt-name-1"></span>
+                    <span class="nt-role" id="nt-role-1"></span>
+                </div>
+            </div>
+            <div class="host-nametag" id="host-nametag-2" style="display:none;">
+                <div class="nt-accent"></div>
+                <div class="nt-body">
+                    <span class="nt-name" id="nt-name-2"></span>
+                    <span class="nt-role" id="nt-role-2"></span>
+                </div>
+            </div>
+        </div>
 
         <!-- 호스트 뷰: 우하단 이미지 배너 -->
         <div class="hc-banner-float" id="hc-banner-float"></div>
@@ -1414,6 +1489,25 @@
                     stackEl.appendChild(card);
                 }
                 stackEl.style.display = rules.length > 0 ? 'flex' : 'none';
+
+                // 진행자 네임택 렌더링
+                for (let i = 1; i <= 2; i++) {
+                    const name = (cfg['host_name' + i] || '').trim();
+                    const role = (cfg['host_role' + i] || '').trim();
+                    const tag = document.getElementById('host-nametag-' + i);
+                    const nameEl = document.getElementById('nt-name-' + i);
+                    const roleEl = document.getElementById('nt-role-' + i);
+                    if (tag) {
+                        if (name) {
+                            nameEl.textContent = name;
+                            roleEl.textContent = role;
+                            roleEl.style.display = role ? '' : 'none';
+                            tag.style.display = 'flex';
+                        } else {
+                            tag.style.display = 'none';
+                        }
+                    }
+                }
             }).getConfigMap();
         }
 
