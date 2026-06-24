@@ -105,7 +105,7 @@ async function getItems() {
  * 현재 진행 중인 경매 개체 (= GAS getActiveItem)
  */
 async function getActiveItem() {
-    const rows = await _sbFetch("items?status=eq.진행&order=num.asc&limit=1");
+    const rows = await _sbFetch("items?status=eq.진행중&order=num.asc&limit=1");
     if (!rows || rows.length === 0) return null;
     const r = rows[0];
 
@@ -242,7 +242,7 @@ async function deleteItem(rowNum, pw) {
     if (!verified) return { success: false, error: "비밀번호 불일치" };
 
     // 진행중인 경매 검증
-    const active = await _sbFetch("items?status=eq.진행");
+    const active = await _sbFetch("items?status=eq.진행중");
     if (active && active.length > 0) {
         return { success: false, error: '경매 진행중에는 삭제할 수 없습니다. 먼저 경매를 종료해주세요.' };
     }
@@ -262,7 +262,7 @@ async function deleteItems(rows, pw) {
     if (!verified) return { success: false, error: "비밀번호 불일치" };
     if (!rows || rows.length === 0) return { success: true, count: 0 };
 
-    const active = await _sbFetch("items?status=eq.진행");
+    const active = await _sbFetch("items?status=eq.진행중");
     if (active && active.length > 0) {
         return { success: false, error: '경매 진행중에는 삭제할 수 없습니다. 먼저 경매를 종료해주세요.' };
     }
@@ -285,7 +285,7 @@ async function deleteAll(pw) {
     const verified = await verifyAdmin(pw);
     if (!verified) return { success: false, error: "비밀번호 불일치" };
 
-    const active = await _sbFetch("items?status=eq.진행");
+    const active = await _sbFetch("items?status=eq.진행중");
     if (active && active.length > 0) {
         return { success: false, error: '경매 진행중에는 전체 삭제를 할 수 없습니다. 먼저 경매를 종료해주세요.' };
     }
@@ -351,7 +351,7 @@ async function shuffleRoundRobin(pw) {
     const verified = await verifyAdmin(pw);
     if (!verified) return { success: false, error: "비밀번호 불일치" };
 
-    const active = await _sbFetch("items?status=eq.진행");
+    const active = await _sbFetch("items?status=eq.진행중");
     if (active && active.length > 0) {
         return { success: false, error: "경매 진행중에는 순서를 변경할 수 없습니다. 먼저 경매를 종료해주세요." };
     }

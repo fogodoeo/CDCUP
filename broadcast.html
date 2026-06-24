@@ -762,7 +762,7 @@
 </head>
 
 <body>
-    <div class="empty" id="empty">경매 대기중...</div>
+    <div class="empty" id="empty"></div>
 
     <div class="broadcast" id="broadcast">
         <div class="scoreboard-wrap" id="scoreboard-wrap">
@@ -1771,9 +1771,8 @@
 
             // 호스트 카드 데이터 렌더링
             document.getElementById("hc-name").textContent = displayName;
-            const subParts = [];
-            if (item.company) subParts.push(item.company);
-            document.getElementById("hc-sub").textContent = subParts.join(' · ');
+            // 업체명은 절대 표시하지 않음
+            document.getElementById("hc-sub").textContent = '';
 
             // 서버에서 받은 개별 사진 숨김 플래그
             if (Array.isArray(item.hiddenPhotos)) hiddenPhotos = item.hiddenPhotos;
