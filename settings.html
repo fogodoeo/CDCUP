@@ -329,6 +329,12 @@
                 <label>배경 스타일</label>
                 <input type="text" id="cfg-ticker-bg" placeholder="linear-gradient(135deg, rgba(17,30,56,0.94), rgba(7,9,15,0.98))">
             </div>
+            <div class="form-group" style="margin-top:12px;">
+                <label>🖼️ 자막 스폰서/주최자 로고</label>
+                <div class="section-desc" style="margin-bottom:6px;">자막 바 좌우측 끝에 배치할 로고 이미지입니다. (2개 등록 시 좌1/우1, 4개 등록 시 좌2/우2로 자동 분배 정렬)</div>
+                <div id="sponsor-list"></div>
+                <button class="add-slot-btn" onclick="addSponsorSlot()" style="margin-top:6px;">+ 로고 추가</button>
+            </div>
         </div>
 
         <!-- ══ 롤링 배너 설정 ══ -->
@@ -654,6 +660,88 @@
             list.appendChild(div);
         }
 
+        // ── Ticker Sponsor Slots ──
+        function addSponsorSlot(url) {
+            const list = document.getElementById('sponsor-list');
+            const idx = list.children.length + 1;
+            const div = document.createElement('div');
+            div.className = 'banner-slot'; // reuse class for styling consistency
+            const hasUrl = url && url.trim();
+
+            const row1 = document.createElement('div');
+            row1.style.cssText = 'display:flex;gap:8px;align-items:center;width:100%';
+            row1.innerHTML = '<img class="banner-thumb ' + (hasUrl?'':'empty') + '" src="' + (hasUrl?url:'') + '" onerror="this.className=\'banner-thumb empty\';this.src=\'\';this.textContent=\'🖼\'" alt="">'
+                + '<input type="text" class="cfg-sponsor-url" data-key="ticker_sponsor' + idx + '" placeholder="로고 ' + idx + ' URL 또는 파일 드롭" value="' + (url||'') + '">'
+                + '<button class="slot-del" onclick="this.closest(\'.banner-slot\').remove()">✕</button>';
+
+            const dropzone = document.createElement('div');
+            dropzone.className = 'banner-dropzone';
+            dropzone.innerHTML = '📂 이미지를 여기에 드래그하거나 클릭해서 업로드<input type="file" accept="image/*">';
+
+            div.appendChild(row1);
+            div.appendChild(dropzone);
+
+            const input = row1.querySelector('input[type=text]');
+            const thumb = row1.querySelector('img');
+            const fileInput = dropzone.querySelector('input[type=file]');
+
+            input.addEventListener('input', function() {
+                const v = this.value.trim();
+                if (v) { thumb.src = v; thumb.className = 'banner-thumb'; }
+                else { thumb.src = ''; thumb.className = 'banner-thumb empty'; thumb.textContent = '🖼'; }
+            });
+
+            async function handleFile(file) {
+                if (!file || !file.type.startsWith('image/')) { toast('이미지 파일만 업로드 가능합니다', true); return; }
+                if (file.size > 25 * 1024 * 1024) { toast('25MB 이하 이미지 파일만 업로드 가능합니다', true); return; }
+                dropzone.innerHTML = '<span class="uploading">이미지 리사이징 중...</span>';
+                try {
+                    const resizedFile = await resizeImage(file);
+                    dropzone.innerHTML = '<span class="uploading">업로드 중...</span>';
+                    const publicUrl = await uploadToSupabase(resizedFile);
+                    input.value = publicUrl;
+                    thumb.src = publicUrl;
+                    thumb.className = 'banner-thumb';
+                    dropzone.innerHTML = '✅ 업로드 완료! 다른 이미지로 교체하려면 클릭<input type="file" accept="image/*">';
+                    dropzone.querySelector('input[type=file]').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+                    toast('로고 이미지 업로드 완료!');
+                } catch(e) {
+                    console.error('Upload process failed:', e);
+                    dropzone.innerHTML = '❌ 업로드 실패 — 다시 시도<input type="file" accept="image/*">';
+                    dropzone.querySelector('input[type=file]').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+                    toast('업로드 실패: ' + e.message, true);
+                }
+            }
+
+            fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+
+            dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+            dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+            dropzone.addEventListener('drop', e => {
+                e.preventDefault();
+                dropzone.classList.remove('drag-over');
+                const file = e.dataTransfer.files[0];
+                if (file) handleFile(file);
+            });
+
+            div.addEventListener('paste', async function(e) {
+                const items = (e.clipboardData || window.clipboardData).items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (file) {
+                            e.preventDefault();
+                            await handleFile(file);
+                            break;
+                        }
+                    }
+                }
+            });
+
+            list.appendChild(div);
+        }
+
         // ── Rule Slots ──
         function addRuleSlot(val) {
             const list = document.getElementById('rule-list');
@@ -723,9 +811,16 @@
             document.querySelectorAll('.cfg-banner-url').forEach((input, i) => {
                 m['banner' + (i+1)] = input.value;
             });
-            // clear old banner keys beyond current count
             const bc = document.querySelectorAll('.cfg-banner-url').length;
             for (let i = bc+1; i <= 10; i++) m['banner'+i] = '';
+
+            // ticker sponsors
+            document.querySelectorAll('.cfg-sponsor-url').forEach((input, i) => {
+                m['ticker_sponsor' + (i+1)] = input.value;
+            });
+            const sc = document.querySelectorAll('.cfg-sponsor-url').length;
+            for (let i = sc+1; i <= 10; i++) m['ticker_sponsor'+i] = '';
+
             // rules
             document.querySelectorAll('.rule-slot input').forEach((input, i) => {
                 m['rule' + (i+1)] = input.value;
@@ -780,6 +875,17 @@
                     if (url || i <= 3) { addBannerSlot(url); hasBanner = true; }
                 }
                 if (!hasBanner) { addBannerSlot(''); addBannerSlot(''); addBannerSlot(''); }
+
+                // ticker sponsors with thumbnails
+                const sponsorList = document.getElementById('sponsor-list');
+                sponsorList.innerHTML = '';
+                let hasSponsor = false;
+                for (let i = 1; i <= 10; i++) {
+                    const url = cfg['ticker_sponsor'+i] || '';
+                    if (url || i <= 2) { addSponsorSlot(url); hasSponsor = true; }
+                }
+                if (!hasSponsor) { addSponsorSlot(''); addSponsorSlot(''); }
+
                 // rules
                 const ruleList = document.getElementById('rule-list');
                 ruleList.innerHTML = '';

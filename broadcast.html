@@ -659,6 +659,44 @@
             display: flex;
         }
 
+        /* 자막 스폰서 로고 스타일 */
+        .ticker-sponsors-left {
+            position: absolute;
+            left: 32px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            z-index: 10;
+        }
+
+        .ticker-sponsors-right {
+            position: absolute;
+            right: 32px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            z-index: 10;
+        }
+
+        .ticker-sponsor-img {
+            max-height: 46px;
+            max-width: 90px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.65)) drop-shadow(0 0 1px rgba(255,255,255,0.25));
+            opacity: 0.95;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            animation: sponsorFadeIn 0.6s ease-out forwards;
+        }
+
+        @keyframes sponsorFadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 0.95; transform: translateY(0); }
+        }
+
         .hc-bottom-bar::before {
             content: "";
             position: absolute;
@@ -799,7 +837,9 @@
 
         <!-- 호스트 뷰: 하단 티커 바 -->
         <div class="hc-bottom-bar">
+            <div class="ticker-sponsors-left" id="hc-ticker-sponsors-left"></div>
             <div class="ticker-card-stage" id="hc-ticker-stage"></div>
+            <div class="ticker-sponsors-right" id="hc-ticker-sponsors-right"></div>
         </div>
     </div>
 
@@ -961,11 +1001,12 @@
         }
 
         // 우하단 이미지 배너 로테이션
-        function buildTickerRenderKey(messages, interval, bgValue) {
+        function buildTickerRenderKey(messages, interval, bgValue, sponsors) {
             return JSON.stringify({
                 messages: messages,
                 interval: interval,
-                bg: String(bgValue || '').trim()
+                bg: String(bgValue || '').trim(),
+                sponsors: sponsors
             });
         }
 
@@ -978,7 +1019,15 @@
             const messages = splitTickerMessages(tickerRaw);
             const interval = Math.max(parseInt(cfg.ticker_interval, 10) || 4200, 1800);
             const bgValue = cfg.ticker_background || cfg.ticker_bg || '';
-            const tickerKey = buildTickerRenderKey(messages, interval, bgValue);
+
+            // 스폰서 로고 목록 수집
+            const sponsors = [];
+            for (let i = 1; i <= 10; i++) {
+                const url = cfg['ticker_sponsor' + i] || '';
+                if (url.trim()) sponsors.push(url.trim());
+            }
+
+            const tickerKey = buildTickerRenderKey(messages, interval, bgValue, sponsors);
 
             applyTickerBackground(bottomBar, bgValue);
 
@@ -999,6 +1048,50 @@
 
             resetTickerMotion();
             stage.innerHTML = '';
+
+            // 스폰서 로고 컨테이너 렌더링
+            let leftContainer = bottomBar.querySelector('.ticker-sponsors-left');
+            let rightContainer = bottomBar.querySelector('.ticker-sponsors-right');
+            if (!leftContainer) {
+                leftContainer = document.createElement('div');
+                leftContainer.className = 'ticker-sponsors-left';
+                leftContainer.id = 'hc-ticker-sponsors-left';
+                bottomBar.insertBefore(leftContainer, bottomBar.firstChild);
+            }
+            if (!rightContainer) {
+                rightContainer = document.createElement('div');
+                rightContainer.className = 'ticker-sponsors-right';
+                rightContainer.id = 'hc-ticker-sponsors-right';
+                bottomBar.appendChild(rightContainer);
+            }
+
+            leftContainer.innerHTML = '';
+            rightContainer.innerHTML = '';
+
+            const N = sponsors.length;
+            const leftCount = Math.ceil(N / 2);
+
+            for (let i = 0; i < N; i++) {
+                const img = document.createElement('img');
+                img.className = 'ticker-sponsor-img';
+                img.src = sponsors[i];
+                img.alt = 'Sponsor';
+                img.onerror = () => { img.style.display = 'none'; };
+
+                if (i < leftCount) {
+                    leftContainer.appendChild(img);
+                } else {
+                    rightContainer.appendChild(img);
+                }
+            }
+
+            // 좌우 패딩 계산 적용 (로고 개수에 비례하여 자막 영역 패딩 설정)
+            // 로고 하나당 평균 너비 90px + 간격 18px = 약 108px. 여백 40px 추가.
+            const rightCount = N - leftCount;
+            const padLeft = leftCount > 0 ? (leftCount * 108) + 40 : 44;
+            const padRight = rightCount > 0 ? (rightCount * 108) + 40 : 44;
+            stage.style.paddingLeft = padLeft + 'px';
+            stage.style.paddingRight = padRight + 'px';
 
             let activeCard = null;
             let index = -1;
