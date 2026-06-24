@@ -1072,6 +1072,15 @@
             return normalizeCssLength(raw);
         }
 
+        function ensureViewportUnit(value, defaultUnit) {
+            const raw = String(value == null ? '' : value).trim();
+            if (!raw) return '';
+            if (raw.endsWith('%')) {
+                return parseFloat(raw) + defaultUnit;
+            }
+            return normalizeViewportSize(raw, defaultUnit);
+        }
+
         function normalizeOpacity(value, fallback) {
             const raw = String(value == null ? '' : value).trim();
             const fallbackValue = typeof fallback === 'number' ? fallback : 0.93;
@@ -1281,8 +1290,8 @@
                 top: normalizeCssLength(cfg[bp + 'banner_top']),
                 bottom: normalizeCssLength(cfg[bp + 'banner_bottom'])
             };
-            const maxW = normalizeCssLength(cfg[bp + 'banner_width']) || normalizeCssLength(cfg.banner_maxwidth) || '42vw';
-            const maxH = normalizeCssLength(cfg[bp + 'banner_height']) || normalizeCssLength(cfg.banner_maxheight) || '50vh';
+            const maxW = ensureViewportUnit(cfg[bp + 'banner_width'], 'vw') || ensureViewportUnit(cfg.banner_maxwidth, 'vw') || '42vw';
+            const maxH = ensureViewportUnit(cfg[bp + 'banner_height'], 'vh') || ensureViewportUnit(cfg.banner_maxheight, 'vh') || '50vh';
             const bannerHidden = ['1', 'true', 'yes', 'on'].indexOf(String(cfg.banner_hidden || '').trim().toLowerCase()) >= 0;
             const bannerOpacity = normalizeOpacity(cfg.banner_opacity, 0.93);
 
@@ -1435,7 +1444,7 @@
                         bottomBar.style.left = '0';
                         bottomBar.style.right = '0';
                         // 티커 높이 적용
-                        const tH = cfg[lp + 'ticker_height'];
+                        const tH = ensureViewportUnit(cfg[lp + 'ticker_height'], 'vh');
                         if (tH && tH !== 'auto') {
                             bottomBar.style.height = tH;
                         }
@@ -1472,10 +1481,14 @@
                     if (isV(cfg[prefix+'bottom'])) el.style.bottom = cfg[prefix+'bottom'];
                     else if (isV(cfg[prefix+'top'])) el.style.top = cfg[prefix+'top'];
                     else el.style.bottom = defaultBottom;
-                    if (cfg[prefix+'show'] === '0') el.style.setProperty('display','none','important');
+                    if (cfg[prefix+'show'] === '0') {
+                        el.style.setProperty('display','none','important');
+                    } else {
+                        el.style.removeProperty('display');
+                    }
                     // 네임택 크기 적용
-                    const ntW = cfg[prefix+'width'];
-                    const ntH = cfg[prefix+'height'];
+                    const ntW = ensureViewportUnit(cfg[prefix+'width'], 'vw');
+                    const ntH = ensureViewportUnit(cfg[prefix+'height'], 'vh');
                     if (ntW && ntW !== 'auto') el.style.width = ntW;
                     if (ntH && ntH !== 'auto') el.style.height = ntH;
                 }
@@ -1795,18 +1808,34 @@
                         }
                         bottomBar.style.left = '0';
                         bottomBar.style.right = '0';
-                        const tH2 = cfg[lp + 'ticker_height'];
+                        const tH2 = ensureViewportUnit(cfg[lp + 'ticker_height'], 'vh');
                         if (tH2 && tH2 !== 'auto') bottomBar.style.height = tH2;
                     }
                 }
 
-                // 배너 show/hide
+                // 배너 show/hide 및 실시간 위치/크기 반영
                 if (bannerContainer) {
                     if (cfg[lp + 'banner_show'] === '0') {
                         bannerContainer.classList.remove('banner-active');
                         bannerContainer.dataset.bannerHiddenByToggle = '1';
                     } else {
                         delete bannerContainer.dataset.bannerHiddenByToggle;
+                        // 실시간 위치 적용
+                        const layout = {
+                            left: normalizeCssLength(cfg[lp + 'banner_left']),
+                            right: normalizeCssLength(cfg[lp + 'banner_right']),
+                            top: normalizeCssLength(cfg[lp + 'banner_top']),
+                            bottom: normalizeCssLength(cfg[lp + 'banner_bottom'])
+                        };
+                        applyBannerPlacement(bannerContainer, layout);
+                        // 실시간 크기 적용
+                        const maxW = ensureViewportUnit(cfg[lp + 'banner_width'], 'vw') || ensureViewportUnit(cfg.banner_maxwidth, 'vw') || '42vw';
+                        const maxH = ensureViewportUnit(cfg[lp + 'banner_height'], 'vh') || ensureViewportUnit(cfg.banner_maxheight, 'vh') || '50vh';
+                        const wraps = Array.from(bannerContainer.querySelectorAll('.banner-item-wrap'));
+                        wraps.forEach(function (wrap) {
+                            wrap.style.setProperty('--banner-w', maxW);
+                            wrap.style.setProperty('--banner-h', maxH);
+                        });
                     }
                 }
 
@@ -1851,7 +1880,16 @@
                         if (isV(cfg[prefix+'bottom'])) el.style.bottom = cfg[prefix+'bottom'];
                         else if (isV(cfg[prefix+'top'])) el.style.top = cfg[prefix+'top'];
                         else el.style.bottom = defaultBottom;
-                        if (cfg[prefix+'show'] === '0') el.style.setProperty('display','none','important');
+                        if (cfg[prefix+'show'] === '0') {
+                            el.style.setProperty('display','none','important');
+                        } else {
+                            el.style.removeProperty('display');
+                        }
+                        // 실시간 크기 적용
+                        const ntW = cfg[prefix+'width'];
+                        const ntH = cfg[prefix+'height'];
+                        if (ntW && ntW !== 'auto') el.style.width = ntW;
+                        if (ntH && ntH !== 'auto') el.style.height = ntH;
                     }
                     applyNTPos2(document.getElementById('host-nametag-1'), 'nametag1_', '3%', '6%');
                     applyNTPos2(document.getElementById('host-nametag-2'), 'nametag2_', '18%', '6%');

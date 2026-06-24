@@ -565,6 +565,12 @@
             if (raw.endsWith('vw') || raw.endsWith('vh')) {
                 return parseFloat(raw) + '%';
             }
+            if (raw.endsWith('%')) {
+                return raw;
+            }
+            if (/^[0-9.]+$/.test(raw)) {
+                return raw + '%';
+            }
             return val;
         }
 
