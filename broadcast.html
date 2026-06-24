@@ -1417,19 +1417,22 @@
                     } else {
                         bottomBar.style.removeProperty('display');
                         
-                        // 티커 위치 적용
-                        if (cfg[lp + 'ticker_top']) {
-                            bottomBar.style.top = cfg[lp + 'ticker_top'];
+                        // 티커 위치 적용 (auto 값 필터링)
+                        const tIsVal = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
+                        const tTop = cfg[lp + 'ticker_top'];
+                        const tBottom = cfg[lp + 'ticker_bottom'];
+                        if (tIsVal(tBottom)) {
+                            bottomBar.style.bottom = tBottom;
+                            bottomBar.style.top = 'auto';
+                        } else if (tIsVal(tTop)) {
+                            bottomBar.style.top = tTop;
                             bottomBar.style.bottom = 'auto';
                         } else {
                             bottomBar.style.bottom = '0';
                             bottomBar.style.top = 'auto';
                         }
-                        if (cfg[lp + 'ticker_left']) {
-                            bottomBar.style.left = cfg[lp + 'ticker_left'];
-                        } else {
-                            bottomBar.style.left = '0';
-                        }
+                        // 티커는 항상 좌우 풀사이즈
+                        bottomBar.style.left = '0';
                         bottomBar.style.right = '0';
                     }
                 }
@@ -1510,7 +1513,7 @@
                 }
                 stackEl.style.display = rules.length > 0 ? 'flex' : 'none';
 
-                // 진행자 네임택 렌더링
+                // 진행자 네임택 렌더링 (show 상태 존중)
                 for (let i = 1; i <= 2; i++) {
                     const name = (cfg['host_name' + i] || '').trim();
                     const role = (cfg['host_role' + i] || '').trim();
@@ -1518,7 +1521,7 @@
                     const nameEl = document.getElementById('nt-name-' + i);
                     const roleEl = document.getElementById('nt-role-' + i);
                     if (tag) {
-                        if (name) {
+                        if (name && cfg['nametag' + i + '_show'] !== '0') {
                             nameEl.textContent = name;
                             roleEl.textContent = role;
                             roleEl.style.display = role ? '' : 'none';
@@ -1761,24 +1764,26 @@
                 const bannerContainer = document.querySelector('.hc-banner-float');
                 const lp = document.body.classList.contains('host-mode') ? '' : 'p2_';
 
-                // 티커 show/hide
+                // 티커 show/hide 및 위치
                 if (bottomBar) {
                     if (cfg[lp + 'ticker_show'] === '0') {
                         bottomBar.style.setProperty('display', 'none', 'important');
                     } else {
                         bottomBar.style.removeProperty('display');
-                        if (cfg[lp + 'ticker_top']) {
-                            bottomBar.style.top = cfg[lp + 'ticker_top'];
+                        const tIsV2 = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
+                        const tT2 = cfg[lp + 'ticker_top'];
+                        const tB2 = cfg[lp + 'ticker_bottom'];
+                        if (tIsV2(tB2)) {
+                            bottomBar.style.bottom = tB2;
+                            bottomBar.style.top = 'auto';
+                        } else if (tIsV2(tT2)) {
+                            bottomBar.style.top = tT2;
                             bottomBar.style.bottom = 'auto';
                         } else {
                             bottomBar.style.bottom = '0';
                             bottomBar.style.top = 'auto';
                         }
-                        if (cfg[lp + 'ticker_left']) {
-                            bottomBar.style.left = cfg[lp + 'ticker_left'];
-                        } else {
-                            bottomBar.style.left = '0';
-                        }
+                        bottomBar.style.left = '0';
                         bottomBar.style.right = '0';
                     }
                 }

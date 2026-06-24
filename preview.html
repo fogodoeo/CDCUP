@@ -747,13 +747,19 @@
             const centerX = x + el.offsetWidth / 2;
             const centerY = y + el.offsetHeight / 2;
 
-            if (centerX > containerRect.width / 2) {
-                const rightPx = containerRect.width - (x + el.offsetWidth);
-                elements[activeDragKey].right = ((rightPx / containerRect.width) * 100).toFixed(1) + "%";
+            // 티커는 수직 이동만 (좌우 항상 풀사이즈)
+            if (activeDragKey === 'ticker') {
                 elements[activeDragKey].left = 'auto';
-            } else {
-                elements[activeDragKey].left = ((x / containerRect.width) * 100).toFixed(1) + "%";
                 elements[activeDragKey].right = 'auto';
+            } else {
+                if (centerX > containerRect.width / 2) {
+                    const rightPx = containerRect.width - (x + el.offsetWidth);
+                    elements[activeDragKey].right = ((rightPx / containerRect.width) * 100).toFixed(1) + "%";
+                    elements[activeDragKey].left = 'auto';
+                } else {
+                    elements[activeDragKey].left = ((x / containerRect.width) * 100).toFixed(1) + "%";
+                    elements[activeDragKey].right = 'auto';
+                }
             }
 
             if (centerY > containerRect.height / 2) {
