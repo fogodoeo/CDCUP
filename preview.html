@@ -161,34 +161,32 @@
             border-color: var(--red) !important;
         }
 
-        /* 🏷️ Draggable Nametag (PAGE1 only) */
-        .draggable-nametag {
-            width: 28%;
-            height: 14%;
+        /* 🏷️ Draggable Nametag 1 (PAGE1 only) */
+        .draggable-nametag1 {
+            width: 16%;
+            height: 8%;
             background: rgba(168, 85, 247, 0.15);
             border: 2px dashed #A855F7;
-            border-radius: 12px;
+            border-radius: 8px;
             box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
         }
-
-        .draggable-nametag:hover {
+        .draggable-nametag1:hover {
             border-color: #C084FC;
             background: rgba(168, 85, 247, 0.25);
         }
 
-        /* 📋 Draggable Rules Card (PAGE1 only) */
-        .draggable-rules {
-            width: 20%;
-            height: 28%;
-            background: rgba(245, 158, 11, 0.15);
-            border: 2px dashed #F59E0B;
-            border-radius: 12px;
-            box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+        /* 🏷️ Draggable Nametag 2 (PAGE1 only) */
+        .draggable-nametag2 {
+            width: 16%;
+            height: 8%;
+            background: rgba(236, 72, 153, 0.15);
+            border: 2px dashed #EC4899;
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(236, 72, 153, 0.4);
         }
-
-        .draggable-rules:hover {
-            border-color: #FBBF24;
-            background: rgba(245, 158, 11, 0.25);
+        .draggable-nametag2:hover {
+            border-color: #F472B6;
+            background: rgba(236, 72, 153, 0.25);
         }
 
         /* 🖼️ Draggable Banner */
@@ -405,14 +403,14 @@
                     <div class="element-label">📢 공지사항 자막 (티커)</div>
                 </div>
 
-                <!-- 3. Draggable Nametag (PAGE1 only) -->
-                <div class="draggable-element draggable-nametag" id="draggable-nametag" data-type="nametag" style="display:none;">
-                    <div class="element-label">🏷️ 네임택 (이름표)</div>
+                <!-- 3. Draggable Nametag 1 (PAGE1 only) -->
+                <div class="draggable-element draggable-nametag1" id="draggable-nametag1" data-type="nametag1" style="display:none;">
+                    <div class="element-label">🏷️ 네임택 1</div>
                 </div>
 
-                <!-- 4. Draggable Rules Card (PAGE1 only) -->
-                <div class="draggable-element draggable-rules" id="draggable-rules" data-type="rules" style="display:none;">
-                    <div class="element-label">📋 룰 카드 (안내사항)</div>
+                <!-- 4. Draggable Nametag 2 (PAGE1 only) -->
+                <div class="draggable-element draggable-nametag2" id="draggable-nametag2" data-type="nametag2" style="display:none;">
+                    <div class="element-label">🏷️ 네임택 2</div>
                 </div>
             </div>
         </div>
@@ -429,13 +427,13 @@
                         <span>🖼️ 배너 노출</span>
                         <input type="checkbox" id="toggle-banner-show" class="switch-input" checked onchange="toggleShowState('banner')">
                     </div>
-                    <div class="switch-container" id="toggle-nametag-group" style="display:none;">
-                        <span>🏷️ 네임택 노출</span>
-                        <input type="checkbox" id="toggle-nametag-show" class="switch-input" checked onchange="toggleShowState('nametag')">
+                    <div class="switch-container" id="toggle-nametag1-group" style="display:none;">
+                        <span>🏷️ 네임택1 노출</span>
+                        <input type="checkbox" id="toggle-nametag1-show" class="switch-input" checked onchange="toggleShowState('nametag1')">
                     </div>
-                    <div class="switch-container" id="toggle-rules-group" style="display:none;">
-                        <span>📋 룰카드 노출</span>
-                        <input type="checkbox" id="toggle-rules-show" class="switch-input" checked onchange="toggleShowState('rules')">
+                    <div class="switch-container" id="toggle-nametag2-group" style="display:none;">
+                        <span>🏷️ 네임택2 노출</span>
+                        <input type="checkbox" id="toggle-nametag2-show" class="switch-input" checked onchange="toggleShowState('nametag2')">
                     </div>
                 </div>
                 <div class="actions-row">
@@ -448,8 +446,8 @@
                 <div class="status-txt">
                     배너 좌표: Top <strong id="banner-val-top">0%</strong>, Left <strong id="banner-val-left">0%</strong> | 
                     자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong>
-                    <span id="nametag-coords" style="display:none;"> | 네임택: Top <strong id="nametag-val-top">0%</strong>, Left <strong id="nametag-val-left">0%</strong></span>
-                    <span id="rules-coords" style="display:none;"> | 룰카드: Top <strong id="rules-val-top">0%</strong>, Left <strong id="rules-val-left">0%</strong></span>
+                    <span id="nametag1-coords" style="display:none;"> | 네임택1: <strong id="nametag1-val-top">0%</strong>, <strong id="nametag1-val-left">0%</strong></span>
+                    <span id="nametag2-coords" style="display:none;"> | 네임택2: <strong id="nametag2-val-top">0%</strong>, <strong id="nametag2-val-left">0%</strong></span>
                     <span id="save-status" style="margin-left: 10px; color: var(--green); display: none;">✓ 저장 완료</span>
                 </div>
             </div>
@@ -477,13 +475,16 @@
 
         // PAGE1 전용 요소 표시
         if (pageNum === '1') {
-            document.getElementById('draggable-nametag').style.display = '';
-            document.getElementById('draggable-rules').style.display = '';
-            document.getElementById('toggle-nametag-group').style.display = '';
-            document.getElementById('toggle-rules-group').style.display = '';
-            document.getElementById('nametag-coords').style.display = '';
-            document.getElementById('rules-coords').style.display = '';
+            document.getElementById('draggable-nametag1').style.display = '';
+            document.getElementById('draggable-nametag2').style.display = '';
+            document.getElementById('toggle-nametag1-group').style.display = '';
+            document.getElementById('toggle-nametag2-group').style.display = '';
+            document.getElementById('nametag1-coords').style.display = '';
+            document.getElementById('nametag2-coords').style.display = '';
         }
+
+        // 페이지별 config 접두사 (PAGE2는 p2_)
+        const cfgPrefix = pageNum === '1' ? '' : 'p2_';
 
         // Draggables Configuration
         const container = document.getElementById('screen-container');
@@ -507,23 +508,15 @@
             }
         };
 
-        // PAGE1 전용 드래그 요소 추가
+        // PAGE1 전용: 네임택 2개 개별 드래그
         if (pageNum === '1') {
-            elements.nametag = {
-                el: document.getElementById('draggable-nametag'),
-                top: "3%",
-                left: "auto",
-                right: "1%",
-                bottom: "auto",
-                show: "1"
+            elements.nametag1 = {
+                el: document.getElementById('draggable-nametag1'),
+                top: "auto", left: "3%", right: "auto", bottom: "6%", show: "1"
             };
-            elements.rules = {
-                el: document.getElementById('draggable-rules'),
-                top: "auto",
-                left: "auto",
-                right: "1%",
-                bottom: "12%",
-                show: "1"
+            elements.nametag2 = {
+                el: document.getElementById('draggable-nametag2'),
+                top: "auto", left: "18%", right: "auto", bottom: "6%", show: "1"
             };
         }
 
@@ -556,49 +549,47 @@
             google.script.run.withSuccessHandler(function(cfg) {
                 if (!cfg) return;
 
-                // Load Banner values
-                elements.banner.top = cfg.banner_top || 'auto';
-                elements.banner.left = cfg.banner_left || 'auto';
-                elements.banner.right = cfg.banner_right || 'auto';
-                elements.banner.bottom = cfg.banner_bottom || 'auto';
-                elements.banner.show = cfg.banner_show !== undefined ? String(cfg.banner_show) : '1';
+                // Load Banner values (페이지별 접두사 적용)
+                elements.banner.top = cfg[cfgPrefix+'banner_top'] || 'auto';
+                elements.banner.left = cfg[cfgPrefix+'banner_left'] || 'auto';
+                elements.banner.right = cfg[cfgPrefix+'banner_right'] || 'auto';
+                elements.banner.bottom = cfg[cfgPrefix+'banner_bottom'] || 'auto';
+                elements.banner.show = cfg[cfgPrefix+'banner_show'] !== undefined ? String(cfg[cfgPrefix+'banner_show']) : '1';
 
                 // Load Ticker values
-                elements.ticker.top = cfg.ticker_top || 'auto';
-                elements.ticker.left = cfg.ticker_left || 'auto';
-                elements.ticker.right = cfg.ticker_right || 'auto';
-                elements.ticker.bottom = cfg.ticker_bottom || 'auto';
-                elements.ticker.show = cfg.ticker_show !== undefined ? String(cfg.ticker_show) : '1';
+                elements.ticker.top = cfg[cfgPrefix+'ticker_top'] || 'auto';
+                elements.ticker.left = cfg[cfgPrefix+'ticker_left'] || 'auto';
+                elements.ticker.right = cfg[cfgPrefix+'ticker_right'] || 'auto';
+                elements.ticker.bottom = cfg[cfgPrefix+'ticker_bottom'] || 'auto';
+                elements.ticker.show = cfg[cfgPrefix+'ticker_show'] !== undefined ? String(cfg[cfgPrefix+'ticker_show']) : '1';
 
-                // Load Nametag values (PAGE1 only)
-                if (elements.nametag) {
-                    elements.nametag.top = cfg.nametag_top || '3%';
-                    elements.nametag.left = cfg.nametag_left || 'auto';
-                    elements.nametag.right = cfg.nametag_right || '1%';
-                    elements.nametag.bottom = cfg.nametag_bottom || 'auto';
-                    elements.nametag.show = cfg.nametag_show !== undefined ? String(cfg.nametag_show) : '1';
+                // Load Nametag 1 & 2 values (PAGE1 only)
+                if (elements.nametag1) {
+                    elements.nametag1.top = cfg.nametag1_top || 'auto';
+                    elements.nametag1.left = cfg.nametag1_left || '3%';
+                    elements.nametag1.right = cfg.nametag1_right || 'auto';
+                    elements.nametag1.bottom = cfg.nametag1_bottom || '6%';
+                    elements.nametag1.show = cfg.nametag1_show !== undefined ? String(cfg.nametag1_show) : '1';
                 }
-
-                // Load Rules values (PAGE1 only)
-                if (elements.rules) {
-                    elements.rules.top = cfg.rules_top || 'auto';
-                    elements.rules.left = cfg.rules_left || 'auto';
-                    elements.rules.right = cfg.rules_right || '1%';
-                    elements.rules.bottom = cfg.rules_bottom || '12%';
-                    elements.rules.show = cfg.rules_show !== undefined ? String(cfg.rules_show) : '1';
+                if (elements.nametag2) {
+                    elements.nametag2.top = cfg.nametag2_top || 'auto';
+                    elements.nametag2.left = cfg.nametag2_left || '18%';
+                    elements.nametag2.right = cfg.nametag2_right || 'auto';
+                    elements.nametag2.bottom = cfg.nametag2_bottom || '6%';
+                    elements.nametag2.show = cfg.nametag2_show !== undefined ? String(cfg.nametag2_show) : '1';
                 }
 
                 // Apply states visually
                 applyVisualState('banner');
                 applyVisualState('ticker');
-                if (elements.nametag) applyVisualState('nametag');
-                if (elements.rules) applyVisualState('rules');
+                if (elements.nametag1) applyVisualState('nametag1');
+                if (elements.nametag2) applyVisualState('nametag2');
 
                 // Update switch checkboxes
                 document.getElementById('toggle-banner-show').checked = elements.banner.show === "1";
                 document.getElementById('toggle-ticker-show').checked = elements.ticker.show === "1";
-                if (elements.nametag) document.getElementById('toggle-nametag-show').checked = elements.nametag.show === "1";
-                if (elements.rules) document.getElementById('toggle-rules-show').checked = elements.rules.show === "1";
+                if (elements.nametag1) document.getElementById('toggle-nametag1-show').checked = elements.nametag1.show === "1";
+                if (elements.nametag2) document.getElementById('toggle-nametag2-show').checked = elements.nametag2.show === "1";
 
                 updateLabelReadouts();
 
@@ -695,19 +686,15 @@
             document.getElementById('ticker-val-top').textContent = tYStr;
             document.getElementById('ticker-val-left').textContent = tXStr;
 
-            if (elements.nametag) {
-                const n = elements.nametag;
-                const nXStr = n.right !== 'auto' ? `Right ${n.right}` : `Left ${n.left}`;
-                const nYStr = n.bottom !== 'auto' ? `Bottom ${n.bottom}` : `Top ${n.top}`;
-                document.getElementById('nametag-val-top').textContent = nYStr;
-                document.getElementById('nametag-val-left').textContent = nXStr;
+            if (elements.nametag1) {
+                const n = elements.nametag1;
+                document.getElementById('nametag1-val-top').textContent = n.bottom !== 'auto' ? `B ${n.bottom}` : `T ${n.top}`;
+                document.getElementById('nametag1-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}`;
             }
-            if (elements.rules) {
-                const r = elements.rules;
-                const rXStr = r.right !== 'auto' ? `Right ${r.right}` : `Left ${r.left}`;
-                const rYStr = r.bottom !== 'auto' ? `Bottom ${r.bottom}` : `Top ${r.top}`;
-                document.getElementById('rules-val-top').textContent = rYStr;
-                document.getElementById('rules-val-left').textContent = rXStr;
+            if (elements.nametag2) {
+                const n = elements.nametag2;
+                document.getElementById('nametag2-val-top').textContent = n.bottom !== 'auto' ? `B ${n.bottom}` : `T ${n.top}`;
+                document.getElementById('nametag2-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}`;
             }
         }
 
@@ -798,34 +785,33 @@
         }
 
         function saveCoordinates(isAuto = false) {
-            const configMap = {
-                banner_top: elements.banner.top,
-                banner_left: elements.banner.left,
-                banner_right: elements.banner.right,
-                banner_bottom: elements.banner.bottom,
-                banner_show: elements.banner.show,
-                
-                ticker_top: elements.ticker.top,
-                ticker_left: elements.ticker.left,
-                ticker_right: elements.ticker.right,
-                ticker_bottom: elements.ticker.bottom,
-                ticker_show: elements.ticker.show
-            };
+            const configMap = {};
+            // 페이지별 접두사 적용
+            configMap[cfgPrefix+'banner_top'] = elements.banner.top;
+            configMap[cfgPrefix+'banner_left'] = elements.banner.left;
+            configMap[cfgPrefix+'banner_right'] = elements.banner.right;
+            configMap[cfgPrefix+'banner_bottom'] = elements.banner.bottom;
+            configMap[cfgPrefix+'banner_show'] = elements.banner.show;
+            configMap[cfgPrefix+'ticker_top'] = elements.ticker.top;
+            configMap[cfgPrefix+'ticker_left'] = elements.ticker.left;
+            configMap[cfgPrefix+'ticker_right'] = elements.ticker.right;
+            configMap[cfgPrefix+'ticker_bottom'] = elements.ticker.bottom;
+            configMap[cfgPrefix+'ticker_show'] = elements.ticker.show;
 
-            // PAGE1 전용: 네임택/룰카드 좌표 저장
-            if (elements.nametag) {
-                configMap.nametag_top = elements.nametag.top;
-                configMap.nametag_left = elements.nametag.left;
-                configMap.nametag_right = elements.nametag.right;
-                configMap.nametag_bottom = elements.nametag.bottom;
-                configMap.nametag_show = elements.nametag.show;
+            // PAGE1 전용: 네임택 1,2 좌표 저장
+            if (elements.nametag1) {
+                configMap.nametag1_top = elements.nametag1.top;
+                configMap.nametag1_left = elements.nametag1.left;
+                configMap.nametag1_right = elements.nametag1.right;
+                configMap.nametag1_bottom = elements.nametag1.bottom;
+                configMap.nametag1_show = elements.nametag1.show;
             }
-            if (elements.rules) {
-                configMap.rules_top = elements.rules.top;
-                configMap.rules_left = elements.rules.left;
-                configMap.rules_right = elements.rules.right;
-                configMap.rules_bottom = elements.rules.bottom;
-                configMap.rules_show = elements.rules.show;
+            if (elements.nametag2) {
+                configMap.nametag2_top = elements.nametag2.top;
+                configMap.nametag2_left = elements.nametag2.left;
+                configMap.nametag2_right = elements.nametag2.right;
+                configMap.nametag2_bottom = elements.nametag2.bottom;
+                configMap.nametag2_show = elements.nametag2.show;
             }
 
             google.script.run.withSuccessHandler(function() {
@@ -857,23 +843,19 @@
             document.getElementById('toggle-banner-show').checked = true;
             document.getElementById('toggle-ticker-show').checked = true;
 
-            if (elements.nametag) {
-                elements.nametag.top = "3%";
-                elements.nametag.left = "auto";
-                elements.nametag.right = "1%";
-                elements.nametag.bottom = "auto";
-                elements.nametag.show = "1";
-                document.getElementById('toggle-nametag-show').checked = true;
-                applyVisualState('nametag');
+            if (elements.nametag1) {
+                elements.nametag1.top = "auto"; elements.nametag1.left = "3%";
+                elements.nametag1.right = "auto"; elements.nametag1.bottom = "6%";
+                elements.nametag1.show = "1";
+                document.getElementById('toggle-nametag1-show').checked = true;
+                applyVisualState('nametag1');
             }
-            if (elements.rules) {
-                elements.rules.top = "auto";
-                elements.rules.left = "auto";
-                elements.rules.right = "1%";
-                elements.rules.bottom = "12%";
-                elements.rules.show = "1";
-                document.getElementById('toggle-rules-show').checked = true;
-                applyVisualState('rules');
+            if (elements.nametag2) {
+                elements.nametag2.top = "auto"; elements.nametag2.left = "18%";
+                elements.nametag2.right = "auto"; elements.nametag2.bottom = "6%";
+                elements.nametag2.show = "1";
+                document.getElementById('toggle-nametag2-show').checked = true;
+                applyVisualState('nametag2');
             }
 
             applyVisualState('banner');
