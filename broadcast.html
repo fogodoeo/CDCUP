@@ -1615,13 +1615,20 @@
                     if (hcTraitsEl) hcTraitsEl.classList.remove("has-items");
                 } else {
                     empty.style.display = "";
-                    bc.style.display = "none";
+                    bc.style.display = "block";
+                    const scoreboardWrap = document.getElementById("scoreboard-wrap");
+                    if (scoreboardWrap) scoreboardWrap.style.display = "none";
+                    if (photoStack) photoStack.style.display = "none";
                 }
                 return;
             }
 
             empty.style.display = "none";
             bc.style.display = "block";
+            const scoreboardWrap = document.getElementById("scoreboard-wrap");
+            if (scoreboardWrap) {
+                scoreboardWrap.style.removeProperty("display");
+            }
             if (topBar) {
                 if (isHost) topBar.style.removeProperty("display");
                 else topBar.style.display = "flex";
