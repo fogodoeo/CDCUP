@@ -952,7 +952,7 @@
     </div>
 
     <script>
-        let lastJson = "";
+        let lastJson = null;
         let hiddenPhotos = [];
         let lastRenderedItem = null;
         let page2PhotoConfigReady = false;
@@ -1617,7 +1617,7 @@
             const photoStack = document.getElementById('photo-stack');
             if (photoStack) photoStack.classList.remove('config-pending');
             if (!document.body.classList.contains('host-mode') && !hadPage2PhotoConfig && lastRenderedItem) {
-                lastJson = '';
+                lastJson = null;
                 render(lastRenderedItem);
             }
 
@@ -2092,7 +2092,7 @@
             bc.onmessage = function (e) {
                 if (e.data && e.data.type === 'hiddenPhotos') {
                     hiddenPhotos = e.data.hidden || [];
-                    lastJson = '';
+                    lastJson = null;
                     if (lastRenderedItem) {
                         render(Object.assign({}, lastRenderedItem, { hiddenPhotos: hiddenPhotos.slice() }));
                     } else {
