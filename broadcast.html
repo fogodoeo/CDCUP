@@ -1128,6 +1128,17 @@
             const stage = document.getElementById('hc-ticker-stage');
             if (!bottomBar || !stage) return;
 
+            const isBracketPage = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket';
+            if (isBracketPage) {
+                resetTickerMotion();
+                stage.innerHTML = '';
+                bottomBar.classList.remove('visible');
+                bottomBar.style.setProperty('display', 'none', 'important');
+                window._tickerRenderState = null;
+                renderImageBanners(cfg);
+                return;
+            }
+
             const tickerRaw = cfg.ticker_cards || cfg.ticker || '';
             const messages = splitTickerMessages(tickerRaw);
             const interval = Math.max(parseInt(cfg.ticker_interval, 10) || 4200, 1800);
@@ -1506,9 +1517,10 @@
             const bannerHidden = ['1', 'true', 'yes', 'on'].indexOf(String(cfg.banner_hidden || '').trim().toLowerCase()) >= 0;
             const bannerOpacity = normalizeOpacity(cfg.banner_opacity, 0.93);
 
+            const isBracketPage = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket';
             applyBannerPlacement(container, layout);
             container.style.setProperty('--banner-opacity', bannerOpacity);
-            const bannerShowOff = cfg[bp + 'banner_show'] === '0' || container.dataset.bannerHiddenByToggle === '1';
+            const bannerShowOff = cfg[bp + 'banner_show'] === '0' || container.dataset.bannerHiddenByToggle === '1' || isBracketPage;
             if (bannerHidden || bannerShowOff || !urls.length) {
                 if (window._bannerRotateTimer) {
                     clearInterval(window._bannerRotateTimer);
@@ -1655,7 +1667,7 @@
             // 티커(자막 바) 위치 적용
             const bottomBar = document.querySelector('.hc-bottom-bar');
             if (bottomBar) {
-                if (cfg[lp + 'ticker_show'] === '0') {
+                if (cfg[lp + 'ticker_show'] === '0' || lp === 'p3_') {
                     bottomBar.style.setProperty('display', 'none', 'important');
                 } else {
                     bottomBar.style.removeProperty('display');
@@ -2118,7 +2130,7 @@
 
                 // 티커 show/hide 및 위치
                 if (bottomBar) {
-                    if (cfg[lp + 'ticker_show'] === '0') {
+                    if (cfg[lp + 'ticker_show'] === '0' || lp === 'p3_') {
                         bottomBar.style.setProperty('display', 'none', 'important');
                     } else {
                         bottomBar.style.removeProperty('display');
@@ -2144,7 +2156,7 @@
 
                 // 배너 show/hide 및 실시간 위치/크기 반영
                 if (bannerContainer) {
-                    if (cfg[lp + 'banner_show'] === '0') {
+                    if (cfg[lp + 'banner_show'] === '0' || lp === 'p3_') {
                         bannerContainer.classList.remove('banner-active');
                         bannerContainer.dataset.bannerHiddenByToggle = '1';
                     } else {
