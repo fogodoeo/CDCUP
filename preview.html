@@ -418,6 +418,19 @@
             <a href="preview.html?page=3" id="btn-tab-p3" class="cdcup-tab" style="text-decoration: none;">대진용 배치기</a>
             <a href="settings.html" class="cdcup-tab" style="text-decoration: none;">방송 시스템 설정</a>
         </div>
+        <!-- 대진용 배치기 배경 미리보기 선택 옵션 -->
+        <div id="bracket-bg-selector-group" class="control-row" style="margin-bottom: 16px; display: none; align-items: center; gap: 16px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
+            <span style="font-weight: 600; color: var(--text-muted); font-size: 14px;">🛠️ 대진표 배치용 배경 화면 선택:</span>
+            <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; color:var(--text); font-size:14px; font-weight: 500;">
+                <input type="radio" name="bracket-bg" value="1" checked onchange="changeBracketBg(1)"> 1P 진행용 화면
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; color:var(--text); font-size:14px; font-weight: 500;">
+                <input type="radio" name="bracket-bg" value="2" onchange="changeBracketBg(2)"> 2P 개체용 화면
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; color:var(--text); font-size:14px; font-weight: 500;">
+                <input type="radio" name="bracket-bg" value="bracket" onchange="changeBracketBg('bracket')"> 대진표 단독 화면 (검은 배경)
+            </label>
+        </div>
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
@@ -558,7 +571,10 @@
         } else if (pageNum === '3') {
             document.getElementById('btn-tab-p3').classList.add('active');
             document.getElementById('page-title').textContent = "📺 대진용 실시간 레이아웃 배치기";
-            frame.src = "broadcast.html?page=bracket";
+            // 3P 대진용 배치기는 1P/2P 페이지 위에 얹어서(오버레이) 쓰는 용도이므로,
+            // 기본 미리보기 배경으로 1P 진행용 화면을 로드하여 겹침 여부를 확인하며 작업할 수 있도록 함
+            frame.src = "broadcast.html?page=1";
+            document.getElementById('bracket-bg-selector-group').style.display = 'flex';
         } else {
             document.getElementById('btn-tab-p2').classList.add('active');
             document.getElementById('page-title').textContent = "📺 개체용 (2P) 실시간 레이아웃 배치기";
@@ -848,6 +864,18 @@
         }
 
         // 대진용 제어 함수
+        function changeBracketBg(bgType) {
+            const frame = document.getElementById('broadcast-frame');
+            if (!frame) return;
+            if (bgType === 1) {
+                frame.src = "broadcast.html?page=1";
+            } else if (bgType === 2) {
+                frame.src = "broadcast.html";
+            } else if (bgType === 'bracket') {
+                frame.src = "broadcast.html?page=bracket";
+            }
+        }
+
         function changeBracketScale(scale) {
             google.script.run.withSuccessHandler(function() {
                 toast('대진표 크기가 ' + scale + '강으로 변경되었습니다.');
