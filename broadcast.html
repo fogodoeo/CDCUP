@@ -433,7 +433,7 @@
         .hc-banner-float {
             display: none;
             position: absolute;
-            z-index: 60;
+            z-index: 10005;
             place-items: center center;
         }
 
@@ -652,7 +652,7 @@
             -webkit-backdrop-filter: blur(10px);
             border-top: 1px solid rgba(255, 255, 255, 0.06);
             overflow: hidden;
-            z-index: 50;
+            z-index: 10004;
         }
 
         .hc-bottom-bar.visible {
@@ -910,16 +910,16 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- 호스트 뷰: 우하단 이미지 배너 -->
-        <div class="hc-banner-float" id="hc-banner-float"></div>
+    <!-- 호스트 뷰: 우하단 이미지 배너 -->
+    <div class="hc-banner-float" id="hc-banner-float"></div>
 
-        <!-- 호스트 뷰: 하단 티커 바 -->
-        <div class="hc-bottom-bar">
-            <div class="ticker-sponsors-left" id="hc-ticker-sponsors-left"></div>
-            <div class="ticker-card-stage" id="hc-ticker-stage"></div>
-            <div class="ticker-sponsors-right" id="hc-ticker-sponsors-right"></div>
-        </div>
+    <!-- 호스트 뷰: 하단 티커 바 -->
+    <div class="hc-bottom-bar">
+        <div class="ticker-sponsors-left" id="hc-ticker-sponsors-left"></div>
+        <div class="ticker-card-stage" id="hc-ticker-stage"></div>
+        <div class="ticker-sponsors-right" id="hc-ticker-sponsors-right"></div>
     </div>
 
     <!-- 전체 대진표 전용 송출 컨테이너 -->
