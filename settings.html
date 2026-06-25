@@ -44,13 +44,24 @@
 
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 1200px;
             margin: 24px auto;
             padding: 0 16px;
             display: flex;
             flex-direction: column;
             gap: 20px;
             padding-bottom: 60px;
+        }
+
+        @media (min-width: 992px) {
+            .container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                align-items: start;
+            }
+            .container > .card:first-of-type {
+                grid-column: span 2;
+            }
         }
 
         /* ══ Cards & Sections ══ */
@@ -209,24 +220,35 @@
     <nav class="cdcup-nav">
         <a href="index.html" class="cdcup-nav__brand">
             <span class="cdcup-nav__brand-icon">🏆</span>
-            <span>CDCUP</span>
+            <span>CDCUP 관리자</span>
         </a>
         <div class="cdcup-nav__links">
-            <a href="index.html" class="cdcup-nav__link">개체관리</a>
-            <a href="preview.html?page=1" class="cdcup-nav__link">1P 진행</a>
-            <a href="preview.html?page=2" class="cdcup-nav__link">2P 개체</a>
-            <a href="summary.html" class="cdcup-nav__link">경매결과</a>
-            <a href="tournament.html" class="cdcup-nav__link">대진표</a>
-            <a href="settings.html" class="cdcup-nav__link active">설정</a>
+            <a href="index.html" class="cdcup-nav__link">개체/경매 관리</a>
+            <a href="preview.html?page=1" class="cdcup-nav__link active">방송 화면 제어</a>
         </div>
         <div class="cdcup-nav__utils">
-            <a href="broadcast.html" target="_blank" class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
-                <span>방송 송출</span>
-            </a>
+            <!-- 방송 송출 드롭다운 메뉴 -->
+            <div class="cdcup-nav__dropdown">
+                <button class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
+                    <span>📺 방송 송출 화면</span>
+                    <span class="caret">▼</span>
+                </button>
+                <div class="cdcup-nav__dropdown-menu">
+                    <a href="broadcast.html?page=1" target="_blank" class="cdcup-nav__dropdown-item">1P 진행용 화면</a>
+                    <a href="broadcast.html" target="_blank" class="cdcup-nav__dropdown-item">2P 개체용 화면</a>
+                    <a href="broadcast.html?page=bracket" target="_blank" class="cdcup-nav__dropdown-item">대진표 화면</a>
+                </div>
+            </div>
         </div>
     </nav>
 
     <div class="container">
+        <!-- 세부 서브 탭 바 -->
+        <div class="cdcup-tabs" style="margin-bottom: 24px; grid-column: span 2;">
+            <a href="preview.html?page=1" class="cdcup-tab" style="text-decoration: none;">1P 진행용 배치기</a>
+            <a href="preview.html?page=2" class="cdcup-tab" style="text-decoration: none;">2P 개체용 배치기</a>
+            <a href="settings.html" class="cdcup-tab active" style="text-decoration: none;">방송 시스템 설정</a>
+        </div>
 
         <!-- ══ 실시간 미리보기 ══ -->
         <div class="card">

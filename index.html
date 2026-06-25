@@ -57,8 +57,13 @@
 
         .container {
             padding: 16px;
-            max-width: 520px;
+            max-width: 1440px;
             margin: 24px auto;
+        }
+
+        #tab-register {
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .section {
@@ -2254,30 +2259,38 @@
     <nav class="cdcup-nav">
         <a href="index.html" class="cdcup-nav__brand">
             <span class="cdcup-nav__brand-icon">🏆</span>
-            <span>CDCUP</span>
+            <span>CDCUP 관리자</span>
         </a>
         <div class="cdcup-nav__links">
-            <a href="index.html" class="cdcup-nav__link active">개체관리</a>
-            <a href="preview.html?page=1" class="cdcup-nav__link">1P 진행</a>
-            <a href="preview.html?page=2" class="cdcup-nav__link">2P 개체</a>
-            <a href="summary.html" class="cdcup-nav__link">경매결과</a>
-            <a href="tournament.html" class="cdcup-nav__link">대진표</a>
-            <a href="settings.html" class="cdcup-nav__link">설정</a>
+            <a href="index.html" class="cdcup-nav__link active">개체/경매 관리</a>
+            <a href="preview.html?page=1" class="cdcup-nav__link">방송 화면 제어</a>
         </div>
         <div class="cdcup-nav__utils">
-            <a href="broadcast.html" target="_blank" class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
-                <span>방송 송출</span>
-            </a>
+            <!-- 방송 송출 드롭다운 메뉴 -->
+            <div class="cdcup-nav__dropdown">
+                <button class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
+                    <span>📺 방송 송출 화면</span>
+                    <span class="caret">▼</span>
+                </button>
+                <div class="cdcup-nav__dropdown-menu">
+                    <a href="broadcast.html?page=1" target="_blank" class="cdcup-nav__dropdown-item">1P 진행용 화면</a>
+                    <a href="broadcast.html" target="_blank" class="cdcup-nav__dropdown-item">2P 개체용 화면</a>
+                    <a href="broadcast.html?page=bracket" target="_blank" class="cdcup-nav__dropdown-item">대진표 화면</a>
+                </div>
+            </div>
         </div>
     </nav>
 
     <div class="container">
         <!-- 업비트 스타일 서브 탭 바 -->
-        <div class="cdcup-tabs" style="margin-bottom: 24px;">
+        <div class="cdcup-tabs" style="margin-bottom: 24px; align-items: center; display: flex;">
             <button class="cdcup-tab tab-btn" onclick="showTab('register',this)">등록</button>
             <button class="cdcup-tab tab-btn active" onclick="showTab('list',this)">목록</button>
             <button class="cdcup-tab tab-btn" onclick="showTab('dodosi',this)">도도시</button>
             <button class="cdcup-tab tab-btn" onclick="showTab('print',this)">인쇄</button>
+            <span style="margin-left: auto;"></span>
+            <a href="summary.html" class="cdcup-tab" style="text-decoration: none; font-size: 13px;">📊 경매결과 조회</a>
+            <a href="tournament.html" class="cdcup-tab" style="text-decoration: none; font-size: 13px;">🏆 토너먼트 대진표</a>
         </div>
         <!-- ═══ 등록 탭 ═══ -->
         <div id="tab-register" class="section">
