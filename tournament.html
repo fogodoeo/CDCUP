@@ -461,8 +461,12 @@
                     if (map.active_tournament) {
                         activeTournament = map.active_tournament;
                         document.getElementById('active-tournament-select').value = activeTournament;
+                        if (activeTournament === '16' || activeTournament === '8' || activeTournament === '4') {
+                            tournamentScale = parseInt(activeTournament);
+                        }
                     }
                 }
+                changeBracketScale(tournamentScale);
                 await loadParticipantTeams();
             } catch (err) {
                 toast('데이터 로드 실패: ' + err.message, true);
@@ -535,6 +539,15 @@
                     
                     const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
                     
+                    let leftPrefix = '';
+                    let rightPrefix = '';
+                    if (round === tournamentScale) {
+                        const leftIdx = (i - 1) * 2;
+                        const rightIdx = (i - 1) * 2 + 1;
+                        leftPrefix = `[${String.fromCharCode(65 + leftIdx)}팀] `;
+                        rightPrefix = `[${String.fromCharCode(65 + rightIdx)}팀] `;
+                    }
+                    
                     node.innerHTML = `
                         <div class="match-node-title" onclick="selectMatchForControl('${matchKey}')">${titleText}</div>
                         <div class="match-slot ${match.winner === 'left' ? 'winner-slot' : ''}" 
@@ -542,7 +555,7 @@
                              ondragleave="onDragLeaveSlot(event)" 
                              ondrop="onDropOnSlot(event, '${matchKey}', 'left')"
                              onclick="selectWinnerClick('${matchKey}', 'left')">
-                            <span class="match-slot-team-text">${esc(match.left || '대기중...')}</span>
+                            <span class="match-slot-team-text">${leftPrefix}${esc(match.left || '대기중...')}</span>
                             ${match.winner === 'left' ? '<span class="match-slot-crown">👑</span>' : ''}
                             ${match.left ? `<span class="slot-clear-btn" onclick="clearMatchSlot(event, '${matchKey}', 'left')">✕</span>` : ''}
                         </div>
@@ -551,7 +564,7 @@
                              ondragleave="onDragLeaveSlot(event)" 
                              ondrop="onDropOnSlot(event, '${matchKey}', 'right')"
                              onclick="selectWinnerClick('${matchKey}', 'right')">
-                            <span class="match-slot-team-text">${esc(match.right || '대기중...')}</span>
+                            <span class="match-slot-team-text">${rightPrefix}${esc(match.right || '대기중...')}</span>
                             ${match.winner === 'right' ? '<span class="match-slot-crown">👑</span>' : ''}
                             ${match.right ? `<span class="slot-clear-btn" onclick="clearMatchSlot(event, '${matchKey}', 'right')">✕</span>` : ''}
                         </div>

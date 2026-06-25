@@ -1596,6 +1596,7 @@
             if (typeof google === 'undefined' || !google.script || !google.script.run) return;
             google.script.run.withSuccessHandler(function (cfg) {
                 if (!cfg) return;
+                window.latestConfigMap = cfg;
                 const hadPage2PhotoConfig = page2PhotoConfigReady;
                 applyPage2PhotoConfig(cfg);
                 page2PhotoConfigReady = true;
@@ -1805,7 +1806,14 @@
 
 
         function render(item) {
-            const json = JSON.stringify(item);
+            let configPart = '';
+            if (item && window.latestConfigMap) {
+                const active = window.latestConfigMap.active_tournament;
+                if (active && active !== 'none') {
+                    configPart = '|' + active + '|' + (window.latestConfigMap['tournament_bracket_' + active] || '');
+                }
+            }
+            const json = item ? (JSON.stringify(item) + configPart) : '';
             if (json === lastJson) return;
             lastJson = json;
 
@@ -1856,7 +1864,41 @@
                 photoStack.classList.toggle('config-pending', !isHost && !page2PhotoConfigReady);
             }
 
-            const displayName = item.displayName || item.name || "";
+            let displayName = item.displayName || item.name || "";
+            
+            // Check for tournament team mapping
+            if (window.latestConfigMap && window.latestConfigMap.active_tournament && window.latestConfigMap.active_tournament !== 'none') {
+                const activeScale = window.latestConfigMap.active_tournament;
+                const matchObj = displayName.trim().match(/^([A-Pa-p])\s*[-_]?\s*([1-4])$/i);
+                if (matchObj) {
+                    const letter = matchObj[1].toUpperCase();
+                    const roundNum = matchObj[2];
+                    const idx = letter.charCodeAt(0) - 65;
+                    const scaleNum = parseInt(activeScale);
+                    if (idx >= 0 && idx < scaleNum) {
+                        const matchIdx = Math.floor(idx / 2) + 1;
+                        const slot = (idx % 2 === 0) ? 'left' : 'right';
+                        const bracketKey = 'tournament_bracket_' + activeScale;
+                        let company = '';
+                        if (window.latestConfigMap[bracketKey]) {
+                            try {
+                                const bracket = JSON.parse(window.latestConfigMap[bracketKey]);
+                                if (bracket && bracket.matches && bracket.matches[activeScale + '_' + matchIdx]) {
+                                    company = bracket.matches[activeScale + '_' + matchIdx][slot] || '';
+                                }
+                            } catch(e){}
+                        }
+                        const roundLabel = (roundNum === '4') ? '대장전' : (roundNum + 'R');
+                        if (company) {
+                            displayName = `[${letter}팀] ${company} (${roundLabel})`;
+                            item.company = company;
+                        } else {
+                            displayName = `[${letter}팀] (${roundLabel})`;
+                        }
+                    }
+                }
+            }
+
             document.getElementById("info-name").textContent = displayName;
             // 페이지2 상단 바에서 업체명 표시 제거
             document.getElementById("info-sub").textContent = '';
@@ -2250,6 +2292,7 @@
             google.script.run
                 .withSuccessHandler(function (map) {
                     if (!map) return;
+                    window.latestConfigMap = map;
                     const active = map.active_tournament || 'none';
                     if (active === 'none') {
                         document.getElementById('bracket-page-tree').innerHTML = '<div style="font-size:18px;color:#94a3b8;text-align:center;">현재 활성화된 토너먼트가 없습니다.</div>';
@@ -2296,13 +2339,22 @@
                     
                     const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
                     
+                    let leftPrefix = '';
+                    let rightPrefix = '';
+                    if (round === scale) {
+                        const leftIdx = (i - 1) * 2;
+                        const rightIdx = (i - 1) * 2 + 1;
+                        leftPrefix = `[${String.fromCharCode(65 + leftIdx)}팀] `;
+                        rightPrefix = `[${String.fromCharCode(65 + rightIdx)}팀] `;
+                    }
+                    
                     node.innerHTML = `
                         <div class="bracket-page-match-title">${titleText}</div>
                         <div class="bracket-page-slot ${match.winner === 'left' ? 'winner-slot' : ''}">
-                            <span class="bracket-page-team-text">${esc(match.left || '대기중...')}</span>
+                            <span class="bracket-page-team-text">${leftPrefix}${esc(match.left || '대기중...')}</span>
                         </div>
                         <div class="bracket-page-slot ${match.winner === 'right' ? 'winner-slot' : ''}">
-                            <span class="bracket-page-team-text">${esc(match.right || '대기중...')}</span>
+                            <span class="bracket-page-team-text">${rightPrefix}${esc(match.right || '대기중...')}</span>
                         </div>
                     `;
                     col.appendChild(node);
@@ -2311,119 +2363,227 @@
             });
         }
 
-        function refreshBattleOverlayState() {
-            google.script.run
-                .withSuccessHandler(function (map) {
-                    if (!map) return;
-                    const active = map.active_tournament || 'none';
-                    const state = map.battle_state || 'none';
-                    const curMatchKey = map.battle_current_match || ''; // '8_8_1' 등
+        let lastActiveItemName = '';
+        let lastActiveItemStatus = '';
+        
+        async function refreshBattleOverlayState() {
+            try {
+                // 1. 설정 및 개체 목록 가져오기
+                const map = await getConfigMap();
+                if (!map) return;
+                window.latestConfigMap = map;
+                
+                const active = map.active_tournament || 'none';
+                if (active === 'none') {
+                    document.getElementById('battle-announcement-overlay').style.display = 'none';
+                    document.body.classList.remove('battle-hide-prices');
+                    return;
+                }
+                
+                const scale = parseInt(active, 10);
+                const bracketKey = 'tournament_bracket_' + scale;
+                if (!map[bracketKey]) return;
+                
+                let bracket = { matches: {} };
+                try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
+                
+                // 2. 1라운드 매치들의 슬롯에 배정된 실제 업체명에 알파벳 팀명 매핑 부여
+                const teamToLetter = {};
+                const letterToTeam = {};
+                const matchCount = scale / 2;
+                for (let i = 1; i <= matchCount; i++) {
+                    const matchKey = scale + '_' + i;
+                    const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
                     
-                    const ann = document.getElementById('battle-announcement-overlay');
+                    const leftLetter = String.fromCharCode(65 + (i - 1) * 2);      // A, C, E...
+                    const rightLetter = String.fromCharCode(65 + (i - 1) * 2 + 1);  // B, D, F...
                     
-                    if (active === 'none' || state === 'none' || !curMatchKey) {
+                    if (match.left) {
+                        teamToLetter[match.left] = leftLetter;
+                        letterToTeam[leftLetter] = match.left;
+                    }
+                    if (match.right) {
+                        teamToLetter[match.right] = rightLetter;
+                        letterToTeam[rightLetter] = match.right;
+                    }
+                }
+                
+                // 3. 전체 개체 목록 가져오기
+                const items = await getItems();
+                if (!items || items.length === 0) return;
+                
+                // 현재 진행 중인 개체(status가 '진행' 또는 'active'인 개체) 찾기
+                const activeItem = items.find(i => i.status === '진행' || i.status === 'active');
+                
+                const ann = document.getElementById('battle-announcement-overlay');
+                
+                if (!activeItem) {
+                    const curMatchKey = map.battle_current_match || '';
+                    if (curMatchKey && map.battle_state === 'final_reveal') {
+                        showFinalRevealUI(scale, curMatchKey, bracket, map, items);
+                    } else {
                         ann.style.display = 'none';
-                        // 금액 숨김 해제
-                        document.body.classList.remove('battle-hide-prices');
-                        return;
-                    }
-                    
-                    // 대진 정보 가져오기
-                    const scale = curMatchKey.split('_')[0];
-                    const matchKey = curMatchKey.split('_')[1] + '_' + curMatchKey.split('_')[2];
-                    
-                    const bracketKey = 'tournament_bracket_' + scale;
-                    let bracket = { matches: {} };
-                    if (map[bracketKey]) {
-                        try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
-                    }
-                    const match = bracket.matches[matchKey] || { left: 'A팀', right: 'B팀', winner: '' };
-                    
-                    const scoreKey = 'score_' + scale + '_' + matchKey;
-                    let scores = { r1: '', r2: '', r3: '', r4: '' };
-                    if (map[scoreKey]) {
-                        try { scores = JSON.parse(map[scoreKey]); } catch(e){}
-                    }
-                    
-                    let leftScore = 0;
-                    let rightScore = 0;
-                    ['r1', 'r2', 'r3', 'r4'].forEach(r => {
-                        if (scores[r] === 'left') leftScore++;
-                        else if (scores[r] === 'right') rightScore++;
-                    });
-                    
-                    const matchIdx = curMatchKey.split('_')[2];
-                    const round = parseInt(curMatchKey.split('_')[1]);
-                    const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + matchIdx + '조' : (round === 8 ? '8강 ' + matchIdx + '조' : '16강 ' + matchIdx + '조'));
-                    
-                    document.getElementById('battle-ann-title').textContent = titleText + ' 진행 현황';
-                    
-                    let displayContent = '';
-                    let displaySub = '';
-                    let showSub = false;
-                    
-                    // 금액 가림 바디 클래스 활성화
-                    if (state !== 'final_reveal') {
-                        document.body.classList.add('battle-hide-prices');
-                    } else {
                         document.body.classList.remove('battle-hide-prices');
                     }
+                    return;
+                }
+                
+                const itemName = (activeItem.name || '').trim().toUpperCase(); // 예: 'A1', 'B2'
+                if (itemName.length < 2) return;
+                
+                const teamLetter = itemName.charAt(0); // 'A', 'B' 등
+                const roundNum = parseInt(itemName.substring(1), 10); // 1, 2, 3, 4
+                if (isNaN(roundNum) || roundNum < 1 || roundNum > 4) return;
+                
+                // 현재 팀 알파벳에 매핑된 실제 업체명 찾기
+                const realCompany = letterToTeam[teamLetter];
+                if (!realCompany) return;
+                
+                // 이 팀이 속한 토너먼트 매치 및 상대방 찾기
+                let targetMatchKey = null;
+                let opponentLetter = null;
+                let opponentCompany = null;
+                let slotType = null; // 'left' or 'right'
+                
+                for (let i = 1; i <= matchCount; i++) {
+                    const matchKey = scale + '_' + i;
+                    const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
                     
-                    switch (state) {
-                        case 'start':
-                            displayContent = `⚔️ ${match.left} VS ${match.right} 경기가 곧 시작됩니다!`;
-                            break;
-                        case 'r1_end':
-                            const r1WinnerName = scores.r1 === 'left' ? match.left : (scores.r1 === 'right' ? match.right : '미정');
-                            displayContent = `1라운드 종료! 승리: <span style="color:#10b981;">${r1WinnerName}</span>`;
-                            displaySub = `현재 스코어 ${leftScore} : ${rightScore} (2라운드 선공: ${scores.r1 === 'left' ? match.left : match.right})`;
-                            showSub = true;
-                            break;
-                        case 'r2_end':
-                            const r2WinnerName = scores.r2 === 'left' ? match.left : (scores.r2 === 'right' ? match.right : '미정');
-                            displayContent = `2라운드 종료! 승리: <span style="color:#10b981;">${r2WinnerName}</span>`;
-                            displaySub = `현재 스코어 ${leftScore} : ${rightScore}`;
-                            showSub = true;
-                            break;
-                        case 'r3_end':
-                            const r3WinnerName = scores.r3 === 'left' ? match.left : (scores.r3 === 'right' ? match.right : '미정');
-                            displayContent = `3라운드 종료! 승리: <span style="color:#10b981;">${r3WinnerName}</span>`;
-                            displaySub = `현재 스코어 ${leftScore} : ${rightScore}`;
-                            showSub = true;
-                            break;
-                        case 'r4_ready':
-                            displayContent = `🔥 대장전(4라운드) 준비!`;
-                            displaySub = `운명의 최종 승부 (현재 스코어 ${leftScore} : ${rightScore})`;
-                            showSub = true;
-                            break;
-                        case 'r4_end':
-                            const r4WinnerName = scores.r4 === 'left' ? match.left : (scores.r4 === 'right' ? match.right : '미정');
-                            displayContent = `대장전 종료! 승리: <span style="color:#10b981;">${r4WinnerName}</span>`;
-                            displaySub = `경기 정산 중... 곧 최종 결과가 공개됩니다!`;
-                            showSub = true;
-                            break;
-                        case 'final_reveal':
-                            const finalWinner = leftScore > rightScore ? match.left : (rightScore > leftScore ? match.right : '무승부');
-                            displayContent = `🏆 최종 승리: <span style="color:#f59e0b;">${finalWinner}</span> (${leftScore} : ${rightScore})`;
-                            displaySub = `대단히 축하드립니다!`;
-                            showSub = true;
-                            break;
+                    const leftL = String.fromCharCode(65 + (i - 1) * 2);
+                    const rightL = String.fromCharCode(65 + (i - 1) * 2 + 1);
+                    
+                    if (leftL === teamLetter) {
+                        targetMatchKey = matchKey;
+                        opponentLetter = rightL;
+                        opponentCompany = match.right;
+                        slotType = 'left';
+                        break;
+                    } else if (rightL === teamLetter) {
+                        targetMatchKey = matchKey;
+                        opponentLetter = leftL;
+                        opponentCompany = match.left;
+                        slotType = 'right';
+                        break;
                     }
-                    
-                    document.getElementById('battle-ann-content').innerHTML = displayContent;
-                    const subEl = document.getElementById('battle-ann-sub');
-                    if (showSub) {
-                        subEl.textContent = displaySub;
-                        subEl.style.display = 'block';
-                    } else {
-                        subEl.style.display = 'none';
+                }
+                
+                if (!targetMatchKey) return;
+                
+                // 상대방 팀 정보 구성
+                const leftTeamName = slotType === 'left' ? realCompany : opponentCompany;
+                const rightTeamName = slotType === 'left' ? opponentCompany : realCompany;
+                const leftLetter = slotType === 'left' ? teamLetter : opponentLetter;
+                const rightLetter = slotType === 'left' ? opponentLetter : teamLetter;
+                
+                // 4. 이 매치에 참여하는 두 팀의 1~4라운드 개체들 가져오기
+                const leftItems = {};
+                const rightItems = {};
+                for (let r = 1; r <= 4; r++) {
+                    leftItems[r] = items.find(i => (i.name || '').trim().toUpperCase() === (leftLetter + r));
+                    rightItems[r] = items.find(i => (i.name || '').trim().toUpperCase() === (rightLetter + r));
+                }
+                
+                // 5. 각 라운드별 점수 연산
+                let leftScore = 0;
+                let rightScore = 0;
+                const roundWinners = {};
+                for (let r = 1; r <= 4; r++) {
+                    const lIt = leftItems[r];
+                    const rIt = rightItems[r];
+                    if (lIt && rIt && (lIt.status === '완료' || lIt.status === 'sold') && (rIt.status === '완료' || rIt.status === 'sold')) {
+                        const lPrice = parseFloat(lIt.sold_price || lIt.soldPrice || 0);
+                        const rPrice = parseFloat(rIt.sold_price || rIt.soldPrice || 0);
+                        if (lPrice > rPrice) {
+                            leftScore++;
+                            roundWinners[r] = 'left';
+                        } else if (rPrice > lPrice) {
+                            rightScore++;
+                            roundWinners[r] = 'right';
+                        } else {
+                            roundWinners[r] = 'tie';
+                        }
                     }
+                }
+                
+                // 6. 현재 상태 판단 및 연출 구성
+                const parts = targetMatchKey.split('_');
+                const roundIdx = parts[1];
+                const titleText = (scale === 2) ? '결승전' : (scale === 4 ? '준결승 ' + roundIdx + '조' : (scale === 8 ? '8강 ' + roundIdx + '조' : '16강 ' + roundIdx + '조'));
+                
+                document.getElementById('battle-ann-title').textContent = titleText + ' 실시간 중계';
+                
+                let displayContent = '';
+                let displaySub = '';
+                
+                // 금액 감춤 활성화
+                const isFinalReveal = (roundNum === 4 && (activeItem.status === '완료' || activeItem.status === 'sold'));
+                if (!isFinalReveal) {
+                    document.body.classList.add('battle-hide-prices');
+                } else {
+                    document.body.classList.remove('battle-hide-prices');
+                }
+                
+                if (roundNum === 4) {
+                    displayContent = `🔥 대장전(4라운드) 진행 중!`;
+                    displaySub = `${leftLetter}팀 (${leftTeamName}) VS ${rightLetter}팀 (${rightTeamName})<br>운명의 최종 승부 (현재 스코어 ${leftScore} : ${rightScore})`;
+                } else {
+                    displayContent = `⚔️ ${roundNum}라운드 진행 중: <span style="color:#60a5fa;">${teamLetter}팀 (${realCompany || '대기'})</span>`;
+                    displaySub = `${leftLetter}팀 VS ${rightLetter}팀 대결 (현재 스코어 ${leftScore} : ${rightScore})`;
                     
-                    // 자막 노출 상태
-                    ann.style.display = (state !== 'none') ? 'block' : 'none';
-                })
-                .withFailureHandler(err => console.log('refresh error', err))
-                .getConfigMap();
+                    const oppItem = slotType === 'left' ? rightItems[roundNum] : leftItems[roundNum];
+                    if (oppItem && (oppItem.status === '완료' || oppItem.status === 'sold')) {
+                        displayContent = `⚔️ ${roundNum}라운드 후공 진행 중: <span style="color:#f87171;">${teamLetter}팀 (${realCompany || '대기'})</span>`;
+                        displaySub = `선공 ${opponentLetter}팀의 기록에 도전 중! (현재 스코어 ${leftScore} : ${rightScore})`;
+                    }
+                }
+                
+                document.getElementById('battle-ann-content').innerHTML = displayContent;
+                const subEl = document.getElementById('battle-ann-sub');
+                subEl.innerHTML = displaySub;
+                subEl.style.display = 'block';
+                ann.style.display = 'block';
+                
+                const currentMatchKey = scale + '_' + targetMatchKey;
+                if (map.battle_current_match !== currentMatchKey) {
+                    await updateConfigs({ battle_current_match: currentMatchKey });
+                }
+                
+            } catch (err) {
+                console.log('auto battle error', err);
+            }
+        }
+        
+        function showFinalRevealUI(scale, curMatchKey, bracket, map, items) {
+            const ann = document.getElementById('battle-announcement-overlay');
+            const matchKey = curMatchKey.split('_')[1] + '_' + curMatchKey.split('_')[2];
+            const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
+            
+            const matchIdx = curMatchKey.split('_')[2];
+            const round = parseInt(curMatchKey.split('_')[1], 10);
+            const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + matchIdx + '조' : (round === 8 ? '8강 ' + matchIdx + '조' : '16강 ' + matchIdx + '조'));
+            
+            const scoreKey = 'score_' + scale + '_' + matchKey;
+            let scores = { r1: '', r2: '', r3: '', r4: '' };
+            if (map[scoreKey]) {
+                try { scores = JSON.parse(map[scoreKey]); } catch(e){}
+            }
+            
+            let leftScore = 0;
+            let rightScore = 0;
+            ['r1', 'r2', 'r3', 'r4'].forEach(r => {
+                if (scores[r] === 'left') leftScore++;
+                else if (scores[r] === 'right') rightScore++;
+            });
+            
+            const finalWinner = leftScore > rightScore ? match.left : (rightScore > leftScore ? match.right : '무승부');
+            
+            document.getElementById('battle-ann-title').textContent = titleText + ' 최종 결과';
+            document.getElementById('battle-ann-content').innerHTML = `🏆 최종 승리: <span style="color:#f59e0b;">${finalWinner}</span> (${leftScore} : ${rightScore})`;
+            const subEl = document.getElementById('battle-ann-sub');
+            subEl.textContent = `대단히 축하드립니다! (원래 팀명: A팀=${match.left}, B팀=${match.right})`;
+            subEl.style.display = 'block';
+            ann.style.display = 'block';
+            document.body.classList.remove('battle-hide-prices');
         }
 
         function esc(s) {
