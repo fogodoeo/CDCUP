@@ -758,11 +758,90 @@
             letter-spacing: -0.015em;
             word-break: keep-all;
         }
+
+        /* ── 대진표 오버레이 스타일 ── */
+        #bracket-page-container {
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%) !important;
+        }
+        .bracket-page-column {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            height: 100%;
+            gap: 20px;
+        }
+        .bracket-page-match {
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            width: 240px;
+            padding: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bracket-page-match.active-match {
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+            background: rgba(30, 41, 59, 0.8);
+        }
+        .bracket-page-match-title {
+            font-size: 11px;
+            color: #94a3b8;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .bracket-page-slot {
+            height: 38px;
+            border-radius: 6px;
+            margin: 4px 0;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            font-size: 13px;
+            font-weight: 700;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            color: #94a3b8;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .bracket-page-slot.winner-slot {
+            background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.03));
+            border-color: #10b981;
+            color: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
+        }
+        .bracket-page-slot.winner-slot::after {
+            content: '👑';
+            position: absolute;
+            right: 12px;
+            font-size: 14px;
+        }
+        .bracket-page-team-text {
+            max-width: 80%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ── 배틀 모드 금액 가림용 클래스 ── */
+        body.battle-hide-prices .ticker-card-text,
+        body.battle-hide-prices #info-sub,
+        body.battle-hide-prices .hc-sub {
+            filter: blur(8px) !important;
+            pointer-events: none;
+            user-select: none;
+        }
     </style>
 </head>
 
 <body>
-    <div class="empty" id="empty"></div>
+    <div class="empty" id="empty">경매 대기중...</div>
 
     <div class="broadcast" id="broadcast">
         <div class="scoreboard-wrap" id="scoreboard-wrap">
@@ -840,6 +919,19 @@
             <div class="ticker-sponsors-left" id="hc-ticker-sponsors-left"></div>
             <div class="ticker-card-stage" id="hc-ticker-stage"></div>
             <div class="ticker-sponsors-right" id="hc-ticker-sponsors-right"></div>
+        <!-- 배틀 안내 자막 레이어 -->
+        <div id="battle-announcement-overlay" style="display:none; position:absolute; top:35%; left:10%; right:10%; z-index:999; background:rgba(9, 15, 29, 0.97); border:3px solid #3b82f6; box-shadow:0 0 40px rgba(59,130,246,0.7); padding:40px 20px; border-radius:20px; text-align:center; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
+            <div id="battle-ann-title" style="font-size:24px; font-weight:800; color:#94a3b8; margin-bottom:14px; letter-spacing:0.05em; text-transform:uppercase;">8강 1조 경기</div>
+            <div id="battle-ann-content" style="font-size:44px; font-weight:900; color:#fff; text-shadow:0 0 15px rgba(255,255,255,0.4); word-break:keep-all; line-height:1.3;">레드팀 VS 블루팀 - 1라운드 시작!</div>
+            <div id="battle-ann-sub" style="font-size:20px; font-weight:800; color:#3b82f6; margin-top:20px; display:none;">현재 스코어 1 : 0 (선공: 레드팀 / 후공: 블루팀)</div>
+        </div>
+
+        <!-- 전체 대진표 전용 송출 컨테이너 -->
+        <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:#0a0f1d; color:#fff; position:absolute; top:0; left:0; z-index:9999; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
+            <div style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
+                🏆 CRE WORLD CUP TOURNAMENT 🏆
+            </div>
+            <div id="bracket-page-tree" style="display:flex; justify-content:center; align-items:center; height:calc(100% - 120px); gap:60px; padding:20px; box-sizing:border-box;"></div>
         </div>
     </div>
 
@@ -1771,8 +1863,9 @@
 
             // 호스트 카드 데이터 렌더링
             document.getElementById("hc-name").textContent = displayName;
-            // 업체명은 절대 표시하지 않음
-            document.getElementById("hc-sub").textContent = '';
+            const subParts = [];
+            if (item.company) subParts.push(item.company);
+            document.getElementById("hc-sub").textContent = subParts.join(' · ');
 
             // 서버에서 받은 개별 사진 숨김 플래그
             if (Array.isArray(item.hiddenPhotos)) hiddenPhotos = item.hiddenPhotos;
@@ -2132,6 +2225,211 @@
                 smartRefresh();
             }
         });
+
+        // ══════════════════════════════════════
+        //  배틀 & 토너먼트 오버레이 연출 (자바스크립트)
+        // ══════════════════════════════════════
+        const params = new URLSearchParams(window.location.search);
+        const isBracketPage = (params.get('page') || '').toLowerCase() === 'bracket';
+        
+        if (isBracketPage) {
+            // 일반 경매 카드 숨기고 대진표 전체화면 노출
+            document.getElementById('empty').style.display = 'none';
+            document.getElementById('broadcast').style.display = 'none';
+            document.getElementById('bracket-page-container').style.display = 'block';
+            
+            // 대진표 자동 리프레시 루프 가동
+            setInterval(refreshBracketPage, 3000);
+            refreshBracketPage();
+        } else {
+            // 일반 경매 오버레이에서 배틀 모드 상태를 구독하여 화면에 자막 및 금액 감춤 적용
+            setInterval(refreshBattleOverlayState, 2000);
+        }
+
+        function refreshBracketPage() {
+            google.script.run
+                .withSuccessHandler(function (map) {
+                    if (!map) return;
+                    const active = map.active_tournament || 'none';
+                    if (active === 'none') {
+                        document.getElementById('bracket-page-tree').innerHTML = '<div style="font-size:18px;color:#94a3b8;text-align:center;">현재 활성화된 토너먼트가 없습니다.</div>';
+                        return;
+                    }
+                    
+                    const bracketKey = 'tournament_bracket_' + active;
+                    if (!map[bracketKey]) return;
+                    
+                    let bracket = { matches: {} };
+                    try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
+                    
+                    renderBracketPageTree(parseInt(active), bracket, map.battle_current_match);
+                })
+                .getConfigMap();
+        }
+
+        function renderBracketPageTree(scale, bracket, currentMatch) {
+            const tree = document.getElementById('bracket-page-tree');
+            tree.innerHTML = '';
+            
+            const rounds = [];
+            let r = scale;
+            while (r >= 2) {
+                rounds.push(r);
+                r = r / 2;
+            }
+            
+            rounds.forEach(round => {
+                const col = document.createElement('div');
+                col.className = 'bracket-page-column';
+                
+                const matchCount = round / 2;
+                for (let i = 1; i <= matchCount; i++) {
+                    const matchKey = round + '_' + i;
+                    const fullKey = scale + '_' + matchKey;
+                    const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
+                    
+                    const node = document.createElement('div');
+                    node.className = 'bracket-page-match';
+                    if (currentMatch === fullKey) {
+                        node.classList.add('active-match');
+                    }
+                    
+                    const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
+                    
+                    node.innerHTML = `
+                        <div class="bracket-page-match-title">${titleText}</div>
+                        <div class="bracket-page-slot ${match.winner === 'left' ? 'winner-slot' : ''}">
+                            <span class="bracket-page-team-text">${esc(match.left || '대기중...')}</span>
+                        </div>
+                        <div class="bracket-page-slot ${match.winner === 'right' ? 'winner-slot' : ''}">
+                            <span class="bracket-page-team-text">${esc(match.right || '대기중...')}</span>
+                        </div>
+                    `;
+                    col.appendChild(node);
+                }
+                tree.appendChild(col);
+            });
+        }
+
+        function refreshBattleOverlayState() {
+            google.script.run
+                .withSuccessHandler(function (map) {
+                    if (!map) return;
+                    const active = map.active_tournament || 'none';
+                    const state = map.battle_state || 'none';
+                    const curMatchKey = map.battle_current_match || ''; // '8_8_1' 등
+                    
+                    const ann = document.getElementById('battle-announcement-overlay');
+                    
+                    if (active === 'none' || state === 'none' || !curMatchKey) {
+                        ann.style.display = 'none';
+                        // 금액 숨김 해제
+                        document.body.classList.remove('battle-hide-prices');
+                        return;
+                    }
+                    
+                    // 대진 정보 가져오기
+                    const scale = curMatchKey.split('_')[0];
+                    const matchKey = curMatchKey.split('_')[1] + '_' + curMatchKey.split('_')[2];
+                    
+                    const bracketKey = 'tournament_bracket_' + scale;
+                    let bracket = { matches: {} };
+                    if (map[bracketKey]) {
+                        try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
+                    }
+                    const match = bracket.matches[matchKey] || { left: 'A팀', right: 'B팀', winner: '' };
+                    
+                    const scoreKey = 'score_' + scale + '_' + matchKey;
+                    let scores = { r1: '', r2: '', r3: '', r4: '' };
+                    if (map[scoreKey]) {
+                        try { scores = JSON.parse(map[scoreKey]); } catch(e){}
+                    }
+                    
+                    let leftScore = 0;
+                    let rightScore = 0;
+                    ['r1', 'r2', 'r3', 'r4'].forEach(r => {
+                        if (scores[r] === 'left') leftScore++;
+                        else if (scores[r] === 'right') rightScore++;
+                    });
+                    
+                    const matchIdx = curMatchKey.split('_')[2];
+                    const round = parseInt(curMatchKey.split('_')[1]);
+                    const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + matchIdx + '조' : (round === 8 ? '8강 ' + matchIdx + '조' : '16강 ' + matchIdx + '조'));
+                    
+                    document.getElementById('battle-ann-title').textContent = titleText + ' 진행 현황';
+                    
+                    let displayContent = '';
+                    let displaySub = '';
+                    let showSub = false;
+                    
+                    // 금액 가림 바디 클래스 활성화
+                    if (state !== 'final_reveal') {
+                        document.body.classList.add('battle-hide-prices');
+                    } else {
+                        document.body.classList.remove('battle-hide-prices');
+                    }
+                    
+                    switch (state) {
+                        case 'start':
+                            displayContent = `⚔️ ${match.left} VS ${match.right} 경기가 곧 시작됩니다!`;
+                            break;
+                        case 'r1_end':
+                            const r1WinnerName = scores.r1 === 'left' ? match.left : (scores.r1 === 'right' ? match.right : '미정');
+                            displayContent = `1라운드 종료! 승리: <span style="color:#10b981;">${r1WinnerName}</span>`;
+                            displaySub = `현재 스코어 ${leftScore} : ${rightScore} (2라운드 선공: ${scores.r1 === 'left' ? match.left : match.right})`;
+                            showSub = true;
+                            break;
+                        case 'r2_end':
+                            const r2WinnerName = scores.r2 === 'left' ? match.left : (scores.r2 === 'right' ? match.right : '미정');
+                            displayContent = `2라운드 종료! 승리: <span style="color:#10b981;">${r2WinnerName}</span>`;
+                            displaySub = `현재 스코어 ${leftScore} : ${rightScore}`;
+                            showSub = true;
+                            break;
+                        case 'r3_end':
+                            const r3WinnerName = scores.r3 === 'left' ? match.left : (scores.r3 === 'right' ? match.right : '미정');
+                            displayContent = `3라운드 종료! 승리: <span style="color:#10b981;">${r3WinnerName}</span>`;
+                            displaySub = `현재 스코어 ${leftScore} : ${rightScore}`;
+                            showSub = true;
+                            break;
+                        case 'r4_ready':
+                            displayContent = `🔥 대장전(4라운드) 준비!`;
+                            displaySub = `운명의 최종 승부 (현재 스코어 ${leftScore} : ${rightScore})`;
+                            showSub = true;
+                            break;
+                        case 'r4_end':
+                            const r4WinnerName = scores.r4 === 'left' ? match.left : (scores.r4 === 'right' ? match.right : '미정');
+                            displayContent = `대장전 종료! 승리: <span style="color:#10b981;">${r4WinnerName}</span>`;
+                            displaySub = `경기 정산 중... 곧 최종 결과가 공개됩니다!`;
+                            showSub = true;
+                            break;
+                        case 'final_reveal':
+                            const finalWinner = leftScore > rightScore ? match.left : (rightScore > leftScore ? match.right : '무승부');
+                            displayContent = `🏆 최종 승리: <span style="color:#f59e0b;">${finalWinner}</span> (${leftScore} : ${rightScore})`;
+                            displaySub = `대단히 축하드립니다!`;
+                            showSub = true;
+                            break;
+                    }
+                    
+                    document.getElementById('battle-ann-content').innerHTML = displayContent;
+                    const subEl = document.getElementById('battle-ann-sub');
+                    if (showSub) {
+                        subEl.textContent = displaySub;
+                        subEl.style.display = 'block';
+                    } else {
+                        subEl.style.display = 'none';
+                    }
+                    
+                    // 자막 노출 상태
+                    ann.style.display = (state !== 'none') ? 'block' : 'none';
+                })
+                .withFailureHandler(err => console.log('refresh error', err))
+                .getConfigMap();
+        }
+
+        function esc(s) {
+            if (!s) return '';
+            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
     </script>
 </body>
 
