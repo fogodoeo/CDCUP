@@ -937,6 +937,20 @@
         <div id="battle-ann-sub" style="font-size:20px; font-weight:800; color:#3b82f6; margin-top:20px; display:none;">현재 스코어 1 : 0 (선공: 레드팀 / 후공: 블루팀)</div>
     </div>
 
+    <!-- 페이지2 용 우측 실시간 매치업 오버레이 카드 -->
+    <div id="battle-matchup-card" style="display:none; position:absolute; top:110px; right:24px; z-index:99; background:rgba(10, 15, 28, 0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border: 1.5px solid rgba(59, 130, 246, 0.4); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); border-radius:12px; padding:14px 20px; font-family:'Pretendard', sans-serif; min-width:280px; box-sizing:border-box;">
+        <div style="font-size:11px; font-weight:800; color:#3b82f6; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:4px;">
+            <span>⚔️</span> CURRENT MATCH
+        </div>
+        <div id="matchup-teams" style="font-size:18px; font-weight:800; color:#fff; word-break:keep-all;">
+            [A팀] 대기중 <span style="color:#ef4444; font-size:14px; margin:0 6px;">VS</span> [B팀] 대기중
+        </div>
+        <div id="matchup-details" style="font-size:13px; font-weight:600; color:#94a3b8; margin-top:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+            <span id="matchup-score">스코어 0 : 0</span>
+            <span id="matchup-round" style="color:#FFA800; background:rgba(255,168,0,0.1); padding:2px 6px; border-radius:4px; font-size:11px;">1R 진행중</span>
+        </div>
+    </div>
+
     <script>
         let lastJson = "";
         let hiddenPhotos = [];
@@ -1883,15 +1897,15 @@
                 photoStack.classList.toggle('config-pending', !isHost && !page2PhotoConfigReady);
             }
 
-            let displayName = item.displayName || item.name || "";
+            const origName = item.displayName || item.name || "";
+            let displayName = origName;
             
-            // Check for tournament team mapping
+            // Check for tournament team mapping to find company name
             if (window.latestConfigMap && window.latestConfigMap.active_tournament && window.latestConfigMap.active_tournament !== 'none') {
                 const activeScale = window.latestConfigMap.active_tournament;
-                const matchObj = displayName.trim().match(/^([A-Pa-p])\s*[-_]?\s*([1-4])$/i);
+                const matchObj = origName.trim().match(/^([A-Pa-p])\s*[-_]?\s*([1-4])$/i);
                 if (matchObj) {
                     const letter = matchObj[1].toUpperCase();
-                    const roundNum = matchObj[2];
                     const idx = letter.charCodeAt(0) - 65;
                     const scaleNum = parseInt(activeScale);
                     if (idx >= 0 && idx < scaleNum) {
@@ -1907,23 +1921,20 @@
                                 }
                             } catch(e){}
                         }
-                        const roundLabel = (roundNum === '4') ? '대장전' : (roundNum + 'R');
                         if (company) {
-                            displayName = `[${letter}팀] ${company} (${roundLabel})`;
                             item.company = company;
-                        } else {
-                            displayName = `[${letter}팀] (${roundLabel})`;
                         }
                     }
                 }
             }
 
-            document.getElementById("info-name").textContent = displayName;
+            // 개체명은 원래 명칭(예: A1) 그대로 출력
+            document.getElementById("info-name").textContent = origName;
             // 페이지2 상단 바에서 업체명 표시 제거
             document.getElementById("info-sub").textContent = '';
 
             // 호스트 카드 데이터 렌더링
-            document.getElementById("hc-name").textContent = displayName;
+            document.getElementById("hc-name").textContent = origName;
             const subParts = [];
             if (item.company) subParts.push(item.company);
             document.getElementById("hc-sub").textContent = subParts.join(' · ');
@@ -2422,6 +2433,8 @@
                 const active = map.active_tournament || 'none';
                 if (active === 'none') {
                     document.getElementById('battle-announcement-overlay').style.display = 'none';
+                    const matchupCard = document.getElementById('battle-matchup-card');
+                    if (matchupCard) matchupCard.style.display = 'none';
                     document.body.classList.remove('battle-hide-prices');
                     return;
                 }
@@ -2471,6 +2484,8 @@
                         ann.style.display = 'none';
                         document.body.classList.remove('battle-hide-prices');
                     }
+                    const matchupCard = document.getElementById('battle-matchup-card');
+                    if (matchupCard) matchupCard.style.display = 'none';
                     return;
                 }
                 
@@ -2588,6 +2603,20 @@
                 subEl.innerHTML = displaySub;
                 subEl.style.display = 'block';
                 ann.style.display = 'block';
+                
+                // 우측 매치업 카드 실시간 업데이트 (page 2 등 일반 오버레이용)
+                const matchupCard = document.getElementById('battle-matchup-card');
+                if (matchupCard) {
+                    if (!isBracketPage) {
+                        document.getElementById('matchup-teams').innerHTML = `[${leftLetter}팀] ${leftTeamName} <span style="color:#ef4444; font-size:14px; margin:0 6px;">VS</span> [${rightLetter}팀] ${rightTeamName}`;
+                        document.getElementById('matchup-score').textContent = `스코어 ${leftScore} : ${rightScore}`;
+                        const roundLabel = (roundNum === 4) ? '대장전' : `${roundNum}R`;
+                        document.getElementById('matchup-round').textContent = `${roundLabel} 진행중`;
+                        matchupCard.style.display = 'block';
+                    } else {
+                        matchupCard.style.display = 'none';
+                    }
+                }
                 
                 const currentMatchKey = scale + '_' + targetMatchKey;
                 if (map.battle_current_match !== currentMatchKey) {
