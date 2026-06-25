@@ -136,6 +136,20 @@
             background: rgba(236, 72, 153, 0.25);
         }
 
+        /* 🏆 Draggable Bracket */
+        .draggable-bracket {
+            width: 80%;
+            height: 70%;
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px dashed #3b82f6;
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+        }
+        .draggable-bracket:hover {
+            border-color: #60a5fa;
+            background: rgba(59, 130, 246, 0.2);
+        }
+
         /* 🖼️ Draggable Banner */
         .draggable-banner {
             width: auto;
@@ -405,6 +419,12 @@
                     <div class="element-label">🏷️ 네임택 2</div>
                     <div class="resize-handle resize-handle-se" id="resize-nametag2" title="크기 조절" style="border-color: #EC4899;"></div>
                 </div>
+
+                <!-- 5. Draggable Bracket (PAGE3 only) -->
+                <div class="draggable-element draggable-bracket" id="draggable-bracket" data-type="bracket" style="display:none; z-index:10;">
+                    <div class="element-label">🏆 대진표 (브라켓)</div>
+                    <div class="resize-handle resize-handle-se" id="resize-bracket" title="크기 조절" style="border-color: #3b82f6;"></div>
+                </div>
             </div>
         </div>
 
@@ -427,6 +447,10 @@
                     <div class="switch-container" id="toggle-nametag2-group" style="display:none;">
                         <span>🏷️ 네임택2 노출</span>
                         <input type="checkbox" id="toggle-nametag2-show" class="switch-input" checked onchange="toggleShowState('nametag2')">
+                    </div>
+                    <div class="switch-container" id="toggle-bracket-show-group" style="display:none;">
+                        <span>🏆 대진표 노출</span>
+                        <input type="checkbox" id="toggle-bracket-show" class="switch-input" checked onchange="toggleShowState('bracket')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-scale-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">🏆 대진표 크기:</span>
@@ -454,10 +478,11 @@
 
             <div class="control-row">
                 <div class="status-txt">
-                    배너 좌표: Top <strong id="banner-val-top">0%</strong>, Left <strong id="banner-val-left">0%</strong> | 
-                    자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong>
+                    <span id="banner-coords-group">배너 좌표: Top <strong id="banner-val-top">0%</strong>, Left <strong id="banner-val-left">0%</strong> | </span>
+                    <span id="ticker-coords-group">자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong></span>
                     <span id="nametag1-coords" style="display:none;"> | 네임택1: <strong id="nametag1-val-top">0%</strong>, <strong id="nametag1-val-left">0%</strong></span>
                     <span id="nametag2-coords" style="display:none;"> | 네임택2: <strong id="nametag2-val-top">0%</strong>, <strong id="nametag2-val-left">0%</strong></span>
+                    <span id="bracket-coords" style="display:none;">대진표 좌표: Top <strong id="bracket-val-top">0%</strong>, Left <strong id="bracket-val-left">0%</strong></span>
                     <span id="save-status" style="margin-left: 10px; color: var(--green); display: none;">✓ 저장 완료</span>
                 </div>
             </div>
@@ -501,6 +526,11 @@
         if (pageNum === '3') {
             document.getElementById('toggle-bracket-scale-group').style.display = 'flex';
             document.getElementById('toggle-bracket-mode-group').style.display = 'flex';
+            document.getElementById('draggable-bracket').style.display = '';
+            document.getElementById('toggle-bracket-show-group').style.display = '';
+            document.getElementById('banner-coords-group').style.display = 'none';
+            document.getElementById('ticker-coords-group').style.display = 'none';
+            document.getElementById('bracket-coords').style.display = 'inline';
         }
 
         // 페이지별 config 접두사 (PAGE2는 p2_, PAGE3는 p3_)
@@ -533,6 +563,15 @@
                 el: document.getElementById('draggable-nametag2'),
                 top: "auto", left: "18%", right: "auto", bottom: "6%", show: "1",
                 width: "16vw", height: "8vh"
+            };
+        }
+
+        // PAGE3 전용: 대진표 (브라켓) 드래그 설정
+        if (pageNum === '3') {
+            elements.bracket = {
+                el: document.getElementById('draggable-bracket'),
+                top: "120px", left: "0px", right: "auto", bottom: "auto",
+                show: "1", width: "100%", height: "calc(100% - 120px)"
             };
         }
 
@@ -619,17 +658,30 @@
                     elements.nametag2.height = sharedH;
                 }
 
+                // Load Bracket values (PAGE3 only)
+                if (elements.bracket) {
+                    elements.bracket.top = cfg.bracket_top || '120px';
+                    elements.bracket.left = cfg.bracket_left || '0px';
+                    elements.bracket.right = cfg.bracket_right || 'auto';
+                    elements.bracket.bottom = cfg.bracket_bottom || 'auto';
+                    elements.bracket.show = cfg.bracket_show !== undefined ? String(cfg.bracket_show) : '1';
+                    elements.bracket.width = cfg.bracket_width || '100%';
+                    elements.bracket.height = cfg.bracket_height || 'calc(100% - 120px)';
+                }
+
                 // Apply states visually
                 applyVisualState('banner');
                 applyVisualState('ticker');
                 if (elements.nametag1) applyVisualState('nametag1');
                 if (elements.nametag2) applyVisualState('nametag2');
+                if (elements.bracket) applyVisualState('bracket');
 
                 // Update switch checkboxes
                 document.getElementById('toggle-banner-show').checked = elements.banner.show === "1";
                 document.getElementById('toggle-ticker-show').checked = elements.ticker.show === "1";
                 if (elements.nametag1) document.getElementById('toggle-nametag1-show').checked = elements.nametag1.show === "1";
                 if (elements.nametag2) document.getElementById('toggle-nametag2-show').checked = elements.nametag2.show === "1";
+                if (elements.bracket) document.getElementById('toggle-bracket-show').checked = elements.bracket.show === "1";
 
                 updateLabelReadouts();
 
@@ -647,6 +699,11 @@
                 if (elements.nametag2) {
                     elements.nametag2.el.style.width = convertToPercent(elements.nametag2.width);
                     elements.nametag2.el.style.height = convertToPercent(elements.nametag2.height);
+                }
+                // 대진표 크기 적용
+                if (elements.bracket) {
+                    elements.bracket.el.style.width = convertToPercent(elements.bracket.width);
+                    elements.bracket.el.style.height = convertToPercent(elements.bracket.height);
                 }
 
                 // Load first banner image as preview inside drag box
@@ -763,6 +820,13 @@
                 document.getElementById('nametag2-val-top').textContent = n.bottom !== 'auto' ? `B ${n.bottom}` : `T ${n.top}`;
                 document.getElementById('nametag2-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}` + ` (${n.width})`;
             }
+            if (pageNum === '3' && elements.bracket) {
+                const br = elements.bracket;
+                const brXStr = br.left !== 'auto' ? `Left ${br.left}` : `Right ${br.right}`;
+                const brYStr = br.top !== 'auto' ? `Top ${br.top}` : `Bottom ${br.bottom}`;
+                document.getElementById('bracket-val-top').textContent = brYStr;
+                document.getElementById('bracket-val-left').textContent = `${brXStr} (${br.width}×${br.height})`;
+            }
         }
 
         // Drag Setup
@@ -806,6 +870,15 @@
             rn1.addEventListener('touchstart', (e) => startResize(e, 'nametag1'), { passive: false });
             rn2.addEventListener('mousedown', (e) => startResize(e, 'nametag2'));
             rn2.addEventListener('touchstart', (e) => startResize(e, 'nametag2'), { passive: false });
+        }
+
+        // 대진표 리사이즈 핸들 (PAGE3 only)
+        if (pageNum === '3') {
+            const resizeBracket = document.getElementById('resize-bracket');
+            if (resizeBracket) {
+                resizeBracket.addEventListener('mousedown', (e) => startResize(e, 'bracket'));
+                resizeBracket.addEventListener('touchstart', (e) => startResize(e, 'bracket'), { passive: false });
+            }
         }
 
         window.addEventListener('mousemove', drag);
@@ -861,6 +934,13 @@
                     elements.nametag1.el.style.height = convertToPercent(unifiedH);
                     elements.nametag2.el.style.width = convertToPercent(unifiedW);
                     elements.nametag2.el.style.height = convertToPercent(unifiedH);
+                } else if (resizeTarget === 'bracket') {
+                    const newW = Math.max(100, resizeStartW + dx);
+                    const newH = Math.max(100, resizeStartH + dy);
+                    elements.bracket.width = ((newW / containerRect.width) * 100).toFixed(1) + '%';
+                    elements.bracket.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
+                    elements.bracket.el.style.width = convertToPercent(elements.bracket.width);
+                    elements.bracket.el.style.height = convertToPercent(elements.bracket.height);
                 }
                 updateLabelReadouts();
                 return;
@@ -929,6 +1009,12 @@
                 
                 applyVisualState('nametag1');
                 applyVisualState('nametag2');
+            } else if (activeDragKey === 'bracket') {
+                elements.bracket.left = ((x / containerRect.width) * 100).toFixed(1) + "%";
+                elements.bracket.top = ((y / containerRect.height) * 100).toFixed(1) + "%";
+                elements.bracket.right = 'auto';
+                elements.bracket.bottom = 'auto';
+                applyVisualState('bracket');
             } else {
                 if (centerX > containerRect.width / 2) {
                     const rightPx = containerRect.width - (x + el.offsetWidth);
@@ -990,6 +1076,16 @@
             configMap[cfgPrefix+'ticker_bottom'] = elements.ticker.bottom;
             configMap[cfgPrefix+'ticker_show'] = elements.ticker.show;
             configMap[cfgPrefix+'ticker_height'] = elements.ticker.height;
+
+            if (pageNum === '3' && elements.bracket) {
+                configMap['bracket_top'] = elements.bracket.top;
+                configMap['bracket_left'] = elements.bracket.left;
+                configMap['bracket_right'] = elements.bracket.right;
+                configMap['bracket_bottom'] = elements.bracket.bottom;
+                configMap['bracket_width'] = elements.bracket.width;
+                configMap['bracket_height'] = elements.bracket.height;
+                configMap['bracket_show'] = elements.bracket.show;
+            }
 
             // PAGE1 전용: 네임택 1,2 좌표 저장 (수직 및 크기는 공유, 수평은 개별)
             if (elements.nametag1 && elements.nametag2) {
@@ -1076,6 +1172,20 @@
                 elements.nametag2.el.style.width = '16%'; elements.nametag2.el.style.height = '8%';
                 document.getElementById('toggle-nametag2-show').checked = true;
                 applyVisualState('nametag2');
+            }
+
+            if (pageNum === '3' && elements.bracket) {
+                elements.bracket.top = "120px";
+                elements.bracket.left = "0px";
+                elements.bracket.right = "auto";
+                elements.bracket.bottom = "auto";
+                elements.bracket.show = "1";
+                elements.bracket.width = "100%";
+                elements.bracket.height = "calc(100% - 120px)";
+                elements.bracket.el.style.width = '100%';
+                elements.bracket.el.style.height = 'calc(100% - 120px)';
+                document.getElementById('toggle-bracket-show').checked = true;
+                applyVisualState('bracket');
             }
 
             applyVisualState('banner');

@@ -2335,9 +2335,34 @@
         function applyBracketPageMap(map) {
             if (!map) return;
             window.latestConfigMap = map;
+            
+            // Apply bracket positioning & size
+            const tree = document.getElementById('bracket-page-tree');
+            if (tree) {
+                const bTop = map.bracket_top || '120px';
+                const bLeft = map.bracket_left || '0px';
+                const bWidth = map.bracket_width || '100%';
+                const bHeight = map.bracket_height || 'calc(100% - 120px)';
+                const bShow = map.bracket_show !== undefined ? String(map.bracket_show) : '1';
+
+                tree.style.position = 'absolute';
+                tree.style.top = bTop;
+                tree.style.left = bLeft;
+                tree.style.width = bWidth;
+                tree.style.height = bHeight;
+                
+                if (bShow === '0') {
+                    tree.style.setProperty('display', 'none', 'important');
+                } else {
+                    tree.style.display = 'flex';
+                }
+            }
+
             const active = map.active_tournament || 'none';
             if (active === 'none') {
-                document.getElementById('bracket-page-tree').innerHTML = '<div style="font-size:18px;color:#94a3b8;text-align:center;">현재 활성화된 토너먼트가 없습니다.</div>';
+                if (tree) {
+                    tree.innerHTML = '<div style="font-size:18px;color:#94a3b8;text-align:center;">현재 활성화된 토너먼트가 없습니다.</div>';
+                }
                 return;
             }
             
