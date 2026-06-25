@@ -919,20 +919,21 @@
             <div class="ticker-sponsors-left" id="hc-ticker-sponsors-left"></div>
             <div class="ticker-card-stage" id="hc-ticker-stage"></div>
             <div class="ticker-sponsors-right" id="hc-ticker-sponsors-right"></div>
+        </div>
         <!-- 배틀 안내 자막 레이어 -->
         <div id="battle-announcement-overlay" style="display:none; position:absolute; top:35%; left:10%; right:10%; z-index:999; background:rgba(9, 15, 29, 0.97); border:3px solid #3b82f6; box-shadow:0 0 40px rgba(59,130,246,0.7); padding:40px 20px; border-radius:20px; text-align:center; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
             <div id="battle-ann-title" style="font-size:24px; font-weight:800; color:#94a3b8; margin-bottom:14px; letter-spacing:0.05em; text-transform:uppercase;">8강 1조 경기</div>
             <div id="battle-ann-content" style="font-size:44px; font-weight:900; color:#fff; text-shadow:0 0 15px rgba(255,255,255,0.4); word-break:keep-all; line-height:1.3;">레드팀 VS 블루팀 - 1라운드 시작!</div>
             <div id="battle-ann-sub" style="font-size:20px; font-weight:800; color:#3b82f6; margin-top:20px; display:none;">현재 스코어 1 : 0 (선공: 레드팀 / 후공: 블루팀)</div>
         </div>
+    </div>
 
-        <!-- 전체 대진표 전용 송출 컨테이너 -->
-        <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:#0a0f1d; color:#fff; position:absolute; top:0; left:0; z-index:9999; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
-            <div style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
-                🏆 CRE WORLD CUP TOURNAMENT 🏆
-            </div>
-            <div id="bracket-page-tree" style="display:flex; justify-content:center; align-items:center; height:calc(100% - 120px); gap:60px; padding:20px; box-sizing:border-box;"></div>
+    <!-- 전체 대진표 전용 송출 컨테이너 -->
+    <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:#0a0f1d; color:#fff; position:absolute; top:0; left:0; z-index:9999; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
+        <div style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
+            🏆 CRE WORLD CUP TOURNAMENT 🏆
         </div>
+        <div id="bracket-page-tree" style="display:flex; justify-content:center; align-items:center; height:calc(100% - 120px); gap:60px; padding:20px; box-sizing:border-box;"></div>
     </div>
 
     <script>
@@ -1592,147 +1593,149 @@
             }
         }
 
-        function loadHostConfig() {
-            if (typeof google === 'undefined' || !google.script || !google.script.run) return;
-            google.script.run.withSuccessHandler(function (cfg) {
-                if (!cfg) return;
-                window.latestConfigMap = cfg;
-                const hadPage2PhotoConfig = page2PhotoConfigReady;
-                applyPage2PhotoConfig(cfg);
-                page2PhotoConfigReady = true;
-                const photoStack = document.getElementById('photo-stack');
-                if (photoStack) photoStack.classList.remove('config-pending');
-                if (!document.body.classList.contains('host-mode') && !hadPage2PhotoConfig && lastRenderedItem) {
-                    lastJson = '';
-                    render(lastRenderedItem);
-                }
+        function applyLoadedHostConfig(cfg) {
+            if (!cfg) return;
+            window.latestConfigMap = cfg;
+            const hadPage2PhotoConfig = page2PhotoConfigReady;
+            applyPage2PhotoConfig(cfg);
+            page2PhotoConfigReady = true;
+            const photoStack = document.getElementById('photo-stack');
+            if (photoStack) photoStack.classList.remove('config-pending');
+            if (!document.body.classList.contains('host-mode') && !hadPage2PhotoConfig && lastRenderedItem) {
+                lastJson = '';
+                render(lastRenderedItem);
+            }
 
-                // 스코어보드 폰트 크기, 투명도, 대회명 적용
-                const sbWrap = document.getElementById('scoreboard-wrap');
-                if (sbWrap) {
-                    if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
-                    if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
-                    // 대회명 라벨 폰트 크기 (직접 스타일)
-                    const labelEl = sbWrap.querySelector('.top-bar-label');
-                    if (labelEl) {
-                        if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
-                        if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
-                            labelEl.textContent = cfg.scoreboard_label;
-                        }
+            // 스코어보드 폰트 크기, 투명도, 대회명 적용
+            const sbWrap = document.getElementById('scoreboard-wrap');
+            if (sbWrap) {
+                if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
+                if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
+                // 대회명 라벨 폰트 크기 (직접 스타일)
+                const labelEl = sbWrap.querySelector('.top-bar-label');
+                if (labelEl) {
+                    if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
+                    if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
+                        labelEl.textContent = cfg.scoreboard_label;
                     }
-                    // 박스 투명도 (직접 background 스타일)
-                    if (cfg.scoreboard_opacity) {
-                        const op = parseFloat(cfg.scoreboard_opacity);
-                        if (!isNaN(op)) {
-                            const nameSection = sbWrap.querySelector('.name-section');
-                            const traitsSection = sbWrap.querySelector('.traits');
-                            if (nameSection) nameSection.style.background = 'rgba(10, 15, 28, ' + op + ')';
-                            if (traitsSection) traitsSection.style.background = 'rgba(20, 28, 46, ' + op + ')';
-                        }
+                }
+                // 박스 투명도 (직접 background 스타일)
+                if (cfg.scoreboard_opacity) {
+                    const op = parseFloat(cfg.scoreboard_opacity);
+                    if (!isNaN(op)) {
+                        const nameSection = sbWrap.querySelector('.name-section');
+                        const traitsSection = sbWrap.querySelector('.traits');
+                        if (nameSection) nameSection.style.background = 'rgba(10, 15, 28, ' + op + ')';
+                        if (traitsSection) traitsSection.style.background = 'rgba(20, 28, 46, ' + op + ')';
                     }
+                }
+            }
+            
+            // 페이지별 독립 배너/티커 위치 키 접두사
+            const lp = document.body.classList.contains('host-mode') ? '' : 'p2_';
+
+            // 티커(자막 바) 위치 적용
+            const bottomBar = document.querySelector('.hc-bottom-bar');
+            if (bottomBar) {
+                if (cfg[lp + 'ticker_show'] === '0') {
+                    bottomBar.style.setProperty('display', 'none', 'important');
+                } else {
+                    bottomBar.style.removeProperty('display');
+                    
+                    // 티커 위치 적용 (auto 값 필터링)
+                    const tIsVal = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
+                    const tTop = cfg[lp + 'ticker_top'];
+                    const tBottom = cfg[lp + 'ticker_bottom'];
+                    if (tIsVal(tBottom)) {
+                        bottomBar.style.bottom = tBottom;
+                        bottomBar.style.top = 'auto';
+                        bottomBar.style.removeProperty('top');
+                    } else if (tIsVal(tTop)) {
+                        bottomBar.style.top = tTop;
+                        bottomBar.style.bottom = 'auto';
+                        bottomBar.style.removeProperty('bottom');
+                    } else {
+                        bottomBar.style.bottom = '0';
+                        bottomBar.style.top = 'auto';
+                        bottomBar.style.removeProperty('top');
+                    }
+                    // 티커는 항상 좌우 풀사이즈
+                    bottomBar.style.left = '0';
+                    bottomBar.style.right = '0';
+                    // 티커 높이 적용
+                    const tH = ensureViewportUnit(cfg[lp + 'ticker_height'], 'vh');
+                    if (tH && tH !== 'auto') {
+                        bottomBar.style.height = tH;
+                    }
+                }
+            }
+
+            const bannerContainer = document.querySelector('.hc-banner-float');
+            if (bannerContainer) {
+                if (cfg[lp + 'banner_show'] === '0') {
+                    bannerContainer.classList.remove('banner-active');
+                    bannerContainer.dataset.bannerHiddenByToggle = '1';
+                } else {
+                    delete bannerContainer.dataset.bannerHiddenByToggle;
+                    bannerContainer.style.removeProperty('display');
+                }
+            }
+
+            // 티커 카드 및 이미지 배너 렌더링 (page 1, 2 공통)
+            renderTickerCards(cfg);
+
+            if (!document.body.classList.contains('host-mode')) return;
+
+            // 진행자 네임택 개별 위치 적용 (nametag1_*, nametag2_*)
+            function applyNTPos(el, prefix, defaultLeft, defaultBottom, defaultRight = 'auto') {
+                if (!el) return;
+                el.style.removeProperty('left');
+                el.style.removeProperty('right');
+                el.style.removeProperty('top');
+                el.style.removeProperty('bottom');
+                const isV = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
+                
+                const ntLeft = cfg[prefix+'left'];
+                const ntRight = cfg[prefix+'right'];
+                const ntWidth = cfg['nametag_width'] || cfg[prefix+'width'];
+                const ntHeight = cfg['nametag_height'] || cfg[prefix+'height'];
+                const ntTop = cfg['nametag_top'] || cfg[prefix+'top'];
+                const ntBottom = cfg['nametag_bottom'] || cfg[prefix+'bottom'];
+
+                if (isV(ntRight)) el.style.right = ntRight;
+                else if (isV(ntLeft)) el.style.left = ntLeft;
+                else {
+                    if (defaultRight !== 'auto') el.style.right = defaultRight;
+                    else el.style.left = defaultLeft;
                 }
                 
-                // 페이지별 독립 배너/티커 위치 키 접두사
-                const lp = document.body.classList.contains('host-mode') ? '' : 'p2_';
-
-                // 티커(자막 바) 위치 적용
-                const bottomBar = document.querySelector('.hc-bottom-bar');
-                if (bottomBar) {
-                    if (cfg[lp + 'ticker_show'] === '0') {
-                        bottomBar.style.setProperty('display', 'none', 'important');
-                    } else {
-                        bottomBar.style.removeProperty('display');
-                        
-                        // 티커 위치 적용 (auto 값 필터링)
-                        const tIsVal = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
-                        const tTop = cfg[lp + 'ticker_top'];
-                        const tBottom = cfg[lp + 'ticker_bottom'];
-                        if (tIsVal(tBottom)) {
-                            bottomBar.style.bottom = tBottom;
-                            bottomBar.style.top = 'auto';
-                        } else if (tIsVal(tTop)) {
-                            bottomBar.style.top = tTop;
-                            bottomBar.style.bottom = 'auto';
-                        } else {
-                            bottomBar.style.bottom = '0';
-                            bottomBar.style.top = 'auto';
-                        }
-                        // 티커는 항상 좌우 풀사이즈
-                        bottomBar.style.left = '0';
-                        bottomBar.style.right = '0';
-                        // 티커 높이 적용
-                        const tH = ensureViewportUnit(cfg[lp + 'ticker_height'], 'vh');
-                        if (tH && tH !== 'auto') {
-                            bottomBar.style.height = tH;
-                        }
-                    }
+                if (isV(ntBottom)) el.style.bottom = ntBottom;
+                else if (isV(ntTop)) el.style.top = ntTop;
+                else el.style.bottom = defaultBottom;
+                
+                if (cfg[prefix+'show'] === '0') {
+                    el.style.setProperty('display','none','important');
+                } else {
+                    el.style.removeProperty('display');
                 }
+                // 네임택 크기 적용
+                const ntW = ensureViewportUnit(ntWidth, 'vw');
+                const ntH = ensureViewportUnit(ntHeight, 'vh');
+                if (ntW && ntW !== 'auto') el.style.width = ntW;
+                if (ntH && ntH !== 'auto') el.style.height = ntH;
+            }
+            applyNTPos(document.getElementById('host-nametag-1'), 'nametag1_', '3%', '6%');
+            applyNTPos(document.getElementById('host-nametag-2'), 'nametag2_', 'auto', '6%', '3%');
 
-                const bannerContainer = document.querySelector('.hc-banner-float');
-                if (bannerContainer) {
-                    if (cfg[lp + 'banner_show'] === '0') {
-                        bannerContainer.classList.remove('banner-active');
-                        bannerContainer.dataset.bannerHiddenByToggle = '1';
-                    } else {
-                        delete bannerContainer.dataset.bannerHiddenByToggle;
-                        bannerContainer.style.removeProperty('display');
-                    }
-                }
-
-                // 티커 카드 및 이미지 배너 렌더링 (page 1, 2 공통)
-                renderTickerCards(cfg);
-
-                if (!document.body.classList.contains('host-mode')) return;
-
-                // 진행자 네임택 개별 위치 적용 (nametag1_*, nametag2_*)
-                function applyNTPos(el, prefix, defaultLeft, defaultBottom, defaultRight = 'auto') {
-                    if (!el) return;
-                    el.style.removeProperty('left');
-                    el.style.removeProperty('right');
-                    el.style.removeProperty('top');
-                    el.style.removeProperty('bottom');
-                    const isV = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
-                    
-                    const ntLeft = cfg[prefix+'left'];
-                    const ntRight = cfg[prefix+'right'];
-                    const ntWidth = cfg['nametag_width'] || cfg[prefix+'width'];
-                    const ntHeight = cfg['nametag_height'] || cfg[prefix+'height'];
-                    const ntTop = cfg['nametag_top'] || cfg[prefix+'top'];
-                    const ntBottom = cfg['nametag_bottom'] || cfg[prefix+'bottom'];
-
-                    if (isV(ntRight)) el.style.right = ntRight;
-                    else if (isV(ntLeft)) el.style.left = ntLeft;
-                    else {
-                        if (defaultRight !== 'auto') el.style.right = defaultRight;
-                        else el.style.left = defaultLeft;
-                    }
-                    
-                    if (isV(ntBottom)) el.style.bottom = ntBottom;
-                    else if (isV(ntTop)) el.style.top = ntTop;
-                    else el.style.bottom = defaultBottom;
-                    
-                    if (cfg[prefix+'show'] === '0') {
-                        el.style.setProperty('display','none','important');
-                    } else {
-                        el.style.removeProperty('display');
-                    }
-                    // 네임택 크기 적용
-                    const ntW = ensureViewportUnit(ntWidth, 'vw');
-                    const ntH = ensureViewportUnit(ntHeight, 'vh');
-                    if (ntW && ntW !== 'auto') el.style.width = ntW;
-                    if (ntH && ntH !== 'auto') el.style.height = ntH;
-                }
-                applyNTPos(document.getElementById('host-nametag-1'), 'nametag1_', '3%', '6%');
-                applyNTPos(document.getElementById('host-nametag-2'), 'nametag2_', 'auto', '6%', '3%');
-
-                // Apply nametag font size
-                const ntFontSize = parseInt(cfg.nametag_font_size, 10) || 22;
-                document.querySelectorAll('.host-nametag').forEach(el => {
-                    el.style.setProperty('--nt-font-size', ntFontSize + 'px');
-                    el.style.setProperty('--nt-role-font-size', Math.round(ntFontSize * 0.55) + 'px');
-                });
-                // 룰 → 개별 필 박스 생성 (라벨 없이 값만) — host mode 전용
-                const stackEl = document.getElementById('hc-rules-stack');
+            // Apply nametag font size
+            const ntFontSize = parseInt(cfg.nametag_font_size, 10) || 22;
+            document.querySelectorAll('.host-nametag').forEach(el => {
+                el.style.setProperty('--nt-font-size', ntFontSize + 'px');
+                el.style.setProperty('--nt-role-font-size', Math.round(ntFontSize * 0.55) + 'px');
+            });
+            // 룰 → 개별 필 박스 생성 (라벨 없이 값만) — host mode 전용
+            const stackEl = document.getElementById('hc-rules-stack');
+            if (stackEl) {
                 stackEl.innerHTML = '';
                 // rules_position 설정: 'top'이면 헤더 바로 아래에서 아래로 깔림
                 if (cfg.rules_position === 'top') {
@@ -1772,27 +1775,42 @@
                     stackEl.appendChild(card);
                 }
                 stackEl.style.display = rules.length > 0 ? 'flex' : 'none';
+            }
 
-                // 진행자 네임택 렌더링 (show 상태 존중)
-                for (let i = 1; i <= 2; i++) {
-                    const name = (cfg['host_name' + i] || '').trim();
-                    const role = (cfg['host_role' + i] || '').trim();
-                    const tag = document.getElementById('host-nametag-' + i);
-                    const nameEl = document.getElementById('nt-name-' + i);
-                    const roleEl = document.getElementById('nt-role-' + i);
-                    if (tag) {
-                        if (name && cfg['nametag' + i + '_show'] !== '0') {
-                            nameEl.textContent = name;
-                            roleEl.textContent = role;
-                            roleEl.style.display = role ? '' : 'none';
-                            tag.style.display = 'flex';
-                        } else {
-                            tag.style.display = 'none';
-                        }
+            // 진행자 네임택 렌더링 (show 상태 존중)
+            for (let i = 1; i <= 2; i++) {
+                const name = (cfg['host_name' + i] || '').trim();
+                const role = (cfg['host_role' + i] || '').trim();
+                const tag = document.getElementById('host-nametag-' + i);
+                const nameEl = document.getElementById('nt-name-' + i);
+                const roleEl = document.getElementById('nt-role-' + i);
+                if (tag) {
+                    if (name && cfg['nametag' + i + '_show'] !== '0') {
+                        nameEl.textContent = name;
+                        roleEl.textContent = role;
+                        roleEl.style.display = role ? '' : 'none';
+                        tag.style.display = 'flex';
+                    } else {
+                        tag.style.display = 'none';
                     }
                 }
-                syncNametagWidths(cfg);
-            }).getConfigMap();
+            }
+            syncNametagWidths(cfg);
+        }
+
+        async function loadHostConfig() {
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run.withSuccessHandler(function (cfg) {
+                    applyLoadedHostConfig(cfg);
+                }).getConfigMap();
+            } else {
+                try {
+                    const cfg = await getConfigMap();
+                    applyLoadedHostConfig(cfg);
+                } catch (err) {
+                    console.error('loadHostConfig error', err);
+                }
+            }
         }
 
         function maybeRefreshHostConfig(force) {
@@ -2019,16 +2037,26 @@
         }
 
         let hasActive = false;
-        function smartRefresh() {
+        async function smartRefresh() {
             if (document.hidden) return;
             maybeRefreshHostConfig(false);
-            google.script.run
-                .withSuccessHandler(function (item) {
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function (item) {
+                        hasActive = !!item;
+                        render(item);
+                    })
+                    .withFailureHandler(err => console.log("err", err))
+                    .getActiveItem();
+            } else {
+                try {
+                    const item = await getActiveItem();
                     hasActive = !!item;
                     render(item);
-                })
-                .withFailureHandler(err => console.log("err", err))
-                .getActiveItem();
+                } catch (err) {
+                    console.error("smartRefresh error", err);
+                }
+            }
         }
         smartRefresh();
         let _pollTimer = null;
@@ -2288,26 +2316,39 @@
             setInterval(refreshBattleOverlayState, 2000);
         }
 
-        function refreshBracketPage() {
-            google.script.run
-                .withSuccessHandler(function (map) {
-                    if (!map) return;
-                    window.latestConfigMap = map;
-                    const active = map.active_tournament || 'none';
-                    if (active === 'none') {
-                        document.getElementById('bracket-page-tree').innerHTML = '<div style="font-size:18px;color:#94a3b8;text-align:center;">현재 활성화된 토너먼트가 없습니다.</div>';
-                        return;
-                    }
-                    
-                    const bracketKey = 'tournament_bracket_' + active;
-                    if (!map[bracketKey]) return;
-                    
-                    let bracket = { matches: {} };
-                    try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
-                    
-                    renderBracketPageTree(parseInt(active), bracket, map.battle_current_match);
-                })
-                .getConfigMap();
+        function applyBracketPageMap(map) {
+            if (!map) return;
+            window.latestConfigMap = map;
+            const active = map.active_tournament || 'none';
+            if (active === 'none') {
+                document.getElementById('bracket-page-tree').innerHTML = '<div style="font-size:18px;color:#94a3b8;text-align:center;">현재 활성화된 토너먼트가 없습니다.</div>';
+                return;
+            }
+            
+            const bracketKey = 'tournament_bracket_' + active;
+            if (!map[bracketKey]) return;
+            
+            let bracket = { matches: {} };
+            try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
+            
+            renderBracketPageTree(parseInt(active), bracket, map.battle_current_match);
+        }
+
+        async function refreshBracketPage() {
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function (map) {
+                        applyBracketPageMap(map);
+                    })
+                    .getConfigMap();
+            } else {
+                try {
+                    const map = await getConfigMap();
+                    applyBracketPageMap(map);
+                } catch (err) {
+                    console.error('refreshBracketPage error', err);
+                }
+            }
         }
 
         function renderBracketPageTree(scale, bracket, currentMatch) {
