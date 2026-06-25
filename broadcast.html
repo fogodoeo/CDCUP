@@ -924,7 +924,7 @@
 
     <!-- 전체 대진표 전용 송출 컨테이너 -->
     <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:#0a0f1d; color:#fff; position:absolute; top:0; left:0; z-index:9999; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
-        <div style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
+        <div id="bracket-page-title" style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
             🏆 CRE WORLD CUP TOURNAMENT 🏆
         </div>
         <div id="bracket-page-tree" style="display:flex; justify-content:center; align-items:center; height:calc(100% - 120px); gap:60px; padding:20px; box-sizing:border-box;"></div>
@@ -2358,6 +2358,31 @@
                 }
             }
 
+            // Apply bracket title positioning & size
+            const titleEl = document.getElementById('bracket-page-title');
+            if (titleEl) {
+                const titleTop = map.bracket_title_top || '40px';
+                const titleLeft = map.bracket_title_left || '25%';
+                const titleWidth = map.bracket_title_width || '50%';
+                const titleHeight = map.bracket_title_height || '10%';
+                const titleShow = map.bracket_title_show !== undefined ? String(map.bracket_title_show) : '1';
+
+                if (map.bracket_title_top || map.bracket_title_left) {
+                    titleEl.style.position = 'absolute';
+                    titleEl.style.top = titleTop;
+                    titleEl.style.left = titleLeft;
+                    titleEl.style.width = titleWidth;
+                    titleEl.style.height = titleHeight;
+                    titleEl.style.padding = '0';
+                    titleEl.style.margin = '0';
+                } else {
+                    titleEl.style.position = 'static';
+                    titleEl.style.padding = '40px 0 10px 0';
+                    titleEl.style.width = '100%';
+                }
+                titleEl.style.display = titleShow === '0' ? 'none' : 'block';
+            }
+
             const active = map.active_tournament || 'none';
             if (active === 'none') {
                 if (tree) {
@@ -2500,6 +2525,16 @@
                 const activeItem = items.find(i => i.status === '진행' || i.status === 'active');
                 
                 const ann = document.getElementById('battle-announcement-overlay');
+                if (ann) {
+                    ann.style.top = map.battle_ann_top || '35%';
+                    ann.style.left = map.battle_ann_left || '10%';
+                    ann.style.width = map.battle_ann_width || '80%';
+                    ann.style.height = map.battle_ann_height || 'auto';
+                    ann.style.removeProperty('right');
+                    if (map.battle_ann_show === '0') {
+                        ann.style.setProperty('display', 'none', 'important');
+                    }
+                }
                 
                 if (!activeItem) {
                     const curMatchKey = map.battle_current_match || '';
