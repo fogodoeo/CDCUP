@@ -1350,8 +1350,8 @@
             if (!urls.length) return;
 
             const interval = Math.max(parseInt(cfg.banner_interval, 10) || 5000, 2000);
-            // 페이지별 독립 배너 위치 키 (page2는 p2_ 접두사)
-            const bp = isHostMode ? '' : 'p2_';
+            // 페이지별 독립 배너 위치 키 (page2는 p2_, 대진표는 p3_ 접두사)
+            const bp = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket' ? 'p3_' : (isHostMode ? '' : 'p2_');
             const left = normalizeCssLength(cfg[bp + 'banner_left']);
             const right = normalizeCssLength(cfg[bp + 'banner_right']);
             const top = normalizeCssLength(cfg[bp + 'banner_top']);
@@ -1647,7 +1647,7 @@
             }
             
             // 페이지별 독립 배너/티커 위치 키 접두사
-            const lp = document.body.classList.contains('host-mode') ? '' : 'p2_';
+            const lp = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket' ? 'p3_' : (document.body.classList.contains('host-mode') ? '' : 'p2_');
 
             // 티커(자막 바) 위치 적용
             const bottomBar = document.querySelector('.hc-bottom-bar');
@@ -2111,7 +2111,7 @@
                 const cfg = e.data.config || {};
                 const bottomBar = document.querySelector('.hc-bottom-bar');
                 const bannerContainer = document.querySelector('.hc-banner-float');
-                const lp = document.body.classList.contains('host-mode') ? '' : 'p2_';
+                const lp = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket' ? 'p3_' : (document.body.classList.contains('host-mode') ? '' : 'p2_');
 
                 // 티커 show/hide 및 위치
                 if (bottomBar) {
