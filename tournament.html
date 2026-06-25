@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <!-- 구글 아이콘 폰트 -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="common.css">
     <style>
         :root {
             --bg: #0b1120;
@@ -40,62 +41,8 @@
             line-height: 1.5;
             letter-spacing: -0.02em;
             overflow-x: hidden;
-        }
-
-        .header {
-            background: #0f172a;
-            padding: 16px 24px;
-            border-bottom: 1px solid var(--card-border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: #FFFFFF;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            font-size: 20px;
-            font-weight: 900;
-            letter-spacing: -0.03em;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .header-links {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-link {
-            text-decoration: none;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            transition: all 0.2s;
-            border: 1px solid transparent;
-        }
-
-        .btn-link.back {
-            background: rgba(255, 255, 255, 0.08);
-            color: #e2e8f0;
-        }
-        .btn-link.back:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .btn-link.primary {
-            background: var(--accent);
-            color: #fff;
-            box-shadow: 0 2px 4px rgba(37,99,235,0.3);
-        }
-        .btn-link.primary:hover {
-            background: #1d4ed8;
+            margin: 0;
+            padding: 0;
         }
 
         .main-container {
@@ -343,17 +290,29 @@
 </head>
 
 <body>
-    <div class="header">
-        <h1>🏆 토너먼트 대진표 배치기</h1>
-        <div class="header-links">
-            <a href="index.html" class="btn-link back">
-                <span class="material-symbols-rounded" style="font-size:14px;">arrow_back</span> 경매 관리로 돌아가기
+    <nav class="cdcup-nav">
+        <a href="index.html" class="cdcup-nav__brand">
+            <span class="cdcup-nav__brand-icon">🏆</span>
+            <span>CDCUP</span>
+        </a>
+        <div class="cdcup-nav__links">
+            <a href="index.html" class="cdcup-nav__link">개체관리</a>
+            <a href="preview.html?page=1" class="cdcup-nav__link">1P 진행</a>
+            <a href="preview.html?page=2" class="cdcup-nav__link">2P 개체</a>
+            <a href="summary.html" class="cdcup-nav__link">경매결과</a>
+            <a href="tournament.html" class="cdcup-nav__link active">대진표</a>
+            <a href="settings.html" class="cdcup-nav__link">설정</a>
+        </div>
+        <div class="cdcup-nav__utils">
+            <a href="broadcast.html?page=bracket" target="_blank" class="cdcup-nav/util-btn cdcup-nav__util-btn--broadcast" style="text-decoration:none; display:inline-flex; align-items:center; gap:4px; padding:6px 10px; border-radius:6px; font-size:11px; font-weight:700; background:rgba(37,99,235,0.12); border:1px solid rgba(37,99,235,0.3); color:#60A5FA;">
+                <span class="material-symbols-rounded" style="font-size:13px;">open_in_new</span> 대진표 화면
             </a>
-            <a href="broadcast.html?page=bracket" target="_blank" class="btn-link primary">
-                <span class="material-symbols-rounded" style="font-size:14px;">open_in_new</span> 대진표 송출화면 열기
+            <span class="cdcup-nav__sep"></span>
+            <a href="broadcast.html" target="_blank" class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
+                <span>방송 송출</span>
             </a>
         </div>
-    </div>
+    </nav>
 
     <div class="main-container">
         <div class="tournament-header">

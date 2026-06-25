@@ -9,29 +9,31 @@
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="common.css">
     <style>
         :root {
-            --bg: #F9FAFB;
-            --card: #FFFFFF;
-            --card-border: #EAECEE;
-            --input-bg: #FFFFFF;
-            --input-border: #D1D5DB;
-            --text-title: #111111;
-            --text: #333333;
-            --text2: #6B7280;
-            --text3: #9CA3AF;
-            --accent: #093687;
-            --accent-light: rgba(9, 54, 135, 0.08);
-            --green: #C84A31;
-            --green-light: rgba(200, 74, 49, 0.08);
-            --red: #1261C4;
-            --red-light: rgba(18, 97, 196, 0.08);
-            --orange: #1261C4;
-            --radius: 4px;
-            --radius-sm: 2px;
-            --shadow-sm: none;
-            --shadow-md: none;
-            --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.1);
+            --bg:             #0B1120;
+            --bg-secondary:   #0F172A;
+            --card:           #1A2332;
+            --card-border:    rgba(255, 255, 255, 0.06);
+            --input-bg:       #0F172A;
+            --input-border:   #2A3544;
+            --text-title:     #F8FAFC;
+            --text:           #E8ECF1;
+            --text2:          #94A3B8;
+            --text3:          #64748B;
+            --accent:         #2563EB;
+            --accent-light:   rgba(37, 99, 235, 0.12);
+            --green:          #E11D48; /* 상승/낙찰 (한국식 빨강) */
+            --green-light:    rgba(225, 29, 72, 0.1);
+            --red:            #2563EB; /* 하락/유찰 (한국식 파랑) */
+            --red-light:      rgba(37, 99, 235, 0.1);
+            --orange:         #F59E0B;
+            --radius:         8px;
+            --radius-sm:      4px;
+            --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow-md:      0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg:      0 8px 24px rgba(0, 0, 0, 0.4);
         }
 
         * {
@@ -49,64 +51,14 @@
             -webkit-font-smoothing: antialiased;
             line-height: 1.5;
             letter-spacing: -0.02em;
-        }
-
-        .header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: #093687;
-            padding: 14px 20px;
-            border-bottom: none;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            color: #FFFFFF;
-        }
-
-        .header h1 {
-            font-size: 19px;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            transition: opacity 0.12s ease;
-        }
-
-        /* 탭 영역 (업비트 스타일 언더라인) */
-        .tab-row {
-            display: flex;
-            gap: 16px;
-        }
-
-        .tab-btn {
-            padding: 4px 2px;
-            border: none;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.5);
-            transition: all .2s;
-            position: relative;
-        }
-
-        .tab-btn.active {
-            color: #FFF;
-        }
-
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -15px;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: #FFFFFF;
+            margin: 0;
+            padding: 0;
         }
 
         .container {
             padding: 16px;
             max-width: 520px;
-            margin: 0 auto;
+            margin: 24px auto;
         }
 
         .section {
@@ -2299,45 +2251,34 @@
 </head>
 
 <body>
-
-    <div class="header" style="flex-direction: column; align-items: stretch; gap: 12px; padding-bottom: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <h1 id="header-title" style="margin:0;">개체 목록</h1>
-            
-            <!-- 방송 및 설정 퀵 링크 네비게이션 바 -->
-            <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
-                <a href="settings.html" style="text-decoration:none; padding:7px 10px; border-radius:6px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; gap:3px;">
-                    <span>⚙️</span> 설정
-                </a>
-                <span style="color:var(--text3); font-size:12px; margin:0 2px;">|</span>
-                <a href="preview.html?page=1" style="text-decoration:none; padding:7px 10px; border-radius:6px; background:#FF4B2B; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; gap:3px; box-shadow: 0 1px 3px rgba(255,75,43,0.3);">
-                    <span>🎨</span> 1P 배치기
-                </a>
-                <a href="broadcast.html?page=1" target="_blank" style="text-decoration:none; padding:7px 10px; border-radius:6px; background:rgba(255, 75, 43, 0.15); border:1px solid #FF4B2B; color:#FF4B2B; font-size:10px; font-weight:700; display:flex; align-items:center; gap:3px;">
-                    <span>📺</span> 1P 송출화면
-                </a>
-                <span style="color:var(--text3); font-size:12px; margin:0 2px;">|</span>
-                <a href="preview.html?page=2" style="text-decoration:none; padding:7px 10px; border-radius:6px; background:#2563EB; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; gap:3px; box-shadow: 0 1px 3px rgba(37,99,235,0.3);">
-                    <span>🎨</span> 2P 배치기
-                </a>
-                <a href="tournament.html" style="text-decoration:none; padding:7px 10px; border-radius:6px; background:#10B981; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; gap:3px; box-shadow: 0 1px 3px rgba(16,185,129,0.3);">
-                    <span>🏆</span> 대진표 배치기
-                </a>
-                <a href="broadcast.html" target="_blank" style="text-decoration:none; padding:7px 10px; border-radius:6px; background:rgba(37, 99, 235, 0.15); border:1px solid #2563EB; color:#3B82F6; font-size:10px; font-weight:700; display:flex; align-items:center; gap:3px;">
-                    <span>📺</span> 2P 송출화면
-                </a>
-            </div>
+    <nav class="cdcup-nav">
+        <a href="index.html" class="cdcup-nav__brand">
+            <span class="cdcup-nav__brand-icon">🏆</span>
+            <span>CDCUP</span>
+        </a>
+        <div class="cdcup-nav__links">
+            <a href="index.html" class="cdcup-nav__link active">개체관리</a>
+            <a href="preview.html?page=1" class="cdcup-nav__link">1P 진행</a>
+            <a href="preview.html?page=2" class="cdcup-nav__link">2P 개체</a>
+            <a href="summary.html" class="cdcup-nav__link">경매결과</a>
+            <a href="tournament.html" class="cdcup-nav__link">대진표</a>
+            <a href="settings.html" class="cdcup-nav__link">설정</a>
         </div>
-        
-        <div class="tab-row" style="margin: 0;">
-            <button class="tab-btn" onclick="showTab('register',this)">등록</button>
-            <button class="tab-btn active" onclick="showTab('list',this)">목록</button>
-            <button class="tab-btn" onclick="showTab('dodosi',this)">도도시</button>
-            <button class="tab-btn" onclick="showTab('print',this)">인쇄</button>
+        <div class="cdcup-nav__utils">
+            <a href="broadcast.html" target="_blank" class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
+                <span>방송 송출</span>
+            </a>
         </div>
-    </div>
+    </nav>
 
     <div class="container">
+        <!-- 업비트 스타일 서브 탭 바 -->
+        <div class="cdcup-tabs" style="margin-bottom: 24px;">
+            <button class="cdcup-tab tab-btn" onclick="showTab('register',this)">등록</button>
+            <button class="cdcup-tab tab-btn active" onclick="showTab('list',this)">목록</button>
+            <button class="cdcup-tab tab-btn" onclick="showTab('dodosi',this)">도도시</button>
+            <button class="cdcup-tab tab-btn" onclick="showTab('print',this)">인쇄</button>
+        </div>
         <!-- ═══ 등록 탭 ═══ -->
         <div id="tab-register" class="section">
             <div class="company-bar">

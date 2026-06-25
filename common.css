@@ -1,0 +1,569 @@
+/* ═══════════════════════════════════════════════════════════════
+   common.css — CDCUP 통합 디자인 시스템
+   모든 관리 페이지(index, settings, preview, tournament, summary)가 공유
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 디자인 토큰 (업비트 스타일 다크 테마) ── */
+:root {
+    --bg:             #0B1120;
+    --bg-secondary:   #0F172A;
+    --bg-tertiary:    #131B2E;
+    --card:           #1A2332;
+    --card-hover:     #1E293B;
+    --card-border:    rgba(255, 255, 255, 0.06);
+    --input-bg:       #0F172A;
+    --input-border:   #2A3544;
+    --input-focus:    #2563EB;
+
+    --text:           #E8ECF1;
+    --text-strong:    #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted:     #64748B;
+    --text-dim:       #475569;
+
+    --accent:         #2563EB;
+    --accent-hover:   #1D4ED8;
+    --accent-light:   rgba(37, 99, 235, 0.12);
+    --accent-glow:    rgba(37, 99, 235, 0.25);
+
+    --green:          #10B981;
+    --green-light:    rgba(16, 185, 129, 0.10);
+    --red:            #EF4444;
+    --red-light:      rgba(239, 68, 68, 0.10);
+    --orange:         #F59E0B;
+    --orange-light:   rgba(245, 158, 11, 0.10);
+    --purple:         #8B5CF6;
+
+    --radius:         8px;
+    --radius-sm:      4px;
+    --radius-lg:      12px;
+    --radius-xl:      16px;
+
+    --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md:      0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-lg:      0 8px 24px rgba(0, 0, 0, 0.4);
+
+    --font:           'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+
+    --nav-height:     52px;
+}
+
+/* ── 리셋 & 베이스 ── */
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+    letter-spacing: -0.02em;
+    min-height: 100vh;
+}
+
+
+/* ═══════════════════════════════════════════
+   글로벌 네비게이션 바
+   ═══════════════════════════════════════════ */
+.cdcup-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    height: var(--nav-height);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 0;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.cdcup-nav__brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text-strong);
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    margin-right: 24px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.cdcup-nav__brand-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+/* 메인 네비 링크 그룹 */
+.cdcup-nav__links {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    height: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    flex: 1;
+    min-width: 0;
+}
+
+.cdcup-nav__links::-webkit-scrollbar {
+    display: none;
+}
+
+.cdcup-nav__link {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 100%;
+    padding: 0 14px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    position: relative;
+    transition: color 0.2s ease;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: var(--font);
+}
+
+.cdcup-nav__link:hover {
+    color: var(--text-secondary);
+}
+
+.cdcup-nav__link.active {
+    color: var(--text-strong);
+}
+
+/* 업비트 스타일 하단 액센트 라인 */
+.cdcup-nav__link.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 16px);
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+}
+
+.cdcup-nav__link-icon {
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.cdcup-nav__link.active .cdcup-nav__link-icon {
+    opacity: 1;
+}
+
+/* 구분선 */
+.cdcup-nav__sep {
+    width: 1px;
+    height: 20px;
+    background: var(--card-border);
+    margin: 0 6px;
+    flex-shrink: 0;
+}
+
+/* 우측 유틸리티 영역 */
+.cdcup-nav__utils {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.cdcup-nav__util-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.cdcup-nav__util-btn--broadcast {
+    background: rgba(37, 99, 235, 0.12);
+    border-color: rgba(37, 99, 235, 0.3);
+    color: #60A5FA;
+}
+
+.cdcup-nav__util-btn--broadcast:hover {
+    background: rgba(37, 99, 235, 0.2);
+}
+
+/* 드롭다운 메뉴 */
+.cdcup-nav__dropdown {
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.cdcup-nav__dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(var(--nav-height) - 1px);
+    left: 0;
+    min-width: 180px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 4px;
+    z-index: 1001;
+}
+
+.cdcup-nav__dropdown:hover .cdcup-nav__dropdown-menu,
+.cdcup-nav__dropdown:focus-within .cdcup-nav__dropdown-menu {
+    display: block;
+}
+
+.cdcup-nav__dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+}
+
+.cdcup-nav__dropdown-item:hover {
+    background: var(--accent-light);
+    color: var(--text-strong);
+}
+
+.cdcup-nav__dropdown-item .item-icon {
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+/* 드롭다운 캐럿 */
+.cdcup-nav__link .caret {
+    font-size: 10px;
+    opacity: 0.5;
+    transition: transform 0.2s;
+}
+
+.cdcup-nav__dropdown:hover .caret {
+    transform: rotate(180deg);
+}
+
+/* 라이브 인디케이터 */
+.cdcup-nav__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background: rgba(239, 68, 68, 0.12);
+    font-size: 10px;
+    font-weight: 800;
+    color: #EF4444;
+    letter-spacing: 0.05em;
+}
+
+.cdcup-nav__live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #EF4444;
+    animation: cdcup-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes cdcup-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+
+/* ═══════════════════════════════════════════
+   공통 컴포넌트 스타일
+   ═══════════════════════════════════════════ */
+
+/* 카드 */
+.cdcup-card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+}
+
+.cdcup-card--hover:hover {
+    background: var(--card-hover);
+}
+
+/* 섹션 제목 */
+.cdcup-section-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-strong);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cdcup-section-title .icon {
+    font-size: 16px;
+    opacity: 0.6;
+}
+
+/* 버튼 */
+.cdcup-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 700;
+    font-family: var(--font);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.cdcup-btn--primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.cdcup-btn--primary:hover {
+    background: var(--accent-hover);
+}
+
+.cdcup-btn--secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--input-border);
+}
+
+.cdcup-btn--secondary:hover {
+    background: var(--card-hover);
+    color: var(--text);
+    border-color: var(--text-muted);
+}
+
+.cdcup-btn--ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: transparent;
+}
+
+.cdcup-btn--ghost:hover {
+    background: var(--card);
+    color: var(--text);
+}
+
+.cdcup-btn--danger {
+    background: var(--red-light);
+    color: var(--red);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.cdcup-btn--danger:hover {
+    background: rgba(239, 68, 68, 0.18);
+}
+
+.cdcup-btn--sm {
+    padding: 6px 12px;
+    font-size: 11px;
+    border-radius: var(--radius-sm);
+}
+
+/* 입력 필드 */
+.cdcup-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 13px;
+    font-family: var(--font);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+.cdcup-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.cdcup-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* 뱃지 / 필 */
+.cdcup-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.cdcup-badge--blue {
+    background: var(--accent-light);
+    color: #60A5FA;
+}
+
+.cdcup-badge--green {
+    background: var(--green-light);
+    color: var(--green);
+}
+
+.cdcup-badge--red {
+    background: var(--red-light);
+    color: var(--red);
+}
+
+.cdcup-badge--orange {
+    background: var(--orange-light);
+    color: var(--orange);
+}
+
+/* 탭 바 */
+.cdcup-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--card-border);
+    padding: 0 4px;
+}
+
+.cdcup-tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+    font-family: var(--font);
+}
+
+.cdcup-tab:hover {
+    color: var(--text-secondary);
+}
+
+.cdcup-tab.active {
+    color: var(--text-strong);
+}
+
+.cdcup-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 20px);
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+}
+
+
+/* ═══════════════════════════════════════════
+   반응형
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .cdcup-nav {
+        padding: 0 12px;
+        gap: 0;
+    }
+
+    .cdcup-nav__brand {
+        margin-right: 12px;
+        font-size: 14px;
+    }
+
+    .cdcup-nav__brand-icon {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+    }
+
+    .cdcup-nav__link {
+        padding: 0 10px;
+        font-size: 12px;
+    }
+
+    .cdcup-nav__link-icon {
+        display: none;
+    }
+
+    .cdcup-nav__utils {
+        gap: 4px;
+    }
+
+    .cdcup-nav__util-btn {
+        padding: 5px 8px;
+        font-size: 10px;
+    }
+
+    .cdcup-nav__sep {
+        margin: 0 2px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cdcup-nav__brand span:not(.cdcup-nav__brand-icon) {
+        display: none;
+    }
+
+    .cdcup-nav__link {
+        padding: 0 8px;
+        font-size: 11px;
+    }
+
+    .cdcup-nav__util-btn span:not(:first-child) {
+        display: none;
+    }
+}
