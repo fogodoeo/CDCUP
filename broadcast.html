@@ -764,7 +764,7 @@
 
         /* ── 대진표 오버레이 스타일 ── */
         #bracket-page-container {
-            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%) !important;
+            background: transparent !important;
         }
         .bracket-page-column {
             display: flex;
@@ -926,7 +926,7 @@
     </div>
 
     <!-- 전체 대진표 전용 송출 컨테이너 -->
-    <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:#0a0f1d; color:#fff; position:absolute; top:0; left:0; z-index:9999; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
+    <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:transparent; color:#fff; position:absolute; top:0; left:0; z-index:9999; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
         <div id="bracket-page-title" style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
             🏆 CRE WORLD CUP TOURNAMENT 🏆
         </div>
@@ -2535,13 +2535,11 @@
             try { if (map.battle_schedule) schedule = JSON.parse(map.battle_schedule); } catch(e){}
             const stepIdx = parseInt(map.battle_step || '-1');
 
-
-
             if (!schedule.length || stepIdx < 0) {
-                tree.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:16px;">
+                tree.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:95%;max-width:780px;margin:0 auto;padding:30px;background:rgba(15,23,42,0.65);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.5);gap:16px;">
                     <div style="font-size:60px;">⚡</div>
-                    <div style="font-size:22px;font-weight:900;color:#fff;">경기 대기 중</div>
-                    <div style="font-size:13px;color:#64748b;">3P 배치기에서 스케줄을 생성하고 경기를 시작하세요.</div>
+                    <div style="font-size:24px;font-weight:900;color:#fff;">경기 대기 중</div>
+                    <div style="font-size:14px;color:#94a3b8;font-weight:600;">3P 배치기에서 스케줄을 생성하고 경기를 시작하세요.</div>
                 </div>`;
                 if (titleEl) titleEl.textContent = '🏆 대기 중';
                 return;
@@ -2622,8 +2620,16 @@
             const firstName = step.firstTeam === 'left' ? step.leftTeam : step.rightTeam;
             const secondName = step.firstTeam === 'left' ? step.rightTeam : step.leftTeam;
 
-            // 숫자 포맷
-            const fmt = n => n ? Number(n).toLocaleString() + '원' : '-';
+            // 숫자 포맷 함수 (만 단위 최적화)
+            const fmtCompact = n => {
+                if (!n) return '-';
+                const num = Number(n);
+                if (num >= 10000) {
+                    const man = num / 10000;
+                    return man % 1 === 0 ? man + '만' : man.toFixed(1) + '만';
+                }
+                return num.toLocaleString();
+            };
 
             // 라운드별 카드 생성
             let roundCards = roundData.map(rd => {
@@ -2632,31 +2638,32 @@
                 let bg, border, glow = '';
 
                 if (rd.isCurrent && !rd.bothDone) {
-                    bg = 'rgba(59,130,246,0.1)'; border = 'rgba(59,130,246,0.5)';
+                    bg = 'rgba(59,130,246,0.18)'; border = 'rgba(59,130,246,0.6)';
                     glow = 'box-shadow:0 0 12px rgba(59,130,246,0.3);';
                 } else if (isChampRound && rd.isCurrent) {
-                    bg = 'rgba(245,158,11,0.1)'; border = 'rgba(245,158,11,0.4)';
+                    bg = 'rgba(245,158,11,0.2)'; border = 'rgba(245,158,11,0.5)';
                     glow = 'box-shadow:0 0 15px rgba(245,158,11,0.3);';
                 } else if (rd.bothDone) {
-                    bg = 'rgba(16,185,129,0.04)'; border = 'rgba(16,185,129,0.15)';
+                    bg = 'rgba(255,255,255,0.03)'; border = 'rgba(255,255,255,0.08)';
                 } else {
-                    bg = 'rgba(30,41,59,0.4)'; border = 'rgba(255,255,255,0.05)';
+                    bg = 'rgba(255,255,255,0.01)'; border = 'rgba(255,255,255,0.04)';
                 }
 
-                let leftC = '#94a3b8', rightC = '#94a3b8', resultLine = '';
-                if (rd.roundWinner === 'left') { leftC = '#10b981'; rightC = '#64748b'; resultLine = `<span style="color:#10b981;">🏆 ${esc(step.leftName)}</span>`; }
-                else if (rd.roundWinner === 'right') { rightC = '#10b981'; leftC = '#64748b'; resultLine = `<span style="color:#10b981;">🏆 ${esc(step.rightName)}</span>`; }
-                else if (rd.roundWinner === 'draw') { resultLine = `<span style="color:#f59e0b;">무승부</span>`; }
-                else if (rd.isCurrent) { resultLine = `<span style="color:#3b82f6;">● 진행중</span>`; }
-                else { resultLine = `<span style="color:#475569;">대기</span>`; }
+                let leftC = '#fff', rightC = '#fff';
+                if (rd.roundWinner === 'left') { leftC = '#10b981'; rightC = '#475569'; }
+                else if (rd.roundWinner === 'right') { rightC = '#10b981'; leftC = '#475569'; }
+                else if (rd.roundWinner === 'draw') { leftC = '#f59e0b'; rightC = '#f59e0b'; }
 
-                return `<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:10px 14px;flex:1;min-width:120px;${glow}">
-                    <div style="font-size:11px;font-weight:800;color:${isChampRound?'#f59e0b':'#64748b'};margin-bottom:8px;text-align:center;">${label}</div>
-                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
-                        <span style="color:${leftC};">${rd.bothDone ? fmt(rd.lp) : (rd.lSold ? fmt(rd.lp) : '-')}</span>
-                        <span style="color:${rightC};">${rd.bothDone ? fmt(rd.rp) : (rd.rSold ? fmt(rd.rp) : '-')}</span>
+                const leftVal = (rd.bothDone || rd.lSold) ? fmtCompact(rd.lp) : '-';
+                const rightVal = (rd.bothDone || rd.rSold) ? fmtCompact(rd.rp) : '-';
+
+                return `<div style="background:${bg};border:1.5px solid ${border};border-radius:10px;padding:10px 12px;flex:1;text-align:center;${glow}">
+                    <div style="font-size:11px;font-weight:800;color:${isChampRound?'#f59e0b':'#94a3b8'};margin-bottom:4px;letter-spacing:0.05em;">${label}</div>
+                    <div style="display:flex;justify-content:center;align-items:center;gap:6px;font-size:13px;font-weight:800;">
+                        <span style="color:${leftC};">${leftVal}</span>
+                        <span style="color:#475569;font-size:10px;">:</span>
+                        <span style="color:${rightC};">${rightVal}</span>
                     </div>
-                    <div style="text-align:center;font-size:10px;font-weight:700;">${resultLine}</div>
                 </div>`;
             }).join('');
 
@@ -2666,13 +2673,12 @@
                 const winner = leftTotal > rightTotal ? step.leftName : (rightTotal > leftTotal ? step.rightName : '무승부');
                 const winLetter = leftTotal > rightTotal ? step.leftTeam : step.rightTeam;
                 finalBanner = `
-                    <div style="background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(234,179,8,0.06));border:2px solid rgba(245,158,11,0.5);border-radius:14px;padding:20px;text-align:center;width:100%;box-shadow:0 0 30px rgba(245,158,11,0.2);">
-                        <div style="font-size:12px;font-weight:800;color:#f59e0b;margin-bottom:8px;letter-spacing:0.08em;">🏆 최종 승자 (낙찰가 총합)</div>
-                        <div style="font-size:36px;font-weight:900;color:#fff;text-shadow:0 0 20px rgba(245,158,11,0.5);">${winLetter}팀 ${esc(winner)}</div>
-                        <div style="margin-top:8px;font-size:14px;color:#94a3b8;font-weight:700;">
-                            ${esc(step.leftName)}: ${fmt(leftTotal)} vs ${esc(step.rightName)}: ${fmt(rightTotal)}
+                    <div style="background:linear-gradient(135deg,rgba(245,158,11,0.25),rgba(234,179,8,0.05));border:2px solid rgba(245,158,11,0.6);border-radius:16px;padding:18px;text-align:center;width:100%;box-shadow:0 0 25px rgba(245,158,11,0.25);margin:8px 0;">
+                        <div style="font-size:12px;font-weight:900;color:#f59e0b;margin-bottom:6px;letter-spacing:0.1em;">🏆 WINNER 🏆</div>
+                        <div style="font-size:32px;font-weight:950;color:#fff;text-shadow:0 0 15px rgba(245,158,11,0.6);">${winLetter}팀 ${esc(winner)} 승리!</div>
+                        <div style="margin-top:6px;font-size:14px;color:#e2e8f0;font-weight:800;">
+                            스코어 ${leftRoundWins}:${rightRoundWins} | 총액 ${fmtCompact(leftTotal)} vs ${fmtCompact(rightTotal)}
                         </div>
-                        <div style="margin-top:6px;font-size:12px;color:#64748b;">라운드 승패: ${leftRoundWins}승 ${rightRoundWins}패</div>
                     </div>`;
             }
 
@@ -2703,27 +2709,27 @@
             }
 
             // 대장전 특수 배경
-            const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,1) 40%);' : '';
+            const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,0.7) 40%);' : '';
 
             tree.innerHTML = `
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:15px;max-width:900px;margin:0 auto;padding:10px 0;${champGlow}">
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:95%;max-width:780px;margin:0 auto;padding:24px 30px;background:rgba(15,23,42,0.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.5);gap:20px;${champGlow}">
                     ${isChamp ? '<div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:-6px;">⭐ CHAMPION ROUND ⭐</div>' : ''}
-                    <div style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:0.06em;">${step.group}조 ${step.round}라운드 · 선공: ${firstName}팀 / 후공: ${secondName}팀</div>
+                    <div style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:0.06em;">${step.group}조 ${step.round}라운드 진행 중</div>
                     
                     <div style="display:flex;align-items:center;justify-content:center;gap:20px;width:100%;">
                         <div style="text-align:center;flex:1;">
-                            <div style="font-size:10px;font-weight:700;color:#60a5fa;margin-bottom:2px;">${step.leftTeam}팀${step.firstTeam==='left'?' ⭐선공':''}</div>
-                            <div style="font-size:22px;font-weight:900;color:#fff;line-height:1.2;">${esc(step.leftName)}</div>
-                            <div style="font-size:12px;color:#94a3b8;font-weight:700;margin-top:2px;">총 ${fmt(leftTotal)}</div>
+                            <div style="font-size:12px;font-weight:850;color:#60a5fa;margin-bottom:4px;letter-spacing:0.05em;">${step.leftTeam}팀${step.firstTeam==='left'?' <span style="color:#f59e0b;">⭐선공</span>':''}</div>
+                            <div style="font-size:30px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${esc(step.leftName)}</div>
+                            <div style="font-size:15px;color:#94a3b8;font-weight:800;margin-top:6px;">총 <span style="color:#60a5fa;font-size:18px;font-weight:900;">${fmtCompact(leftTotal)}</span></div>
                         </div>
-                        <div style="text-align:center;min-width:110px;">
-                            <div style="font-size:36px;font-weight:900;color:#fff;letter-spacing:0.08em;line-height:1;text-shadow:0 0 15px rgba(255,255,255,0.15);">${leftRoundWins} : ${rightRoundWins}</div>
-                            <div style="font-size:9px;color:#64748b;margin-top:4px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;">ROUND SCORE</div>
+                        <div style="text-align:center;min-width:130px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:10px 0;box-shadow:inset 0 0 10px rgba(0,0,0,0.5);">
+                            <div style="font-size:52px;font-weight:950;color:#fff;letter-spacing:0.05em;line-height:1;text-shadow:0 0 15px rgba(255,255,255,0.25);">${leftRoundWins} : ${rightRoundWins}</div>
+                            <div style="font-size:10px;color:#64748b;margin-top:6px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;">ROUND SCORE</div>
                         </div>
                         <div style="text-align:center;flex:1;">
-                            <div style="font-size:10px;font-weight:700;color:#f87171;margin-bottom:2px;">${step.rightTeam}팀${step.firstTeam==='right'?' ⭐선공':''}</div>
-                            <div style="font-size:22px;font-weight:900;color:#fff;line-height:1.2;">${esc(step.rightName)}</div>
-                            <div style="font-size:12px;color:#94a3b8;font-weight:700;margin-top:2px;">총 ${fmt(rightTotal)}</div>
+                            <div style="font-size:12px;font-weight:850;color:#f87171;margin-bottom:4px;letter-spacing:0.05em;">${step.rightTeam}팀${step.firstTeam==='right'?' <span style="color:#f59e0b;">⭐선공</span>':''}</div>
+                            <div style="font-size:30px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${esc(step.rightName)}</div>
+                            <div style="font-size:15px;color:#94a3b8;font-weight:800;margin-top:6px;">총 <span style="color:#f87171;font-size:18px;font-weight:900;">${fmtCompact(rightTotal)}</span></div>
                         </div>
                     </div>
                     
@@ -2731,7 +2737,7 @@
                     
                     ${finalBanner}
                     
-                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;margin-top:4px;font-size:11px;color:#94a3b8;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;margin-top:6px;font-size:12px;color:#94a3b8;font-weight:700;">
                         <div style="display:flex;align-items:center;gap:4px;">
                             ${nowAuctionText}
                         </div>
