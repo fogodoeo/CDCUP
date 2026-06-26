@@ -2487,6 +2487,18 @@
             tree.innerHTML = '';
             const currentMatch = map.battle_current_match || '';
             
+            // 1라운드 매칭으로 회사명 -> 알파벳 매핑 생성
+            const teamToLetter = {};
+            const matchCount = scale / 2;
+            for (let i = 1; i <= matchCount; i++) {
+                const matchKey = scale + '_' + i;
+                const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
+                const leftLetter = String.fromCharCode(65 + (i - 1) * 2);      // A, C, E...
+                const rightLetter = String.fromCharCode(65 + (i - 1) * 2 + 1);  // B, D, F...
+                if (match.left) teamToLetter[match.left.trim()] = leftLetter;
+                if (match.right) teamToLetter[match.right.trim()] = rightLetter;
+            }
+            
             const rounds = [];
             let r = scale;
             while (r >= 2) { rounds.push(r); r = r / 2; }
@@ -2520,12 +2532,20 @@
                     
                     const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
                     
-                    let leftPrefix = '';
-                    let rightPrefix = '';
-                    if (round === scale) {
-                        leftPrefix = `[${String.fromCharCode(65 + (i-1)*2)}팀] `;
-                        rightPrefix = `[${String.fromCharCode(65 + (i-1)*2 + 1)}팀] `;
-                    }
+                    const leftL = String.fromCharCode(65 + (i-1)*2);
+                    const rightL = String.fromCharCode(65 + (i-1)*2 + 1);
+                    
+                    const getSlotText = (teamName, defaultLetter, isFirstRound) => {
+                        if (!teamName) return '대기중...';
+                        const letter = teamToLetter[teamName.trim()] || defaultLetter;
+                        if (match.winner) {
+                            return isFirstRound ? `[${letter}팀] ${teamName}` : teamName;
+                        }
+                        return `${letter}팀`;
+                    };
+                    
+                    const leftText = getSlotText(match.left, leftL, round === scale);
+                    const rightText = getSlotText(match.right, rightL, round === scale);
 
                     // 승패 상태 스타일
                     const leftWin = match.winner === 'left';
@@ -2543,12 +2563,12 @@
                     node.innerHTML = `
                         <div class="bracket-page-match-title">${titleText}${currentMatch === fullKey ? ' ⚡' : ''}</div>
                         <div class="bracket-page-slot" style="${leftWin ? winStyle : ''}${leftLose ? loseStyle : ''}${activeStyle}">
-                            <span class="bracket-page-team-text">${leftPrefix}${esc(match.left || '대기중...')}</span>
+                            <span class="bracket-page-team-text">${leftText}</span>
                             ${leftWin ? '<span style="position:absolute;right:8px;font-size:13px;">✅</span>' : ''}
                             ${leftLose ? '<span style="position:absolute;right:8px;font-size:11px;color:#ef4444;">패</span>' : ''}
                         </div>
                         <div class="bracket-page-slot" style="${rightWin ? winStyle : ''}${rightLose ? loseStyle : ''}${activeStyle}">
-                            <span class="bracket-page-team-text">${rightPrefix}${esc(match.right || '대기중...')}</span>
+                            <span class="bracket-page-team-text">${rightText}</span>
                             ${rightWin ? '<span style="position:absolute;right:8px;font-size:13px;">✅</span>' : ''}
                             ${rightLose ? '<span style="position:absolute;right:8px;font-size:11px;color:#ef4444;">패</span>' : ''}
                         </div>
