@@ -871,15 +871,15 @@
             // 3P 전용 드래그 요소 표시
             document.getElementById('draggable-bracket').style.display = '';
             document.getElementById('draggable-bracket-title').style.display = '';
-            document.getElementById('draggable-battle-ann').style.display = '';
+            document.getElementById('draggable-battle-ann').style.display = 'none';
             document.getElementById('toggle-bracket-show-group').style.display = '';
             document.getElementById('toggle-bracket-title-show-group').style.display = '';
-            document.getElementById('toggle-battle-ann-show-group').style.display = '';
+            document.getElementById('toggle-battle-ann-show-group').style.display = 'none';
             document.getElementById('toggle-bracket-scale-group').style.display = '';
             document.getElementById('toggle-bracket-mode-group').style.display = '';
             document.getElementById('bracket-coords').style.display = '';
             document.getElementById('bracket-title-coords').style.display = '';
-            document.getElementById('battle-ann-coords').style.display = '';
+            document.getElementById('battle-ann-coords').style.display = 'none';
             // 배너/자막 완전 숨김 (3P 오버레이에 불필요)
             document.getElementById('draggable-banner').style.display = 'none';
             document.getElementById('draggable-ticker').style.display = 'none';
@@ -933,11 +933,6 @@
                 el: document.getElementById('draggable-bracket-title'),
                 top: "40px", left: "25%", right: "auto", bottom: "auto",
                 show: "1", width: "50%", height: "10%"
-            };
-            elements.battle_ann = {
-                el: document.getElementById('draggable-battle-ann'),
-                top: "35%", left: "10%", right: "auto", bottom: "auto",
-                show: "1", width: "80%", height: "25%"
             };
         }
 

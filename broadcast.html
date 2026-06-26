@@ -3069,15 +3069,15 @@
                 }
                 
                 if (roundNum === 4) {
-                    displayContent = `🔥 대장전(4라운드) 진행 중!`;
-                    displaySub = `${leftLetter}팀 (${leftTeamName}) VS ${rightLetter}팀 (${rightTeamName})<br>운명의 최종 승부 (현재 스코어 ${leftScore} : ${rightScore})`;
+                    displayContent = `대장전(4라운드) 진행 중!`;
+                    displaySub = `${leftLetter}팀 VS ${rightLetter}팀<br>운명의 최종 승부 (현재 스코어 ${leftScore} : ${rightScore})`;
                 } else {
-                    displayContent = `⚔️ ${roundNum}라운드 진행 중: <span style="color:#60a5fa;">${teamLetter}팀 (${realCompany || '대기'})</span>`;
+                    displayContent = `${roundNum}라운드 진행 중: <span style="color:#60a5fa;">${teamLetter}팀</span>`;
                     displaySub = `${leftLetter}팀 VS ${rightLetter}팀 대결 (현재 스코어 ${leftScore} : ${rightScore})`;
                     
                     const oppItem = slotType === 'left' ? rightItems[roundNum] : leftItems[roundNum];
                     if (oppItem && (oppItem.status === '완료' || oppItem.status === 'sold' || oppItem.status === '낙찰' || oppItem.status === '유찰')) {
-                        displayContent = `⚔️ ${roundNum}라운드 후공 진행 중: <span style="color:#f87171;">${teamLetter}팀 (${realCompany || '대기'})</span>`;
+                        displayContent = `${roundNum}라운드 후공 진행 중: <span style="color:#f87171;">${teamLetter}팀</span>`;
                         displaySub = `선공 ${opponentLetter}팀의 기록에 도전 중! (현재 스코어 ${leftScore} : ${rightScore})`;
                     }
                 }
@@ -3096,7 +3096,7 @@
                 const matchupCard = document.getElementById('battle-matchup-card');
                 if (matchupCard) {
                     if (!isBracketPage) {
-                        document.getElementById('matchup-teams').innerHTML = `[${leftLetter}팀] ${leftTeamName} <span style="color:#ef4444; font-size:14px; margin:0 6px;">VS</span> [${rightLetter}팀] ${rightTeamName}`;
+                        document.getElementById('matchup-teams').innerHTML = `[${leftLetter}팀] <span style="color:#ef4444; font-size:14px; margin:0 6px;">VS</span> [${rightLetter}팀]`;
                         document.getElementById('matchup-score').textContent = `스코어 ${leftScore} : ${rightScore}`;
                         const roundLabel = (roundNum === 4) ? '대장전' : `${roundNum}R`;
                         document.getElementById('matchup-round').textContent = `${roundLabel} 진행중`;
