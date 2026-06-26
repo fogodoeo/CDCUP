@@ -2686,6 +2686,48 @@
                 return `<span style="background:${c};color:${tc};border:1px solid ${b};border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;">${lbl}</span>`;
             }).join('');
 
+            // 현재 경매 중인 아이템 감지 (현재 라운드에서 아직 안 팔린 아이템)
+            const curRd = roundData.find(rd => rd.isCurrent);
+            let nowAuctionHtml = '';
+            if (curRd && !curRd.bothDone) {
+                const auctionItems = [];
+                if (!curRd.lSold) auctionItems.push(`${step.leftTeam}팀 ${curRd.leftItemName}`);
+                if (!curRd.rSold) auctionItems.push(`${step.rightTeam}팀 ${curRd.rightItemName}`);
+                if (curRd.lSold && !curRd.rSold) {
+                    nowAuctionHtml = `<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 16px;text-align:center;width:100%;">
+                        <span style="font-size:10px;color:#3b82f6;font-weight:800;">🔴 현재 경매</span>
+                        <span style="font-size:13px;color:#fff;font-weight:700;margin-left:8px;">${curRd.rightItemName} (${step.rightTeam}팀)</span>
+                        <span style="font-size:10px;color:#64748b;margin-left:6px;">| ${curRd.leftItemName} 낙찰: ${fmt(curRd.lp)}</span>
+                    </div>`;
+                } else if (!curRd.lSold && curRd.rSold) {
+                    nowAuctionHtml = `<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 16px;text-align:center;width:100%;">
+                        <span style="font-size:10px;color:#3b82f6;font-weight:800;">🔴 현재 경매</span>
+                        <span style="font-size:13px;color:#fff;font-weight:700;margin-left:8px;">${curRd.leftItemName} (${step.leftTeam}팀)</span>
+                        <span style="font-size:10px;color:#64748b;margin-left:6px;">| ${curRd.rightItemName} 낙찰: ${fmt(curRd.rp)}</span>
+                    </div>`;
+                } else {
+                    nowAuctionHtml = `<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 16px;text-align:center;width:100%;">
+                        <span style="font-size:10px;color:#3b82f6;font-weight:800;">🔴 경매 대기</span>
+                        <span style="font-size:13px;color:#fff;font-weight:700;margin-left:8px;">${auctionItems.join(' vs ')}</span>
+                    </div>`;
+                }
+            }
+
+            // 다음 경기 안내
+            let nextMatchHtml = '';
+            const nextIdx = stepIdx + 1;
+            if (nextIdx < schedule.length && !isLastRoundDone) {
+                const ns = schedule[nextIdx];
+                const nsChamp = ns.isLastRound;
+                const nsLabel = nsChamp ? '⭐ 대장전' : ns.round + 'R';
+                nextMatchHtml = `<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 16px;text-align:center;width:100%;">
+                    <span style="font-size:10px;color:#64748b;font-weight:800;">⏭️ 다음 경기</span>
+                    <span style="font-size:12px;color:#94a3b8;font-weight:700;margin-left:8px;">${ns.group}조 ${nsLabel}</span>
+                    <span style="font-size:12px;color:#fff;font-weight:700;margin-left:8px;">${ns.leftTeam}팀 ${esc(ns.leftName)} vs ${ns.rightTeam}팀 ${esc(ns.rightName)}</span>
+                    <span style="font-size:10px;color:#475569;margin-left:8px;">${ns.leftTeam}${ns.round} vs ${ns.rightTeam}${ns.round}</span>
+                </div>`;
+            }
+
             // 대장전 특수 배경
             const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,1) 40%);' : '';
 
@@ -2710,7 +2752,9 @@
                         </div>
                     </div>
                     <div style="display:flex;gap:8px;width:100%;flex-wrap:wrap;justify-content:center;">${roundCards}</div>
+                    ${nowAuctionHtml}
                     ${finalBanner}
+                    ${nextMatchHtml}
                     <div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);width:100%;">${scheduleBar}</div>
                 </div>
             `;
