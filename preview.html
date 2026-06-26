@@ -1890,10 +1890,11 @@
 
             tSchedule = [];
             for (let round = 1; round <= rpm; round++) {
-                const isReversed = (round % 2 === 0);
+                // 한 조씩 밀리는 순환 방식: R1=1,2,3,4 / R2=2,3,4,1 / R3=3,4,1,2 / ...
                 const order = [];
-                for (let g = 1; g <= groups; g++) order.push(g);
-                if (isReversed) order.reverse();
+                for (let g = 0; g < groups; g++) {
+                    order.push(((g + round - 1) % groups) + 1);
+                }
 
                 for (const g of order) {
                     const mk = tScale + '_' + g;
