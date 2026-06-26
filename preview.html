@@ -870,15 +870,15 @@
         if (pageNum === '3') {
             // 3P 전용 드래그 요소 표시
             document.getElementById('draggable-bracket').style.display = '';
-            document.getElementById('draggable-bracket-title').style.display = '';
+            document.getElementById('draggable-bracket-title').style.display = 'none'; // Hidden per user request
             document.getElementById('draggable-battle-ann').style.display = 'none';
             document.getElementById('toggle-bracket-show-group').style.display = '';
-            document.getElementById('toggle-bracket-title-show-group').style.display = '';
+            document.getElementById('toggle-bracket-title-show-group').style.display = 'none'; // Hidden per user request
             document.getElementById('toggle-battle-ann-show-group').style.display = 'none';
             document.getElementById('toggle-bracket-scale-group').style.display = '';
             document.getElementById('toggle-bracket-mode-group').style.display = '';
             document.getElementById('bracket-coords').style.display = '';
-            document.getElementById('bracket-title-coords').style.display = '';
+            document.getElementById('bracket-title-coords').style.display = 'none'; // Hidden per user request
             document.getElementById('battle-ann-coords').style.display = 'none';
             // 배너/자막 완전 숨김 (3P 오버레이에 불필요)
             document.getElementById('draggable-banner').style.display = 'none';
@@ -1406,7 +1406,12 @@
 
             // Constrain
             const maxX = containerRect.width - el.offsetWidth;
-            const maxY = containerRect.height - el.offsetHeight;
+            let maxY = containerRect.height - el.offsetHeight;
+
+            if (activeDragKey === 'bracket') {
+                // Allow the bracket to be dragged past the bottom boundary to overlay the ticker
+                maxY = containerRect.height;
+            }
 
             x = Math.max(0, Math.min(x, maxX));
             y = Math.max(0, Math.min(y, maxY));

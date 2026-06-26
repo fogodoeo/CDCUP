@@ -926,7 +926,7 @@
     </div>
 
     <!-- 전체 대진표 전용 송출 컨테이너 -->
-    <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:transparent; color:#fff; position:absolute; top:0; left:0; z-index:9999; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
+    <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:transparent; color:#fff; position:absolute; top:0; left:0; z-index:10005; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
         <div id="bracket-page-title" style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
             CRE WORLD CUP TOURNAMENT
         </div>
@@ -2479,15 +2479,16 @@
             window.latestConfigMap = map;
             
             const displayMode = map.bracket_display_mode || 'full';
+            const bShow = map.bracket_show !== undefined ? String(map.bracket_show) : '1';
+            const active = map.active_tournament || 'none';
             
             // Apply bracket positioning & size
             const tree = document.getElementById('bracket-page-tree');
             if (tree) {
-                const bTop = (displayMode === 'live') ? '0px' : (map.bracket_top || '120px');
+                const bTop = map.bracket_top || (displayMode === 'live' ? '0px' : '120px');
                 const bLeft = map.bracket_left || '0px';
                 const bWidth = map.bracket_width || '100%';
-                const bHeight = (displayMode === 'live') ? '100%' : (map.bracket_height || 'calc(100% - 120px)');
-                const bShow = map.bracket_show !== undefined ? String(map.bracket_show) : '1';
+                const bHeight = map.bracket_height || (displayMode === 'live' ? '100%' : 'calc(100% - 120px)');
 
                 tree.style.position = 'absolute';
                 tree.style.top = bTop;
@@ -2495,43 +2496,22 @@
                 tree.style.width = bWidth;
                 tree.style.height = bHeight;
                 
-                if (bShow === '0') {
-                    tree.style.setProperty('display', 'none', 'important');
-                } else {
-                    tree.style.display = 'flex';
-                }
+                // tree의 display 상태는 Flex로 고정 유지 (컨테이너의 표시는 containerEl이 결정)
+                tree.style.display = 'flex';
             }
 
-            // Apply bracket title positioning & size
+            // Apply bracket title (completely hidden as requested by user)
             const titleEl = document.getElementById('bracket-page-title');
             if (titleEl) {
-                if (displayMode === 'live') {
-                    titleEl.style.display = 'none';
-                } else {
-                    const titleTop = map.bracket_title_top || '40px';
-                    const titleLeft = map.bracket_title_left || '25%';
-                    const titleWidth = map.bracket_title_width || '50%';
-                    const titleHeight = map.bracket_title_height || '10%';
-                    const titleShow = map.bracket_title_show !== undefined ? String(map.bracket_title_show) : '1';
-
-                    if (map.bracket_title_top || map.bracket_title_left) {
-                        titleEl.style.position = 'absolute';
-                        titleEl.style.top = titleTop;
-                        titleEl.style.left = titleLeft;
-                        titleEl.style.width = titleWidth;
-                        titleEl.style.height = titleHeight;
-                        titleEl.style.padding = '0';
-                        titleEl.style.margin = '0';
-                    } else {
-                        titleEl.style.position = 'static';
-                        titleEl.style.padding = '40px 0 10px 0';
-                        titleEl.style.width = '100%';
-                    }
-                    titleEl.style.display = titleShow === '0' ? 'none' : 'block';
-                }
+                titleEl.style.display = 'none';
             }
 
-            const active = map.active_tournament || 'none';
+            // Control the visibility of the entire bracket container (On/Off master toggle)
+            const containerEl = document.getElementById('bracket-page-container');
+            if (containerEl) {
+                const shouldShow = (bShow === '1') && (isBracketPage || active !== 'none');
+                containerEl.style.display = shouldShow ? 'block' : 'none';
+            }
             if (active === 'none') {
                 if (tree) {
                     tree.innerHTML = `
@@ -3043,6 +3023,9 @@
                 const map = await getConfigMap();
                 if (!map) return;
                 window.latestConfigMap = map;
+
+                // Sync bracket overlay visibility & positioning on all pages
+                applyBracketPageMap(map);
                 
                 const active = map.active_tournament || 'none';
                 if (active === 'none') {
