@@ -2526,128 +2526,163 @@
             });
         }
 
-        function renderBracketLiveView(scale, bracket, map) {
+        async function renderBracketLiveView(scale, bracket, map) {
             const tree = document.getElementById('bracket-page-tree');
             const titleEl = document.getElementById('bracket-page-title');
 
-            const curMatch = map.battle_current_match || '';
-            const battleState = map.battle_state || '';
+            // 스케줄 읽기
+            let schedule = [];
+            try { if (map.battle_schedule) schedule = JSON.parse(map.battle_schedule); } catch(e){}
+            const stepIdx = parseInt(map.battle_step || '-1');
 
-            if (!curMatch) {
-                tree.innerHTML = '<div style="font-size:20px;color:#94a3b8;text-align:center;width:100%;">현재 진행 중인 경기가 없습니다.</div>';
+            if (!schedule.length || stepIdx < 0) {
+                tree.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:16px;">
+                    <div style="font-size:60px;">⚡</div>
+                    <div style="font-size:22px;font-weight:900;color:#fff;">경기 대기 중</div>
+                    <div style="font-size:13px;color:#64748b;">3P 배치기에서 스케줄을 생성하고 경기를 시작하세요.</div>
+                </div>`;
                 if (titleEl) titleEl.textContent = '🏆 대기 중';
                 return;
             }
 
-            const cp = curMatch.split('_');
-            if (cp.length < 3) { tree.innerHTML = ''; return; }
-            const mRound = parseInt(cp[1]);
-            const mIdx = parseInt(cp[2]);
-            const matchKey = cp[1] + '_' + cp[2];
-            const m = bracket.matches[matchKey] || { left:'', right:'', winner:'' };
+            const step = schedule[stepIdx] || schedule[0];
+            const rpm = step.roundsPerMatch || 4;
+            const isChamp = step.isLastRound;
 
-            const tt = (mRound === 2) ? '결승전' : (mRound === 4 ? '준결승 ' + mIdx + '조' : (mRound === 8 ? '8강 ' + mIdx + '조' : '16강 ' + mIdx + '조'));
+            // 매치의 모든 라운드 아이템 가격 조회
+            let items = [];
+            try { items = await getItems() || []; } catch(e){}
 
-            // Score
-            const scoreKey = 'score_' + scale + '_' + matchKey;
-            let scores = { r1:'', r2:'', r3:'', r4:'' };
-            if (map[scoreKey]) try { scores = JSON.parse(map[scoreKey]); } catch(e){}
-            let ls = 0, rs = 0;
-            ['r1','r2','r3','r4'].forEach(k => {
-                if (scores[k] === 'left') ls++;
-                else if (scores[k] === 'right') rs++;
-            });
+            let leftTotal = 0, rightTotal = 0;
+            let leftRoundWins = 0, rightRoundWins = 0;
+            const roundData = [];
 
-            const stateLabels = { start:'경기 진행 중', r1_end:'1라운드 종료', r2_end:'2라운드 종료', r3_end:'3라운드 종료', r4_ready:'대장전 준비', r4_end:'대장전 종료', final_reveal:'🏆 최종 결과' };
-            const stateText = stateLabels[battleState] || '대기 중';
-            const isFinished = battleState === 'final_reveal';
-
-            if (titleEl) titleEl.textContent = '🏆 ' + tt;
-
-            // 팀 알파벳 찾기 (1라운드 매치에서)
-            let leftLetter = '', rightLetter = '';
-            const mc = scale / 2;
-            for (let ii = 1; ii <= mc; ii++) {
-                const mk = scale + '_' + ii;
-                const mm = bracket.matches[mk] || {};
-                const lL = String.fromCharCode(65 + (ii-1)*2);
-                const rL = String.fromCharCode(65 + (ii-1)*2 + 1);
-                if (mm.left === m.left && m.left) leftLetter = lL;
-                if (mm.right === m.left && m.left) leftLetter = rL;
-                if (mm.left === m.right && m.right) rightLetter = lL;
-                if (mm.right === m.right && m.right) rightLetter = rL;
+            for (let r = 1; r <= rpm; r++) {
+                const leftItemName = step.leftTeam + r;
+                const rightItemName = step.rightTeam + r;
+                const lItem = items.find(i => (i.name||'').trim().toUpperCase() === leftItemName);
+                const rItem = items.find(i => (i.name||'').trim().toUpperCase() === rightItemName);
+                
+                const lp = parseFloat(lItem?.sold_price || lItem?.soldPrice || 0);
+                const rp = parseFloat(rItem?.sold_price || rItem?.soldPrice || 0);
+                const lSold = (lItem?.status === '완료' || lItem?.status === 'sold');
+                const rSold = (rItem?.status === '완료' || rItem?.status === 'sold');
+                const bothDone = lSold && rSold;
+                
+                let roundWinner = '';
+                if (bothDone) {
+                    roundWinner = lp > rp ? 'left' : (rp > lp ? 'right' : 'draw');
+                    leftTotal += lp;
+                    rightTotal += rp;
+                    if (roundWinner === 'left') leftRoundWins++;
+                    if (roundWinner === 'right') rightRoundWins++;
+                }
+                
+                const isCurrent = (r === step.round);
+                roundData.push({ round: r, lItem, rItem, lp, rp, lSold, rSold, bothDone, roundWinner, isCurrent, leftItemName, rightItemName });
             }
 
-            // 라운드별 상세 카드
-            let roundCards = '';
-            ['r1','r2','r3','r4'].forEach((k, idx) => {
-                const rNum = idx + 1;
-                const label = rNum <= 3 ? rNum + '라운드' : '대장전';
-                const w = scores[k]; // 'left', 'right', or ''
-                
-                let bg = 'rgba(30,41,59,0.5)';
-                let border = 'rgba(255,255,255,0.06)';
-                let leftIcon = '', rightIcon = '';
-                let leftColor = '#94a3b8', rightColor = '#94a3b8';
-                let resultText = '미진행';
-                
-                if (w === 'left') {
-                    bg = 'rgba(16,185,129,0.06)';
-                    border = 'rgba(16,185,129,0.2)';
-                    leftIcon = '🏆'; leftColor = '#10b981';
-                    rightIcon = ''; rightColor = '#64748b';
-                    resultText = `${esc(m.left)} 승리`;
-                } else if (w === 'right') {
-                    bg = 'rgba(239,68,68,0.04)';
-                    border = 'rgba(239,68,68,0.15)';
-                    rightIcon = '🏆'; rightColor = '#10b981';
-                    leftIcon = ''; leftColor = '#64748b';
-                    resultText = `${esc(m.right)} 승리`;
+            const isLastRoundDone = roundData[rpm-1]?.bothDone;
+            const matchTitle = step.group + '조 ' + (isChamp ? '⭐ 대장전 ⭐' : step.round + '라운드');
+            
+            if (titleEl) {
+                titleEl.textContent = '🏆 ' + (scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강'))) + ' ' + matchTitle;
+            }
+
+            // 선공/후공 정보
+            const firstName = step.firstTeam === 'left' ? step.leftTeam : step.rightTeam;
+            const secondName = step.firstTeam === 'left' ? step.rightTeam : step.leftTeam;
+
+            // 숫자 포맷
+            const fmt = n => n ? Number(n).toLocaleString() + '원' : '-';
+
+            // 라운드별 카드 생성
+            let roundCards = roundData.map(rd => {
+                const isChampRound = (rd.round === rpm);
+                const label = isChampRound ? '⭐ 대장전' : rd.round + 'R';
+                let bg, border, glow = '';
+
+                if (rd.isCurrent && !rd.bothDone) {
+                    bg = 'rgba(59,130,246,0.1)'; border = 'rgba(59,130,246,0.5)';
+                    glow = 'box-shadow:0 0 12px rgba(59,130,246,0.3);';
+                } else if (isChampRound && rd.isCurrent) {
+                    bg = 'rgba(245,158,11,0.1)'; border = 'rgba(245,158,11,0.4)';
+                    glow = 'box-shadow:0 0 15px rgba(245,158,11,0.3);';
+                } else if (rd.bothDone) {
+                    bg = 'rgba(16,185,129,0.04)'; border = 'rgba(16,185,129,0.15)';
+                } else {
+                    bg = 'rgba(30,41,59,0.4)'; border = 'rgba(255,255,255,0.05)';
                 }
 
-                roundCards += `
-                    <div style="background:${bg};border:1px solid ${border};border-radius:10px;padding:14px 18px;flex:1;min-width:180px;">
-                        <div style="font-size:12px;font-weight:800;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">${label}</div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                            <span style="font-size:14px;font-weight:700;color:${leftColor};">${leftIcon} ${leftLetter ? '['+leftLetter+'팀]' : ''} ${esc(m.left||'?')}</span>
-                            <span style="font-size:11px;color:#64748b;font-weight:700;">VS</span>
-                            <span style="font-size:14px;font-weight:700;color:${rightColor};">${esc(m.right||'?')} ${rightLetter ? '['+rightLetter+'팀]' : ''} ${rightIcon}</span>
-                        </div>
-                        <div style="text-align:center;font-size:11px;font-weight:700;color:${w ? '#fff' : '#475569'};margin-top:4px;">${resultText}</div>
-                    </div>
-                `;
-            });
+                let leftC = '#94a3b8', rightC = '#94a3b8', resultLine = '';
+                if (rd.roundWinner === 'left') { leftC = '#10b981'; rightC = '#64748b'; resultLine = `<span style="color:#10b981;">🏆 ${esc(step.leftName)}</span>`; }
+                else if (rd.roundWinner === 'right') { rightC = '#10b981'; leftC = '#64748b'; resultLine = `<span style="color:#10b981;">🏆 ${esc(step.rightName)}</span>`; }
+                else if (rd.roundWinner === 'draw') { resultLine = `<span style="color:#f59e0b;">무승부</span>`; }
+                else if (rd.isCurrent) { resultLine = `<span style="color:#3b82f6;">● 진행중</span>`; }
+                else { resultLine = `<span style="color:#475569;">대기</span>`; }
 
-            // 최종 결과 배너
-            let finalBanner = '';
-            if (isFinished) {
-                const winner = ls > rs ? m.left : (rs > ls ? m.right : '무승부');
-                finalBanner = `
-                    <div style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(234,179,8,0.08));border:2px solid rgba(245,158,11,0.4);border-radius:12px;padding:16px;text-align:center;width:100%;">
-                        <div style="font-size:14px;font-weight:800;color:#f59e0b;margin-bottom:6px;">🏆 최종 승자</div>
-                        <div style="font-size:32px;font-weight:900;color:#fff;text-shadow:0 0 20px rgba(245,158,11,0.5);">${esc(winner)}</div>
+                return `<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:10px 14px;flex:1;min-width:120px;${glow}">
+                    <div style="font-size:11px;font-weight:800;color:${isChampRound?'#f59e0b':'#64748b'};margin-bottom:8px;text-align:center;">${label}</div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;margin-bottom:4px;">
+                        <span style="color:${leftC};">${rd.bothDone ? fmt(rd.lp) : (rd.lSold ? fmt(rd.lp) : '-')}</span>
+                        <span style="color:${rightC};">${rd.bothDone ? fmt(rd.rp) : (rd.rSold ? fmt(rd.rp) : '-')}</span>
                     </div>
-                `;
+                    <div style="text-align:center;font-size:10px;font-weight:700;">${resultLine}</div>
+                </div>`;
+            }).join('');
+
+            // 전체 매치 최종 결과 배너
+            let finalBanner = '';
+            if (isLastRoundDone) {
+                const winner = leftTotal > rightTotal ? step.leftName : (rightTotal > leftTotal ? step.rightName : '무승부');
+                const winLetter = leftTotal > rightTotal ? step.leftTeam : step.rightTeam;
+                finalBanner = `
+                    <div style="background:linear-gradient(135deg,rgba(245,158,11,0.18),rgba(234,179,8,0.06));border:2px solid rgba(245,158,11,0.5);border-radius:14px;padding:20px;text-align:center;width:100%;box-shadow:0 0 30px rgba(245,158,11,0.2);">
+                        <div style="font-size:12px;font-weight:800;color:#f59e0b;margin-bottom:8px;letter-spacing:0.08em;">🏆 최종 승자 (낙찰가 총합)</div>
+                        <div style="font-size:36px;font-weight:900;color:#fff;text-shadow:0 0 20px rgba(245,158,11,0.5);">${winLetter}팀 ${esc(winner)}</div>
+                        <div style="margin-top:8px;font-size:14px;color:#94a3b8;font-weight:700;">
+                            ${esc(step.leftName)}: ${fmt(leftTotal)} vs ${esc(step.rightName)}: ${fmt(rightTotal)}
+                        </div>
+                        <div style="margin-top:6px;font-size:12px;color:#64748b;">라운드 승패: ${leftRoundWins}승 ${rightRoundWins}패</div>
+                    </div>`;
             }
 
+            // 스케줄 진행바
+            let scheduleBar = schedule.map((s, i) => {
+                let c = '#1e293b', tc = '#475569', b = 'rgba(255,255,255,0.04)';
+                let lbl = s.group + '조R' + s.round;
+                if (i < stepIdx) { c = '#10b981'; tc = '#fff'; b = '#10b981'; lbl = '✅'; }
+                else if (i === stepIdx) { c = '#f59e0b'; tc = '#000'; b = '#f59e0b'; }
+                if (s.isLastRound && i >= stepIdx) lbl = '⭐' + s.group;
+                return `<span style="background:${c};color:${tc};border:1px solid ${b};border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;">${lbl}</span>`;
+            }).join('');
+
+            // 대장전 특수 배경
+            const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,1) 40%);' : '';
+
             tree.innerHTML = `
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:28px;max-width:900px;margin:0 auto;">
-                    <div style="font-size:14px;font-weight:800;color:${isFinished?'#f59e0b':'#94a3b8'};text-transform:uppercase;letter-spacing:0.08em;">${stateText}</div>
-                    <div style="display:flex;align-items:center;justify-content:center;gap:40px;width:100%;">
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:22px;max-width:900px;margin:0 auto;${champGlow}">
+                    ${isChamp ? '<div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;">⭐ CHAMPION ROUND ⭐</div>' : ''}
+                    <div style="font-size:13px;font-weight:800;color:#94a3b8;letter-spacing:0.06em;">${step.group}조 ${step.round}라운드 · 선공: ${firstName}팀 / 후공: ${secondName}팀</div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:30px;width:100%;">
                         <div style="text-align:center;flex:1;">
-                            <div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:6px;">${leftLetter ? leftLetter+'팀' : 'LEFT'}</div>
-                            <div style="font-size:28px;font-weight:900;color:#fff;">${esc(m.left || '대기중')}</div>
+                            <div style="font-size:11px;font-weight:700;color:#60a5fa;margin-bottom:4px;">${step.leftTeam}팀${step.firstTeam==='left'?' ⭐선공':''}</div>
+                            <div style="font-size:24px;font-weight:900;color:#fff;">${esc(step.leftName)}</div>
+                            <div style="font-size:13px;color:#94a3b8;font-weight:700;margin-top:4px;">총 ${fmt(leftTotal)}</div>
                         </div>
                         <div style="text-align:center;">
-                            <div style="font-size:56px;font-weight:900;color:#fff;letter-spacing:0.1em;text-shadow:0 0 20px rgba(255,255,255,0.2);">${ls} : ${rs}</div>
+                            <div style="font-size:40px;font-weight:900;color:#fff;letter-spacing:0.08em;text-shadow:0 0 15px rgba(255,255,255,0.15);">${leftRoundWins} : ${rightRoundWins}</div>
+                            <div style="font-size:10px;color:#64748b;margin-top:4px;font-weight:700;">라운드 승패</div>
                         </div>
                         <div style="text-align:center;flex:1;">
-                            <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:6px;">${rightLetter ? rightLetter+'팀' : 'RIGHT'}</div>
-                            <div style="font-size:28px;font-weight:900;color:#fff;">${esc(m.right || '대기중')}</div>
+                            <div style="font-size:11px;font-weight:700;color:#f87171;margin-bottom:4px;">${step.rightTeam}팀${step.firstTeam==='right'?' ⭐선공':''}</div>
+                            <div style="font-size:24px;font-weight:900;color:#fff;">${esc(step.rightName)}</div>
+                            <div style="font-size:13px;color:#94a3b8;font-weight:700;margin-top:4px;">총 ${fmt(rightTotal)}</div>
                         </div>
                     </div>
-                    <div style="display:flex;gap:12px;width:100%;flex-wrap:wrap;">${roundCards}</div>
+                    <div style="display:flex;gap:8px;width:100%;flex-wrap:wrap;justify-content:center;">${roundCards}</div>
                     ${finalBanner}
+                    <div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);width:100%;">${scheduleBar}</div>
                 </div>
             `;
         }
