@@ -2946,13 +2946,17 @@
                 
                 const ann = document.getElementById('battle-announcement-overlay');
                 if (ann) {
-                    ann.style.top = map.battle_ann_top || '35%';
-                    ann.style.left = map.battle_ann_left || '10%';
-                    ann.style.width = map.battle_ann_width || '80%';
-                    ann.style.height = map.battle_ann_height || 'auto';
-                    ann.style.removeProperty('right');
-                    if (map.battle_ann_show === '0') {
+                    if (isBracketPage) {
                         ann.style.setProperty('display', 'none', 'important');
+                    } else {
+                        ann.style.top = map.battle_ann_top || '35%';
+                        ann.style.left = map.battle_ann_left || '10%';
+                        ann.style.width = map.battle_ann_width || '80%';
+                        ann.style.height = map.battle_ann_height || 'auto';
+                        ann.style.removeProperty('right');
+                        if (map.battle_ann_show === '0') {
+                            ann.style.setProperty('display', 'none', 'important');
+                        }
                     }
                 }
                 
@@ -3082,7 +3086,11 @@
                 const subEl = document.getElementById('battle-ann-sub');
                 subEl.innerHTML = displaySub;
                 subEl.style.display = 'block';
-                ann.style.display = 'block';
+                if (!isBracketPage) {
+                    ann.style.display = 'block';
+                } else {
+                    ann.style.setProperty('display', 'none', 'important');
+                }
                 
                 // 우측 매치업 카드 실시간 업데이트 (page 2 등 일반 오버레이용)
                 const matchupCard = document.getElementById('battle-matchup-card');
@@ -3137,7 +3145,11 @@
             const subEl = document.getElementById('battle-ann-sub');
             subEl.textContent = `대단히 축하드립니다! (원래 팀명: A팀=${match.left}, B팀=${match.right})`;
             subEl.style.display = 'block';
-            ann.style.display = 'block';
+            if (!isBracketPage) {
+                ann.style.display = 'block';
+            } else {
+                ann.style.setProperty('display', 'none', 'important');
+            }
             document.body.classList.remove('battle-hide-prices');
         }
 
