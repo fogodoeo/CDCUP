@@ -1945,8 +1945,15 @@
                 }
             }
 
-            // 개체명은 원래 명칭(예: A1) 그대로 출력
-            document.getElementById("info-name").textContent = origName;
+            // 개체명은 원래 명칭(예: A1) 그대로 출력하되, 토너먼트 진행 중(blind)일 때는 업체명 노출을 방지하기 위해 코드(예: C2)만 추출하여 출력
+            let cleanInfoName = origName;
+            if (window.latestConfigMap && window.latestConfigMap.active_tournament && window.latestConfigMap.active_tournament !== 'none') {
+                const nameMatch = origName.trim().toUpperCase().match(/^([A-Z]\d+)/);
+                if (nameMatch) {
+                    cleanInfoName = nameMatch[1];
+                }
+            }
+            document.getElementById("info-name").textContent = cleanInfoName;
             // 페이지2 상단 바에서 업체명 표시 제거
             document.getElementById("info-sub").textContent = '';
 
@@ -2951,18 +2958,7 @@
                 
                 const ann = document.getElementById('battle-announcement-overlay');
                 if (ann) {
-                    if (isBracketPage) {
-                        ann.style.setProperty('display', 'none', 'important');
-                    } else {
-                        ann.style.top = map.battle_ann_top || '35%';
-                        ann.style.left = map.battle_ann_left || '10%';
-                        ann.style.width = map.battle_ann_width || '80%';
-                        ann.style.height = map.battle_ann_height || 'auto';
-                        ann.style.removeProperty('right');
-                        if (map.battle_ann_show === '0') {
-                            ann.style.setProperty('display', 'none', 'important');
-                        }
-                    }
+                    ann.style.setProperty('display', 'none', 'important');
                 }
                 
                 if (!activeItem) {
@@ -2970,11 +2966,11 @@
                     if (curMatchKey && map.battle_state === 'final_reveal') {
                         showFinalRevealUI(scale, curMatchKey, bracket, map, items);
                     } else {
-                        ann.style.display = 'none';
+                        if (ann) ann.style.setProperty('display', 'none', 'important');
                         document.body.classList.remove('battle-hide-prices');
                     }
                     const matchupCard = document.getElementById('battle-matchup-card');
-                    if (matchupCard) matchupCard.style.display = 'none';
+                    if (matchupCard) matchupCard.style.setProperty('display', 'none', 'important');
                     return;
                 }
                 
@@ -3091,24 +3087,14 @@
                 const subEl = document.getElementById('battle-ann-sub');
                 subEl.innerHTML = displaySub;
                 subEl.style.display = 'block';
-                if (!isBracketPage) {
-                    ann.style.display = 'block';
-                } else {
+                if (ann) {
                     ann.style.setProperty('display', 'none', 'important');
                 }
                 
-                // 우측 매치업 카드 실시간 업데이트 (page 2 등 일반 오버레이용)
+                // 우측 매치업 카드 실시간 업데이트 (page 2 등 일반 오버레이용) - 2page 대진 정보 표시 제거
                 const matchupCard = document.getElementById('battle-matchup-card');
                 if (matchupCard) {
-                    if (!isBracketPage) {
-                        document.getElementById('matchup-teams').innerHTML = `[${leftLetter}팀] <span style="color:#ef4444; font-size:14px; margin:0 6px;">VS</span> [${rightLetter}팀]`;
-                        document.getElementById('matchup-score').textContent = `스코어 ${leftScore} : ${rightScore}`;
-                        const roundLabel = (roundNum === 4) ? '대장전' : `${roundNum}R`;
-                        document.getElementById('matchup-round').textContent = `${roundLabel} 진행중`;
-                        matchupCard.style.display = 'block';
-                    } else {
-                        matchupCard.style.display = 'none';
-                    }
+                    matchupCard.style.setProperty('display', 'none', 'important');
                 }
                 
                 const currentMatchKey = scale + '_' + targetMatchKey;
@@ -3150,9 +3136,7 @@
             const subEl = document.getElementById('battle-ann-sub');
             subEl.textContent = `대단히 축하드립니다! (원래 팀명: A팀=${match.left}, B팀=${match.right})`;
             subEl.style.display = 'block';
-            if (!isBracketPage) {
-                ann.style.display = 'block';
-            } else {
+            if (ann) {
                 ann.style.setProperty('display', 'none', 'important');
             }
             document.body.classList.remove('battle-hide-prices');
