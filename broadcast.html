@@ -2584,6 +2584,125 @@
 
             const isLastRoundDone = roundData[rpm-1]?.bothDone;
 
+            // ═══ 대진 스텝 전환 감지 및 초기화 ═══
+            if (window._lastStepIdx !== stepIdx) {
+                window._playedShowdownsInitialized = false;
+                window._lastStepIdx = stepIdx;
+            }
+
+            // 첫 로드 시 이미 종료된 라운드는 쇼다운 연출 제외
+            if (!window._playedShowdownsInitialized) {
+                window._playedShowdowns = window._playedShowdowns || new Set();
+                for (let r = 1; r <= rpm; r++) {
+                    const lName = step.leftTeam + r;
+                    const rName = step.rightTeam + r;
+                    const li = items.find(i => (i.name||'').trim().toUpperCase() === lName);
+                    const ri = items.find(i => (i.name||'').trim().toUpperCase() === rName);
+                    const ld = (li?.status === '완료' || li?.status === 'sold' || li?.status === '낙찰' || li?.status === '유찰');
+                    const rd2 = (ri?.status === '완료' || ri?.status === 'sold' || ri?.status === '낙찰' || ri?.status === '유찰');
+                    if (ld && rd2) {
+                        const showdownKey = `${scale}_${step.leftTeam}_${step.rightTeam}_${r}`;
+                        window._playedShowdowns.add(showdownKey);
+                    }
+                }
+                window._playedShowdownsInitialized = true;
+            }
+
+            // 숫자 포맷 함수 (만 단위 최적화)
+            const fmtCompact = n => {
+                if (!n) return '-';
+                const num = Number(n);
+                if (num >= 10000) {
+                    const man = num / 10000;
+                    return man % 1 === 0 ? man + '만' : man.toFixed(1) + '만';
+                }
+                return num.toLocaleString();
+            };
+
+            // ═══ 실시간 신규 낙찰/유찰 알림 처리 ═══
+            window._lastSeenSold = window._lastSeenSold || {};
+            if (!window._lastSeenSoldInitialized) {
+                items.forEach(i => {
+                    if (i.status === '낙찰' || i.status === '유찰') {
+                        window._lastSeenSold[i.row] = i.status;
+                    }
+                });
+                window._lastSeenSoldInitialized = true;
+            } else {
+                items.forEach(i => {
+                    if ((i.status === '낙찰' || i.status === '유찰') && window._lastSeenSold[i.row] !== i.status) {
+                        window._lastSeenSold[i.row] = i.status;
+                        
+                        const nameUpper = (i.name || '').trim().toUpperCase();
+                        const isCurrentLeft = nameUpper.startsWith(step.leftTeam);
+                        const isCurrentRight = nameUpper.startsWith(step.rightTeam);
+                        
+                        if (isCurrentLeft || isCurrentRight) {
+                            window._activeNotification = {
+                                name: i.name,
+                                status: i.status,
+                                price: i.sold_price || i.soldPrice || 0,
+                                winner: i.winner || '',
+                                timer: 6
+                            };
+                            
+                            if (!window._notificationTimer) {
+                                window._notificationTimer = setInterval(() => {
+                                    if (window._activeNotification) {
+                                        window._activeNotification.timer--;
+                                        if (window._activeNotification.timer <= 0) {
+                                            window._activeNotification = null;
+                                            clearInterval(window._notificationTimer);
+                                            window._notificationTimer = null;
+                                        }
+                                        applyBracketPageMap(window.latestConfigMap);
+                                    }
+                                }, 1000);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ═══ 신규 라운드 종료 감지 (쇼다운 예약) ═══
+            window._playedShowdowns = window._playedShowdowns || new Set();
+            for (let r = 1; r <= rpm; r++) {
+                const leftItemName = step.leftTeam + r;
+                const rightItemName = step.rightTeam + r;
+                const lItem = items.find(i => (i.name||'').trim().toUpperCase() === leftItemName);
+                const rItem = items.find(i => (i.name||'').trim().toUpperCase() === rightItemName);
+                const lSold = (lItem?.status === '완료' || lItem?.status === 'sold' || lItem?.status === '낙찰' || lItem?.status === '유찰');
+                const rSold = (rItem?.status === '완료' || rItem?.status === 'sold' || rItem?.status === '낙찰' || rItem?.status === '유찰');
+                const bothDone = lSold && rSold;
+
+                if (bothDone) {
+                    const showdownKey = `${scale}_${step.leftTeam}_${step.rightTeam}_${r}`;
+                    if (!window._playedShowdowns.has(showdownKey)) {
+                        window._playedShowdowns.add(showdownKey);
+                        
+                        window._activeShowdown = {
+                            key: showdownKey,
+                            round: r,
+                            countdown: 4
+                        };
+                        
+                        if (!window._showdownTimer) {
+                            window._showdownTimer = setInterval(() => {
+                                if (window._activeShowdown) {
+                                    window._activeShowdown.countdown--;
+                                    if (window._activeShowdown.countdown <= 0) {
+                                        window._activeShowdown = null;
+                                        clearInterval(window._showdownTimer);
+                                        window._showdownTimer = null;
+                                    }
+                                    applyBracketPageMap(window.latestConfigMap);
+                                }
+                            }, 1000);
+                        }
+                    }
+                }
+            }
+
             // ═══ 자동 진행: 순서 상관없이 첫 번째 미완료 스텝으로 점프 ═══
             if (!window._autoAdvancing && stepIdx < schedule.length - 1) {
                 let targetStep = stepIdx;
@@ -2616,26 +2735,15 @@
                 titleEl.textContent = '🏆 ' + (scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강'))) + ' ' + matchTitle;
             }
 
-            // 선공/후공 정보
-            const firstName = step.firstTeam === 'left' ? step.leftTeam : step.rightTeam;
-            const secondName = step.firstTeam === 'left' ? step.rightTeam : step.leftTeam;
-
-            // 숫자 포맷 함수 (만 단위 최적화)
-            const fmtCompact = n => {
-                if (!n) return '-';
-                const num = Number(n);
-                if (num >= 10000) {
-                    const man = num / 10000;
-                    return man % 1 === 0 ? man + '만' : man.toFixed(1) + '만';
-                }
-                return num.toLocaleString();
-            };
-
             // 라운드별 카드 생성
             let roundCards = roundData.map(rd => {
                 const isChampRound = (rd.round === rpm);
                 const label = isChampRound ? '⭐ 대장전' : rd.round + 'R';
                 let bg, border, glow = '';
+
+                // 현재 쇼다운이 진행 중인지 체크
+                const showdownKey = `${scale}_${step.leftTeam}_${step.rightTeam}_${rd.round}`;
+                const isShowingDown = window._activeShowdown && window._activeShowdown.key === showdownKey;
 
                 if (rd.isCurrent && !rd.bothDone) {
                     bg = 'rgba(59,130,246,0.18)'; border = 'rgba(59,130,246,0.6)';
@@ -2643,19 +2751,22 @@
                 } else if (isChampRound && rd.isCurrent) {
                     bg = 'rgba(245,158,11,0.2)'; border = 'rgba(245,158,11,0.5)';
                     glow = 'box-shadow:0 0 15px rgba(245,158,11,0.3);';
-                } else if (rd.bothDone) {
+                } else if (rd.bothDone && !isShowingDown) {
                     bg = 'rgba(255,255,255,0.03)'; border = 'rgba(255,255,255,0.08)';
                 } else {
                     bg = 'rgba(255,255,255,0.01)'; border = 'rgba(255,255,255,0.04)';
                 }
 
                 let leftC = '#fff', rightC = '#fff';
-                if (rd.roundWinner === 'left') { leftC = '#10b981'; rightC = '#475569'; }
-                else if (rd.roundWinner === 'right') { rightC = '#10b981'; leftC = '#475569'; }
-                else if (rd.roundWinner === 'draw') { leftC = '#f59e0b'; rightC = '#f59e0b'; }
+                if (!isShowingDown && rd.bothDone) {
+                    if (rd.roundWinner === 'left') { leftC = '#10b981'; rightC = '#475569'; }
+                    else if (rd.roundWinner === 'right') { rightC = '#10b981'; leftC = '#475569'; }
+                    else if (rd.roundWinner === 'draw') { leftC = '#f59e0b'; rightC = '#f59e0b'; }
+                }
 
-                const leftVal = (rd.bothDone || rd.lSold) ? fmtCompact(rd.lp) : '-';
-                const rightVal = (rd.bothDone || rd.rSold) ? fmtCompact(rd.rp) : '-';
+                // 쇼다운 카운트다운 진행 중일 때는 가격 숨김
+                const leftVal = isShowingDown ? '?' : ((rd.bothDone || rd.lSold) ? fmtCompact(rd.lp) : '-');
+                const rightVal = isShowingDown ? '?' : ((rd.bothDone || rd.rSold) ? fmtCompact(rd.rp) : '-');
 
                 return `<div style="background:${bg};border:1.5px solid ${border};border-radius:10px;padding:10px 12px;flex:1;text-align:center;${glow}">
                     <div style="font-size:11px;font-weight:800;color:${isChampRound?'#f59e0b':'#94a3b8'};margin-bottom:4px;letter-spacing:0.05em;">${label}</div>
@@ -2708,18 +2819,64 @@
                 nextMatchText = `🏆 <span style="font-weight:700;color:#f59e0b;">최종 매치</span>`;
             }
 
+            // 블라인드 처리: 전체 라운드가 모두 끝나기 전까지는 업체명 숨기고 알파벳 팀명으로만 노출
+            const displayNameLeft = isLastRoundDone ? esc(step.leftName) : `${step.leftTeam}팀`;
+            const displayNameRight = isLastRoundDone ? esc(step.rightName) : `${step.rightTeam}팀`;
+
+            const headerLeft = isLastRoundDone 
+                ? `${step.leftTeam}팀 (최종 공개)`
+                : (step.firstTeam === 'left' ? '<span style="color:#f59e0b;font-weight:900;font-size:11px;">⭐ 선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>');
+            const headerRight = isLastRoundDone 
+                ? `${step.rightTeam}팀 (최종 공개)`
+                : (step.firstTeam === 'right' ? '<span style="color:#f59e0b;font-weight:900;font-size:11px;">⭐ 선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>');
+
+            // 신규 낙찰/유찰 상단 알림 바 HTML
+            let notificationOverlayHtml = '';
+            if (window._activeNotification) {
+                const isSold = window._activeNotification.status === '낙찰';
+                notificationOverlayHtml = `
+                    <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:92%;background:rgba(9,15,29,0.95);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1.5px solid ${isSold ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.6)'};border-radius:12px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:20;">
+                        <span style="font-size:12px;font-weight:900;color:${isSold ? '#10b981' : '#f59e0b'};display:flex;align-items:center;gap:4px;">
+                            ${isSold ? '🎉 낙찰 성공!' : '⚠️ 유찰 안내'}
+                        </span>
+                        <span style="font-size:13px;font-weight:800;color:#fff;">[${window._activeNotification.name}] ${isSold ? fmtCompact(window._activeNotification.price) : '유찰'}</span>
+                        <span style="font-size:11px;font-weight:700;color:#cbd5e1;">${isSold ? '낙찰자: ' + (window._activeNotification.winner || '무명') : '경매 종료'}</span>
+                    </div>
+                `;
+            }
+
+            // 쇼다운 카운트다운 오버레이 HTML
+            let showdownOverlayHtml = '';
+            if (window._activeShowdown) {
+                const countText = window._activeShowdown.countdown > 0 ? window._activeShowdown.countdown : 'OPEN!';
+                showdownOverlayHtml = `
+                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(9,15,29,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;">
+                        <div style="font-size:12px;font-weight:900;color:#3b82f6;letter-spacing:0.15em;margin-bottom:8px;text-transform:uppercase;">ROUND ${window._activeShowdown.round} FINISHED</div>
+                        <div style="font-size:54px;font-weight:950;color:#fff;text-shadow:0 0 20px rgba(59,130,246,0.8);">${countText}</div>
+                        <div style="font-size:12px;color:#94a3b8;margin-top:6px;font-weight:700;">라운드 결과를 공개합니다...</div>
+                    </div>
+                `;
+            }
+
             // 대장전 특수 배경
             const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,0.7) 40%);' : '';
 
             tree.innerHTML = `
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:95%;max-width:780px;margin:0 auto;padding:24px 30px;background:rgba(15,23,42,0.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.5);gap:20px;${champGlow}">
+                <div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:95%;max-width:780px;margin:0 auto;padding:24px 30px;background:rgba(15,23,42,0.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.5);gap:20px;${champGlow}">
+                    
+                    <!-- 알림 토스트 배너 -->
+                    ${notificationOverlayHtml}
+                    
+                    <!-- 쇼다운 카운트다운 오버레이 -->
+                    ${showdownOverlayHtml}
+
                     ${isChamp ? '<div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:-6px;">⭐ CHAMPION ROUND ⭐</div>' : ''}
                     <div style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:0.06em;">${step.group}조 ${step.round}라운드 진행 중</div>
                     
                     <div style="display:flex;align-items:center;justify-content:center;gap:20px;width:100%;">
                         <div style="text-align:center;flex:1;">
-                            <div style="font-size:12px;font-weight:850;color:#60a5fa;margin-bottom:4px;letter-spacing:0.05em;">${step.leftTeam}팀${step.firstTeam==='left'?' <span style="color:#f59e0b;">⭐선공</span>':''}</div>
-                            <div style="font-size:30px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${esc(step.leftName)}</div>
+                            <div style="font-size:12px;font-weight:850;color:#60a5fa;margin-bottom:4px;letter-spacing:0.05em;">${headerLeft}</div>
+                            <div style="font-size:30px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${displayNameLeft}</div>
                             <div style="font-size:15px;color:#94a3b8;font-weight:800;margin-top:6px;">총 <span style="color:#60a5fa;font-size:18px;font-weight:900;">${fmtCompact(leftTotal)}</span></div>
                         </div>
                         <div style="text-align:center;min-width:130px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:10px 0;box-shadow:inset 0 0 10px rgba(0,0,0,0.5);">
@@ -2727,8 +2884,8 @@
                             <div style="font-size:10px;color:#64748b;margin-top:6px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;">ROUND SCORE</div>
                         </div>
                         <div style="text-align:center;flex:1;">
-                            <div style="font-size:12px;font-weight:850;color:#f87171;margin-bottom:4px;letter-spacing:0.05em;">${step.rightTeam}팀${step.firstTeam==='right'?' <span style="color:#f59e0b;">⭐선공</span>':''}</div>
-                            <div style="font-size:30px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${esc(step.rightName)}</div>
+                            <div style="font-size:12px;font-weight:850;color:#f87171;margin-bottom:4px;letter-spacing:0.05em;">${headerRight}</div>
+                            <div style="font-size:30px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${displayNameRight}</div>
                             <div style="font-size:15px;color:#94a3b8;font-weight:800;margin-top:6px;">총 <span style="color:#f87171;font-size:18px;font-weight:900;">${fmtCompact(rightTotal)}</span></div>
                         </div>
                     </div>
