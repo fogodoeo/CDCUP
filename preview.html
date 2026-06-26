@@ -381,6 +381,167 @@
         .toast.show {
             transform: translateX(-50%) translateY(0);
         }
+
+        /* ══ 3P Tournament Dashboard ══ */
+        .tournament-dashboard { display: none; width: 100%; }
+        .tournament-dashboard.active { display: block; }
+
+        .t-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--card-bg); border: 1px solid var(--border);
+            padding: 16px 20px; border-radius: 12px; margin-bottom: 16px;
+            flex-wrap: wrap; gap: 12px;
+        }
+        .t-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .t-btn {
+            padding: 7px 14px; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--card-bg); color: var(--text); font-size: 12px;
+            font-weight: 700; cursor: pointer; transition: all 0.15s;
+        }
+        .t-btn:hover { background: rgba(255,255,255,0.08); }
+        .t-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .t-btn.save { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .t-btn.danger { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #f87171; }
+        .t-btn.success { background: rgba(16,185,129,0.1); border-color: #10b981; color: #34d399; }
+        .t-select {
+            padding: 7px 10px; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--card-bg); color: #fff; font-size: 12px; font-weight: 700; cursor: pointer;
+        }
+        .t-label { font-size: 12px; font-weight: 800; color: var(--text2); white-space: nowrap; }
+
+        /* Team Pool */
+        .t-pool-title {
+            font-size: 13px; font-weight: 800; color: var(--text);
+            margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+        }
+        .t-pool {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            background: var(--card-bg); border: 1px solid var(--border);
+            padding: 12px; border-radius: 10px; margin-bottom: 16px; min-height: 44px;
+        }
+        .t-team-chip {
+            padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 700;
+            background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.3);
+            color: #93c5fd; cursor: grab; user-select: none; transition: all 0.15s;
+        }
+        .t-team-chip:active { cursor: grabbing; }
+        .t-team-chip:hover { background: rgba(37, 99, 235, 0.2); border-color: #3b82f6; }
+
+        /* Bracket Tree */
+        .t-bracket-wrap {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; margin-bottom: 16px;
+            overflow-x: auto;
+        }
+        .t-bracket-tree {
+            display: flex; justify-content: center; align-items: stretch;
+            gap: 40px; min-height: 300px;
+        }
+        .t-round-col {
+            display: flex; flex-direction: column; justify-content: space-around;
+            gap: 16px;
+        }
+        .t-match {
+            background: rgba(15, 23, 42, 0.5); border: 2px solid rgba(255,255,255,0.06);
+            border-radius: 10px; width: 220px; padding: 8px; position: relative;
+            transition: all 0.2s; cursor: default;
+        }
+        .t-match:hover { border-color: rgba(255,255,255,0.12); }
+        .t-match.active-match {
+            border-color: #3b82f6; box-shadow: 0 0 12px rgba(59,130,246,0.35);
+            background: rgba(30, 41, 59, 0.7);
+        }
+        .t-match-title {
+            font-size: 10px; color: #64748b; font-weight: 800; text-align: center;
+            margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em;
+            cursor: pointer; padding: 2px 0; border-radius: 4px; transition: color 0.15s;
+        }
+        .t-match-title:hover { color: #93c5fd; }
+        .t-slot {
+            height: 34px; border-radius: 5px; margin: 3px 0;
+            display: flex; align-items: center; padding: 0 10px;
+            font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06); color: #64748b;
+            position: relative; overflow: hidden; transition: all 0.15s; cursor: pointer;
+        }
+        .t-slot:hover { background: rgba(255,255,255,0.06); }
+        .t-slot.dragover { border-color: #3b82f6; background: rgba(59,130,246,0.1); }
+        .t-slot.winner-slot {
+            background: linear-gradient(90deg, rgba(16,185,129,0.12), rgba(16,185,129,0.03));
+            border-color: #10b981; color: #10b981;
+        }
+        .t-slot-team { max-width: 75%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .t-slot-crown { position: absolute; right: 8px; font-size: 12px; }
+        .t-slot-clear {
+            position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+            width: 18px; height: 18px; border-radius: 50%; background: rgba(239,68,68,0.2);
+            color: #f87171; font-size: 10px; display: flex; align-items: center;
+            justify-content: center; cursor: pointer; opacity: 0; transition: opacity 0.15s;
+            border: none;
+        }
+        .t-slot:hover .t-slot-clear { opacity: 1; }
+
+        /* Match Controller */
+        .t-match-ctrl {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 12px; padding: 16px 20px; margin-bottom: 16px; display: none;
+        }
+        .t-match-ctrl.visible { display: block; }
+        .t-ctrl-title {
+            font-size: 14px; font-weight: 800; color: var(--text);
+            border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 12px;
+        }
+        .t-ctrl-row {
+            display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;
+        }
+        .t-ctrl-label { font-size: 13px; font-weight: 700; color: var(--text); }
+        .t-score-row {
+            display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+            padding-top: 10px; border-top: 1px dashed var(--border);
+        }
+        .t-score-item { font-size: 12px; font-weight: 600; color: var(--text2); display: flex; align-items: center; gap: 4px; }
+        .t-score-select {
+            padding: 4px 6px; border-radius: 4px; border: 1px solid var(--border);
+            background: var(--card-bg); color: #fff; font-size: 12px;
+        }
+        .t-score-display {
+            margin-left: auto; font-weight: 800; font-size: 15px; color: #60a5fa;
+        }
+
+        /* Live Match Status Card */
+        .t-live-card {
+            background: linear-gradient(135deg, rgba(37,99,235,0.08), rgba(139,92,246,0.06));
+            border: 1px solid rgba(37,99,235,0.25); border-radius: 12px;
+            padding: 16px 20px; margin-bottom: 16px; display: none;
+        }
+        .t-live-card.visible { display: block; }
+        .t-live-header {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+        }
+        .t-live-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #ef4444;
+            animation: t-pulse 1.5s infinite;
+        }
+        @keyframes t-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .t-live-tag {
+            font-size: 11px; font-weight: 800; color: #ef4444;
+            text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .t-live-match-title {
+            font-size: 11px; font-weight: 700; color: #94a3b8; margin-left: auto;
+        }
+        .t-live-teams {
+            display: flex; align-items: center; justify-content: center; gap: 16px;
+            margin-bottom: 8px; font-size: 16px; font-weight: 800; color: var(--text);
+        }
+        .t-live-vs { font-size: 12px; color: #ef4444; font-weight: 800; }
+        .t-live-score {
+            text-align: center; font-size: 28px; font-weight: 900; color: #fff;
+            margin-bottom: 6px; letter-spacing: 0.04em;
+        }
+        .t-live-round {
+            text-align: center; font-size: 12px; font-weight: 700; color: #94a3b8;
+        }
     </style>
 </head>
 
@@ -553,6 +714,88 @@
                 </div>
             </div>
         </div>
+
+        <!-- ═══ 3P Tournament Dashboard ═══ -->
+        <div class="tournament-dashboard" id="tournament-dashboard">
+            <!-- 실시간 경기 현황 카드 -->
+            <div class="t-live-card" id="t-live-card">
+                <div class="t-live-header">
+                    <div class="t-live-dot"></div>
+                    <span class="t-live-tag">LIVE 경기 진행 중</span>
+                    <span class="t-live-match-title" id="t-live-match-name"></span>
+                </div>
+                <div class="t-live-teams">
+                    <span id="t-live-left"></span>
+                    <span class="t-live-vs">VS</span>
+                    <span id="t-live-right"></span>
+                </div>
+                <div class="t-live-score" id="t-live-score">0 : 0</div>
+                <div class="t-live-round" id="t-live-round"></div>
+            </div>
+
+            <!-- 헤더 (크기 선택 + 송출 모드 + 저장/초기화) -->
+            <div class="t-header">
+                <div class="t-controls">
+                    <span class="t-label">토너먼트 크기:</span>
+                    <button class="t-btn active" id="t-btn-16" onclick="tChangeScale(16)">16강</button>
+                    <button class="t-btn" id="t-btn-8" onclick="tChangeScale(8)">8강</button>
+                    <button class="t-btn" id="t-btn-4" onclick="tChangeScale(4)">4강</button>
+                </div>
+                <div class="t-controls">
+                    <span class="t-label">방송 송출:</span>
+                    <select class="t-select" id="t-active-select" onchange="tChangeActive(this.value)">
+                        <option value="none">비송출 (기본경매)</option>
+                        <option value="16">16강 송출</option>
+                        <option value="8">8강 송출</option>
+                        <option value="4">4강 송출</option>
+                    </select>
+                </div>
+                <div class="t-controls">
+                    <button class="t-btn danger" onclick="tReset()">초기화</button>
+                    <button class="t-btn success" onclick="tRandomFill()">랜덤 배치</button>
+                    <button class="t-btn save" onclick="tSave()">💾 대진표 저장</button>
+                </div>
+            </div>
+
+            <!-- 참가 팀 풀 -->
+            <div class="t-pool-title">👥 참가 팀 목록 (드래그하여 대진표 슬롯에 넣으세요)</div>
+            <div class="t-pool" id="t-team-pool">
+                <span style="color:#64748b; font-size:12px;">로딩 중...</span>
+            </div>
+
+            <!-- 대진표 트리 -->
+            <div class="t-bracket-wrap">
+                <div class="t-bracket-tree" id="t-bracket-tree"></div>
+            </div>
+
+            <!-- 경기 진행 제어 패널 -->
+            <div class="t-match-ctrl" id="t-match-ctrl">
+                <div class="t-ctrl-title" id="t-ctrl-title">선택된 경기 정보</div>
+                <div class="t-ctrl-row">
+                    <div class="t-ctrl-label">
+                        매치업: <span id="t-ctrl-left" style="color:#60a5fa;">A팀</span>
+                        <span style="color:#ef4444; margin:0 4px;">VS</span>
+                        <span id="t-ctrl-right" style="color:#f87171;">B팀</span>
+                    </div>
+                    <div style="margin-left:auto; display:flex; gap:6px; flex-wrap:wrap;">
+                        <button class="t-btn" onclick="tSetStatus('start')">⚔️ 경기 시작</button>
+                        <button class="t-btn" onclick="tSetStatus('r1_end')">1R 종료</button>
+                        <button class="t-btn" onclick="tSetStatus('r2_end')">2R 종료</button>
+                        <button class="t-btn" onclick="tSetStatus('r3_end')">3R 종료</button>
+                        <button class="t-btn" onclick="tSetStatus('r4_ready')">대장전 준비</button>
+                        <button class="t-btn" onclick="tSetStatus('r4_end')">대장전 종료</button>
+                        <button class="t-btn success" onclick="tSetStatus('final_reveal')">🏆 결과 공개</button>
+                    </div>
+                </div>
+                <div class="t-score-row">
+                    <div class="t-score-item"><strong>1R:</strong> <select class="t-score-select" id="t-score-r1" onchange="tUpdateScore()"><option value="">-</option><option value="left">좌</option><option value="right">우</option></select></div>
+                    <div class="t-score-item"><strong>2R:</strong> <select class="t-score-select" id="t-score-r2" onchange="tUpdateScore()"><option value="">-</option><option value="left">좌</option><option value="right">우</option></select></div>
+                    <div class="t-score-item"><strong>3R:</strong> <select class="t-score-select" id="t-score-r3" onchange="tUpdateScore()"><option value="">-</option><option value="left">좌</option><option value="right">우</option></select></div>
+                    <div class="t-score-item"><strong>4R(대장전):</strong> <select class="t-score-select" id="t-score-r4" onchange="tUpdateScore()"><option value="">-</option><option value="left">좌</option><option value="right">우</option></select></div>
+                    <div class="t-score-display">스코어: <span id="t-score-text">0 : 0</span></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -570,11 +813,13 @@
             frame.src = "broadcast.html?page=1";
         } else if (pageNum === '3') {
             document.getElementById('btn-tab-p3').classList.add('active');
-            document.getElementById('page-title').textContent = "📺 대진용 실시간 레이아웃 배치기";
-            // 3P 대진용 배치기는 1P/2P 페이지 위에 얹어서(오버레이) 쓰는 용도이므로,
-            // 기본 미리보기 배경으로 1P 진행용 화면을 로드하여 겹침 여부를 확인하며 작업할 수 있도록 함
-            frame.src = "broadcast.html?page=1";
-            document.getElementById('bracket-bg-selector-group').style.display = 'flex';
+            document.getElementById('page-title').textContent = "🏆 대진표 관리 및 현황";
+            // 3P: 레이아웃 배치기 대신 대진표 관리 대시보드 표시
+            document.getElementById('screen-container').style.display = 'none';
+            document.querySelector('.control-panel').style.display = 'none';
+            const bgSel = document.getElementById('bracket-bg-selector-group');
+            if (bgSel) bgSel.style.display = 'none';
+            document.getElementById('tournament-dashboard').classList.add('active');
         } else {
             document.getElementById('btn-tab-p2').classList.add('active');
             document.getElementById('page-title').textContent = "📺 개체용 (2P) 실시간 레이아웃 배치기";
@@ -589,23 +834,6 @@
             document.getElementById('toggle-nametag2-group').style.display = '';
             document.getElementById('nametag1-coords').style.display = '';
             document.getElementById('nametag2-coords').style.display = '';
-        }
-
-        // PAGE3 전용 요소 표시
-        if (pageNum === '3') {
-            document.getElementById('toggle-bracket-scale-group').style.display = 'flex';
-            document.getElementById('toggle-bracket-mode-group').style.display = 'flex';
-            document.getElementById('draggable-bracket').style.display = '';
-            document.getElementById('draggable-bracket-title').style.display = '';
-            document.getElementById('draggable-battle-ann').style.display = '';
-            document.getElementById('toggle-bracket-show-group').style.display = '';
-            document.getElementById('toggle-bracket-title-show-group').style.display = '';
-            document.getElementById('toggle-battle-ann-show-group').style.display = '';
-            document.getElementById('banner-coords-group').style.display = 'none';
-            document.getElementById('ticker-coords-group').style.display = 'none';
-            document.getElementById('bracket-coords').style.display = 'inline';
-            document.getElementById('bracket-title-coords').style.display = 'inline';
-            document.getElementById('battle-ann-coords').style.display = 'inline';
         }
 
         // 페이지별 config 접두사 (PAGE2는 p2_, PAGE3는 p3_)
@@ -1421,9 +1649,357 @@
             saveCoordinates();
         }
 
+        // ════════════════════════════════════════════
+        //  3P Tournament Dashboard Logic
+        // ════════════════════════════════════════════
+        let tScale = 16;
+        let tBrackets = { 16: { matches: {} }, 8: { matches: {} }, 4: { matches: {} } };
+        let tActiveTournament = 'none';
+        let tEditingMatch = null;
+        let _tLiveTimer = null;
+
+        function tEsc(s) {
+            if (!s) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        async function tInit() {
+            try {
+                const map = await getConfigMap();
+                if (map) {
+                    [16, 8, 4].forEach(s => {
+                        const k = 'tournament_bracket_' + s;
+                        if (map[k]) try { tBrackets[s] = JSON.parse(map[k]); } catch(e){}
+                    });
+                    if (map.active_tournament) {
+                        tActiveTournament = map.active_tournament;
+                        document.getElementById('t-active-select').value = tActiveTournament;
+                        if (['16','8','4'].includes(tActiveTournament)) {
+                            tScale = parseInt(tActiveTournament);
+                        }
+                    }
+                }
+                tChangeScale(tScale);
+                await tLoadTeams();
+            } catch (err) {
+                toast('대진표 데이터 로드 실패: ' + err.message);
+                await tLoadTeams();
+            }
+            // 실시간 경기 현황 폴링 시작
+            tRefreshLive();
+            _tLiveTimer = setInterval(tRefreshLive, 4000);
+        }
+
+        async function tLoadTeams() {
+            try {
+                const items = await getItems();
+                const teams = [...new Set((items || []).map(i => i.company).filter(Boolean))];
+                const pool = document.getElementById('t-team-pool');
+                if (teams.length === 0) {
+                    pool.innerHTML = '<span style="color:#64748b; font-size:12px;">등록된 업체가 없습니다. 개체를 먼저 등록해주세요.</span>';
+                    return;
+                }
+                pool.innerHTML = teams.map(t =>
+                    `<div class="t-team-chip" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${tEsc(t)}')">${tEsc(t)}</div>`
+                ).join('');
+            } catch (err) {
+                document.getElementById('t-team-pool').innerHTML = '<span style="color:#f87171; font-size:12px;">팀 목록 로딩 실패</span>';
+            }
+        }
+
+        function tChangeScale(scale) {
+            tScale = scale;
+            [16, 8, 4].forEach(s => {
+                const btn = document.getElementById('t-btn-' + s);
+                if (btn) btn.classList.toggle('active', s === scale);
+            });
+            document.getElementById('t-match-ctrl').classList.remove('visible');
+            tEditingMatch = null;
+            tRenderTree();
+        }
+
+        function tGetMatch(scale, key) {
+            if (!tBrackets[scale]) tBrackets[scale] = { matches: {} };
+            if (!tBrackets[scale].matches) tBrackets[scale].matches = {};
+            if (!tBrackets[scale].matches[key]) tBrackets[scale].matches[key] = { left: '', right: '', winner: '' };
+            return tBrackets[scale].matches[key];
+        }
+
+        function tGetParentSlot(round, idx) {
+            const pr = round / 2;
+            if (pr < 2) return null;
+            return { key: pr + '_' + Math.ceil(idx / 2), slot: (idx % 2 === 1) ? 'left' : 'right' };
+        }
+
+        function tPropagate(scale, key, team) {
+            const parts = key.split('_');
+            const p = tGetParentSlot(parseInt(parts[0]), parseInt(parts[1]));
+            if (p) {
+                const pm = tGetMatch(scale, p.key);
+                pm[p.slot] = team;
+                if (pm.winner) { pm.winner = ''; tPropagate(scale, p.key, ''); }
+            }
+        }
+
+        function tRenderTree() {
+            const tree = document.getElementById('t-bracket-tree');
+            tree.innerHTML = '';
+            const rounds = [];
+            let r = tScale;
+            while (r >= 2) { rounds.push(r); r = r / 2; }
+
+            rounds.forEach(round => {
+                const col = document.createElement('div');
+                col.className = 't-round-col';
+                const mc = round / 2;
+                for (let i = 1; i <= mc; i++) {
+                    const mk = round + '_' + i;
+                    const m = tGetMatch(tScale, mk);
+                    const node = document.createElement('div');
+                    node.className = 't-match';
+                    node.id = 't-node-' + mk;
+                    if (tEditingMatch === mk) node.classList.add('active-match');
+
+                    const tt = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
+                    let lp = '', rp = '';
+                    if (round === tScale) {
+                        lp = `[${String.fromCharCode(65 + (i-1)*2)}팀] `;
+                        rp = `[${String.fromCharCode(65 + (i-1)*2 + 1)}팀] `;
+                    }
+
+                    node.innerHTML = `
+                        <div class="t-match-title" onclick="tSelectMatch('${mk}')">${tt}</div>
+                        <div class="t-slot ${m.winner==='left'?'winner-slot':''}"
+                             ondragover="event.preventDefault();this.classList.add('dragover')"
+                             ondragleave="this.classList.remove('dragover')"
+                             ondrop="tDrop(event,'${mk}','left')"
+                             onclick="tClickWinner('${mk}','left')">
+                            <span class="t-slot-team">${lp}${tEsc(m.left||'대기중...')}</span>
+                            ${m.winner==='left'?'<span class="t-slot-crown">👑</span>':''}
+                            ${m.left?`<button class="t-slot-clear" onclick="event.stopPropagation();tClearSlot('${mk}','left')">✕</button>`:''}
+                        </div>
+                        <div class="t-slot ${m.winner==='right'?'winner-slot':''}"
+                             ondragover="event.preventDefault();this.classList.add('dragover')"
+                             ondragleave="this.classList.remove('dragover')"
+                             ondrop="tDrop(event,'${mk}','right')"
+                             onclick="tClickWinner('${mk}','right')">
+                            <span class="t-slot-team">${rp}${tEsc(m.right||'대기중...')}</span>
+                            ${m.winner==='right'?'<span class="t-slot-crown">👑</span>':''}
+                            ${m.right?`<button class="t-slot-clear" onclick="event.stopPropagation();tClearSlot('${mk}','right')">✕</button>`:''}
+                        </div>
+                    `;
+                    col.appendChild(node);
+                }
+                tree.appendChild(col);
+            });
+        }
+
+        function tDrop(e, mk, slot) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+            const team = e.dataTransfer.getData('text/plain');
+            if (!team) return;
+            const m = tGetMatch(tScale, mk);
+            m[slot] = team;
+            if (m.winner) { m.winner = ''; tPropagate(tScale, mk, ''); }
+            tRenderTree();
+        }
+
+        function tClearSlot(mk, slot) {
+            const m = tGetMatch(tScale, mk);
+            m[slot] = '';
+            if (m.winner) { m.winner = ''; tPropagate(tScale, mk, ''); }
+            tRenderTree();
+        }
+
+        function tClickWinner(mk, slot) {
+            const m = tGetMatch(tScale, mk);
+            if (!m[slot]) return;
+            m.winner = (m.winner === slot) ? '' : slot;
+            tPropagate(tScale, mk, m.winner ? m[slot] : '');
+            tRenderTree();
+            if (tEditingMatch === mk) tSelectMatch(mk);
+        }
+
+        async function tSelectMatch(mk) {
+            tEditingMatch = mk;
+            document.querySelectorAll('.t-match').forEach(n => n.classList.remove('active-match'));
+            const node = document.getElementById('t-node-' + mk);
+            if (node) node.classList.add('active-match');
+
+            const m = tGetMatch(tScale, mk);
+            const ctrl = document.getElementById('t-match-ctrl');
+            ctrl.classList.add('visible');
+
+            const parts = mk.split('_');
+            const round = parseInt(parts[0]), idx = parseInt(parts[1]);
+            const tt = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + idx + '조' : (round === 8 ? '8강 ' + idx + '조' : '16강 ' + idx + '조'));
+
+            document.getElementById('t-ctrl-title').textContent = tt + ' 진행 및 자막 제어';
+            document.getElementById('t-ctrl-left').textContent = m.left || '(대기중)';
+            document.getElementById('t-ctrl-right').textContent = m.right || '(대기중)';
+
+            try {
+                const map = await getConfigMap();
+                const scoreKey = 'score_' + tScale + '_' + mk;
+                let scores = { r1:'', r2:'', r3:'', r4:'' };
+                if (map && map[scoreKey]) try { scores = JSON.parse(map[scoreKey]); } catch(e){}
+                ['r1','r2','r3','r4'].forEach(r => {
+                    document.getElementById('t-score-' + r).value = scores[r] || '';
+                });
+                tCalcScore(scores);
+            } catch(e) {
+                tCalcScore({ r1:'', r2:'', r3:'', r4:'' });
+            }
+        }
+
+        function tCalcScore(scores) {
+            let l = 0, r = 0;
+            ['r1','r2','r3','r4'].forEach(k => {
+                if (scores[k] === 'left') l++;
+                else if (scores[k] === 'right') r++;
+            });
+            document.getElementById('t-score-text').textContent = l + ' : ' + r;
+        }
+
+        async function tUpdateScore() {
+            if (!tEditingMatch) return;
+            const scores = {
+                r1: document.getElementById('t-score-r1').value,
+                r2: document.getElementById('t-score-r2').value,
+                r3: document.getElementById('t-score-r3').value,
+                r4: document.getElementById('t-score-r4').value
+            };
+            tCalcScore(scores);
+            try {
+                const payload = {};
+                payload['score_' + tScale + '_' + tEditingMatch] = JSON.stringify(scores);
+                await updateConfigs(payload);
+                toast('매치 스코어 저장 완료');
+            } catch (err) { toast('스코어 저장 실패: ' + err.message); }
+        }
+
+        async function tSetStatus(status) {
+            if (!tEditingMatch) { alert('대진표에서 먼저 경기를 선택(타이틀 클릭)해주세요.'); return; }
+            try {
+                await updateConfigs({
+                    battle_current_match: tScale + '_' + tEditingMatch,
+                    battle_state: status
+                });
+                const map = { start:'경기 시작', r1_end:'1R 종료', r2_end:'2R 종료', r3_end:'3R 종료', r4_ready:'대장전 준비', r4_end:'대장전 종료', final_reveal:'최종 결과 공개' };
+                toast('오버레이 상태 변경: ' + (map[status] || status));
+            } catch (err) { toast('상태 전환 실패: ' + err.message); }
+        }
+
+        async function tChangeActive(val) {
+            try {
+                tActiveTournament = val;
+                await updateConfigs({ active_tournament: val });
+                toast('송출 모드 변경: ' + (val === 'none' ? '비송출' : val + '강 송출'));
+            } catch (err) { toast('송출 모드 갱신 실패: ' + err.message); }
+        }
+
+        function tReset() {
+            if (!confirm('현재 ' + tScale + '강 대진표를 초기화합니까?')) return;
+            tBrackets[tScale] = { matches: {} };
+            tEditingMatch = null;
+            document.getElementById('t-match-ctrl').classList.remove('visible');
+            tRenderTree();
+        }
+
+        async function tRandomFill() {
+            try {
+                const items = await getItems();
+                const teams = [...new Set((items || []).map(i => i.company).filter(Boolean))];
+                if (!teams.length) { alert('등록된 업체가 없습니다.'); return; }
+                for (let i = teams.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [teams[i], teams[j]] = [teams[j], teams[i]];
+                }
+                tBrackets[tScale] = { matches: {} };
+                const mc = tScale / 2;
+                for (let i = 1; i <= mc; i++) {
+                    const m = tGetMatch(tScale, tScale + '_' + i);
+                    m.left = teams.pop() || '';
+                    m.right = teams.pop() || '';
+                }
+                tRenderTree();
+                toast('랜덤 배치 완료 (저장 버튼을 눌러 확정하세요)');
+            } catch (err) { alert('팀 목록 조회 실패: ' + err.message); }
+        }
+
+        async function tSave() {
+            try {
+                const payload = {};
+                payload['tournament_bracket_' + tScale] = JSON.stringify(tBrackets[tScale]);
+                await updateConfigs(payload);
+                toast(tScale + '강 대진표 저장 완료!');
+            } catch (err) { toast('대진표 저장 실패: ' + err.message); }
+        }
+
+        // ── 실시간 경기 현황 카드 ──
+        async function tRefreshLive() {
+            const card = document.getElementById('t-live-card');
+            if (!card) return;
+            try {
+                const map = await getConfigMap();
+                if (!map) { card.classList.remove('visible'); return; }
+
+                const active = map.active_tournament || 'none';
+                if (active === 'none') { card.classList.remove('visible'); return; }
+
+                const scale = parseInt(active, 10);
+                const bracketKey = 'tournament_bracket_' + scale;
+                if (!map[bracketKey]) { card.classList.remove('visible'); return; }
+
+                let bracket = { matches: {} };
+                try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
+
+                const curMatch = map.battle_current_match || '';
+                const battleState = map.battle_state || '';
+                if (!curMatch) { card.classList.remove('visible'); return; }
+
+                // Parse: "8_8_1" → scale=8, round=8, idx=1
+                const cp = curMatch.split('_');
+                if (cp.length < 3) { card.classList.remove('visible'); return; }
+                const mRound = parseInt(cp[1]);
+                const mIdx = parseInt(cp[2]);
+                const matchKey = cp[1] + '_' + cp[2];
+                const m = bracket.matches[matchKey] || { left:'', right:'', winner:'' };
+
+                if (!m.left && !m.right) { card.classList.remove('visible'); return; }
+
+                const tt = (mRound === 2) ? '결승전' : (mRound === 4 ? '준결승 ' + mIdx + '조' : (mRound === 8 ? '8강 ' + mIdx + '조' : '16강 ' + mIdx + '조'));
+
+                // Score
+                const scoreKey = 'score_' + scale + '_' + matchKey;
+                let scores = { r1:'', r2:'', r3:'', r4:'' };
+                if (map[scoreKey]) try { scores = JSON.parse(map[scoreKey]); } catch(e){}
+                let ls = 0, rs = 0;
+                ['r1','r2','r3','r4'].forEach(k => {
+                    if (scores[k] === 'left') ls++;
+                    else if (scores[k] === 'right') rs++;
+                });
+
+                const stateMap = { start:'경기 진행 중', r1_end:'1R 종료', r2_end:'2R 종료', r3_end:'3R 종료', r4_ready:'대장전 준비', r4_end:'대장전 종료', final_reveal:'최종 결과 공개' };
+
+                document.getElementById('t-live-match-name').textContent = tt;
+                document.getElementById('t-live-left').textContent = m.left || '?';
+                document.getElementById('t-live-right').textContent = m.right || '?';
+                document.getElementById('t-live-score').textContent = ls + ' : ' + rs;
+                document.getElementById('t-live-round').textContent = stateMap[battleState] || battleState || '';
+                card.classList.add('visible');
+            } catch (err) {
+                card.classList.remove('visible');
+            }
+        }
+
         // Initial Initialization
         window.addEventListener('DOMContentLoaded', () => {
             loadConfigurations();
+            if (pageNum === '3') {
+                tInit();
+            }
         });
     </script>
 </body>
