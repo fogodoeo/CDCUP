@@ -765,6 +765,19 @@
         /* ── 대진표 오버레이 스타일 ── */
         #bracket-page-container {
             background: transparent !important;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.96) translateY(20px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.6s ease;
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+        }
+        #bracket-page-container.visible {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1) translateY(0);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
         .bracket-page-column {
             display: flex;
@@ -926,7 +939,7 @@
     </div>
 
     <!-- 전체 대진표 전용 송출 컨테이너 -->
-    <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:transparent; color:#fff; position:absolute; top:0; left:0; z-index:10005; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
+    <div id="bracket-page-container" style="width:100%; height:100%; background:transparent; color:#fff; position:absolute; top:0; left:0; z-index:10005; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
         <div id="bracket-page-title" style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
             CRE WORLD CUP TOURNAMENT
         </div>
@@ -2460,7 +2473,7 @@
             // 일반 경매 카드 숨기고 대진표 전체화면 노출
             document.getElementById('empty').style.display = 'none';
             document.getElementById('broadcast').style.display = 'none';
-            document.getElementById('bracket-page-container').style.display = 'block';
+            // document.getElementById('bracket-page-container').style.display = 'block';
             
             // 대진표 자동 리프레시 루프 가동
             setInterval(refreshBracketPage, 3000);
@@ -2510,7 +2523,11 @@
             const containerEl = document.getElementById('bracket-page-container');
             if (containerEl) {
                 const shouldShow = (bShow === '1') && (isBracketPage || active !== 'none');
-                containerEl.style.display = shouldShow ? 'block' : 'none';
+                if (shouldShow) {
+                    containerEl.classList.add('visible');
+                } else {
+                    containerEl.classList.remove('visible');
+                }
             }
             if (active === 'none') {
                 if (tree) {
