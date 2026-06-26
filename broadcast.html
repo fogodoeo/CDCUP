@@ -961,6 +961,51 @@
         let page2PhotoConfigReady = false;
         const GRADE = { "1": "낮음", "2": "보통", "3": "양호", "4": "우수", "5": "최상" };
 
+        window._baseScoreboardLabel = "CRE WORLD CUP";
+        window._totalItemsCount = 0;
+        window._lastCountFetchTime = 0;
+        window.activeItem = null;
+
+        function updateProgressText() {
+            const labelEl = document.querySelector(".top-bar-label");
+            if (!labelEl) return;
+            
+            let baseText = window._baseScoreboardLabel || "CRE WORLD CUP";
+            if (window.activeItem && window.activeItem.num && window._totalItemsCount > 0) {
+                labelEl.textContent = baseText + ` ${window.activeItem.num}/${window._totalItemsCount}`;
+            } else {
+                labelEl.textContent = baseText;
+            }
+        }
+
+        async function refreshTotalCount() {
+            const now = Date.now();
+            if (now - window._lastCountFetchTime < 15000 && window._totalItemsCount > 0) return;
+            
+            if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                    .withSuccessHandler(function (items) {
+                        if (Array.isArray(items)) {
+                            window._totalItemsCount = items.length;
+                            window._lastCountFetchTime = Date.now();
+                            updateProgressText();
+                        }
+                    })
+                    .getItems();
+            } else {
+                try {
+                    const items = await getItems();
+                    if (Array.isArray(items)) {
+                        window._totalItemsCount = items.length;
+                        window._lastCountFetchTime = Date.now();
+                        updateProgressText();
+                    }
+                } catch(e) {
+                    console.error("Failed to fetch items count", e);
+                }
+            }
+        }
+
         function getCleanCode(item) {
             if (!item) return '';
             const numStr = String(item.num || '').trim().toUpperCase();
@@ -1673,7 +1718,8 @@
                 if (labelEl) {
                     if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
                     if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
-                        labelEl.textContent = cfg.scoreboard_label;
+                        window._baseScoreboardLabel = cfg.scoreboard_label;
+                        updateProgressText();
                     }
                 }
                 // 박스 투명도 (직접 background 스타일)
@@ -1881,6 +1927,8 @@
 
 
         function render(item) {
+            window.activeItem = item;
+            updateProgressText();
             let configPart = '';
             if (item && window.latestConfigMap) {
                 const active = window.latestConfigMap.active_tournament;
@@ -2129,6 +2177,7 @@
         async function smartRefresh() {
             if (document.hidden) return;
             maybeRefreshHostConfig(false);
+            refreshTotalCount();
             if (typeof google !== 'undefined' && google.script && google.script.run) {
                 google.script.run
                     .withSuccessHandler(function (item) {
@@ -2251,7 +2300,8 @@
                     if (labelEl) {
                         if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
                         if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
-                            labelEl.textContent = cfg.scoreboard_label;
+                            window._baseScoreboardLabel = cfg.scoreboard_label;
+                            updateProgressText();
                         }
                     }
                     if (cfg.scoreboard_opacity) {
