@@ -967,9 +967,10 @@
         }
 
         // Load configuration from database
-        function loadConfigurations() {
-            google.script.run.withSuccessHandler(function(cfg) {
-                if (!cfg) return;
+        async function loadConfigurations() {
+            try {
+            const cfg = await getConfigMap();
+            if (cfg) {
 
                 // Load Banner values (페이지별 접두사 적용)
                 elements.banner.top = cfg[cfgPrefix+'banner_top'] || 'auto';
@@ -1135,7 +1136,8 @@
                         }
                     }
                 }
-            }).getConfigMap();
+            }
+            } catch(err) { console.error('Config load failed:', err); }
         }
 
         // 대진용 제어 함수
@@ -1151,19 +1153,21 @@
             }
         }
 
-        function changeBracketScale(scale) {
-            google.script.run.withSuccessHandler(function() {
+        async function changeBracketScale(scale) {
+            try {
+                await updateConfigs({ active_tournament: scale });
                 toast('대진표 크기가 ' + scale + '강으로 변경되었습니다.');
                 document.getElementById('bracket-active-select').value = scale;
                 frame.contentWindow.location.reload();
-            }).updateConfigs({ active_tournament: scale });
+            } catch(err) { toast('변경 실패: ' + err.message); }
         }
 
-        function changeActiveTournament(val) {
-            google.script.run.withSuccessHandler(function() {
+        async function changeActiveTournament(val) {
+            try {
+                await updateConfigs({ active_tournament: val });
                 toast('송출 모드가 변경되었습니다: ' + (val === 'none' ? '비송출' : val + '강 송출'));
                 frame.contentWindow.location.reload();
-            }).updateConfigs({ active_tournament: val });
+            } catch(err) { toast('변경 실패: ' + err.message); }
         }
 
         function applyVisualState(key) {
@@ -1514,7 +1518,7 @@
             saveCoordinates(false);
         }
 
-        function saveCoordinates(isAuto = false) {
+        async function saveCoordinates(isAuto = false) {
             const configMap = {};
             // 페이지별 접두사 적용
             configMap[cfgPrefix+'banner_top'] = elements.banner.top;
@@ -1592,7 +1596,8 @@
                 configMap.nametag_right = 'auto';
             }
 
-            google.script.run.withSuccessHandler(function() {
+            try {
+                await updateConfigs(configMap);
                 // Flash Save status indicator
                 const indicator = document.getElementById('save-status');
                 indicator.style.display = 'inline';
@@ -1602,7 +1607,7 @@
 
                 // Reload iframe inside visual screen simulator to show real result
                 frame.contentWindow.location.reload();
-            }).updateConfigs(configMap);
+            } catch(err) { toast('저장 실패: ' + err.message); }
         }
 
         function resetPositions() {
