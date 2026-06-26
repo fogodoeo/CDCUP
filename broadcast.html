@@ -2567,8 +2567,8 @@
                 
                 const lp = parseFloat(lItem?.sold_price || lItem?.soldPrice || 0);
                 const rp = parseFloat(rItem?.sold_price || rItem?.soldPrice || 0);
-                const lSold = (lItem?.status === '완료' || lItem?.status === 'sold');
-                const rSold = (rItem?.status === '완료' || rItem?.status === 'sold');
+                const lSold = (lItem?.status === '완료' || lItem?.status === 'sold' || lItem?.status === '낙찰' || lItem?.status === '유찰');
+                const rSold = (rItem?.status === '완료' || rItem?.status === 'sold' || rItem?.status === '낙찰' || rItem?.status === '유찰');
                 const bothDone = lSold && rSold;
                 
                 let roundWinner = '';
@@ -2595,8 +2595,8 @@
                     const rName = st.rightTeam + st.round;
                     const li = items.find(i => (i.name||'').trim().toUpperCase() === lName);
                     const ri = items.find(i => (i.name||'').trim().toUpperCase() === rName);
-                    const ld = (li?.status === '완료' || li?.status === 'sold');
-                    const rd2 = (ri?.status === '완료' || ri?.status === 'sold');
+                    const ld = (li?.status === '완료' || li?.status === 'sold' || li?.status === '낙찰' || li?.status === '유찰');
+                    const rd2 = (ri?.status === '완료' || ri?.status === 'sold' || ri?.status === '낙찰' || ri?.status === '유찰');
                     if (ld && rd2) {
                         targetStep = s + 1;
                     } else {
@@ -2811,8 +2811,8 @@
                 const items = await getItems();
                 if (!items || items.length === 0) return;
                 
-                // 현재 진행 중인 개체(status가 '진행' 또는 'active'인 개체) 찾기
-                const activeItem = items.find(i => i.status === '진행' || i.status === 'active');
+                // 현재 진행 중인 개체(status가 '진행', '진행중' 또는 'active'인 개체) 찾기
+                const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
                 
                 const ann = document.getElementById('battle-announcement-overlay');
                 if (ann) {
@@ -2901,7 +2901,7 @@
                 for (let r = 1; r <= 4; r++) {
                     const lIt = leftItems[r];
                     const rIt = rightItems[r];
-                    if (lIt && rIt && (lIt.status === '완료' || lIt.status === 'sold') && (rIt.status === '완료' || rIt.status === 'sold')) {
+                    if (lIt && rIt && (lIt.status === '완료' || lIt.status === 'sold' || lIt.status === '낙찰' || lIt.status === '유찰') && (rIt.status === '완료' || rIt.status === 'sold' || rIt.status === '낙찰' || rIt.status === '유찰')) {
                         const lPrice = parseFloat(lIt.sold_price || lIt.soldPrice || 0);
                         const rPrice = parseFloat(rIt.sold_price || rIt.soldPrice || 0);
                         if (lPrice > rPrice) {
@@ -2927,7 +2927,7 @@
                 let displaySub = '';
                 
                 // 금액 감춤 활성화
-                const isFinalReveal = (roundNum === 4 && (activeItem.status === '완료' || activeItem.status === 'sold'));
+                const isFinalReveal = (roundNum === 4 && (activeItem.status === '완료' || activeItem.status === 'sold' || activeItem.status === '낙찰' || activeItem.status === '유찰'));
                 if (!isFinalReveal) {
                     document.body.classList.add('battle-hide-prices');
                 } else {
@@ -2942,7 +2942,7 @@
                     displaySub = `${leftLetter}팀 VS ${rightLetter}팀 대결 (현재 스코어 ${leftScore} : ${rightScore})`;
                     
                     const oppItem = slotType === 'left' ? rightItems[roundNum] : leftItems[roundNum];
-                    if (oppItem && (oppItem.status === '완료' || oppItem.status === 'sold')) {
+                    if (oppItem && (oppItem.status === '완료' || oppItem.status === 'sold' || oppItem.status === '낙찰' || oppItem.status === '유찰')) {
                         displayContent = `⚔️ ${roundNum}라운드 후공 진행 중: <span style="color:#f87171;">${teamLetter}팀 (${realCompany || '대기'})</span>`;
                         displaySub = `선공 ${opponentLetter}팀의 기록에 도전 중! (현재 스코어 ${leftScore} : ${rightScore})`;
                     }
