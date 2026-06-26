@@ -1970,11 +1970,39 @@
                 }
             }
 
-            // 개체명은 원래 명칭(예: A1) 그대로 출력하되, 토너먼트 진행 중(blind)일 때는 업체명 노출을 방지하기 위해 코드(예: C2)만 추출하여 출력
+            // 개체명은 원래 명칭(예: A1) 그대로 출력하되, 토너먼트 진행 중(blind)일 때는 업체명 노출을 방지하기 위해 업체명을 '팀 알파벳'으로 치환
             let cleanInfoName = origName;
             const codeFromItem = getCleanCode(item);
             if (codeFromItem) {
-                cleanInfoName = codeFromItem;
+                const teamLetter = codeFromItem.charAt(0);
+                let companyName = '';
+                if (window.latestConfigMap && window.latestConfigMap.active_tournament && window.latestConfigMap.active_tournament !== 'none') {
+                    const activeScale = window.latestConfigMap.active_tournament;
+                    const bracketKey = 'tournament_bracket_' + activeScale;
+                    if (window.latestConfigMap[bracketKey]) {
+                        try {
+                            const bracket = JSON.parse(window.latestConfigMap[bracketKey]);
+                            const matchCount = parseInt(activeScale, 10) / 2;
+                            for (let i = 1; i <= matchCount; i++) {
+                                const match = bracket.matches[activeScale + '_' + i];
+                                if (match) {
+                                    const leftL = String.fromCharCode(65 + (i - 1) * 2);
+                                    const rightL = String.fromCharCode(65 + (i - 1) * 2 + 1);
+                                    if (leftL === teamLetter) { companyName = match.left; break; }
+                                    if (rightL === teamLetter) { companyName = match.right; break; }
+                                }
+                            }
+                        } catch(e){}
+                    }
+                }
+                
+                if (companyName && companyName.trim()) {
+                    const escapedCompany = companyName.trim().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                    const regex = new RegExp(escapedCompany, 'gi');
+                    cleanInfoName = origName.replace(regex, teamLetter + '팀');
+                } else {
+                    cleanInfoName = codeFromItem;
+                }
             }
             document.getElementById("info-name").textContent = cleanInfoName;
             // 페이지2 상단 바에서 업체명 표시 제거
