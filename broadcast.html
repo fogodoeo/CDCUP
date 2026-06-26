@@ -1128,7 +1128,8 @@
             const stage = document.getElementById('hc-ticker-stage');
             if (!bottomBar || !stage) return;
 
-            const isBracketPage = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket';
+            const _bp = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase();
+            const isBracketPage = _bp === 'bracket' || _bp === '3';
             if (isBracketPage) {
                 resetTickerMotion();
                 stage.innerHTML = '';
@@ -1517,7 +1518,8 @@
             const bannerHidden = ['1', 'true', 'yes', 'on'].indexOf(String(cfg.banner_hidden || '').trim().toLowerCase()) >= 0;
             const bannerOpacity = normalizeOpacity(cfg.banner_opacity, 0.93);
 
-            const isBracketPage = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket';
+            const _bp2 = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase();
+            const isBracketPage = _bp2 === 'bracket' || _bp2 === '3';
             applyBannerPlacement(container, layout);
             container.style.setProperty('--banner-opacity', bannerOpacity);
             const bannerShowOff = cfg[bp + 'banner_show'] === '0' || container.dataset.bannerHiddenByToggle === '1' || isBracketPage;
@@ -2327,7 +2329,8 @@
         //  배틀 & 토너먼트 오버레이 연출 (자바스크립트)
         // ══════════════════════════════════════
         const params = new URLSearchParams(window.location.search);
-        const isBracketPage = (params.get('page') || '').toLowerCase() === 'bracket';
+        const _pgVal = (params.get('page') || '').toLowerCase();
+        const isBracketPage = _pgVal === 'bracket' || _pgVal === '3';
         
         if (isBracketPage) {
             // 일반 경매 카드 숨기고 대진표 전체화면 노출
@@ -2411,8 +2414,14 @@
             
             let bracket = { matches: {} };
             try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
+
+            const displayMode = map.bracket_display_mode || 'full';
             
-            renderBracketPageTree(parseInt(active), bracket, map.battle_current_match);
+            if (displayMode === 'live') {
+                renderBracketLiveView(parseInt(active), bracket, map);
+            } else {
+                renderBracketPageTree(parseInt(active), bracket, map.battle_current_match);
+            }
         }
 
         async function refreshBracketPage() {
@@ -2483,6 +2492,75 @@
                 }
                 tree.appendChild(col);
             });
+        }
+
+        function renderBracketLiveView(scale, bracket, map) {
+            const tree = document.getElementById('bracket-page-tree');
+            const titleEl = document.getElementById('bracket-page-title');
+
+            const curMatch = map.battle_current_match || '';
+            const battleState = map.battle_state || '';
+
+            if (!curMatch) {
+                tree.innerHTML = '<div style="font-size:20px;color:#94a3b8;text-align:center;">현재 진행 중인 경기가 없습니다.</div>';
+                if (titleEl) titleEl.textContent = '🏆 대기 중';
+                return;
+            }
+
+            const cp = curMatch.split('_');
+            if (cp.length < 3) { tree.innerHTML = ''; return; }
+            const mRound = parseInt(cp[1]);
+            const mIdx = parseInt(cp[2]);
+            const matchKey = cp[1] + '_' + cp[2];
+            const m = bracket.matches[matchKey] || { left:'', right:'', winner:'' };
+
+            const tt = (mRound === 2) ? '결승전' : (mRound === 4 ? '준결승 ' + mIdx + '조' : (mRound === 8 ? '8강 ' + mIdx + '조' : '16강 ' + mIdx + '조'));
+
+            // Score
+            const scoreKey = 'score_' + scale + '_' + matchKey;
+            let scores = { r1:'', r2:'', r3:'', r4:'' };
+            if (map[scoreKey]) try { scores = JSON.parse(map[scoreKey]); } catch(e){}
+            let ls = 0, rs = 0;
+            ['r1','r2','r3','r4'].forEach(k => {
+                if (scores[k] === 'left') ls++;
+                else if (scores[k] === 'right') rs++;
+            });
+
+            const stateLabels = { start:'경기 진행 중', r1_end:'1R 종료', r2_end:'2R 종료', r3_end:'3R 종료', r4_ready:'대장전 준비', r4_end:'대장전 종료', final_reveal:'최종 결과 공개' };
+            const stateText = stateLabels[battleState] || '준비 중';
+
+            if (titleEl) titleEl.textContent = '🏆 ' + tt;
+
+            // Round detail
+            let roundDots = '';
+            ['r1','r2','r3','r4'].forEach((k, idx) => {
+                const label = idx < 3 ? (idx+1) + 'R' : '대장전';
+                let color = '#334155';
+                let icon = '○';
+                if (scores[k] === 'left') { color = '#60a5fa'; icon = '●'; }
+                else if (scores[k] === 'right') { color = '#f87171'; icon = '●'; }
+                roundDots += `<div style="text-align:center;"><div style="font-size:32px;color:${color};line-height:1;">${icon}</div><div style="font-size:13px;color:#64748b;margin-top:4px;font-weight:700;">${label}</div></div>`;
+            });
+
+            tree.innerHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:24px;">
+                    <div style="font-size:16px;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">${stateText}</div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:60px;">
+                        <div style="text-align:center;">
+                            <div style="font-size:14px;font-weight:700;color:#60a5fa;margin-bottom:8px;">LEFT</div>
+                            <div style="font-size:40px;font-weight:900;color:#fff;text-shadow:0 0 20px rgba(96,165,250,0.5);">${esc(m.left || '대기중')}</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:72px;font-weight:900;color:#fff;letter-spacing:0.1em;text-shadow:0 0 30px rgba(255,255,255,0.3);">${ls} : ${rs}</div>
+                        </div>
+                        <div style="text-align:center;">
+                            <div style="font-size:14px;font-weight:700;color:#f87171;margin-bottom:8px;">RIGHT</div>
+                            <div style="font-size:40px;font-weight:900;color:#fff;text-shadow:0 0 20px rgba(248,113,113,0.5);">${esc(m.right || '대기중')}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:40px;margin-top:10px;">${roundDots}</div>
+                </div>
+            `;
         }
 
         let lastActiveItemName = '';

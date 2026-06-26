@@ -565,7 +565,7 @@
                 <div class="cdcup-nav__dropdown-menu">
                     <a href="broadcast.html?page=1" target="_blank" class="cdcup-nav__dropdown-item">1P 진행용 화면</a>
                     <a href="broadcast.html" target="_blank" class="cdcup-nav__dropdown-item">2P 개체용 화면</a>
-                    <a href="broadcast.html?page=bracket" target="_blank" class="cdcup-nav__dropdown-item">대진표 화면</a>
+                    <a href="broadcast.html?page=3" target="_blank" class="cdcup-nav__dropdown-item">3P 대진용 화면</a>
                 </div>
             </div>
         </div>
@@ -576,7 +576,7 @@
         <div class="cdcup-tabs" style="margin-bottom: 24px; width: 100%;">
             <a href="preview.html?page=1" id="btn-tab-p1" class="cdcup-tab" style="text-decoration: none;">1P 진행용 배치기</a>
             <a href="preview.html?page=2" id="btn-tab-p2" class="cdcup-tab" style="text-decoration: none;">2P 개체용 배치기</a>
-            <a href="preview.html?page=3" id="btn-tab-p3" class="cdcup-tab" style="text-decoration: none;">대진용 배치기</a>
+            <a href="preview.html?page=3" id="btn-tab-p3" class="cdcup-tab" style="text-decoration: none;">🏆 3P 대진용 배치기</a>
             <a href="settings.html" class="cdcup-tab" style="text-decoration: none;">방송 시스템 설정</a>
         </div>
         <!-- 대진용 배치기 배경 미리보기 선택 옵션 -->
@@ -749,6 +749,11 @@
                         <option value="8">8강 송출</option>
                         <option value="4">4강 송출</option>
                     </select>
+                </div>
+                <div class="t-controls">
+                    <span class="t-label">표시 모드:</span>
+                    <button class="t-btn active" id="t-mode-full" onclick="tChangeDisplayMode('full')">📊 전체 대진</button>
+                    <button class="t-btn" id="t-mode-live" onclick="tChangeDisplayMode('live')">🔴 실시간 경기</button>
                 </div>
                 <div class="t-controls">
                     <button class="t-btn danger" onclick="tReset()">초기화</button>
@@ -1678,6 +1683,10 @@
                             tScale = parseInt(tActiveTournament);
                         }
                     }
+                    // 표시 모드 초기화
+                    const dm = map.bracket_display_mode || 'full';
+                    document.getElementById('t-mode-full').classList.toggle('active', dm === 'full');
+                    document.getElementById('t-mode-live').classList.toggle('active', dm === 'live');
                 }
                 tChangeScale(tScale);
                 await tLoadTeams();
@@ -1897,6 +1906,15 @@
                 await updateConfigs({ active_tournament: val });
                 toast('송출 모드 변경: ' + (val === 'none' ? '비송출' : val + '강 송출'));
             } catch (err) { toast('송출 모드 갱신 실패: ' + err.message); }
+        }
+
+        async function tChangeDisplayMode(mode) {
+            try {
+                await updateConfigs({ bracket_display_mode: mode });
+                document.getElementById('t-mode-full').classList.toggle('active', mode === 'full');
+                document.getElementById('t-mode-live').classList.toggle('active', mode === 'live');
+                toast('송출 표시 모드 변경: ' + (mode === 'full' ? '전체 대진' : '실시간 경기'));
+            } catch (err) { toast('표시 모드 변경 실패: ' + err.message); }
         }
 
         function tReset() {
