@@ -837,21 +837,22 @@
 
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
+        const pageTitle = document.getElementById('page-title');
         if (pageNum === '1') {
-            document.getElementById('btn-tab-p1').classList.add('active');
-            document.getElementById('page-title').textContent = "📺 진행용 (1P) 실시간 레이아웃 배치기";
+            document.getElementById('btn-tab-p1')?.classList.add('active');
+            if (pageTitle) pageTitle.textContent = "📺 진행용 (1P) 실시간 레이아웃 배치기";
             frame.src = "broadcast.html?page=1";
         } else if (pageNum === '3') {
-            document.getElementById('btn-tab-p3').classList.add('active');
-            document.getElementById('page-title').textContent = "🏆 대진용 (3P) 실시간 레이아웃 배치기";
+            document.getElementById('btn-tab-p3')?.classList.add('active');
+            if (pageTitle) pageTitle.textContent = "🏆 대진용 (3P) 실시간 레이아웃 배치기";
             frame.src = "broadcast.html?page=3";
             // 3P: 레이아웃 미리보기 + 대진표 관리 대시보드 함께 표시
             const bgSel = document.getElementById('bracket-bg-selector-group');
             if (bgSel) bgSel.style.display = 'none';
-            document.getElementById('tournament-dashboard').classList.add('active');
+            document.getElementById('tournament-dashboard')?.classList.add('active');
         } else {
-            document.getElementById('btn-tab-p2').classList.add('active');
-            document.getElementById('page-title').textContent = "📺 개체용 (2P) 실시간 레이아웃 배치기";
+            document.getElementById('btn-tab-p2')?.classList.add('active');
+            if (pageTitle) pageTitle.textContent = "📺 개체용 (2P) 실시간 레이아웃 배치기";
             frame.src = "broadcast.html?page=2"; // Default page2 layout
         }
 
