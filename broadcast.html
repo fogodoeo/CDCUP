@@ -928,7 +928,7 @@
     <!-- 전체 대진표 전용 송출 컨테이너 -->
     <div id="bracket-page-container" style="display:none; width:100%; height:100%; background:transparent; color:#fff; position:absolute; top:0; left:0; z-index:9999; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
         <div id="bracket-page-title" style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
-            🏆 CRE WORLD CUP TOURNAMENT 🏆
+            CRE WORLD CUP TOURNAMENT
         </div>
         <div id="bracket-page-tree" style="display:flex; justify-content:center; align-items:center; height:calc(100% - 120px); gap:60px; padding:20px; box-sizing:border-box;"></div>
     </div>
@@ -2537,11 +2537,10 @@
 
             if (!schedule.length || stepIdx < 0) {
                 tree.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:95%;max-width:780px;margin:0 auto;padding:30px;background:rgba(15,23,42,0.65);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.5);gap:16px;">
-                    <div style="font-size:60px;">⚡</div>
                     <div style="font-size:24px;font-weight:900;color:#fff;">경기 대기 중</div>
                     <div style="font-size:14px;color:#94a3b8;font-weight:600;">3P 배치기에서 스케줄을 생성하고 경기를 시작하세요.</div>
                 </div>`;
-                if (titleEl) titleEl.textContent = '🏆 대기 중';
+                if (titleEl) titleEl.textContent = '대기 중';
                 return;
             }
 
@@ -2729,16 +2728,16 @@
                     setTimeout(() => { window._autoAdvancing = false; }, 3000);
                 }
             }
-            const matchTitle = step.group + '조 ' + (isChamp ? '⭐ 대장전 ⭐' : step.round + '라운드');
+            const matchTitle = step.group + '조 ' + (isChamp ? '대장전' : step.round + '라운드');
             
             if (titleEl) {
-                titleEl.textContent = '🏆 ' + (scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강'))) + ' ' + matchTitle;
+                titleEl.textContent = (scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강'))) + ' ' + matchTitle;
             }
 
             // 라운드별 카드 생성
             let roundCards = roundData.map(rd => {
                 const isChampRound = (rd.round === rpm);
-                const label = isChampRound ? '⭐ 대장전' : rd.round + 'R';
+                const label = isChampRound ? '대장전' : rd.round + 'R';
                 let bg, border, glow = '';
 
                 // 현재 쇼다운이 진행 중인지 체크
@@ -2785,7 +2784,7 @@
                 const winLetter = leftTotal > rightTotal ? step.leftTeam : step.rightTeam;
                 finalBanner = `
                     <div style="background:linear-gradient(135deg,rgba(245,158,11,0.25),rgba(234,179,8,0.05));border:2px solid rgba(245,158,11,0.6);border-radius:16px;padding:18px;text-align:center;width:100%;box-shadow:0 0 25px rgba(245,158,11,0.25);margin:8px 0;">
-                        <div style="font-size:12px;font-weight:900;color:#f59e0b;margin-bottom:6px;letter-spacing:0.1em;">🏆 WINNER 🏆</div>
+                        <div style="font-size:12px;font-weight:900;color:#f59e0b;margin-bottom:6px;letter-spacing:0.1em;text-transform:uppercase;">MATCH WINNER</div>
                         <div style="font-size:32px;font-weight:950;color:#fff;text-shadow:0 0 15px rgba(245,158,11,0.6);">${winLetter}팀 ${esc(winner)} 승리!</div>
                         <div style="margin-top:6px;font-size:14px;color:#e2e8f0;font-weight:800;">
                             스코어 ${leftRoundWins}:${rightRoundWins} | 총액 ${fmtCompact(leftTotal)} vs ${fmtCompact(rightTotal)}
@@ -2798,14 +2797,14 @@
             let nowAuctionText = '';
             if (curRd && !curRd.bothDone) {
                 if (curRd.lSold && !curRd.rSold) {
-                    nowAuctionText = `🔴 <span style="font-weight:700;color:#60a5fa;">경매중:</span> <span style="color:#fff;">${curRd.rightItemName} (${step.rightTeam}팀)</span>`;
+                    nowAuctionText = `<span style="display:inline-block;width:6px;height:6px;background:#ef4444;border-radius:50%;margin-right:6px;box-shadow:0 0 8px #ef4444;"></span><span style="font-weight:700;color:#60a5fa;margin-right:4px;">경매중:</span><span style="color:#fff;">${curRd.rightItemName} (${step.rightTeam}팀)</span>`;
                 } else if (!curRd.lSold && curRd.rSold) {
-                    nowAuctionText = `🔴 <span style="font-weight:700;color:#60a5fa;">경매중:</span> <span style="color:#fff;">${curRd.leftItemName} (${step.leftTeam}팀)</span>`;
+                    nowAuctionText = `<span style="display:inline-block;width:6px;height:6px;background:#ef4444;border-radius:50%;margin-right:6px;box-shadow:0 0 8px #ef4444;"></span><span style="font-weight:700;color:#60a5fa;margin-right:4px;">경매중:</span><span style="color:#fff;">${curRd.leftItemName} (${step.leftTeam}팀)</span>`;
                 } else {
-                    nowAuctionText = `🔴 <span style="font-weight:700;color:#3b82f6;">대기중:</span> <span style="color:#fff;opacity:0.8;">${curRd.leftItemName} vs ${curRd.rightItemName}</span>`;
+                    nowAuctionText = `<span style="display:inline-block;width:6px;height:6px;background:#3b82f6;border-radius:50%;margin-right:6px;box-shadow:0 0 8px #3b82f6;"></span><span style="font-weight:700;color:#3b82f6;margin-right:4px;">대기중:</span><span style="color:#fff;opacity:0.8;">${curRd.leftItemName} vs ${curRd.rightItemName}</span>`;
                 }
             } else {
-                nowAuctionText = `✅ <span style="font-weight:700;color:#10b981;">라운드 종료</span>`;
+                nowAuctionText = `<span style="display:inline-block;width:6px;height:6px;background:#10b981;border-radius:50%;margin-right:6px;"></span><span style="font-weight:700;color:#10b981;">라운드 종료</span>`;
             }
 
             // 다음 경기 안내 텍스트
@@ -2814,9 +2813,9 @@
             if (nextIdx < schedule.length && !isLastRoundDone) {
                 const ns = schedule[nextIdx];
                 const nsLabel = ns.isLastRound ? '대장전' : ns.round + 'R';
-                nextMatchText = `⏭️ <span style="font-weight:700;color:#94a3b8;">다음:</span> <span style="color:#fff;">${ns.group}조 ${nsLabel} (${ns.leftTeam} vs ${ns.rightTeam})</span>`;
+                nextMatchText = `<span style="font-weight:800;color:#94a3b8;margin-right:6px;">NEXT</span><span style="color:#fff;">${ns.group}조 ${nsLabel} (${ns.leftTeam} vs ${ns.rightTeam})</span>`;
             } else {
-                nextMatchText = `🏆 <span style="font-weight:700;color:#f59e0b;">최종 매치</span>`;
+                nextMatchText = `<span style="font-weight:800;color:#f59e0b;">최종 매치</span>`;
             }
 
             // 블라인드 처리: 전체 라운드가 모두 끝나기 전까지는 업체명 숨기고 알파벳 팀명으로만 노출
@@ -2825,10 +2824,10 @@
 
             const headerLeft = isLastRoundDone 
                 ? `${step.leftTeam}팀 (최종 공개)`
-                : (step.firstTeam === 'left' ? '<span style="color:#f59e0b;font-weight:900;font-size:11px;">⭐ 선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>');
+                : (step.firstTeam === 'left' ? '<span style="color:#f59e0b;font-weight:900;font-size:11px;">선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>');
             const headerRight = isLastRoundDone 
                 ? `${step.rightTeam}팀 (최종 공개)`
-                : (step.firstTeam === 'right' ? '<span style="color:#f59e0b;font-weight:900;font-size:11px;">⭐ 선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>');
+                : (step.firstTeam === 'right' ? '<span style="color:#f59e0b;font-weight:900;font-size:11px;">선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>');
 
             // 신규 낙찰/유찰 상단 알림 바 HTML
             let notificationOverlayHtml = '';
@@ -2837,7 +2836,7 @@
                 notificationOverlayHtml = `
                     <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:92%;background:rgba(9,15,29,0.95);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1.5px solid ${isSold ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.6)'};border-radius:12px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:20;">
                         <span style="font-size:12px;font-weight:900;color:${isSold ? '#10b981' : '#f59e0b'};display:flex;align-items:center;gap:4px;">
-                            ${isSold ? '🎉 낙찰 성공!' : '⚠️ 유찰 안내'}
+                            ${isSold ? '낙찰 완료' : '유찰'}
                         </span>
                         <span style="font-size:13px;font-weight:800;color:#fff;">[${window._activeNotification.name}] ${isSold ? fmtCompact(window._activeNotification.price) : '유찰'}</span>
                         <span style="font-size:11px;font-weight:700;color:#cbd5e1;">${isSold ? '낙찰자: ' + (window._activeNotification.winner || '무명') : '경매 종료'}</span>
@@ -2870,7 +2869,7 @@
                     <!-- 쇼다운 카운트다운 오버레이 -->
                     ${showdownOverlayHtml}
 
-                    ${isChamp ? '<div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:-6px;">⭐ CHAMPION ROUND ⭐</div>' : ''}
+                    ${isChamp ? '<div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:-6px;">CHAMPION ROUND</div>' : ''}
                     <div style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:0.06em;">${step.group}조 ${step.round}라운드 진행 중</div>
                     
                     <div style="display:flex;align-items:center;justify-content:center;gap:20px;width:100%;">
