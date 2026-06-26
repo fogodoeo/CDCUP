@@ -2100,9 +2100,7 @@
                 if (cl.feed) addPill(track, '먹이:' + (GRADE[cl.feed] || cl.feed), '');
                 if (cl.structure) addPill(track, '체형:' + (GRADE[cl.structure] || cl.structure), '');
                 if (cl.memo) addPill(track, cl.memo, '');
-                // 특이사항(note) 노출 방지: 토너먼트 모드가 활성화되어 있거나 토너먼트 코드 형식이면 업체명 노출을 방지하기 위해 특이사항을 출력하지 않음
-                const isTourney = (window.latestConfigMap && window.latestConfigMap.active_tournament && window.latestConfigMap.active_tournament !== 'none') || !!getCleanCode(item);
-                if (item.note && !isTourney) {
+                if (item.note) {
                     addPill(track, item.note, '');
                 }
 
