@@ -765,19 +765,25 @@
         /* ── 대진표 오버레이 스타일 ── */
         #bracket-page-container {
             background: transparent !important;
+            transition: backdrop-filter 0.6s ease;
+            backdrop-filter: blur(0px);
+            -webkit-backdrop-filter: blur(0px);
+            pointer-events: none;
+        }
+        #bracket-page-container.visible {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .bracket-tree-view {
             opacity: 0;
             pointer-events: none;
             transform: scale(0.96) translateY(20px);
-            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.6s ease;
-            backdrop-filter: blur(0px);
-            -webkit-backdrop-filter: blur(0px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        #bracket-page-container.visible {
+        .bracket-tree-view.visible {
             opacity: 1;
             pointer-events: auto;
             transform: scale(1) translateY(0);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
         }
         .bracket-page-column {
             display: flex;
@@ -943,7 +949,11 @@
         <div id="bracket-page-title" style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
             CRE WORLD CUP TOURNAMENT
         </div>
-        <div id="bracket-page-tree" style="display:flex; justify-content:center; align-items:center; height:calc(100% - 120px); gap:60px; padding:20px; box-sizing:border-box;"></div>
+        <!-- 전체 대진표 트리 (Full Bracket) -->
+        <div id="bracket-page-tree-full" class="bracket-tree-view" style="display:flex; justify-content:center; align-items:center; gap:60px; padding:20px; box-sizing:border-box;"></div>
+        
+        <!-- 실시간 경기 스코어보드 (Live Match) -->
+        <div id="bracket-page-tree-live" class="bracket-tree-view" style="display:flex; justify-content:center; align-items:center; gap:60px; padding:20px; box-sizing:border-box;"></div>
     </div>
 
     <!-- 배틀 안내 자막 레이어 (z-index를 10000으로 높여 대진표 컨테이너 위에 오버레이되도록 처리) -->
@@ -2496,21 +2506,29 @@
             const active = map.active_tournament || 'none';
             
             // Apply bracket positioning & size
-            const tree = document.getElementById('bracket-page-tree');
-            if (tree) {
-                const bTop = map.bracket_top || (displayMode === 'live' ? '0px' : '120px');
-                const bLeft = map.bracket_left || '0px';
-                const bWidth = map.bracket_width || '100%';
-                const bHeight = map.bracket_height || (displayMode === 'live' ? '100%' : 'calc(100% - 120px)');
+            const treeFull = document.getElementById('bracket-page-tree-full');
+            const treeLive = document.getElementById('bracket-page-tree-live');
+            
+            const bTop = map.bracket_top || (displayMode === 'live' ? '0px' : '120px');
+            const bLeft = map.bracket_left || '0px';
+            const bWidth = map.bracket_width || '100%';
+            const bHeight = map.bracket_height || (displayMode === 'live' ? '100%' : 'calc(100% - 120px)');
 
-                tree.style.position = 'absolute';
-                tree.style.top = bTop;
-                tree.style.left = bLeft;
-                tree.style.width = bWidth;
-                tree.style.height = bHeight;
-                
-                // tree의 display 상태는 Flex로 고정 유지 (컨테이너의 표시는 containerEl이 결정)
-                tree.style.display = 'flex';
+            if (treeFull) {
+                treeFull.style.position = 'absolute';
+                treeFull.style.top = bTop;
+                treeFull.style.left = bLeft;
+                treeFull.style.width = bWidth;
+                treeFull.style.height = bHeight;
+                treeFull.style.display = 'flex';
+            }
+            if (treeLive) {
+                treeLive.style.position = 'absolute';
+                treeLive.style.top = bTop;
+                treeLive.style.left = bLeft;
+                treeLive.style.width = bWidth;
+                treeLive.style.height = bHeight;
+                treeLive.style.display = 'flex';
             }
 
             // Apply bracket title (completely hidden as requested by user)
@@ -2521,17 +2539,34 @@
 
             // Control the visibility of the entire bracket container (On/Off master toggle)
             const containerEl = document.getElementById('bracket-page-container');
+            const masterShow = (bShow === '1') && (isBracketPage || active !== 'none');
             if (containerEl) {
-                const shouldShow = (bShow === '1') && (isBracketPage || active !== 'none');
-                if (shouldShow) {
+                if (masterShow) {
                     containerEl.classList.add('visible');
                 } else {
                     containerEl.classList.remove('visible');
                 }
             }
+
+            // Toggles active display mode transitions
+            if (treeFull && treeLive) {
+                if (masterShow) {
+                    if (displayMode === 'live') {
+                        treeLive.classList.add('visible');
+                        treeFull.classList.remove('visible');
+                    } else {
+                        treeFull.classList.add('visible');
+                        treeLive.classList.remove('visible');
+                    }
+                } else {
+                    treeFull.classList.remove('visible');
+                    treeLive.classList.remove('visible');
+                }
+            }
+
             if (active === 'none') {
-                if (tree) {
-                    tree.innerHTML = `
+                if (treeFull) {
+                    treeFull.innerHTML = `
                         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:16px;">
                             <div style="font-size:32px;font-weight:900;color:#3b82f6;letter-spacing:0.05em;margin-bottom:8px;">TOURNAMENT</div>
                             <div style="font-size:24px;font-weight:900;color:#fff;">토너먼트 대기 중</div>
@@ -2574,7 +2609,7 @@
         }
 
         function renderBracketPageTree(scale, bracket, map) {
-            const tree = document.getElementById('bracket-page-tree');
+            const tree = document.getElementById('bracket-page-tree-full');
             tree.innerHTML = '';
             const currentMatch = map.battle_current_match || '';
             
@@ -2672,7 +2707,7 @@
         }
 
         async function renderBracketLiveView(scale, bracket, map) {
-            const tree = document.getElementById('bracket-page-tree');
+            const tree = document.getElementById('bracket-page-tree-live');
             const titleEl = document.getElementById('bracket-page-title');
 
             // 스케줄 읽기
