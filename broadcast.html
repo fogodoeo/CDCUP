@@ -2990,47 +2990,141 @@
             // 대장전 특수 배경
             const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,0.7) 40%);' : '';
 
-            tree.innerHTML = `
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;width:100%;max-width:840px;margin:0 auto;box-sizing:border-box;">
-                    
-                    <!-- 점수판 카드 (타이틀 없애고 점수판만 남겨 폰트 사이즈 더 키우고) -->
-                    <div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:40px;background:rgba(15,23,42,0.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:24px;box-shadow:0 12px 40px rgba(0,0,0,0.6);gap:32px;box-sizing:border-box;${champGlow}">
-                        
-                        <!-- 알림 토스트 배너 -->
-                        ${notificationOverlayHtml}
-                        
-                        <!-- 쇼다운 카운트다운 오버레이 -->
-                        ${showdownOverlayHtml}
+            // 진행 중인 팀 판별
+            let isLeftActive = false;
+            let isRightActive = false;
+            if (activeItem) {
+                const activeName = getCleanCode(activeItem) || (activeItem.name || '').trim().toUpperCase();
+                const activeLetter = activeName.charAt(0).toUpperCase();
+                isLeftActive = (activeLetter === step.leftTeam.toUpperCase());
+                isRightActive = (activeLetter === step.rightTeam.toUpperCase());
+            }
 
-                        <div style="display:flex;align-items:center;justify-content:center;gap:40px;width:100%;">
-                            <div style="text-align:center;flex:1;">
-                                <div style="font-size:18px;font-weight:850;color:#60a5fa;margin-bottom:8px;letter-spacing:0.05em;">${headerLeft}</div>
-                                <div style="font-size:52px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${displayNameLeft}</div>
-                                <div style="font-size:22px;color:#94a3b8;font-weight:800;margin-top:10px;">총 <span style="color:#60a5fa;font-size:28px;font-weight:900;">${fmtCompact(leftTotal)}</span></div>
-                            </div>
-                            <div style="text-align:center;min-width:200px;background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.06);border-radius:20px;padding:18px 0;box-shadow:inset 0 0 15px rgba(0,0,0,0.6);">
-                                <div style="font-size:80px;font-weight:950;color:#fff;letter-spacing:0.05em;line-height:1;text-shadow:0 0 20px rgba(255,255,255,0.3);">${leftRoundWins} : ${rightRoundWins}</div>
-                                <div style="font-size:16px;color:#64748b;margin-top:10px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;">ROUND SCORE</div>
-                            </div>
-                            <div style="text-align:center;flex:1;">
-                                <div style="font-size:18px;font-weight:850;color:#f87171;margin-bottom:8px;letter-spacing:0.05em;">${headerRight}</div>
-                                <div style="font-size:52px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${displayNameRight}</div>
-                                <div style="font-size:22px;color:#94a3b8;font-weight:800;margin-top:10px;">총 <span style="color:#f87171;font-size:28px;font-weight:900;">${fmtCompact(rightTotal)}</span></div>
-                            </div>
+            // 넥스트 매치 텍스트
+            let nextMatchText = '';
+            const nextIdx = stepIdx + 1;
+            if (nextIdx < schedule.length && !isLastRoundDone) {
+                const ns = schedule[nextIdx];
+                const nsLabel = ns.isLastRound ? '대장전' : ns.round + '라운드';
+                nextMatchText = `${ns.group}조 ${nsLabel} (${ns.leftTeam}팀 vs ${ns.rightTeam}팀)`;
+            } else {
+                nextMatchText = '마지막 매치 진행 중';
+            }
+
+            // 쇼다운 카운트다운 오버레이 HTML (컴팩트화)
+            let showdownOverlayHtml = '';
+            if (window._activeShowdown) {
+                const countText = window._activeShowdown.countdown > 0 ? window._activeShowdown.countdown : 'OPEN!';
+                showdownOverlayHtml = `
+                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(9,15,29,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;">
+                        <div style="font-size:10px;font-weight:900;color:#3b82f6;letter-spacing:0.1em;margin-bottom:4px;">ROUND ${window._activeShowdown.round} FINISHED</div>
+                        <div style="font-size:32px;font-weight:950;color:#fff;text-shadow:0 0 15px rgba(59,130,246,0.8);">${countText}</div>
+                    </div>
+                `;
+            }
+
+            // 알림 토스트 배너 HTML (컴팩트화)
+            let notificationOverlayHtml = '';
+            if (window._activeNotification) {
+                const isSold = window._activeNotification.status === '낙찰';
+                notificationOverlayHtml = `
+                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(9,15,29,0.95);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid ${isSold ? '#10b981' : '#f59e0b'};border-radius:12px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:20;box-sizing:border-box;">
+                        <span style="font-size:11px;font-weight:900;color:${isSold ? '#10b981' : '#f59e0b'};">${isSold ? '낙찰 완료' : '유찰'}</span>
+                        <span style="font-size:12px;font-weight:800;color:#fff;margin:0 6px;text-align:center;flex:1;">[${window._activeNotification.name}] ${isSold ? fmtCompact(window._activeNotification.price) : '유찰'}</span>
+                        <span style="font-size:10px;font-weight:700;color:#cbd5e1;">${isSold ? (window._activeNotification.winner || '무명') : '경매 종료'}</span>
+                    </div>
+                `;
+            }
+
+            // 최종 매치 결과 배너 (컴팩트화)
+            let finalBanner = '';
+            if (isLastRoundDone) {
+                const winner = leftTotal > rightTotal ? step.leftName : (rightTotal > leftTotal ? step.rightName : '무승부');
+                const winLetter = leftTotal > rightTotal ? step.leftTeam : step.rightTeam;
+                finalBanner = `
+                    <div style="background:linear-gradient(135deg,rgba(245,158,11,0.2),rgba(234,179,8,0.03));border:1.5px solid rgba(245,158,11,0.5);border-radius:10px;padding:12px;text-align:center;width:100%;box-shadow:0 0 15px rgba(245,158,11,0.2);margin-top:10px;box-sizing:border-box;">
+                        <div style="font-size:10px;font-weight:900;color:#f59e0b;margin-bottom:2px;letter-spacing:0.08em;">MATCH WINNER</div>
+                        <div style="font-size:18px;font-weight:950;color:#fff;">${winLetter}팀 ${esc(winner)} 승리!</div>
+                        <div style="margin-top:4px;font-size:11px;color:#e2e8f0;font-weight:800;">
+                            스코어 ${leftRoundWins}:${rightRoundWins} | 총액 ${fmtCompact(leftTotal)} vs ${fmtCompact(rightTotal)}
                         </div>
-                        
-                        ${finalBanner}
-                        
-                        <!-- 경매 진행 상태 바 -->
-                        <div style="display:flex;justify-content:center;align-items:center;width:100%;border-top:1px solid rgba(255,255,255,0.08);padding-top:20px;margin-top:8px;font-size:16px;color:#cbd5e1;font-weight:700;">
-                            <div style="display:flex;align-items:center;gap:6px;justify-content:center;">
-                                ${nowAuctionText}
-                            </div>
-                        </div>
+                    </div>`;
+            }
+
+            // 선공 정보
+            const headerLeft = step.firstTeam === 'left' ? '<span style="color:#FFA800;font-weight:900;font-size:11px;background:rgba(255,168,0,0.1);padding:1px 5px;border-radius:4px;">선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>';
+            const headerRight = step.firstTeam === 'right' ? '<span style="color:#FFA800;font-weight:900;font-size:11px;background:rgba(255,168,0,0.1);padding:1px 5px;border-radius:4px;">선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>';
+
+            const activeLeftGlow = isLeftActive ? 'border-color:rgba(96,165,250,0.6);box-shadow:0 0 15px rgba(96,165,250,0.25);background:rgba(96,165,250,0.06);' : 'border-color:transparent;';
+            const activeRightGlow = isRightActive ? 'border-color:rgba(248,113,113,0.6);box-shadow:0 0 15px rgba(248,113,113,0.25);background:rgba(248,113,113,0.06);' : 'border-color:transparent;';
+
+            // blink keyframe 주입용 style
+            const animationStyle = `
+                <style>
+                    @keyframes dot-blink {
+                        0%, 100% { opacity: 0.35; }
+                        50% { opacity: 1; }
+                    }
+                    .active-dot {
+                        animation: dot-blink 1.2s infinite;
+                    }
+                </style>
+            `;
+
+            tree.innerHTML = `
+                ${animationStyle}
+                <div style="position:relative; display:flex; flex-direction:column; width:100%; height:100%; max-width:340px; background:rgba(10,15,28,0.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.08); border-radius:12px; box-shadow:0 8px 32px rgba(0,0,0,0.5); padding:14px; box-sizing:border-box; color:#fff; font-family:'Pretendard', sans-serif; justify-content:space-between; gap:10px;">
+                    
+                    <!-- 알림 토스트 배너 -->
+                    ${notificationOverlayHtml}
+                    
+                    <!-- 쇼다운 카운트다운 오버레이 -->
+                    ${showdownOverlayHtml}
+
+                    <!-- 현재 경기 정보 및 라운드명 -->
+                    <div style="font-size:12px; font-weight:700; color:#94a3b8; text-align:center; display:flex; align-items:center; justify-content:center; gap:6px; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px;">
+                        <span>${(scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강')))} ${step.group}조</span>
+                        <span style="color:#FFA800; background:rgba(255,168,0,0.1); padding:1px 5px; border-radius:4px; font-size:10px;">${isChamp ? '대장전' : step.round + 'R'}</span>
                     </div>
 
-                    <!-- 다음 경기 안내 섹션 (아예섹션을 떼서 좀더 사이즈 키워서 잘보이게) -->
-                    ${nextMatchSectionHtml}
+                    <!-- 메인 대결 팀 & 점수 영역 -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; width:100%; padding:4px 0;">
+                        
+                        <!-- 왼쪽 팀 정보 -->
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.04); border-radius:8px; padding:6px; box-sizing:border-box; min-width:0; ${activeLeftGlow}">
+                            <div style="display:flex; align-items:center; gap:4px; font-size:14px; font-weight:800; color:${isLeftActive ? '#60a5fa' : '#94a3b8'};">
+                                ${isLeftActive ? '<span class="active-dot" style="display:inline-block; width:6px; height:6px; background:#60a5fa; border-radius:50%; box-shadow:0 0 8px #60a5fa;"></span>' : ''}
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.leftTeam}팀</span>
+                            </div>
+                            <div style="margin-top:2px;">${headerLeft}</div>
+                            <div style="font-size:11px; color:#cbd5e1; font-weight:700; margin-top:4px; opacity:0.8;">${fmtCompact(leftTotal)}</div>
+                        </div>
+
+                        <!-- 스코어 구분 영역 -->
+                        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:60px;">
+                            <div style="font-size:28px; font-weight:950; color:#fff; letter-spacing:0.02em; line-height:1; text-shadow:0 0 10px rgba(255,255,255,0.2);">${leftRoundWins} : ${rightRoundWins}</div>
+                            <div style="font-size:9px; color:#475569; font-weight:800; margin-top:4px; letter-spacing:0.04em;">SCORE</div>
+                        </div>
+
+                        <!-- 오른쪽 팀 정보 -->
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.04); border-radius:8px; padding:6px; box-sizing:border-box; min-width:0; ${activeRightGlow}">
+                            <div style="display:flex; align-items:center; gap:4px; font-size:14px; font-weight:800; color:${isRightActive ? '#f87171' : '#94a3b8'};">
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${step.rightTeam}팀</span>
+                                ${isRightActive ? '<span class="active-dot" style="display:inline-block; width:6px; height:6px; background:#f87171; border-radius:50%; box-shadow:0 0 8px #f87171;"></span>' : ''}
+                            </div>
+                            <div style="margin-top:2px;">${headerRight}</div>
+                            <div style="font-size:11px; color:#cbd5e1; font-weight:700; margin-top:4px; opacity:0.8;">${fmtCompact(rightTotal)}</div>
+                        </div>
+
+                    </div>
+
+                    ${finalBanner}
+
+                    <!-- 넥스트 매치 영역 -->
+                    <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:8px; display:flex; align-items:center; justify-content:center; gap:6px; font-size:11px; font-weight:700; color:#64748b;">
+                        <span style="background:rgba(255,255,255,0.06); color:#94a3b8; padding:2px 6px; border-radius:4px; font-size:9px; letter-spacing:0.02em; white-space:nowrap;">NEXT</span>
+                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:240px;">${nextMatchText}</span>
+                    </div>
 
                 </div>
             `;
