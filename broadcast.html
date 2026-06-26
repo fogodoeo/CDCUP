@@ -963,6 +963,7 @@
 
         window._baseScoreboardLabel = "CRE WORLD CUP";
         window._totalItemsCount = 0;
+        window._completedItemsCount = 0;
         window._lastCountFetchTime = 0;
         window.activeItem = null;
 
@@ -971,11 +972,28 @@
             if (!labelEl) return;
             
             let baseText = window._baseScoreboardLabel || "CRE WORLD CUP";
-            if (window.activeItem && window.activeItem.num && window._totalItemsCount > 0) {
-                labelEl.textContent = baseText + ` ${window.activeItem.num}/${window._totalItemsCount}`;
+            if (window.activeItem && window._totalItemsCount > 0) {
+                const currentOrder = window._completedItemsCount + 1;
+                labelEl.textContent = baseText + ` ${currentOrder}/${window._totalItemsCount}`;
             } else {
                 labelEl.textContent = baseText;
             }
+        }
+
+        function processItemsList(items) {
+            window._totalItemsCount = items.length;
+            window._lastCountFetchTime = Date.now();
+            
+            let completed = 0;
+            items.forEach(it => {
+                const status = (it.status || '').trim();
+                if (status.indexOf('낙찰') >= 0 || status.indexOf('유찰') >= 0) {
+                    completed++;
+                }
+            });
+            window._completedItemsCount = completed;
+            
+            updateProgressText();
         }
 
         async function refreshTotalCount() {
@@ -986,9 +1004,7 @@
                 google.script.run
                     .withSuccessHandler(function (items) {
                         if (Array.isArray(items)) {
-                            window._totalItemsCount = items.length;
-                            window._lastCountFetchTime = Date.now();
-                            updateProgressText();
+                            processItemsList(items);
                         }
                     })
                     .getItems();
@@ -996,9 +1012,7 @@
                 try {
                     const items = await getItems();
                     if (Array.isArray(items)) {
-                        window._totalItemsCount = items.length;
-                        window._lastCountFetchTime = Date.now();
-                        updateProgressText();
+                        processItemsList(items);
                     }
                 } catch(e) {
                     console.error("Failed to fetch items count", e);
