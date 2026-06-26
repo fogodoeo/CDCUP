@@ -866,8 +866,9 @@
             document.getElementById('nametag2-coords').style.display = '';
         }
 
-        // PAGE3 전용 요소 표시
+        // PAGE3 전용 요소 표시 + 배너/자막 숨김 (3P는 오버레이 전용)
         if (pageNum === '3') {
+            // 3P 전용 드래그 요소 표시
             document.getElementById('draggable-bracket').style.display = '';
             document.getElementById('draggable-bracket-title').style.display = '';
             document.getElementById('draggable-battle-ann').style.display = '';
@@ -879,7 +880,11 @@
             document.getElementById('bracket-coords').style.display = '';
             document.getElementById('bracket-title-coords').style.display = '';
             document.getElementById('battle-ann-coords').style.display = '';
-            // 2P 전용 좌표는 숨김
+            // 배너/자막 완전 숨김 (3P 오버레이에 불필요)
+            document.getElementById('draggable-banner').style.display = 'none';
+            document.getElementById('draggable-ticker').style.display = 'none';
+            document.getElementById('toggle-ticker-show')?.closest('.switch-container')?.style.setProperty('display', 'none');
+            document.getElementById('toggle-banner-show')?.closest('.switch-container')?.style.setProperty('display', 'none');
             document.getElementById('banner-coords-group').style.display = 'none';
             document.getElementById('ticker-coords-group').style.display = 'none';
         }

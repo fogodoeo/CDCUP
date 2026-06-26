@@ -1136,7 +1136,7 @@
                 bottomBar.classList.remove('visible');
                 bottomBar.style.setProperty('display', 'none', 'important');
                 window._tickerRenderState = null;
-                renderImageBanners(cfg);
+                // 3P 오버레이: 배너/자막 불필요 (1P/2P 위에 겹치는 용도)
                 return;
             }
 
@@ -2535,6 +2535,8 @@
             try { if (map.battle_schedule) schedule = JSON.parse(map.battle_schedule); } catch(e){}
             const stepIdx = parseInt(map.battle_step || '-1');
 
+
+
             if (!schedule.length || stepIdx < 0) {
                 tree.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:16px;">
                     <div style="font-size:60px;">⚡</div>
@@ -2583,6 +2585,33 @@
             }
 
             const isLastRoundDone = roundData[rpm-1]?.bothDone;
+
+            // ═══ 자동 진행: 순서 상관없이 첫 번째 미완료 스텝으로 점프 ═══
+            if (!window._autoAdvancing && stepIdx < schedule.length - 1) {
+                let targetStep = stepIdx;
+                for (let s = stepIdx; s < schedule.length; s++) {
+                    const st = schedule[s];
+                    const lName = st.leftTeam + st.round;
+                    const rName = st.rightTeam + st.round;
+                    const li = items.find(i => (i.name||'').trim().toUpperCase() === lName);
+                    const ri = items.find(i => (i.name||'').trim().toUpperCase() === rName);
+                    const ld = (li?.status === '완료' || li?.status === 'sold');
+                    const rd2 = (ri?.status === '완료' || ri?.status === 'sold');
+                    if (ld && rd2) {
+                        targetStep = s + 1;
+                    } else {
+                        break;
+                    }
+                }
+                if (targetStep !== stepIdx && targetStep <= schedule.length - 1) {
+                    window._autoAdvancing = true;
+                    try {
+                        await updateConfigs({ battle_step: String(targetStep) });
+                        console.log('Auto-jumped to step', targetStep, 'from', stepIdx);
+                    } catch(e) { console.error('Auto-advance failed:', e); }
+                    setTimeout(() => { window._autoAdvancing = false; }, 3000);
+                }
+            }
             const matchTitle = step.group + '조 ' + (isChamp ? '⭐ 대장전 ⭐' : step.round + '라운드');
             
             if (titleEl) {
