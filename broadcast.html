@@ -2676,86 +2676,69 @@
                     </div>`;
             }
 
-            // 스케줄 진행바
-            let scheduleBar = schedule.map((s, i) => {
-                let c = '#1e293b', tc = '#475569', b = 'rgba(255,255,255,0.04)';
-                let lbl = s.group + '조R' + s.round;
-                if (i < stepIdx) { c = '#10b981'; tc = '#fff'; b = '#10b981'; lbl = '✅'; }
-                else if (i === stepIdx) { c = '#f59e0b'; tc = '#000'; b = '#f59e0b'; }
-                if (s.isLastRound && i >= stepIdx) lbl = '⭐' + s.group;
-                return `<span style="background:${c};color:${tc};border:1px solid ${b};border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700;">${lbl}</span>`;
-            }).join('');
-
-            // 현재 경매 중인 아이템 감지 (현재 라운드에서 아직 안 팔린 아이템)
+            // 현재 경매 진행 개체 텍스트
             const curRd = roundData.find(rd => rd.isCurrent);
-            let nowAuctionHtml = '';
+            let nowAuctionText = '';
             if (curRd && !curRd.bothDone) {
-                const auctionItems = [];
-                if (!curRd.lSold) auctionItems.push(`${step.leftTeam}팀 ${curRd.leftItemName}`);
-                if (!curRd.rSold) auctionItems.push(`${step.rightTeam}팀 ${curRd.rightItemName}`);
                 if (curRd.lSold && !curRd.rSold) {
-                    nowAuctionHtml = `<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 16px;text-align:center;width:100%;">
-                        <span style="font-size:10px;color:#3b82f6;font-weight:800;">🔴 현재 경매</span>
-                        <span style="font-size:13px;color:#fff;font-weight:700;margin-left:8px;">${curRd.rightItemName} (${step.rightTeam}팀)</span>
-                        <span style="font-size:10px;color:#64748b;margin-left:6px;">| ${curRd.leftItemName} 낙찰: ${fmt(curRd.lp)}</span>
-                    </div>`;
+                    nowAuctionText = `🔴 <span style="font-weight:700;color:#60a5fa;">경매중:</span> <span style="color:#fff;">${curRd.rightItemName} (${step.rightTeam}팀)</span>`;
                 } else if (!curRd.lSold && curRd.rSold) {
-                    nowAuctionHtml = `<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 16px;text-align:center;width:100%;">
-                        <span style="font-size:10px;color:#3b82f6;font-weight:800;">🔴 현재 경매</span>
-                        <span style="font-size:13px;color:#fff;font-weight:700;margin-left:8px;">${curRd.leftItemName} (${step.leftTeam}팀)</span>
-                        <span style="font-size:10px;color:#64748b;margin-left:6px;">| ${curRd.rightItemName} 낙찰: ${fmt(curRd.rp)}</span>
-                    </div>`;
+                    nowAuctionText = `🔴 <span style="font-weight:700;color:#60a5fa;">경매중:</span> <span style="color:#fff;">${curRd.leftItemName} (${step.leftTeam}팀)</span>`;
                 } else {
-                    nowAuctionHtml = `<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:8px;padding:8px 16px;text-align:center;width:100%;">
-                        <span style="font-size:10px;color:#3b82f6;font-weight:800;">🔴 경매 대기</span>
-                        <span style="font-size:13px;color:#fff;font-weight:700;margin-left:8px;">${auctionItems.join(' vs ')}</span>
-                    </div>`;
+                    nowAuctionText = `🔴 <span style="font-weight:700;color:#3b82f6;">대기중:</span> <span style="color:#fff;opacity:0.8;">${curRd.leftItemName} vs ${curRd.rightItemName}</span>`;
                 }
+            } else {
+                nowAuctionText = `✅ <span style="font-weight:700;color:#10b981;">라운드 종료</span>`;
             }
 
-            // 다음 경기 안내
-            let nextMatchHtml = '';
+            // 다음 경기 안내 텍스트
+            let nextMatchText = '';
             const nextIdx = stepIdx + 1;
             if (nextIdx < schedule.length && !isLastRoundDone) {
                 const ns = schedule[nextIdx];
-                const nsChamp = ns.isLastRound;
-                const nsLabel = nsChamp ? '⭐ 대장전' : ns.round + 'R';
-                nextMatchHtml = `<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 16px;text-align:center;width:100%;">
-                    <span style="font-size:10px;color:#64748b;font-weight:800;">⏭️ 다음 경기</span>
-                    <span style="font-size:12px;color:#94a3b8;font-weight:700;margin-left:8px;">${ns.group}조 ${nsLabel}</span>
-                    <span style="font-size:12px;color:#fff;font-weight:700;margin-left:8px;">${ns.leftTeam}팀 ${esc(ns.leftName)} vs ${ns.rightTeam}팀 ${esc(ns.rightName)}</span>
-                    <span style="font-size:10px;color:#475569;margin-left:8px;">${ns.leftTeam}${ns.round} vs ${ns.rightTeam}${ns.round}</span>
-                </div>`;
+                const nsLabel = ns.isLastRound ? '대장전' : ns.round + 'R';
+                nextMatchText = `⏭️ <span style="font-weight:700;color:#94a3b8;">다음:</span> <span style="color:#fff;">${ns.group}조 ${nsLabel} (${ns.leftTeam} vs ${ns.rightTeam})</span>`;
+            } else {
+                nextMatchText = `🏆 <span style="font-weight:700;color:#f59e0b;">최종 매치</span>`;
             }
 
             // 대장전 특수 배경
             const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,1) 40%);' : '';
 
             tree.innerHTML = `
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:22px;max-width:900px;margin:0 auto;${champGlow}">
-                    ${isChamp ? '<div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;">⭐ CHAMPION ROUND ⭐</div>' : ''}
-                    <div style="font-size:13px;font-weight:800;color:#94a3b8;letter-spacing:0.06em;">${step.group}조 ${step.round}라운드 · 선공: ${firstName}팀 / 후공: ${secondName}팀</div>
-                    <div style="display:flex;align-items:center;justify-content:center;gap:30px;width:100%;">
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;gap:15px;max-width:900px;margin:0 auto;padding:10px 0;${champGlow}">
+                    ${isChamp ? '<div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:-6px;">⭐ CHAMPION ROUND ⭐</div>' : ''}
+                    <div style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:0.06em;">${step.group}조 ${step.round}라운드 · 선공: ${firstName}팀 / 후공: ${secondName}팀</div>
+                    
+                    <div style="display:flex;align-items:center;justify-content:center;gap:20px;width:100%;">
                         <div style="text-align:center;flex:1;">
-                            <div style="font-size:11px;font-weight:700;color:#60a5fa;margin-bottom:4px;">${step.leftTeam}팀${step.firstTeam==='left'?' ⭐선공':''}</div>
-                            <div style="font-size:24px;font-weight:900;color:#fff;">${esc(step.leftName)}</div>
-                            <div style="font-size:13px;color:#94a3b8;font-weight:700;margin-top:4px;">총 ${fmt(leftTotal)}</div>
+                            <div style="font-size:10px;font-weight:700;color:#60a5fa;margin-bottom:2px;">${step.leftTeam}팀${step.firstTeam==='left'?' ⭐선공':''}</div>
+                            <div style="font-size:22px;font-weight:900;color:#fff;line-height:1.2;">${esc(step.leftName)}</div>
+                            <div style="font-size:12px;color:#94a3b8;font-weight:700;margin-top:2px;">총 ${fmt(leftTotal)}</div>
                         </div>
-                        <div style="text-align:center;">
-                            <div style="font-size:40px;font-weight:900;color:#fff;letter-spacing:0.08em;text-shadow:0 0 15px rgba(255,255,255,0.15);">${leftRoundWins} : ${rightRoundWins}</div>
-                            <div style="font-size:10px;color:#64748b;margin-top:4px;font-weight:700;">라운드 승패</div>
+                        <div style="text-align:center;min-width:110px;">
+                            <div style="font-size:36px;font-weight:900;color:#fff;letter-spacing:0.08em;line-height:1;text-shadow:0 0 15px rgba(255,255,255,0.15);">${leftRoundWins} : ${rightRoundWins}</div>
+                            <div style="font-size:9px;color:#64748b;margin-top:4px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;">ROUND SCORE</div>
                         </div>
                         <div style="text-align:center;flex:1;">
-                            <div style="font-size:11px;font-weight:700;color:#f87171;margin-bottom:4px;">${step.rightTeam}팀${step.firstTeam==='right'?' ⭐선공':''}</div>
-                            <div style="font-size:24px;font-weight:900;color:#fff;">${esc(step.rightName)}</div>
-                            <div style="font-size:13px;color:#94a3b8;font-weight:700;margin-top:4px;">총 ${fmt(rightTotal)}</div>
+                            <div style="font-size:10px;font-weight:700;color:#f87171;margin-bottom:2px;">${step.rightTeam}팀${step.firstTeam==='right'?' ⭐선공':''}</div>
+                            <div style="font-size:22px;font-weight:900;color:#fff;line-height:1.2;">${esc(step.rightName)}</div>
+                            <div style="font-size:12px;color:#94a3b8;font-weight:700;margin-top:2px;">총 ${fmt(rightTotal)}</div>
                         </div>
                     </div>
-                    <div style="display:flex;gap:8px;width:100%;flex-wrap:wrap;justify-content:center;">${roundCards}</div>
-                    ${nowAuctionHtml}
+                    
+                    <div style="display:flex;gap:6px;width:100%;justify-content:center;">${roundCards}</div>
+                    
                     ${finalBanner}
-                    ${nextMatchHtml}
-                    <div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);width:100%;">${scheduleBar}</div>
+                    
+                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;border-top:1px solid rgba(255,255,255,0.06);padding-top:10px;margin-top:4px;font-size:11px;color:#94a3b8;">
+                        <div style="display:flex;align-items:center;gap:4px;">
+                            ${nowAuctionText}
+                        </div>
+                        <div style="display:flex;align-items:center;gap:4px;">
+                            ${nextMatchText}
+                        </div>
+                    </div>
                 </div>
             `;
         }
