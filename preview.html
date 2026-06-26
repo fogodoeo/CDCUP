@@ -694,6 +694,11 @@
                             <option value="4">4강 대진표 송출</option>
                         </select>
                     </div>
+                    <div class="switch-container" id="toggle-bracket-fontsize-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">🔤 폰트:</span>
+                        <input type="range" id="bracket-fontsize-slider" min="8" max="32" value="14" step="1" style="width:80px; accent-color:#3b82f6;" oninput="changeBracketFontSize(this.value)">
+                        <span id="bracket-fontsize-val" style="min-width:28px; font-weight:700; font-size:11px;">14px</span>
+                    </div>
                 </div>
                 <div class="actions-row">
                     <button class="btn-action reset" onclick="resetPositions()">기본 좌표 복구</button>
@@ -877,6 +882,7 @@
             document.getElementById('toggle-battle-ann-show-group').style.display = 'none';
             document.getElementById('toggle-bracket-scale-group').style.display = '';
             document.getElementById('toggle-bracket-mode-group').style.display = '';
+            document.getElementById('toggle-bracket-fontsize-group').style.display = '';
             document.getElementById('bracket-coords').style.display = '';
             document.getElementById('bracket-title-coords').style.display = 'none'; // Hidden per user request
             document.getElementById('battle-ann-coords').style.display = 'none';
@@ -1029,6 +1035,7 @@
                     elements.bracket.show = cfg.bracket_show !== undefined ? String(cfg.bracket_show) : '1';
                     elements.bracket.width = cfg.bracket_width || '100%';
                     elements.bracket.height = cfg.bracket_height || 'calc(100% - 120px)';
+                    elements.bracket.fontSize = cfg.bracket_font_size || '14';
                 }
                 if (elements.bracket_title) {
                     elements.bracket_title.top = cfg.bracket_title_top || '40px';
@@ -1066,6 +1073,11 @@
                 if (elements.bracket) document.getElementById('toggle-bracket-show').checked = elements.bracket.show === "1";
                 if (elements.bracket_title) document.getElementById('toggle-bracket-title-show').checked = elements.bracket_title.show === "1";
                 if (elements.battle_ann) document.getElementById('toggle-battle-ann-show').checked = elements.battle_ann.show === "1";
+                // Update font-size slider
+                if (elements.bracket && elements.bracket.fontSize) {
+                    document.getElementById('bracket-fontsize-slider').value = elements.bracket.fontSize;
+                    document.getElementById('bracket-fontsize-val').textContent = elements.bracket.fontSize + 'px';
+                }
 
                 updateLabelReadouts();
 
@@ -1169,6 +1181,13 @@
                 toast('송출 모드가 변경되었습니다: ' + (val === 'none' ? '비송출' : val + '강 송출'));
                 frame.contentWindow.location.reload();
             } catch(err) { toast('변경 실패: ' + err.message); }
+        }
+
+        function changeBracketFontSize(val) {
+            if (elements.bracket) {
+                elements.bracket.fontSize = String(val);
+            }
+            document.getElementById('bracket-fontsize-val').textContent = val + 'px';
         }
 
         function applyVisualState(key) {
@@ -1409,12 +1428,13 @@
             let maxY = containerRect.height - el.offsetHeight;
 
             if (activeDragKey === 'bracket') {
-                // Allow the bracket to be dragged past the bottom boundary to overlay the ticker
-                maxY = containerRect.height;
+                // Allow the bracket to be dragged beyond all boundaries
+                x = Math.max(-el.offsetWidth * 0.8, Math.min(x, containerRect.width - el.offsetWidth * 0.2));
+                y = Math.max(-el.offsetHeight * 0.8, Math.min(y, containerRect.height));
+            } else {
+                x = Math.max(0, Math.min(x, maxX));
+                y = Math.max(0, Math.min(y, maxY));
             }
-
-            x = Math.max(0, Math.min(x, maxX));
-            y = Math.max(0, Math.min(y, maxY));
 
             // Dynamic boundary switching based on center point
             const centerX = x + el.offsetWidth / 2;
@@ -1550,6 +1570,7 @@
                     configMap['bracket_width'] = elements.bracket.width;
                     configMap['bracket_height'] = elements.bracket.height;
                     configMap['bracket_show'] = elements.bracket.show;
+                    configMap['bracket_font_size'] = elements.bracket.fontSize || '14';
                 }
                 if (elements.bracket_title) {
                     configMap['bracket_title_top'] = elements.bracket_title.top;

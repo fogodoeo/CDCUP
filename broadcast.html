@@ -771,8 +771,8 @@
             pointer-events: none;
         }
         #bracket-page-container.visible {
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
         }
         .bracket-tree-view {
             opacity: 0;
@@ -946,9 +946,6 @@
 
     <!-- 전체 대진표 전용 송출 컨테이너 -->
     <div id="bracket-page-container" style="width:100%; height:100%; background:transparent; color:#fff; position:absolute; top:0; left:0; z-index:10005; overflow:hidden; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
-        <div id="bracket-page-title" style="text-align:center; padding:40px 0 10px 0; font-size:36px; font-weight:900; letter-spacing:-0.03em; color:#fff; text-shadow:0 0 20px rgba(59,130,246,0.7);">
-            CRE WORLD CUP TOURNAMENT
-        </div>
         <!-- 전체 대진표 트리 (Full Bracket) -->
         <div id="bracket-page-tree-full" class="bracket-tree-view" style="display:flex; justify-content:center; align-items:center; gap:60px; padding:20px; box-sizing:border-box;"></div>
         
@@ -2513,6 +2510,7 @@
             const bLeft = map.bracket_left || '0px';
             const bWidth = map.bracket_width || '100%';
             const bHeight = map.bracket_height || (displayMode === 'live' ? '100%' : 'calc(100% - 120px)');
+            const bFontSize = map.bracket_font_size || '14';
 
             if (treeFull) {
                 treeFull.style.position = 'absolute';
@@ -2521,6 +2519,7 @@
                 treeFull.style.width = bWidth;
                 treeFull.style.height = bHeight;
                 treeFull.style.display = 'flex';
+                treeFull.style.fontSize = bFontSize + 'px';
             }
             if (treeLive) {
                 treeLive.style.position = 'absolute';
@@ -2529,12 +2528,7 @@
                 treeLive.style.width = bWidth;
                 treeLive.style.height = bHeight;
                 treeLive.style.display = 'flex';
-            }
-
-            // Apply bracket title (completely hidden as requested by user)
-            const titleEl = document.getElementById('bracket-page-title');
-            if (titleEl) {
-                titleEl.style.display = 'none';
+                treeLive.style.fontSize = bFontSize + 'px';
             }
 
             // Control the visibility of the entire bracket container (On/Off master toggle)
