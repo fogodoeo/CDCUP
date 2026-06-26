@@ -2354,13 +2354,15 @@
             if (!map) return;
             window.latestConfigMap = map;
             
+            const displayMode = map.bracket_display_mode || 'full';
+            
             // Apply bracket positioning & size
             const tree = document.getElementById('bracket-page-tree');
             if (tree) {
-                const bTop = map.bracket_top || '120px';
+                const bTop = (displayMode === 'live') ? '0px' : (map.bracket_top || '120px');
                 const bLeft = map.bracket_left || '0px';
                 const bWidth = map.bracket_width || '100%';
-                const bHeight = map.bracket_height || 'calc(100% - 120px)';
+                const bHeight = (displayMode === 'live') ? '100%' : (map.bracket_height || 'calc(100% - 120px)');
                 const bShow = map.bracket_show !== undefined ? String(map.bracket_show) : '1';
 
                 tree.style.position = 'absolute';
@@ -2379,26 +2381,30 @@
             // Apply bracket title positioning & size
             const titleEl = document.getElementById('bracket-page-title');
             if (titleEl) {
-                const titleTop = map.bracket_title_top || '40px';
-                const titleLeft = map.bracket_title_left || '25%';
-                const titleWidth = map.bracket_title_width || '50%';
-                const titleHeight = map.bracket_title_height || '10%';
-                const titleShow = map.bracket_title_show !== undefined ? String(map.bracket_title_show) : '1';
-
-                if (map.bracket_title_top || map.bracket_title_left) {
-                    titleEl.style.position = 'absolute';
-                    titleEl.style.top = titleTop;
-                    titleEl.style.left = titleLeft;
-                    titleEl.style.width = titleWidth;
-                    titleEl.style.height = titleHeight;
-                    titleEl.style.padding = '0';
-                    titleEl.style.margin = '0';
+                if (displayMode === 'live') {
+                    titleEl.style.display = 'none';
                 } else {
-                    titleEl.style.position = 'static';
-                    titleEl.style.padding = '40px 0 10px 0';
-                    titleEl.style.width = '100%';
+                    const titleTop = map.bracket_title_top || '40px';
+                    const titleLeft = map.bracket_title_left || '25%';
+                    const titleWidth = map.bracket_title_width || '50%';
+                    const titleHeight = map.bracket_title_height || '10%';
+                    const titleShow = map.bracket_title_show !== undefined ? String(map.bracket_title_show) : '1';
+
+                    if (map.bracket_title_top || map.bracket_title_left) {
+                        titleEl.style.position = 'absolute';
+                        titleEl.style.top = titleTop;
+                        titleEl.style.left = titleLeft;
+                        titleEl.style.width = titleWidth;
+                        titleEl.style.height = titleHeight;
+                        titleEl.style.padding = '0';
+                        titleEl.style.margin = '0';
+                    } else {
+                        titleEl.style.position = 'static';
+                        titleEl.style.padding = '40px 0 10px 0';
+                        titleEl.style.width = '100%';
+                    }
+                    titleEl.style.display = titleShow === '0' ? 'none' : 'block';
                 }
-                titleEl.style.display = titleShow === '0' ? 'none' : 'block';
             }
 
             const active = map.active_tournament || 'none';
@@ -2422,8 +2428,6 @@
             let bracket = { matches: {} };
             try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
 
-            const displayMode = map.bracket_display_mode || 'full';
-            
             if (displayMode === 'live') {
                 renderBracketLiveView(parseInt(active), bracket, map);
             } else {
@@ -2745,15 +2749,15 @@
                 const isShowingDown = window._activeShowdown && window._activeShowdown.key === showdownKey;
 
                 if (rd.isCurrent && !rd.bothDone) {
-                    bg = 'rgba(59,130,246,0.18)'; border = 'rgba(59,130,246,0.6)';
-                    glow = 'box-shadow:0 0 12px rgba(59,130,246,0.3);';
+                    bg = 'rgba(59,130,246,0.22)'; border = 'rgba(59,130,246,0.7)';
+                    glow = 'box-shadow:0 0 16px rgba(59,130,246,0.4);';
                 } else if (isChampRound && rd.isCurrent) {
-                    bg = 'rgba(245,158,11,0.2)'; border = 'rgba(245,158,11,0.5)';
-                    glow = 'box-shadow:0 0 15px rgba(245,158,11,0.3);';
+                    bg = 'rgba(245,158,11,0.25)'; border = 'rgba(245,158,11,0.6)';
+                    glow = 'box-shadow:0 0 20px rgba(245,158,11,0.4);';
                 } else if (rd.bothDone && !isShowingDown) {
-                    bg = 'rgba(255,255,255,0.03)'; border = 'rgba(255,255,255,0.08)';
+                    bg = 'rgba(255,255,255,0.04)'; border = 'rgba(255,255,255,0.1)';
                 } else {
-                    bg = 'rgba(255,255,255,0.01)'; border = 'rgba(255,255,255,0.04)';
+                    bg = 'rgba(255,255,255,0.02)'; border = 'rgba(255,255,255,0.05)';
                 }
 
                 let leftC = '#fff', rightC = '#fff';
@@ -2767,11 +2771,11 @@
                 const leftVal = isShowingDown ? '?' : ((rd.bothDone || rd.lSold) ? fmtCompact(rd.lp) : '-');
                 const rightVal = isShowingDown ? '?' : ((rd.bothDone || rd.rSold) ? fmtCompact(rd.rp) : '-');
 
-                return `<div style="background:${bg};border:1.5px solid ${border};border-radius:10px;padding:10px 12px;flex:1;text-align:center;${glow}">
-                    <div style="font-size:11px;font-weight:800;color:${isChampRound?'#f59e0b':'#94a3b8'};margin-bottom:4px;letter-spacing:0.05em;">${label}</div>
-                    <div style="display:flex;justify-content:center;align-items:center;gap:6px;font-size:13px;font-weight:800;">
+                return `<div style="background:${bg};border:1.5px solid ${border};border-radius:12px;padding:12px 16px;flex:1;text-align:center;${glow}">
+                    <div style="font-size:13px;font-weight:800;color:${isChampRound?'#f59e0b':'#94a3b8'};margin-bottom:6px;letter-spacing:0.05em;">${label}</div>
+                    <div style="display:flex;justify-content:center;align-items:center;gap:8px;font-size:16px;font-weight:800;">
                         <span style="color:${leftC};">${leftVal}</span>
-                        <span style="color:#475569;font-size:10px;">:</span>
+                        <span style="color:#475569;font-size:12px;">:</span>
                         <span style="color:${rightC};">${rightVal}</span>
                     </div>
                 </div>`;
@@ -2797,25 +2801,42 @@
             let nowAuctionText = '';
             if (curRd && !curRd.bothDone) {
                 if (curRd.lSold && !curRd.rSold) {
-                    nowAuctionText = `<span style="display:inline-block;width:6px;height:6px;background:#ef4444;border-radius:50%;margin-right:6px;box-shadow:0 0 8px #ef4444;"></span><span style="font-weight:700;color:#60a5fa;margin-right:4px;">경매중:</span><span style="color:#fff;">${curRd.rightItemName} (${step.rightTeam}팀)</span>`;
+                    nowAuctionText = `<span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-right:6px;box-shadow:0 0 10px #ef4444;"></span><span style="font-weight:800;color:#60a5fa;margin-right:6px;">경매중:</span><span style="color:#fff;font-weight:800;">${curRd.rightItemName} (${step.rightTeam}팀)</span>`;
                 } else if (!curRd.lSold && curRd.rSold) {
-                    nowAuctionText = `<span style="display:inline-block;width:6px;height:6px;background:#ef4444;border-radius:50%;margin-right:6px;box-shadow:0 0 8px #ef4444;"></span><span style="font-weight:700;color:#60a5fa;margin-right:4px;">경매중:</span><span style="color:#fff;">${curRd.leftItemName} (${step.leftTeam}팀)</span>`;
+                    nowAuctionText = `<span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-right:6px;box-shadow:0 0 10px #ef4444;"></span><span style="font-weight:800;color:#60a5fa;margin-right:6px;">경매중:</span><span style="color:#fff;font-weight:800;">${curRd.leftItemName} (${step.leftTeam}팀)</span>`;
                 } else {
-                    nowAuctionText = `<span style="display:inline-block;width:6px;height:6px;background:#3b82f6;border-radius:50%;margin-right:6px;box-shadow:0 0 8px #3b82f6;"></span><span style="font-weight:700;color:#3b82f6;margin-right:4px;">대기중:</span><span style="color:#fff;opacity:0.8;">${curRd.leftItemName} vs ${curRd.rightItemName}</span>`;
+                    nowAuctionText = `<span style="display:inline-block;width:8px;height:8px;background:#3b82f6;border-radius:50%;margin-right:6px;box-shadow:0 0 10px #3b82f6;"></span><span style="font-weight:800;color:#3b82f6;margin-right:6px;">대기중:</span><span style="color:#fff;opacity:0.9;font-weight:800;">${curRd.leftItemName} vs ${curRd.rightItemName}</span>`;
                 }
             } else {
-                nowAuctionText = `<span style="display:inline-block;width:6px;height:6px;background:#10b981;border-radius:50%;margin-right:6px;"></span><span style="font-weight:700;color:#10b981;">라운드 종료</span>`;
+                nowAuctionText = `<span style="display:inline-block;width:8px;height:8px;background:#10b981;border-radius:50%;margin-right:6px;"></span><span style="font-weight:850;color:#10b981;">라운드 종료</span>`;
             }
 
-            // 다음 경기 안내 텍스트
-            let nextMatchText = '';
+            // 다음 경기 안내 섹션 (아예섹션을 떼서 좀더 사이즈 키워서 잘보이게)
+            let nextMatchSectionHtml = '';
             const nextIdx = stepIdx + 1;
             if (nextIdx < schedule.length && !isLastRoundDone) {
                 const ns = schedule[nextIdx];
-                const nsLabel = ns.isLastRound ? '대장전' : ns.round + 'R';
-                nextMatchText = `<span style="font-weight:800;color:#94a3b8;margin-right:6px;">NEXT</span><span style="color:#fff;">${ns.group}조 ${nsLabel} (${ns.leftTeam} vs ${ns.rightTeam})</span>`;
+                const nsLabel = ns.isLastRound ? '대장전' : ns.round + '라운드';
+                nextMatchSectionHtml = `
+                    <div style="width:100%;padding:20px 32px;background:rgba(15,23,42,0.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(59,130,246,0.25);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                            <span style="background:#3b82f6;color:#fff;font-size:13px;font-weight:900;padding:5px 12px;border-radius:8px;letter-spacing:0.05em;text-shadow:none;">NEXT MATCH</span>
+                            <span style="font-size:22px;font-weight:850;color:#e2e8f0;letter-spacing:-0.01em;">${ns.group}조 ${nsLabel}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:20px;font-size:24px;font-weight:900;color:#fff;">
+                            <span style="color:#60a5fa;letter-spacing:-0.02em;">${ns.leftTeam}팀</span>
+                            <span style="color:#475569;font-size:18px;font-weight:800;">VS</span>
+                            <span style="color:#f87171;letter-spacing:-0.02em;">${ns.rightTeam}팀</span>
+                        </div>
+                    </div>
+                `;
             } else {
-                nextMatchText = `<span style="font-weight:800;color:#f59e0b;">최종 매치</span>`;
+                nextMatchSectionHtml = `
+                    <div style="width:100%;padding:20px 32px;background:rgba(15,23,42,0.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(245,158,11,0.25);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;gap:12px;box-sizing:border-box;">
+                        <span style="background:#f59e0b;color:#fff;font-size:13px;font-weight:900;padding:5px 12px;border-radius:8px;letter-spacing:0.05em;text-shadow:none;">NEXT MATCH</span>
+                        <span style="font-size:20px;font-weight:850;color:#f59e0b;letter-spacing:-0.01em;">마지막 매치가 진행 중입니다</span>
+                    </div>
+                `;
             }
 
             // 블라인드 처리: 전체 라운드가 모두 끝나기 전까지는 업체명 숨기고 알파벳 팀명으로만 노출
@@ -2824,17 +2845,17 @@
 
             const headerLeft = isLastRoundDone 
                 ? `${step.leftTeam}팀 (최종 공개)`
-                : (step.firstTeam === 'left' ? '<span style="color:#f59e0b;font-weight:900;font-size:11px;">선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>');
+                : (step.firstTeam === 'left' ? '<span style="color:#f59e0b;font-weight:900;font-size:14px;">선공</span>' : '<span style="color:#94a3b8;font-size:14px;opacity:0.6;">후공</span>');
             const headerRight = isLastRoundDone 
                 ? `${step.rightTeam}팀 (최종 공개)`
-                : (step.firstTeam === 'right' ? '<span style="color:#f59e0b;font-weight:900;font-size:11px;">선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;">후공</span>');
+                : (step.firstTeam === 'right' ? '<span style="color:#f59e0b;font-weight:900;font-size:14px;">선공</span>' : '<span style="color:#94a3b8;font-size:14px;opacity:0.6;">후공</span>');
 
             // 신규 낙찰/유찰 상단 알림 바 HTML
             let notificationOverlayHtml = '';
             if (window._activeNotification) {
                 const isSold = window._activeNotification.status === '낙찰';
                 notificationOverlayHtml = `
-                    <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:92%;background:rgba(9,15,29,0.95);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1.5px solid ${isSold ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.6)'};border-radius:12px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:20;">
+                    <div style="position:absolute;top:12px;left:50%;transform:translateX(-50%);width:92%;background:rgba(9,15,29,0.95);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1.5px solid ${isSold ? 'rgba(16,185,129,0.6)' : 'rgba(245,158,11,0.6)'};border-radius:18px;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:20;">
                         <span style="font-size:12px;font-weight:900;color:${isSold ? '#10b981' : '#f59e0b'};display:flex;align-items:center;gap:4px;">
                             ${isSold ? '낙찰 완료' : '유찰'}
                         </span>
@@ -2849,7 +2870,7 @@
             if (window._activeShowdown) {
                 const countText = window._activeShowdown.countdown > 0 ? window._activeShowdown.countdown : 'OPEN!';
                 showdownOverlayHtml = `
-                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(9,15,29,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;">
+                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(9,15,29,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:24px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;">
                         <div style="font-size:12px;font-weight:900;color:#3b82f6;letter-spacing:0.15em;margin-bottom:8px;text-transform:uppercase;">ROUND ${window._activeShowdown.round} FINISHED</div>
                         <div style="font-size:54px;font-weight:950;color:#fff;text-shadow:0 0 20px rgba(59,130,246,0.8);">${countText}</div>
                         <div style="font-size:12px;color:#94a3b8;margin-top:6px;font-weight:700;">라운드 결과를 공개합니다...</div>
@@ -2861,47 +2882,51 @@
             const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,0.7) 40%);' : '';
 
             tree.innerHTML = `
-                <div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:95%;max-width:780px;margin:0 auto;padding:24px 30px;background:rgba(15,23,42,0.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.5);gap:20px;${champGlow}">
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;width:100%;max-width:840px;margin:0 auto;box-sizing:border-box;">
                     
-                    <!-- 알림 토스트 배너 -->
-                    ${notificationOverlayHtml}
-                    
-                    <!-- 쇼다운 카운트다운 오버레이 -->
-                    ${showdownOverlayHtml}
+                    <!-- 점수판 카드 (타이틀 없애고 점수판만 남겨 폰트 사이즈 더 키우고) -->
+                    <div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;padding:32px 40px;background:rgba(15,23,42,0.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:24px;box-shadow:0 12px 40px rgba(0,0,0,0.6);gap:28px;box-sizing:border-box;${champGlow}">
+                        
+                        <!-- 알림 토스트 배너 -->
+                        ${notificationOverlayHtml}
+                        
+                        <!-- 쇼다운 카운트다운 오버레이 -->
+                        ${showdownOverlayHtml}
 
-                    ${isChamp ? '<div style="font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:-6px;">CHAMPION ROUND</div>' : ''}
-                    <div style="font-size:12px;font-weight:800;color:#94a3b8;letter-spacing:0.06em;">${step.group}조 ${step.round}라운드 진행 중</div>
-                    
-                    <div style="display:flex;align-items:center;justify-content:center;gap:20px;width:100%;">
-                        <div style="text-align:center;flex:1;">
-                            <div style="font-size:12px;font-weight:850;color:#60a5fa;margin-bottom:4px;letter-spacing:0.05em;">${headerLeft}</div>
-                            <div style="font-size:30px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${displayNameLeft}</div>
-                            <div style="font-size:15px;color:#94a3b8;font-weight:800;margin-top:6px;">총 <span style="color:#60a5fa;font-size:18px;font-weight:900;">${fmtCompact(leftTotal)}</span></div>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:32px;width:100%;">
+                            <div style="text-align:center;flex:1;">
+                                <div style="font-size:16px;font-weight:850;color:#60a5fa;margin-bottom:6px;letter-spacing:0.05em;">${headerLeft}</div>
+                                <div style="font-size:44px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${displayNameLeft}</div>
+                                <div style="font-size:20px;color:#94a3b8;font-weight:800;margin-top:8px;">총 <span style="color:#60a5fa;font-size:26px;font-weight:900;">${fmtCompact(leftTotal)}</span></div>
+                            </div>
+                            <div style="text-align:center;min-width:180px;background:rgba(255,255,255,0.03);border:1.5px solid rgba(255,255,255,0.06);border-radius:18px;padding:14px 0;box-shadow:inset 0 0 12px rgba(0,0,0,0.6);">
+                                <div style="font-size:72px;font-weight:950;color:#fff;letter-spacing:0.05em;line-height:1;text-shadow:0 0 20px rgba(255,255,255,0.3);">${leftRoundWins} : ${rightRoundWins}</div>
+                                <div style="font-size:14px;color:#64748b;margin-top:8px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;">ROUND SCORE</div>
+                            </div>
+                            <div style="text-align:center;flex:1;">
+                                <div style="font-size:16px;font-weight:850;color:#f87171;margin-bottom:6px;letter-spacing:0.05em;">${headerRight}</div>
+                                <div style="font-size:44px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${displayNameRight}</div>
+                                <div style="font-size:20px;color:#94a3b8;font-weight:800;margin-top:8px;">총 <span style="color:#f87171;font-size:26px;font-weight:900;">${fmtCompact(rightTotal)}</span></div>
+                            </div>
                         </div>
-                        <div style="text-align:center;min-width:130px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:10px 0;box-shadow:inset 0 0 10px rgba(0,0,0,0.5);">
-                            <div style="font-size:52px;font-weight:950;color:#fff;letter-spacing:0.05em;line-height:1;text-shadow:0 0 15px rgba(255,255,255,0.25);">${leftRoundWins} : ${rightRoundWins}</div>
-                            <div style="font-size:10px;color:#64748b;margin-top:6px;font-weight:900;letter-spacing:0.08em;text-transform:uppercase;">ROUND SCORE</div>
-                        </div>
-                        <div style="text-align:center;flex:1;">
-                            <div style="font-size:12px;font-weight:850;color:#f87171;margin-bottom:4px;letter-spacing:0.05em;">${headerRight}</div>
-                            <div style="font-size:30px;font-weight:900;color:#fff;line-height:1.1;letter-spacing:-0.02em;">${displayNameRight}</div>
-                            <div style="font-size:15px;color:#94a3b8;font-weight:800;margin-top:6px;">총 <span style="color:#f87171;font-size:18px;font-weight:900;">${fmtCompact(rightTotal)}</span></div>
-                        </div>
-                    </div>
-                    
-                    <div style="display:flex;gap:6px;width:100%;justify-content:center;">${roundCards}</div>
-                    
-                    ${finalBanner}
-                    
-                    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;border-top:1px solid rgba(255,255,255,0.08);padding-top:12px;margin-top:6px;font-size:12px;color:#94a3b8;font-weight:700;">
-                        <div style="display:flex;align-items:center;gap:4px;">
-                            ${nowAuctionText}
-                        </div>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                            ${nextMatchText}
+                        
+                        <div style="display:flex;gap:10px;width:100%;justify-content:center;">${roundCards}</div>
+                        
+                        ${finalBanner}
+                        
+                        <!-- 경매 진행 상태 바 -->
+                        <div style="display:flex;justify-content:center;align-items:center;width:100%;border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;margin-top:8px;font-size:15px;color:#cbd5e1;font-weight:700;">
+                            <div style="display:flex;align-items:center;gap:6px;justify-content:center;">
+                                ${nowAuctionText}
+                            </div>
                         </div>
                     </div>
+
+                    <!-- 다음 경기 안내 섹션 (아예섹션을 떼서 좀더 사이즈 키워서 잘보이게) -->
+                    ${nextMatchSectionHtml}
+                    
                 </div>
+            `;
             `;
         }
 
