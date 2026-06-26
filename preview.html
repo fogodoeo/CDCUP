@@ -846,7 +846,6 @@
             document.getElementById('page-title').textContent = "🏆 대진용 (3P) 실시간 레이아웃 배치기";
             frame.src = "broadcast.html?page=3";
             // 3P: 레이아웃 미리보기 + 대진표 관리 대시보드 함께 표시
-            document.querySelector('.control-panel').style.display = 'none';
             const bgSel = document.getElementById('bracket-bg-selector-group');
             if (bgSel) bgSel.style.display = 'none';
             document.getElementById('tournament-dashboard').classList.add('active');
@@ -864,6 +863,24 @@
             document.getElementById('toggle-nametag2-group').style.display = '';
             document.getElementById('nametag1-coords').style.display = '';
             document.getElementById('nametag2-coords').style.display = '';
+        }
+
+        // PAGE3 전용 요소 표시
+        if (pageNum === '3') {
+            document.getElementById('draggable-bracket').style.display = '';
+            document.getElementById('draggable-bracket-title').style.display = '';
+            document.getElementById('draggable-battle-ann').style.display = '';
+            document.getElementById('toggle-bracket-show-group').style.display = '';
+            document.getElementById('toggle-bracket-title-show-group').style.display = '';
+            document.getElementById('toggle-battle-ann-show-group').style.display = '';
+            document.getElementById('toggle-bracket-scale-group').style.display = '';
+            document.getElementById('toggle-bracket-mode-group').style.display = '';
+            document.getElementById('bracket-coords').style.display = '';
+            document.getElementById('bracket-title-coords').style.display = '';
+            document.getElementById('battle-ann-coords').style.display = '';
+            // 2P 전용 좌표는 숨김
+            document.getElementById('banner-coords-group').style.display = 'none';
+            document.getElementById('ticker-coords-group').style.display = 'none';
         }
 
         // 페이지별 config 접두사 (PAGE2는 p2_, PAGE3는 p3_)
