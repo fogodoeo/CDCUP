@@ -961,6 +961,31 @@
         let page2PhotoConfigReady = false;
         const GRADE = { "1": "낮음", "2": "보통", "3": "양호", "4": "우수", "5": "최상" };
 
+        function getCleanCode(item) {
+            if (!item) return '';
+            const numStr = String(item.num || '').trim().toUpperCase();
+            if (numStr.match(/^[A-Z]\d+$/)) {
+                return numStr;
+            }
+            const nameUpper = (item.name || '').trim().toUpperCase();
+            const match = nameUpper.match(/^([A-Z]\d+)/);
+            return match ? match[1] : '';
+        }
+
+        function findItemByCode(items, code) {
+            if (!items || !code) return null;
+            const target = code.trim().toUpperCase();
+            return items.find(i => {
+                const numStr = String(i.num || '').trim().toUpperCase();
+                if (numStr === target) return true;
+                const nameUpper = (i.name || '').trim().toUpperCase();
+                const match = nameUpper.match(/^([A-Z]\d+)/);
+                if (match && match[1] === target) return true;
+                if (nameUpper === target) return true;
+                return false;
+            });
+        }
+
         // URL 파라미터 확인 후 host-mode 적용 (일반 웹)
         const urlParams = new URLSearchParams(window.location.search);
         const isHostMode = urlParams.get('mode') === 'host' || urlParams.get('page') === '1';
@@ -1947,11 +1972,9 @@
 
             // 개체명은 원래 명칭(예: A1) 그대로 출력하되, 토너먼트 진행 중(blind)일 때는 업체명 노출을 방지하기 위해 코드(예: C2)만 추출하여 출력
             let cleanInfoName = origName;
-            if (window.latestConfigMap && window.latestConfigMap.active_tournament && window.latestConfigMap.active_tournament !== 'none') {
-                const nameMatch = origName.trim().toUpperCase().match(/^([A-Z]\d+)/);
-                if (nameMatch) {
-                    cleanInfoName = nameMatch[1];
-                }
+            const codeFromItem = getCleanCode(item);
+            if (codeFromItem) {
+                cleanInfoName = codeFromItem;
             }
             document.getElementById("info-name").textContent = cleanInfoName;
             // 페이지2 상단 바에서 업체명 표시 제거
@@ -2570,8 +2593,8 @@
             for (let r = 1; r <= rpm; r++) {
                 const leftItemName = step.leftTeam + r;
                 const rightItemName = step.rightTeam + r;
-                const lItem = items.find(i => (i.name||'').trim().toUpperCase() === leftItemName);
-                const rItem = items.find(i => (i.name||'').trim().toUpperCase() === rightItemName);
+                const lItem = findItemByCode(items, leftItemName);
+                const rItem = findItemByCode(items, rightItemName);
                 
                 const lp = parseFloat(lItem?.sold_price || lItem?.soldPrice || 0);
                 const rp = parseFloat(rItem?.sold_price || rItem?.soldPrice || 0);
@@ -2606,8 +2629,8 @@
                 for (let r = 1; r <= rpm; r++) {
                     const lName = step.leftTeam + r;
                     const rName = step.rightTeam + r;
-                    const li = items.find(i => (i.name||'').trim().toUpperCase() === lName);
-                    const ri = items.find(i => (i.name||'').trim().toUpperCase() === rName);
+                    const li = findItemByCode(items, lName);
+                    const ri = findItemByCode(items, rName);
                     const ld = (li?.status === '완료' || li?.status === 'sold' || li?.status === '낙찰' || li?.status === '유찰');
                     const rd2 = (ri?.status === '완료' || ri?.status === 'sold' || ri?.status === '낙찰' || ri?.status === '유찰');
                     if (ld && rd2) {
@@ -2643,34 +2666,33 @@
                     if ((i.status === '낙찰' || i.status === '유찰') && window._lastSeenSold[i.row] !== i.status) {
                         window._lastSeenSold[i.row] = i.status;
                         
-                        const nameUpper = (i.name || '').trim().toUpperCase();
-                        const isCurrentLeft = nameUpper.startsWith(step.leftTeam);
-                        const isCurrentRight = nameUpper.startsWith(step.rightTeam);
-                        
-                        if (isCurrentLeft || isCurrentRight) {
-                            const nameMatch = nameUpper.match(/^([A-Z]\d+)/);
-                            const cleanName = nameMatch ? nameMatch[1] : nameUpper;
-
-                            window._activeNotification = {
-                                name: cleanName,
-                                status: i.status,
-                                price: i.sold_price || i.soldPrice || 0,
-                                winner: i.winner || '',
-                                timer: 6
-                            };
+                        const cleanCode = getCleanCode(i);
+                        if (cleanCode) {
+                            const isCurrentLeft = cleanCode.startsWith(step.leftTeam);
+                            const isCurrentRight = cleanCode.startsWith(step.rightTeam);
                             
-                            if (!window._notificationTimer) {
-                                window._notificationTimer = setInterval(() => {
-                                    if (window._activeNotification) {
-                                        window._activeNotification.timer--;
-                                        if (window._activeNotification.timer <= 0) {
-                                            window._activeNotification = null;
-                                            clearInterval(window._notificationTimer);
-                                            window._notificationTimer = null;
+                            if (isCurrentLeft || isCurrentRight) {
+                                window._activeNotification = {
+                                    name: cleanCode,
+                                    status: i.status,
+                                    price: i.sold_price || i.soldPrice || 0,
+                                    winner: i.winner || '',
+                                    timer: 6
+                                };
+                                
+                                if (!window._notificationTimer) {
+                                    window._notificationTimer = setInterval(() => {
+                                        if (window._activeNotification) {
+                                            window._activeNotification.timer--;
+                                            if (window._activeNotification.timer <= 0) {
+                                                window._activeNotification = null;
+                                                clearInterval(window._notificationTimer);
+                                                window._notificationTimer = null;
+                                            }
+                                            applyBracketPageMap(window.latestConfigMap);
                                         }
-                                        applyBracketPageMap(window.latestConfigMap);
-                                    }
-                                }, 1000);
+                                    }, 1000);
+                                }
                             }
                         }
                     }
@@ -2682,8 +2704,8 @@
             for (let r = 1; r <= rpm; r++) {
                 const leftItemName = step.leftTeam + r;
                 const rightItemName = step.rightTeam + r;
-                const lItem = items.find(i => (i.name||'').trim().toUpperCase() === leftItemName);
-                const rItem = items.find(i => (i.name||'').trim().toUpperCase() === rightItemName);
+                const lItem = findItemByCode(items, leftItemName);
+                const rItem = findItemByCode(items, rightItemName);
                 const lSold = (lItem?.status === '완료' || lItem?.status === 'sold' || lItem?.status === '낙찰' || lItem?.status === '유찰');
                 const rSold = (rItem?.status === '완료' || rItem?.status === 'sold' || rItem?.status === '낙찰' || rItem?.status === '유찰');
                 const bothDone = lSold && rSold;
@@ -2723,8 +2745,8 @@
                     const st = schedule[s];
                     const lName = st.leftTeam + st.round;
                     const rName = st.rightTeam + st.round;
-                    const li = items.find(i => (i.name||'').trim().toUpperCase() === lName);
-                    const ri = items.find(i => (i.name||'').trim().toUpperCase() === rName);
+                    const li = findItemByCode(items, lName);
+                    const ri = findItemByCode(items, rName);
                     const ld = (li?.status === '완료' || li?.status === 'sold' || li?.status === '낙찰' || li?.status === '유찰');
                     const rd2 = (ri?.status === '완료' || ri?.status === 'sold' || ri?.status === '낙찰' || ri?.status === '유찰');
                     if (ld && rd2) {
@@ -2773,9 +2795,7 @@
             const curRd = roundData.find(rd => rd.isCurrent);
             let nowAuctionText = '';
             if (activeItem) {
-                const activeNameRaw = (activeItem.name || '').trim().toUpperCase();
-                const nameMatch = activeNameRaw.match(/^([A-Z]\d+)/);
-                const activeName = nameMatch ? nameMatch[1] : activeNameRaw;
+                const activeName = getCleanCode(activeItem) || (activeItem.name || '').trim().toUpperCase();
                 const activeLetter = activeName.charAt(0);
                 nowAuctionText = `<span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-right:6px;box-shadow:0 0 10px #ef4444;"></span><span style="font-weight:800;color:#60a5fa;margin-right:6px;">경매중:</span><span style="color:#fff;font-weight:800;">${activeName} (${activeLetter}팀)</span>`;
             } else {
@@ -2974,8 +2994,8 @@
                     return;
                 }
                 
-                const itemName = (activeItem.name || '').trim().toUpperCase(); // 예: 'A1', 'B2'
-                if (itemName.length < 2) return;
+                const itemName = getCleanCode(activeItem) || (activeItem.name || '').trim().toUpperCase(); // 예: 'A1', 'B2'
+                if (!itemName || itemName.length < 2) return;
                 
                 const teamLetter = itemName.charAt(0); // 'A', 'B' 등
                 const roundNum = parseInt(itemName.substring(1), 10); // 1, 2, 3, 4
@@ -3025,8 +3045,8 @@
                 const leftItems = {};
                 const rightItems = {};
                 for (let r = 1; r <= 4; r++) {
-                    leftItems[r] = items.find(i => (i.name || '').trim().toUpperCase() === (leftLetter + r));
-                    rightItems[r] = items.find(i => (i.name || '').trim().toUpperCase() === (rightLetter + r));
+                    leftItems[r] = findItemByCode(items, leftLetter + r);
+                    rightItems[r] = findItemByCode(items, rightLetter + r);
                 }
                 
                 // 5. 각 라운드별 점수 연산
