@@ -2641,8 +2641,11 @@
                         const isCurrentRight = nameUpper.startsWith(step.rightTeam);
                         
                         if (isCurrentLeft || isCurrentRight) {
+                            const nameMatch = nameUpper.match(/^([A-Z]\d+)/);
+                            const cleanName = nameMatch ? nameMatch[1] : nameUpper;
+
                             window._activeNotification = {
-                                name: i.name,
+                                name: cleanName,
                                 status: i.status,
                                 price: i.sold_price || i.soldPrice || 0,
                                 winner: i.winner || '',
@@ -2763,7 +2766,9 @@
             const curRd = roundData.find(rd => rd.isCurrent);
             let nowAuctionText = '';
             if (activeItem) {
-                const activeName = (activeItem.name || '').trim().toUpperCase();
+                const activeNameRaw = (activeItem.name || '').trim().toUpperCase();
+                const nameMatch = activeNameRaw.match(/^([A-Z]\d+)/);
+                const activeName = nameMatch ? nameMatch[1] : activeNameRaw;
                 const activeLetter = activeName.charAt(0);
                 nowAuctionText = `<span style="display:inline-block;width:8px;height:8px;background:#ef4444;border-radius:50%;margin-right:6px;box-shadow:0 0 10px #ef4444;"></span><span style="font-weight:800;color:#60a5fa;margin-right:6px;">경매중:</span><span style="color:#fff;font-weight:800;">${activeName} (${activeLetter}팀)</span>`;
             } else {
