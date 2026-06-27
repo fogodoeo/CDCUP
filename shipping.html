@@ -2380,7 +2380,7 @@
             }
 
             if (company === '파르게') {
-                const isJeju = region.includes('제주');
+                const isJeju = (region || '').includes('제주');
                 return itemCount <= 1 ? baseCost : baseCost + (itemCount - 1) * (isJeju ? 4000 : 7000);
             } else if (company === '랩팡') {
                 return itemCount <= 1 ? baseCost :
