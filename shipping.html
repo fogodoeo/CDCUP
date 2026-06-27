@@ -1056,15 +1056,18 @@
                     if (dodosiRes && dodosiRes.success && dodosiRes.data && dodosiRes.data.length > 0) {
                         SHIPPING_DATA['도도시'].regions = {};
                         dodosiRes.data.forEach(item => {
-                            const regName = item.region || '기타';
+                            const regName = item.route || '기타';
                             if (!SHIPPING_DATA['도도시'].regions[regName]) {
                                 SHIPPING_DATA['도도시'].regions[regName] = [];
                             }
                             let label = item.shop;
-                            if (item.sub) label = `${item.sub} [${item.shop}]`;
+                            if (item.region) {
+                                label = `${item.region}${item.sub ? ' ' + item.sub : ''} - ${item.shop}`;
+                            }
                             SHIPPING_DATA['도도시'].regions[regName].push({
                                 shop: label,
-                                cost: item.price || 5000
+                                cost: item.price || 16000,
+                                day: item.day || ''
                             });
                         });
                         console.log('[Dodosi] Successfully loaded dynamic dodosi prices:', Object.keys(SHIPPING_DATA['도도시'].regions).length, 'regions');
