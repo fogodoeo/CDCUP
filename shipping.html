@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CDCUP - 낙찰 배송 정보 등록</title>
+    <title>CDCUP - 배송/수령 정보 등록</title>
     <script src="supabase-bridge.js"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <style>
@@ -32,19 +32,25 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            padding: 24px;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .container {
             width: 100%;
+            max-width: 680px;
+        }
+
+        /* 어드민 모드일 때는 가로를 넓게 설정 */
+        body.admin-mode .container {
             max-width: 1200px;
-            margin: 0 auto;
         }
 
         .header {
+            text-align: center;
             margin-bottom: 24px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 16px;
         }
 
         .header h1 {
@@ -66,14 +72,15 @@
             padding: 20px;
             box-shadow: var(--shadow);
             margin-bottom: 20px;
+            width: 100%;
         }
 
-        /* 컨트롤 영역 */
         .control-row {
             display: flex;
             align-items: center;
             gap: 12px;
             margin-bottom: 16px;
+            flex-wrap: wrap;
         }
 
         .control-group {
@@ -96,6 +103,7 @@
             outline: none;
             font-family: inherit;
             background: white;
+            width: 100%;
         }
 
         .input-text:focus {
@@ -118,7 +126,7 @@
         }
 
         .btn {
-            padding: 8px 16px;
+            padding: 10px 16px;
             border: none;
             border-radius: 6px;
             background: var(--accent);
@@ -129,6 +137,8 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            justify-content: center;
+            transition: background 0.2s;
         }
 
         .btn:hover {
@@ -144,7 +154,13 @@
             background: #CBD5E1;
         }
 
-        /* 그리드 테이블 */
+        .btn-full {
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        /* 테이블 구조 */
         .table-wrap {
             overflow-x: auto;
             border: 1px solid var(--border);
@@ -178,7 +194,6 @@
             background: #F8FAFC;
         }
 
-        /* 합배송 정보 텍스트 */
         .combined-shipping-badge {
             font-size: 11px;
             color: #D97706;
@@ -190,12 +205,6 @@
             margin-top: 4px;
         }
 
-        /* 가격 표시 */
-        .price-sold {
-            font-weight: 700;
-            color: var(--text-title);
-        }
-
         .price-shipping {
             font-weight: 700;
             color: var(--accent);
@@ -205,6 +214,60 @@
             font-weight: 800;
             color: #E11D48;
             font-size: 14px;
+        }
+
+        /* 소비자/낙찰자 개별 정보 폼 */
+        .buyer-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: #F8FAFC;
+        }
+
+        .buyer-shipping-options {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-top: 8px;
+            margin-bottom: 12px;
+        }
+
+        .buyer-option-btn {
+            padding: 12px 6px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            background: white;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .buyer-option-btn.active {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .buyer-form-detail {
+            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .buyer-form-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
         }
 
         /* 토스트 */
@@ -229,7 +292,6 @@
             opacity: 1;
         }
 
-        /* 로딩 */
         .loading-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -263,56 +325,149 @@
 <body>
 
     <div class="container">
-        <div class="header">
-            <h1>낙찰자 배송/수령 관리</h1>
-            <p>출품 업체별 낙찰 개체 확인, 배송 옵션 일괄 계산 및 안내 금액 조회 페이지입니다.</p>
-        </div>
+        
+        <!-- 어드민 전용 레이아웃 -->
+        <div id="admin-view" style="display: none; width: 100%;">
+            <div class="header">
+                <h1>낙찰자 배송/수령 관리 (관리자)</h1>
+                <p>출품 업체별 낙찰 개체 확인, 배송 옵션 일괄 계산 및 정산 테이블입니다.</p>
+            </div>
 
-        <!-- 1단계: 업체 필터 바 -->
-        <div class="card" style="padding: 14px 20px;">
-            <div class="control-row">
-                <div class="control-group" style="width: 160px;">
-                    <label>출품 업체 필터</label>
-                    <input type="text" id="company-filter-input" class="input-text" placeholder="업체명 검색..." oninput="onCompanyFilterInput()">
+            <div class="card" style="padding: 14px 20px;">
+                <div class="control-row">
+                    <div class="control-group" style="width: 160px;">
+                        <label>출품 업체 필터</label>
+                        <input type="text" id="company-filter-input" class="input-text" placeholder="업체명 검색..." oninput="onCompanyFilterInput()">
+                    </div>
+                    <div class="control-group" style="width: 200px;">
+                        <label>출품 업체 선택</label>
+                        <select id="company-select" class="select-custom" onchange="onCompanySelectChange()">
+                            <!-- 동적 로딩 -->
+                        </select>
+                    </div>
+                    <button class="btn btn-secondary" onclick="clearCompanyFilter()" style="margin-top: 16px;">필터 초기화</button>
+                    
+                    <button class="btn" onclick="submitAllShippingInfo()" style="margin-top: 16px; margin-left: auto;">
+                        💾 설정 일괄 저장
+                    </button>
                 </div>
-                <div class="control-group" style="width: 200px;">
-                    <label>출품 업체 선택</label>
-                    <select id="company-select" class="select-custom" onchange="onCompanySelectChange()">
-                        <!-- 동적 로딩 -->
-                    </select>
+            </div>
+
+            <div class="card">
+                <div class="table-wrap">
+                    <table class="grid-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">개체명</th>
+                                <th style="width: 100px;">낙찰자</th>
+                                <th style="width: 110px;">연락처</th>
+                                <th style="width: 120px;">배송 방식</th>
+                                <th style="width: 160px;">지역 거점샵 / 입력</th>
+                                <th style="width: 90px;">개별 배송비</th>
+                                <th style="width: 130px;">최종 안내 금액</th>
+                                <th>메모 / 상세주소</th>
+                            </tr>
+                        </thead>
+                        <tbody id="grid-tbody">
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-secondary);">출품 업체를 선택해 주세요.</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <button class="btn btn-secondary" onclick="clearCompanyFilter()" style="margin-top: 16px;">필터 초기화</button>
-                
-                <button class="btn" onclick="submitAllShippingInfo()" style="margin-top: 16px; margin-left: auto;">
-                    💾 설정 일괄 저장
-                </button>
             </div>
         </div>
 
-        <!-- 2단계: 개체별 배송 관리 그리드 테이블 -->
-        <div class="card">
-            <div class="table-wrap">
-                <table class="grid-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 120px;">개체명</th>
-                            <th style="width: 100px;">낙찰자</th>
-                            <th style="width: 110px;">연락처</th>
-                            <th style="width: 120px;">배송 방식</th>
-                            <th style="width: 160px;">지역 거점샵 / 입력</th>
-                            <th style="width: 90px;">개별 배송비</th>
-                            <th style="width: 130px;">최종 안내 금액</th>
-                            <th>메모 / 상세주소</th>
-                        </tr>
-                    </thead>
-                    <tbody id="grid-tbody">
-                        <tr>
-                            <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-secondary);">출품 업체를 선택해 주세요.</td>
-                        </tr>
-                    </tbody>
-                </table>
+        <!-- 소비자/낙찰자 직접 입력 레이아웃 -->
+        <div id="buyer-view" style="display: none; width: 100%;">
+            <div class="header">
+                <h1>낙찰 배송 정보 등록</h1>
+                <p>성함과 연락처를 입력해 배송지 또는 수령 방식을 직접 신청해 주세요.</p>
+            </div>
+
+            <!-- 본인 조회 카드 -->
+            <div class="card" id="buyer-search-card">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="control-group">
+                        <label>낙찰자 성함</label>
+                        <input type="text" id="buyer-name-input" class="input-text" placeholder="성함 입력" onkeyup="if(event.key==='Enter') searchBuyerWins()">
+                    </div>
+                    <div class="control-group">
+                        <label>연락처 뒷자리 (또는 전체)</label>
+                        <input type="text" id="buyer-phone-input" class="input-text" placeholder="연락처 입력" onkeyup="if(event.key==='Enter') searchBuyerWins()">
+                    </div>
+                    <button class="btn btn-full" onclick="searchBuyerWins()">조회하기</button>
+                </div>
+            </div>
+
+            <!-- 결과 및 입력 카드 -->
+            <div class="card" id="buyer-form-card" style="display: none;">
+                <div style="font-size: 15px; font-weight: 800; color: var(--text-title); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                    <span id="buyer-display-title">김철수</span>님의 낙찰 목록
+                </div>
+
+                <div id="buyer-items-container" style="margin-bottom: 16px;">
+                    <!-- 동적 렌더링 -->
+                </div>
+
+                <div style="font-size: 13px; font-weight: 700; color: var(--text-title); margin-bottom: 6px;">수령 방법 선택</div>
+                <div class="buyer-shipping-options">
+                    <button type="button" class="buyer-option-btn" id="b-opt-pickup" onclick="setBuyerShippingType('픽업')">픽업</button>
+                    <button type="button" class="buyer-option-btn" id="b-opt-dodosi" onclick="setBuyerShippingType('도도시')">도도시</button>
+                    <button type="button" class="buyer-option-btn" id="b-opt-parge" onclick="setBuyerShippingType('파르게')">파르게</button>
+                    <button type="button" class="buyer-option-btn" id="b-opt-wrapang" onclick="setBuyerShippingType('랩팡')">랩팡</button>
+                    <button type="button" class="buyer-option-btn" id="b-opt-custom" onclick="setBuyerShippingType('기타')">기타</button>
+                </div>
+
+                <!-- 배송 세부 정보 -->
+                <div class="buyer-form-detail" id="buyer-detail-box" style="display: none;">
+                    <div class="control-group" id="b-custom-company-group" style="display: none; margin-bottom: 8px;">
+                        <label>배송업체명 직접 기입</label>
+                        <input type="text" class="input-text" id="buyer-custom-company" placeholder="배송업체 기입">
+                    </div>
+
+                    <div class="buyer-form-columns" id="b-hub-select-group">
+                        <div class="control-group">
+                            <label>지역</label>
+                            <select class="select-custom" id="buyer-region-select" onchange="onBuyerRegionChange()"></select>
+                        </div>
+                        <div class="control-group">
+                            <label>거점샵</label>
+                            <select class="select-custom" id="buyer-hub-select" onchange="onBuyerHubChange()"></select>
+                        </div>
+                    </div>
+
+                    <div class="control-group" id="b-custom-region-group" style="display: none; margin-top: 8px;">
+                        <label>주소 / 거점지 직접 기입</label>
+                        <input type="text" class="input-text" id="buyer-custom-region" placeholder="상세 주소 또는 희망 위치 입력">
+                    </div>
+                </div>
+
+                <div class="control-group" style="margin-bottom: 16px;">
+                    <label>메모 또는 기타 요청사항</label>
+                    <input type="text" class="input-text" id="buyer-memo-input" placeholder="상세 주소 또는 요청사항이 있으시면 적어주세요.">
+                </div>
+
+                <!-- 합산 금액 정보 -->
+                <div style="padding: 16px; background: #F1F5F9; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: 500;">
+                        <span>총 낙찰 금액</span>
+                        <span id="b-summary-bid" style="font-weight: 700;">0만</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: 500;">
+                        <span>배송비</span>
+                        <span id="b-summary-ship" style="font-weight: 700;">0원</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px dashed #CBD5E1; font-size: 15px; font-weight: 800; color: var(--text-title);">
+                        <span>최종 입금액</span>
+                        <span id="b-summary-total" style="color: #E11D48;">0원</span>
+                    </div>
+                </div>
+
+                <button class="btn btn-full" onclick="submitBuyerShipping()">배송 정보 등록 완료</button>
             </div>
         </div>
+
     </div>
 
     <!-- 토스트 & 로딩 -->
@@ -384,7 +539,18 @@
 
         let allItems = [];
         let uniqueSellerCompanies = [];
-        let winnerStateMap = {}; // 낙찰자별 배송 설정 상태 맵
+        let winnerStateMap = {}; 
+        let isAdminMode = false;
+
+        // URL 파라미터 감지 (?admin=1)
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('admin') === '1') {
+            isAdminMode = true;
+            document.body.classList.add('admin-mode');
+            document.getElementById('admin-view').style.display = 'block';
+        } else {
+            document.getElementById('buyer-view').style.display = 'block';
+        }
 
         function showToast(msg, isError = false) {
             const t = document.getElementById('toast');
@@ -402,17 +568,19 @@
             else overlay.classList.remove('active');
         }
 
+        // 초기화 로딩
         window.addEventListener('DOMContentLoaded', async () => {
             showLoading(true, '데이터를 불러오는 중...');
             try {
                 const items = await getItems();
                 allItems = (items || []).filter(it => it.status && it.status.indexOf('낙찰') >= 0);
 
-                const companies = allItems.map(it => (it.company || '').trim()).filter(Boolean);
-                uniqueSellerCompanies = [...new Set(companies)].sort();
-
-                populateCompanySelect();
-                renderGrid();
+                if (isAdminMode) {
+                    const companies = allItems.map(it => (it.company || '').trim()).filter(Boolean);
+                    uniqueSellerCompanies = [...new Set(companies)].sort();
+                    populateCompanySelect();
+                    renderGrid();
+                }
             } catch (err) {
                 console.error(err);
                 showToast('로딩 실패: ' + err.message, true);
@@ -421,15 +589,16 @@
             }
         });
 
+        // ════════════════════════════════════════════
+        //  어드민 관리자 모드 로직 (admin-view)
+        // ════════════════════════════════════════════
         function populateCompanySelect(filteredList = null) {
             const select = document.getElementById('company-select');
             const list = filteredList || uniqueSellerCompanies;
-
             if (list.length === 0) {
                 select.innerHTML = '<option value="">출품 업체 없음</option>';
                 return;
             }
-
             select.innerHTML = list.map(c => `<option value="${c}">${c}</option>`).join('');
             select.value = list[0] || '';
         }
@@ -441,7 +610,6 @@
                 renderGrid();
                 return;
             }
-
             const filtered = uniqueSellerCompanies.filter(c => c.toLowerCase().indexOf(q) >= 0);
             populateCompanySelect(filtered);
             renderGrid();
@@ -457,9 +625,6 @@
             renderGrid();
         }
 
-        // ════════════════════════════════════════════
-        //  그리드 테이블 렌더링 & 실시간 계산
-        // ════════════════════════════════════════════
         function renderGrid() {
             const selectedCo = document.getElementById('company-select').value;
             const tbody = document.getElementById('grid-tbody');
@@ -471,14 +636,13 @@
                 return;
             }
 
-            // 1. 해당 출품 업체의 낙찰 데이터 선별
             const selfItems = allItems.filter(it => (it.company || '').trim() === selectedCo);
             if (selfItems.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary);">'${selectedCo}'의 낙찰 정보가 없습니다.</td></tr>`;
                 return;
             }
 
-            // 2. 낙찰자별 그룹핑
+            // 낙찰자별 그룹핑
             const winnerGroups = {};
             selfItems.forEach(it => {
                 const winnerName = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
@@ -488,20 +652,14 @@
                 winnerGroups[winnerName].push(it);
             });
 
-            // 3. 각 낙찰자 그룹에 대한 배송 상태 분석 및 행 렌더링
             Object.keys(winnerGroups).forEach(winnerName => {
                 const groupItems = winnerGroups[winnerName];
-
-                // 낙찰자가 가져간 전체 개체 (타사 출품 포함)
                 const winnerAllItems = allItems.filter(it => {
                     const clean = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
                     return clean === winnerName;
                 });
 
-                // 이 낙찰자가 낙찰받은 고유 출품사 목록
                 const sellerCos = [...new Set(winnerAllItems.map(it => (it.company || '').trim()))];
-                
-                // 첫 자사 개체 기준 배송 기본 설정 로딩
                 const firstSelfItem = groupItems[0];
                 const currentType = firstSelfItem.shipping_type || '직접수령';
                 const currentCompany = firstSelfItem.shipping_company || '도도시';
@@ -519,7 +677,6 @@
                     phone: firstSelfItem.winner_phone || ''
                 };
 
-                // 개별 개체 행 추가
                 groupItems.forEach(it => {
                     const tr = document.createElement('tr');
                     tr.id = `row-${it.row}`;
@@ -567,7 +724,7 @@
                     populateRowInputs(it.row, winnerName, companyKey, currentRegion, currentHub);
                 });
 
-                // 합계 행 추가 (낙찰자별 합배송/묶음 정산 금액 표시)
+                // 합계 행
                 const subtotalTr = document.createElement('tr');
                 subtotalTr.style.background = '#EEF2F6';
                 subtotalTr.style.borderTop = '1.5px solid var(--border)';
@@ -601,13 +758,9 @@
             const customReg = document.getElementById(`custom-region-${rowId}`);
 
             if (!selectRegion || !selectHub) return;
-
-            if (companyKey === '픽업') {
-                return;
-            }
+            if (companyKey === '픽업') return;
 
             if (companyKey !== '도도시' && companyKey !== '파르게' && companyKey !== '랩팡') {
-                // 기타 직접입력
                 customComp.style.display = 'inline-block';
                 selectRegion.style.display = 'none';
                 selectHub.style.display = 'none';
@@ -623,14 +776,12 @@
             const companyData = SHIPPING_DATA[companyKey];
             if (!companyData) return;
 
-            // 지역 채우기
             const regions = Object.keys(companyData.regions);
             selectRegion.innerHTML = regions.map(r => `<option value="${r}">${r}</option>`).join('');
             if (selectedRegion && companyData.regions[selectedRegion]) {
                 selectRegion.value = selectedRegion;
             }
 
-            // 거점샵 채우기
             populateRowHubs(rowId, winnerName, companyKey, selectRegion.value, selectedHub);
         }
 
@@ -645,18 +796,14 @@
                 const matched = hubs.find(h => h.shop === selectedHub);
                 if (matched) selectHub.value = selectedHub;
             }
-
             winnerStateMap[winnerName].shipping_hub = selectHub.value;
         }
 
-        // 배송사 변경시 낙찰자가 보유한 자사의 모든 개체 행 설정을 동기화
         function changeRowType(rowId, winnerName) {
             const val = document.getElementById(`type-${rowId}`).value;
             const state = winnerStateMap[winnerName];
-
             const selfItemsOfWinner = getSelfItemsOfWinner(winnerName);
 
-            // 동일 낙찰자 행 일괄 적용
             selfItemsOfWinner.forEach(it => {
                 const typeSelect = document.getElementById(`type-${it.row}`);
                 if (typeSelect) typeSelect.value = val;
@@ -673,7 +820,6 @@
                 }
             });
 
-            // 내부 상태 변경
             if (val === '픽업') {
                 state.shipping_type = '직접수령';
                 state.shipping_company = '';
@@ -704,7 +850,6 @@
                 if (rSelect) rSelect.value = selectRegion.value;
                 populateRowHubs(it.row, winnerName, state.shipping_company, selectRegion.value);
             });
-
             recalculateAllCosts();
         }
 
@@ -718,14 +863,12 @@
                 const hSelect = document.getElementById(`hub-${it.row}`);
                 if (hSelect) hSelect.value = selectHub.value;
             });
-
             recalculateAllCosts();
         }
 
         function onCustomCompanyInput(rowId, winnerName) {
             const inputVal = document.getElementById(`custom-company-${rowId}`).value.trim();
             winnerStateMap[winnerName].shipping_company = inputVal || '기타';
-
             const selfItemsOfWinner = getSelfItemsOfWinner(winnerName);
             selfItemsOfWinner.forEach(it => {
                 const cInput = document.getElementById(`custom-company-${it.row}`);
@@ -737,7 +880,6 @@
         function onCustomRegionInput(rowId, winnerName) {
             const inputVal = document.getElementById(`custom-region-${rowId}`).value.trim();
             winnerStateMap[winnerName].shipping_region = inputVal || '기타';
-
             const selfItemsOfWinner = getSelfItemsOfWinner(winnerName);
             selfItemsOfWinner.forEach(it => {
                 const rInput = document.getElementById(`custom-region-${it.row}`);
@@ -754,9 +896,6 @@
             });
         }
 
-        // ════════════════════════════════════════════
-        //  비용 계산 로직 (합배송 +7,000 및 1/N 분할 계산)
-        // ════════════════════════════════════════════
         function recalculateAllCosts() {
             const selectedCo = document.getElementById('company-select').value;
             if (!selectedCo) return;
@@ -764,29 +903,25 @@
             let grandTotalItemsPrice = 0;
             let grandTotalShippingPrice = 0;
 
-            // 자사 출품 아이템 집계
             const selfItems = allItems.filter(it => (it.company || '').trim() === selectedCo);
             selfItems.forEach(it => {
                 grandTotalItemsPrice += (parseFloat(it.soldPrice || it.sold_price) || 0);
             });
 
-            // 각 낙찰자별 배송 정보 계산
             Object.keys(winnerStateMap).forEach(winnerName => {
                 const state = winnerStateMap[winnerName];
                 const type = state.shipping_type;
-                const companyCount = state.sellerCompanies.length; // 전체 낙찰받은 출품 업체수
+                const companyCount = state.sellerCompanies.length;
                 const selfItemsOfWinner = getSelfItemsOfWinner(winnerName);
                 const winnerBidTotal = selfItemsOfWinner.reduce((sum, it) => sum + (parseFloat(it.soldPrice || it.sold_price) || 0), 0);
 
                 if (type === '직접수령') {
-                    // 수령방법 픽업 시: 배송비 0원
                     selfItemsOfWinner.forEach(it => {
                         document.getElementById(`cost-${it.row}`).textContent = '0원';
                         const itemSold = parseFloat(it.soldPrice || it.sold_price) || 0;
                         document.getElementById(`total-${it.row}`).textContent = itemSold + '만';
                     });
                     
-                    // 서브토탈 갱신
                     const subCostEl = document.getElementById(`subtotal-cost-${winnerName}`);
                     const subTotalEl = document.getElementById(`subtotal-total-${winnerName}`);
                     if (subCostEl) subCostEl.textContent = '0원';
@@ -794,34 +929,28 @@
                     return;
                 }
 
-                // 배송비 계산
                 let baseCost = 5000;
                 if (state.shipping_company === '도도시' || state.shipping_company === '파르게' || state.shipping_company === '랩팡') {
-                    // 매칭되는 거점의 금액 추출
                     const compData = SHIPPING_DATA[state.shipping_company];
                     if (compData && compData.regions[state.shipping_region]) {
                         const matchedHub = compData.regions[state.shipping_region].find(h => h.shop === state.shipping_hub);
                         if (matchedHub) baseCost = matchedHub.cost;
                     }
                 } else {
-                    baseCost = 0; // 기타
+                    baseCost = 0;
                 }
 
-                // 합배송 청구 규칙: 기본료 + (업체수 - 1) * 7000
                 let totalGroupShipping = baseCost;
                 if (companyCount > 1) {
                     totalGroupShipping = baseCost + (companyCount - 1) * 7000;
                 }
 
-                // 1/N 배송비 분할 금액
                 const splitCostPerCompany = Math.round(totalGroupShipping / companyCount);
 
-                // 현재 선택한 자사 개체들에 배송비 배정 (첫 자사 개체 행에만 부과하고 나머지는 0원)
                 selfItemsOfWinner.forEach((it, idx) => {
                     const rowCost = (idx === 0) ? splitCostPerCompany : 0;
                     document.getElementById(`cost-${it.row}`).textContent = rowCost.toLocaleString() + '원';
 
-                    // 최종 안내 금액: 낙찰가만 + 배송비
                     const itemSold = parseFloat(it.soldPrice || it.sold_price) || 0;
                     let displayTotal = itemSold + '만';
                     if (rowCost > 0) {
@@ -829,13 +958,11 @@
                     }
                     document.getElementById(`total-${it.row}`).textContent = displayTotal;
 
-                    // 전체 합산 누적
                     if (idx === 0) {
                         grandTotalShippingPrice += splitCostPerCompany;
                     }
                 });
 
-                // 서브토탈 갱신
                 const subCostEl = document.getElementById(`subtotal-cost-${winnerName}`);
                 const subTotalEl = document.getElementById(`subtotal-total-${winnerName}`);
                 if (subCostEl) {
@@ -850,7 +977,6 @@
                 }
             });
 
-            // 화면 하단 종합 바인딩
             document.getElementById('summary-items-price').textContent = grandTotalItemsPrice + '만';
             document.getElementById('summary-shipping-price').textContent = grandTotalShippingPrice.toLocaleString() + '원';
             
@@ -861,7 +987,6 @@
             document.getElementById('summary-total-price').textContent = totalStr;
         }
 
-        // 정보 요청 메시지 클립보드 복사
         function copyRequestMessage(winnerName) {
             const selfItems = getSelfItemsOfWinner(winnerName);
             const itemNames = selfItems.map(it => it.name).join(', ');
@@ -886,7 +1011,6 @@
             });
         }
 
-        // 최종 안내 메시지 클립보드 복사
         function copyBillingMessage(winnerName) {
             const state = winnerStateMap[winnerName];
             const selfItems = getSelfItemsOfWinner(winnerName);
@@ -898,7 +1022,6 @@
             const shippingCost = costCell ? parseInt(costCell.textContent.replace(/[^0-9]/g, '')) || 0 : 0;
             
             const grandTotal = (totalBid * 10000) + shippingCost;
-            
             const shippingDesc = state.shipping_type === '직접수령' 
                 ? '현장 직접수령' 
                 : `${state.shipping_company} (${state.shipping_region}${state.shipping_hub ? ' ' + state.shipping_hub : ''})`;
@@ -922,9 +1045,6 @@
             });
         }
 
-        // ════════════════════════════════════════════
-        //  저장 로직
-        // ════════════════════════════════════════════
         async function submitAllShippingInfo() {
             const selectedCo = document.getElementById('company-select').value;
             if (!selectedCo) return;
@@ -947,21 +1067,18 @@
                     let shipping_region = '';
                     let shipping_cost = 0;
 
-                    // 이 행의 개별 계산된 배송비 금액 파싱
                     const costCellText = document.getElementById(`cost-${it.row}`).textContent;
                     shipping_cost = parseInt(costCellText.replace(/[^0-9]/g, '')) || 0;
 
                     if (shipping_type === '배송') {
                         shipping_company = state.shipping_company;
                         if (shipping_company !== '도도시' && shipping_company !== '파르게' && shipping_company !== '랩팡') {
-                            // 수동 기입 주소
                             shipping_region = document.getElementById(`custom-region-${it.row}`).value.trim() || '직접기입';
                         } else {
                             shipping_region = `${state.shipping_region} (${state.shipping_hub})`;
                         }
                     }
 
-                    // 메모
                     const memoVal = document.getElementById(`memo-${it.row}`).value.trim();
                     if (memoVal) {
                         shipping_region = `${shipping_region} [메모: ${memoVal}]`.trim();
@@ -974,10 +1091,8 @@
                         shipping_cost
                     });
                 }
-
-                showToast('배송 설정 및 분할 계산 결과가 성공적으로 저장되었습니다! 💾');
+                showToast('성공적으로 저장되었습니다! 💾');
                 
-                // 최신 데이터 리프레시
                 const items = await getItems();
                 allItems = (items || []).filter(it => it.status && it.status.indexOf('낙찰') >= 0);
                 renderGrid();
@@ -988,6 +1103,284 @@
                 showLoading(false);
             }
         }
+
+
+        // ════════════════════════════════════════════
+        //  소비자/낙찰자 직접 조회 및 제출 모드 (buyer-view)
+        // ════════════════════════════════════════════
+        let buyerFoundItems = [];
+        let buyerShippingState = {
+            type: '직접수령',
+            company: '',
+            region: '',
+            hub: '',
+            cost: 0
+        };
+
+        // 낙찰자 정보 찾기
+        function searchBuyerWins() {
+            const name = document.getElementById('buyer-name-input').value.trim().toLowerCase();
+            const phone = document.getElementById('buyer-phone-input').value.trim().replace(/[^0-9]/g, '');
+
+            if (!name) {
+                showToast('성함을 입력해 주세요.', true);
+                return;
+            }
+
+            // DB 전체 낙찰 품목 중 이름 및 전화번호가 일치하는 항목 필터링
+            buyerFoundItems = allItems.filter(it => {
+                const winnerClean = (it.winner || '').replace(/[\[\]]/g, '').trim();
+                const parts = winnerClean.split('/');
+                const wName = parts[0].trim().toLowerCase();
+                const wPhone = it.winner_phone ? it.winner_phone.replace(/[^0-9]/g, '') : '';
+                
+                // 이름 일치 & (번호 비었거나 번호 일치)
+                const nameMatch = wName === name;
+                const phoneMatch = !phone || wPhone.endsWith(phone);
+                return nameMatch && phoneMatch;
+            });
+
+            if (buyerFoundItems.length === 0) {
+                showToast('일치하는 낙찰 내역이 없습니다. 정보를 다시 확인해 주세요.', true);
+                document.getElementById('buyer-form-card').style.display = 'none';
+                return;
+            }
+
+            // 정보 입력 카드 활성화
+            document.getElementById('buyer-display-title').textContent = name;
+            document.getElementById('buyer-form-card').style.display = 'block';
+
+            // 낙찰 개체 목록 렌더링
+            const container = document.getElementById('buyer-items-container');
+            container.innerHTML = buyerFoundItems.map(it => `
+                <div class="buyer-item-row">
+                    <div>
+                        <strong style="color: var(--text-title); font-size: 14px;">${it.name || '개체명 없음'}</strong>
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">출품: ${it.company || '미지정'}</div>
+                    </div>
+                    <div style="font-weight: 800; color: #E11D48;">${parseFloat(it.soldPrice || it.sold_price)}만</div>
+                </div>
+            `).join('');
+
+            // 기본 데이터 바인딩
+            const firstItem = buyerFoundItems[0];
+            const initType = firstItem.shipping_type || '직접수령';
+            const initCompany = firstItem.shipping_company || '도도시';
+            const fullRegion = firstItem.shipping_region || '';
+            const initRegion = fullRegion.split(' ')[0] || '';
+            const initHub = fullRegion.indexOf('(') >= 0 ? fullRegion.slice(fullRegion.indexOf('(') + 1, -1) : '';
+
+            setBuyerShippingType(initType === '직접수령' ? '픽업' : initCompany, true);
+            if (initType === '배송' && (initCompany === '도도시' || initCompany === '파르게' || initCompany === '랩팡')) {
+                document.getElementById('buyer-region-select').value = initRegion;
+                onBuyerRegionChange(initHub);
+            } else if (initType === '배송') {
+                document.getElementById('buyer-custom-company').value = initCompany;
+                document.getElementById('buyer-custom-region').value = fullRegion;
+            }
+
+            recalculateBuyerTotal();
+        }
+
+        // 소비자용 배송사 탭 선택
+        function setBuyerShippingType(companyKey, isInit = false) {
+            const btns = ['pickup', 'dodosi', 'parge', 'wrapang', 'custom'];
+            btns.forEach(b => document.getElementById(`b-opt-${b}`).classList.remove('active'));
+
+            const detailBox = document.getElementById('buyer-detail-box');
+            const customCompanyGroup = document.getElementById('b-custom-company-group');
+            const hubSelectGroup = document.getElementById('b-hub-select-group');
+            const customRegionGroup = document.getElementById('b-custom-region-group');
+
+            if (companyKey === '픽업') {
+                document.getElementById('b-opt-pickup').classList.add('active');
+                detailBox.style.display = 'none';
+                buyerShippingState.type = '직접수령';
+                buyerShippingState.company = '';
+                buyerShippingState.region = '';
+                buyerShippingState.hub = '';
+                buyerShippingState.cost = 0;
+            } else {
+                detailBox.style.display = 'block';
+                buyerShippingState.type = '배송';
+
+                if (companyKey === '도도시') {
+                    document.getElementById('b-opt-dodosi').classList.add('active');
+                    buyerShippingState.company = '도도시';
+                    customCompanyGroup.style.display = 'none';
+                    hubSelectGroup.style.display = 'grid';
+                    customRegionGroup.style.display = 'none';
+                } else if (companyKey === '파르게') {
+                    document.getElementById('b-opt-parge').classList.add('active');
+                    buyerShippingState.company = '파르게';
+                    customCompanyGroup.style.display = 'none';
+                    hubSelectGroup.style.display = 'grid';
+                    customRegionGroup.style.display = 'none';
+                } else if (companyKey === '랩팡') {
+                    document.getElementById('b-opt-wrapang').classList.add('active');
+                    buyerShippingState.company = '랩팡';
+                    customCompanyGroup.style.display = 'none';
+                    hubSelectGroup.style.display = 'grid';
+                    customRegionGroup.style.display = 'none';
+                } else {
+                    document.getElementById('b-opt-custom').classList.add('active');
+                    buyerShippingState.company = '기타 (직접입력)';
+                    customCompanyGroup.style.display = 'block';
+                    hubSelectGroup.style.display = 'none';
+                    customRegionGroup.style.display = 'block';
+                }
+
+                if (companyKey !== '픽업' && companyKey !== '기타') {
+                    // 지역/거점 옵션 채우기
+                    const compData = SHIPPING_DATA[buyerShippingState.company];
+                    const regions = Object.keys(compData.regions);
+                    const regionSelect = document.getElementById('buyer-region-select');
+                    regionSelect.innerHTML = regions.map(r => `<option value="${r}">${r}</option>`).join('');
+                    
+                    if (!isInit) {
+                        onBuyerRegionChange();
+                    }
+                }
+            }
+
+            recalculateBuyerTotal();
+        }
+
+        function onBuyerRegionChange(selectedHub = null) {
+            const comp = buyerShippingState.company;
+            const region = document.getElementById('buyer-region-select').value;
+            buyerShippingState.region = region;
+
+            const hubSelect = document.getElementById('buyer-hub-select');
+            const hubs = SHIPPING_DATA[comp].regions[region] || [];
+            hubSelect.innerHTML = hubs.map(h => `<option value="${h.shop}" data-cost="${h.cost}">${h.shop} (${h.cost.toLocaleString()}원)</option>`).join('');
+
+            if (selectedHub) {
+                const matched = hubs.find(h => h.shop === selectedHub);
+                if (matched) hubSelect.value = selectedHub;
+            }
+
+            onBuyerHubChange();
+        }
+
+        function onBuyerHubChange() {
+            const hubSelect = document.getElementById('buyer-hub-select');
+            buyerShippingState.hub = hubSelect.value;
+
+            const selectedOpt = hubSelect.options[hubSelect.selectedIndex];
+            buyerShippingState.cost = selectedOpt ? parseInt(selectedOpt.getAttribute('data-cost')) : 5000;
+
+            recalculateBuyerTotal();
+        }
+
+        // 소비자 화면 총 계산
+        function recalculateBuyerTotal() {
+            let totalBid = 0;
+            buyerFoundItems.forEach(it => {
+                totalBid += (parseFloat(it.soldPrice || it.sold_price) || 0);
+            });
+
+            // 합배송사 분석 및 +7,000 연산 동일 적용
+            const sellerCos = [...new Set(buyerFoundItems.map(it => (it.company || '').trim()))];
+            const companyCount = sellerCos.length;
+
+            let totalShipping = 0;
+            if (buyerShippingState.type === '배송') {
+                if (buyerShippingState.company === '기타 (직접입력)') {
+                    totalShipping = 0;
+                } else {
+                    const baseCost = buyerShippingState.cost;
+                    totalShipping = baseCost;
+                    if (companyCount > 1) {
+                        totalShipping = baseCost + (companyCount - 1) * 7000;
+                    }
+                }
+            }
+
+            document.getElementById('b-summary-bid').textContent = totalBid + '만';
+            document.getElementById('b-summary-ship').textContent = totalShipping.toLocaleString() + '원';
+            
+            const grandTotalWon = (totalBid * 10000) + totalShipping;
+            document.getElementById('b-summary-total').textContent = grandTotalWon.toLocaleString() + '원';
+        }
+
+        // 소비자 직접 제출
+        async function submitBuyerShipping() {
+            if (buyerFoundItems.length === 0) return;
+
+            showLoading(true, '배송 정보를 전송하는 중...');
+            try {
+                const type = buyerShippingState.type;
+                const sellerCos = [...new Set(buyerFoundItems.map(it => (it.company || '').trim()))];
+                const companyCount = sellerCos.length;
+
+                // 전체 배송비 구한 뒤, 업체별로 쪼개기
+                let totalShipping = 0;
+                if (type === '배송') {
+                    if (buyerShippingState.company === '기타 (직접입력)') {
+                        totalShipping = 0;
+                    } else {
+                        totalShipping = buyerShippingState.cost;
+                        if (companyCount > 1) {
+                            totalShipping = buyerShippingState.cost + (companyCount - 1) * 7000;
+                        }
+                    }
+                }
+
+                const splitCostPerCompany = Math.round(totalShipping / companyCount);
+
+                // 업체별 첫 개체에 쪼갠 금액 배부하고 업데이트
+                for (const co of sellerCos) {
+                    const coItems = buyerFoundItems.filter(it => (it.company || '').trim() === co);
+                    
+                    coItems.forEach(async (it, idx) => {
+                        let shipping_type = type;
+                        let shipping_company = '';
+                        let shipping_region = '';
+                        let shipping_cost = 0;
+
+                        if (type === '배송') {
+                            if (buyerShippingState.company === '기타 (직접입력)') {
+                                shipping_company = document.getElementById('buyer-custom-company').value.trim() || '기타';
+                                shipping_region = document.getElementById('buyer-custom-region').value.trim() || '직접기입';
+                            } else {
+                                shipping_company = buyerShippingState.company;
+                                shipping_region = `${buyerShippingState.region} (${buyerShippingState.hub})`;
+                            }
+
+                            // 첫 번째 개체에 배송비 배정
+                            if (idx === 0) {
+                                shipping_cost = splitCostPerCompany;
+                            }
+                        }
+
+                        // 메모
+                        const memoVal = document.getElementById('buyer-memo-input').value.trim();
+                        if (memoVal) {
+                            shipping_region = `${shipping_region} [요청: ${memoVal}]`.trim();
+                        }
+
+                        await updateItemShipping(it.row, {
+                            shipping_type,
+                            shipping_company,
+                            shipping_region,
+                            shipping_cost
+                        });
+                    });
+                }
+
+                showToast('배송 정보 등록이 완료되었습니다! 판매자 정산서에 실시간 반영됩니다. 🚚');
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } catch (e) {
+                console.error(e);
+                showToast('저장 실패: ' + e.message, true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
 
         // 전화번호 포맷 헬퍼
         function fmtPhone(raw) {
