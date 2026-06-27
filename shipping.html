@@ -2102,7 +2102,7 @@
                 </div>
 
                 <!-- 합배송 구성과 업체별 수령 금액 -->
-                <section id="editor-shipping-breakdown" class="shipping-breakdown" aria-live="polite"></section>
+                <section id="editor-shipping-breakdown" class="shipping-breakdown" aria-live="polite" style="display: none;"></section>
 
                 <!-- 메모 입력 -->
                 <div class="form-group">
@@ -2118,8 +2118,8 @@
                         <span>이 업체 낙찰금액</span>
                         <strong id="editor-summary-bid">0원</strong>
                     </div>
-                    <div class="editor-total-item">
-                        <span>이 업체 배송비</span>
+                    <div class="editor-total-item" onclick="toggleShippingBreakdown()" style="cursor: pointer;">
+                        <span>이 업체 배송비 <span id="breakdown-toggle-arrow" style="font-size: 10px; margin-left: 4px; transition: transform 0.2s;">&#9660;</span></span>
                         <strong id="editor-summary-ship">0원</strong>
                     </div>
                     <div class="editor-total-item is-grand-total">
@@ -2392,8 +2392,10 @@
             return 0; // 픽업 / 기타 (기본값)
         }
 
-        // 총 배송비를 업체별로 정확히 나눈다. 나머지 원 단위는 앞 업체부터 1원씩 배분한다.
-        function splitShippingCostByCompany(companies, totalShipping) {
+        // 총 배송비를 업체별 **개체 수 비례**로 나눈다.
+        // 2마리 낸 업체는 1마리 낸 업체보다 배송비를 2배 부담한다.
+        // 나머지 원 단위는 개체 수가 많은 업체부터 1원씩 배분한다.
+        function splitShippingCostByCompany(companies, totalShipping, winnerAllItems) {
             const validCompanies = (companies || []).filter(Boolean);
             const allocations = {};
             if (validCompanies.length === 0 || totalShipping <= 0) {
@@ -2401,12 +2403,34 @@
                 return allocations;
             }
 
-            const baseShare = Math.floor(totalShipping / validCompanies.length);
-            let remainder = totalShipping - (baseShare * validCompanies.length);
+            // 업체별 개체 수 집계
+            const itemCounts = {};
+            let totalItems = 0;
             validCompanies.forEach(co => {
-                allocations[co] = baseShare + (remainder > 0 ? 1 : 0);
-                if (remainder > 0) remainder -= 1;
+                const count = (winnerAllItems || []).filter(it => (it.company || '').trim() === co).length;
+                itemCounts[co] = Math.max(count, 1); // 최소 1개체
+                totalItems += itemCounts[co];
             });
+
+            // 개체 수 비례 분배 (내림 후 나머지 배분)
+            let allocated = 0;
+            const shares = [];
+            validCompanies.forEach(co => {
+                const share = Math.floor(totalShipping * itemCounts[co] / totalItems);
+                allocations[co] = share;
+                allocated += share;
+                shares.push({ co, count: itemCounts[co] });
+            });
+
+            // 나머지는 개체 수가 많은 업체부터 1원씩
+            let remainder = totalShipping - allocated;
+            shares.sort((a, b) => b.count - a.count);
+            for (const s of shares) {
+                if (remainder <= 0) break;
+                allocations[s.co] += 1;
+                remainder -= 1;
+            }
+
             return allocations;
         }
 
@@ -2497,7 +2521,7 @@
                 if (baseCost > 0 && state.shipping_type === '배송' && companyCount > 1 && state.shipping_company !== '기타') {
                     totalShipping = baseCost + (companyCount - 1) * 7000;
                 }
-                const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping);
+                const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping, winnerAllItems);
                 const shippingCost = state.shipping_type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
                 
                 const grandTotal = (totalBid * 10000) + shippingCost;
@@ -2775,6 +2799,20 @@
             }
         }
 
+        function toggleShippingBreakdown() {
+            const section = document.getElementById('editor-shipping-breakdown');
+            const arrow = document.getElementById('breakdown-toggle-arrow');
+            if (!section) return;
+            const isHidden = section.style.display === 'none';
+            section.style.display = isHidden ? 'block' : 'none';
+            if (arrow) {
+                arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+            if (isHidden) {
+                setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+            }
+        }
+
         function renderEditorShippingBreakdown(state, selectedCo, baseCost, totalShipping, allocations, companyName) {
             const container = document.getElementById('editor-shipping-breakdown');
             if (!container || !state) return;
@@ -2822,6 +2860,7 @@
                     return `${numberText}${it.name || '이름 없음'}`;
                 }).join(' · ');
                 const isCurrent = co === selectedCo;
+                const pct = totalObjectCount > 0 ? Math.round(items.length / totalObjectCount * 100) : 0;
 
                 return `
                     <div class="breakdown-company ${isCurrent ? 'is-current' : ''}">
@@ -2829,7 +2868,7 @@
                             <span class="breakdown-company-name">${co}</span>
                             <span class="breakdown-company-badge ${isCurrent ? '' : 'is-other'}">${isCurrent ? '현재 업체' : '다른 업체'}</span>
                         </div>
-                        <div class="breakdown-objects">개체 ${items.length}개 · ${objectNames}</div>
+                        <div class="breakdown-objects">개체 ${items.length}개 (${pct}% 부담) · ${objectNames}</div>
                         <div class="breakdown-money-grid">
                             <div><span>낙찰금액</span><strong>${bidWon.toLocaleString()}원</strong></div>
                             <div><span>배분 배송비</span><strong>${shippingShare.toLocaleString()}원</strong></div>
@@ -2886,7 +2925,7 @@
             if (baseCost > 0 && companyCount > 1 && comp !== '기타') {
                 totalShipping = baseCost + (companyCount - 1) * 7000;
             }
-            const shippingAllocations = splitShippingCostByCompany(sellerCos, totalShipping);
+            const shippingAllocations = splitShippingCostByCompany(sellerCos, totalShipping, state.allItems);
             const shipCost = editorShippingState.type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
             const grandTotal = (totalBid * 10000) + shipCost;
 
@@ -2962,8 +3001,8 @@
                     totalShipping = baseCost + (companyCount - 1) * 7000;
                 }
                 const shippingAllocations = type === '배송'
-                    ? splitShippingCostByCompany(sellerCos, totalShipping)
-                    : splitShippingCostByCompany(sellerCos, 0);
+                    ? splitShippingCostByCompany(sellerCos, totalShipping, state.allItems)
+                    : splitShippingCostByCompany(sellerCos, 0, state.allItems);
 
                 const promises = [];
                 for (const co of sellerCos) {
@@ -3638,7 +3677,7 @@
                     }
                 }
 
-                const shippingAllocations = splitShippingCostByCompany(sellerCos, totalShipping);
+                const shippingAllocations = splitShippingCostByCompany(sellerCos, totalShipping, buyerFoundItems);
 
                 // 업체별 첫 개체에 쪼갠 금액 배부하고 업데이트
                 for (const co of sellerCos) {
