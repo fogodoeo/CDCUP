@@ -2510,7 +2510,8 @@
             if (!map) return;
             window.latestConfigMap = map;
             
-            const displayMode = map.bracket_display_mode || 'full';
+            const fullShow = (map.bracket_full_show !== undefined ? String(map.bracket_full_show) : '1') === '1';
+            const liveShow = (map.bracket_live_show !== undefined ? String(map.bracket_live_show) : '0') === '1';
             const bShow = map.bracket_show !== undefined ? String(map.bracket_show) : '1';
             const active = map.active_tournament || 'none';
             
@@ -2518,10 +2519,10 @@
             const treeFull = document.getElementById('bracket-page-tree-full');
             const treeLive = document.getElementById('bracket-page-tree-live');
             
-            const bTop = map.bracket_top || (displayMode === 'live' ? '0px' : '120px');
+            const bTop = map.bracket_top || (liveShow ? '0px' : '120px');
             const bLeft = map.bracket_left || '0px';
             const bWidth = map.bracket_width || '100%';
-            const bHeight = map.bracket_height || (displayMode === 'live' ? '100%' : 'calc(100% - 120px)');
+            const bHeight = map.bracket_height || (liveShow ? '100%' : 'calc(100% - 120px)');
             const bFontSize = map.bracket_font_size || '14';
 
             if (treeFull) {
@@ -2555,17 +2556,17 @@
             }
 
             // Toggles active display mode transitions
-            if (treeFull && treeLive) {
-                if (masterShow) {
-                    if (displayMode === 'live') {
-                        treeLive.classList.add('visible');
-                        treeFull.classList.remove('visible');
-                    } else {
-                        treeFull.classList.add('visible');
-                        treeLive.classList.remove('visible');
-                    }
+            if (treeFull) {
+                if (masterShow && fullShow) {
+                    treeFull.classList.add('visible');
                 } else {
                     treeFull.classList.remove('visible');
+                }
+            }
+            if (treeLive) {
+                if (masterShow && liveShow) {
+                    treeLive.classList.add('visible');
+                } else {
                     treeLive.classList.remove('visible');
                 }
             }
@@ -2594,10 +2595,11 @@
             let bracket = { matches: {} };
             try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
 
-            if (displayMode === 'live') {
-                renderBracketLiveView(parseInt(active), bracket, map);
-            } else {
+            if (fullShow) {
                 renderBracketPageTree(parseInt(active), bracket, map);
+            }
+            if (liveShow) {
+                renderBracketLiveView(parseInt(active), bracket, map);
             }
         }
 

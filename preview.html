@@ -717,21 +717,6 @@
 
         <!-- ═══ 3P Tournament Dashboard ═══ -->
         <div class="tournament-dashboard" id="tournament-dashboard">
-            <!-- 실시간 경기 현황 카드 -->
-            <div class="t-live-card" id="t-live-card">
-                <div class="t-live-header">
-                    <div class="t-live-dot"></div>
-                    <span class="t-live-tag">LIVE 경기 진행 중</span>
-                    <span class="t-live-match-title" id="t-live-match-name"></span>
-                </div>
-                <div class="t-live-teams">
-                    <span id="t-live-left"></span>
-                    <span class="t-live-vs">VS</span>
-                    <span id="t-live-right"></span>
-                </div>
-                <div class="t-live-score" id="t-live-score">0 : 0</div>
-                <div class="t-live-round" id="t-live-round"></div>
-            </div>
 
             <!-- 헤더 (크기 선택 + 송출 모드 + 저장/초기화) -->
             <div class="t-header">
@@ -750,10 +735,9 @@
                         <option value="4">4강 송출</option>
                     </select>
                 </div>
-                <div class="t-controls">
-                    <span class="t-label">표시 모드:</span>
-                    <button class="t-btn active" id="t-mode-full" onclick="tChangeDisplayMode('full')">📊 전체 대진</button>
-                    <button class="t-btn" id="t-mode-live" onclick="tChangeDisplayMode('live')">🔴 실시간 경기</button>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="t-btn" id="t-toggle-full" onclick="tToggleFullShow()" style="min-width:120px;">전체대진 ON</button>
+                    <button class="t-btn" id="t-toggle-live" onclick="tToggleLiveShow()" style="min-width:120px;">실시간대진 OFF</button>
                 </div>
                 <div class="t-controls">
                     <button class="t-btn danger" onclick="tReset()">초기화</button>
@@ -773,58 +757,7 @@
                 <div class="t-bracket-tree" id="t-bracket-tree"></div>
             </div>
 
-            <!-- ⚡ 경기 자동 진행 컨트롤러 -->
-            <div class="t-match-ctrl visible" id="t-auto-ctrl" style="border-color:#f59e0b;">
-                <div class="t-ctrl-title" style="color:#f59e0b;">⚡ 경기 자동 진행 컨트롤러</div>
 
-                <!-- 라운드 수 설정 + 스케줄 생성 -->
-                <div class="t-ctrl-row" style="gap:12px;flex-wrap:wrap;">
-                    <div class="t-ctrl-label" style="flex:none;">
-                        매치당 라운드 수:
-                        <select class="t-select" id="t-rounds-per-match" style="width:70px;">
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4" selected>4</option>
-                            <option value="5">5</option>
-                            <option value="6">6</option>
-                        </select>
-                    </div>
-                    <button class="t-btn save" onclick="tGenerateSchedule()" style="font-size:13px;">📋 스케줄 생성</button>
-                    <span id="t-schedule-status" style="font-size:12px;color:#64748b;"></span>
-                </div>
-
-                <!-- 현재 경기 정보 -->
-                <div id="t-current-info" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:14px;margin-top:8px;display:none;">
-                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
-                        <span id="t-cur-badge" style="background:#f59e0b;color:#000;font-weight:800;font-size:11px;padding:3px 10px;border-radius:20px;"></span>
-                        <span id="t-cur-title" style="font-weight:800;color:#fff;font-size:15px;"></span>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-                        <span style="font-size:14px;font-weight:700;">
-                            <span id="t-cur-left" style="color:#60a5fa;"></span>
-                            <span style="color:#64748b;margin:0 6px;">VS</span>
-                            <span id="t-cur-right" style="color:#f87171;"></span>
-                        </span>
-                        <span style="font-size:12px;color:#64748b;">|</span>
-                        <span style="font-size:12px;color:#94a3b8;">아이템: <strong id="t-cur-items" style="color:#fff;"></strong></span>
-                        <span style="font-size:12px;color:#64748b;">|</span>
-                        <span style="font-size:12px;"><span id="t-cur-first" style="color:#10b981;font-weight:700;"></span></span>
-                    </div>
-                </div>
-
-                <!-- 진행 버튼 -->
-                <div style="display:flex;gap:8px;margin-top:10px;align-items:center;">
-                    <button class="t-btn" onclick="tPrevStep()" style="font-size:13px;">⏪ 이전</button>
-                    <button class="t-btn save" onclick="tNextStep()" style="font-size:15px;padding:6px 24px;flex:1;">⏩ 다음 경기</button>
-                    <button class="t-btn danger" onclick="tResetSchedule()" style="font-size:12px;">🔄 초기화</button>
-                </div>
-
-                <!-- 스케줄 진행 현황 -->
-                <div id="t-schedule-bar" style="margin-top:10px;display:none;">
-                    <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:6px;">스케줄 진행 현황:</div>
-                    <div id="t-schedule-dots" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -1717,7 +1650,7 @@
         let tBrackets = { 16: { matches: {} }, 8: { matches: {} }, 4: { matches: {} } };
         let tActiveTournament = 'none';
         let tEditingMatch = null;
-        let _tLiveTimer = null;
+
 
         function tEsc(s) {
             if (!s) return '';
@@ -1739,22 +1672,13 @@
                             tScale = parseInt(tActiveTournament);
                         }
                     }
-                    // 표시 모드 초기화
-                    const dm = map.bracket_display_mode || 'full';
-                    document.getElementById('t-mode-full').classList.toggle('active', dm === 'full');
-                    document.getElementById('t-mode-live').classList.toggle('active', dm === 'live');
-
-                    // 스케줄 복원
-                    if (map.battle_schedule) {
-                        try { tSchedule = JSON.parse(map.battle_schedule); } catch(e){}
-                    }
-                    if (map.battle_step !== undefined) {
-                        tStep = parseInt(map.battle_step);
-                    }
-                    if (map.battle_rounds_per_match) {
-                        document.getElementById('t-rounds-per-match').value = map.battle_rounds_per_match;
-                    }
-                    tUpdateControllerUI();
+                    // 토글 버튼 초기화
+                    const fullShow = map.bracket_full_show || '1';
+                    const liveShow = map.bracket_live_show || '0';
+                    const fullBtn = document.getElementById('t-toggle-full');
+                    const liveBtn = document.getElementById('t-toggle-live');
+                    if (fullBtn) { fullBtn.textContent = '전체대진 ' + (fullShow === '1' ? 'ON' : 'OFF'); fullBtn.style.background = fullShow === '1' ? '#3b82f6' : '#64748b'; }
+                    if (liveBtn) { liveBtn.textContent = '실시간대진 ' + (liveShow === '1' ? 'ON' : 'OFF'); liveBtn.style.background = liveShow === '1' ? '#3b82f6' : '#64748b'; }
                 }
                 tChangeScale(tScale);
                 await tLoadTeams();
@@ -1762,9 +1686,6 @@
                 toast('대진표 데이터 로드 실패: ' + err.message);
                 await tLoadTeams();
             }
-            // 실시간 경기 현황 폴링 시작
-            tRefreshLive();
-            _tLiveTimer = setInterval(tRefreshLive, 4000);
         }
 
         async function tLoadTeams() {
@@ -1844,7 +1765,7 @@
                     }
 
                     node.innerHTML = `
-                        <div class="t-match-title" onclick="tSelectMatch('${mk}')">${tt}</div>
+                        <div class="t-match-title">${tt}</div>
                         <div class="t-slot ${m.winner==='left'?'winner-slot':''}"
                              ondragover="event.preventDefault();this.classList.add('dragover')"
                              ondragleave="this.classList.remove('dragover')"
@@ -1894,188 +1815,10 @@
             m.winner = (m.winner === slot) ? '' : slot;
             tPropagate(tScale, mk, m.winner ? m[slot] : '');
             tRenderTree();
-            if (tEditingMatch === mk) tSelectMatch(mk);
+
         }
 
-        // ── 스케줄 자동 진행 시스템 ──
-        let tSchedule = [];
-        let tStep = -1;
-        let tAllItems = [];
 
-        async function tGenerateSchedule() {
-            const rpm = parseInt(document.getElementById('t-rounds-per-match').value) || 4;
-            const groups = tScale / 2;
-            const bracket = tBrackets[tScale];
-            if (!bracket || !bracket.matches) { toast('먼저 대진표를 설정하세요.'); return; }
-
-            // 팀 알파벳 매핑
-            const teamLetters = {};
-            for (let i = 1; i <= groups; i++) {
-                const mk = tScale + '_' + i;
-                const m = bracket.matches[mk] || {};
-                teamLetters[mk] = {
-                    left: String.fromCharCode(65 + (i-1)*2),
-                    right: String.fromCharCode(65 + (i-1)*2 + 1)
-                };
-            }
-
-            tSchedule = [];
-            for (let round = 1; round <= rpm; round++) {
-                // 한 조씩 밀리는 순환 방식: R1=1,2,3,4 / R2=2,3,4,1 / R3=3,4,1,2 / ...
-                const order = [];
-                for (let g = 0; g < groups; g++) {
-                    order.push(((g + round - 1) % groups) + 1);
-                }
-
-                for (const g of order) {
-                    const mk = tScale + '_' + g;
-                    const m = bracket.matches[mk] || {};
-                    const letters = teamLetters[mk];
-                    if (!m.left || !m.right) continue;
-
-                    tSchedule.push({
-                        group: g,
-                        round: round,
-                        matchKey: mk,
-                        leftTeam: letters.left,
-                        rightTeam: letters.right,
-                        leftName: m.left,
-                        rightName: m.right,
-                        firstTeam: 'left', // R1은 기본 left 선공, 이후 동적 결정
-                        isLastRound: (round === rpm),
-                        roundsPerMatch: rpm
-                    });
-                }
-            }
-
-            if (!tSchedule.length) { toast('스케줄을 생성할 수 없습니다. 대진표를 확인하세요.'); return; }
-
-            tStep = 0;
-            try {
-                await updateConfigs({
-                    battle_schedule: JSON.stringify(tSchedule),
-                    battle_step: '0',
-                    battle_rounds_per_match: String(rpm),
-                    bracket_display_mode: 'live'
-                });
-                document.getElementById('t-mode-full').classList.remove('active');
-                document.getElementById('t-mode-live').classList.add('active');
-                toast('스케줄 생성 완료! ' + tSchedule.length + '개 경기');
-                tUpdateControllerUI();
-            } catch (err) { toast('스케줄 저장 실패: ' + err.message); }
-        }
-
-        async function tNextStep() {
-            if (!tSchedule.length) { toast('먼저 스케줄을 생성하세요.'); return; }
-            if (tStep >= tSchedule.length - 1) { toast('모든 경기가 완료되었습니다!'); return; }
-            
-            tStep++;
-            
-            // 선공/후공 자동 결정 (R2부터)
-            await tDetermineFirstTeam();
-            
-            try {
-                const step = tSchedule[tStep];
-                await updateConfigs({
-                    battle_step: String(tStep),
-                    battle_schedule: JSON.stringify(tSchedule),
-                    battle_current_match: tScale + '_' + step.matchKey,
-                    battle_state: step.isLastRound ? 'champion_ready' : 'start'
-                });
-                tUpdateControllerUI();
-            } catch (err) { toast('경기 진행 실패: ' + err.message); }
-        }
-
-        async function tPrevStep() {
-            if (tStep <= 0) { toast('첫 번째 경기입니다.'); return; }
-            tStep--;
-            try {
-                const step = tSchedule[tStep];
-                await updateConfigs({
-                    battle_step: String(tStep),
-                    battle_current_match: tScale + '_' + step.matchKey,
-                    battle_state: step.isLastRound ? 'champion_ready' : 'start'
-                });
-                tUpdateControllerUI();
-            } catch (err) { toast('이전 경기 이동 실패: ' + err.message); }
-        }
-
-        async function tDetermineFirstTeam() {
-            const step = tSchedule[tStep];
-            if (step.round === 1) { step.firstTeam = 'left'; return; }
-
-            // 이전 라운드에서 같은 조의 결과를 찾아서 패배팀 = 후공
-            try {
-                if (!tAllItems.length) tAllItems = await getItems() || [];
-                const prevRound = step.round - 1;
-                const leftItem = tAllItems.find(i => (i.name||'').trim().toUpperCase() === (step.leftTeam + prevRound));
-                const rightItem = tAllItems.find(i => (i.name||'').trim().toUpperCase() === (step.rightTeam + prevRound));
-                
-                if (leftItem && rightItem) {
-                    const lp = parseFloat(leftItem.sold_price || leftItem.soldPrice || 0);
-                    const rp = parseFloat(rightItem.sold_price || rightItem.soldPrice || 0);
-                    // 전 라운드 승자가 선공
-                    step.firstTeam = (lp >= rp) ? 'left' : 'right';
-                }
-            } catch(e) { /* 판정 실패 시 기본 left */ }
-        }
-
-        async function tResetSchedule() {
-            if (!confirm('스케줄을 초기화합니까?')) return;
-            tSchedule = [];
-            tStep = -1;
-            try {
-                await updateConfigs({
-                    battle_schedule: '',
-                    battle_step: '-1',
-                    battle_state: ''
-                });
-                tUpdateControllerUI();
-                toast('스케줄 초기화 완료');
-            } catch(err) { toast('초기화 실패: ' + err.message); }
-        }
-
-        function tUpdateControllerUI() {
-            const info = document.getElementById('t-current-info');
-            const bar = document.getElementById('t-schedule-bar');
-            const status = document.getElementById('t-schedule-status');
-
-            if (!tSchedule.length || tStep < 0) {
-                info.style.display = 'none';
-                bar.style.display = 'none';
-                status.textContent = '스케줄 없음';
-                return;
-            }
-
-            status.textContent = `${tStep + 1} / ${tSchedule.length} 경기`;
-            info.style.display = 'block';
-            bar.style.display = 'block';
-
-            const step = tSchedule[tStep];
-            const roundLabel = step.isLastRound ? '⭐대장전' : step.round + '라운드';
-            
-            document.getElementById('t-cur-badge').textContent = step.group + '조 ' + roundLabel;
-            document.getElementById('t-cur-title').textContent = 
-                step.isLastRound ? '⭐ ' + step.group + '조 대장전 최종결정전 ⭐' : step.group + '조 ' + roundLabel;
-            document.getElementById('t-cur-left').textContent = step.leftTeam + '팀(' + step.leftName + ')';
-            document.getElementById('t-cur-right').textContent = step.rightTeam + '팀(' + step.rightName + ')';
-            document.getElementById('t-cur-items').textContent = step.leftTeam + step.round + ' vs ' + step.rightTeam + step.round;
-            
-            const firstName = step.firstTeam === 'left' ? step.leftTeam : step.rightTeam;
-            const secondName = step.firstTeam === 'left' ? step.rightTeam : step.leftTeam;
-            document.getElementById('t-cur-first').textContent = '선공: ' + firstName + '팀 / 후공: ' + secondName + '팀';
-
-            // 스케줄 dots
-            const dots = document.getElementById('t-schedule-dots');
-            dots.innerHTML = tSchedule.map((s, i) => {
-                let bg = '#1e293b', color = '#64748b', border = 'rgba(255,255,255,0.06)';
-                let label = s.group + '조R' + s.round;
-                if (i < tStep) { bg = '#10b981'; color = '#fff'; border = '#10b981'; label = '✅'; }
-                else if (i === tStep) { bg = '#f59e0b'; color = '#000'; border = '#f59e0b'; }
-                if (s.isLastRound && i >= tStep) { label = '⭐' + s.group + '조'; }
-                return `<div style="background:${bg};color:${color};border:1px solid ${border};border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;">${label}</div>`;
-            }).join('');
-        }
 
         async function tChangeActive(val) {
             try {
@@ -2085,13 +1828,22 @@
             } catch (err) { toast('송출 모드 갱신 실패: ' + err.message); }
         }
 
-        async function tChangeDisplayMode(mode) {
-            try {
-                await updateConfigs({ bracket_display_mode: mode });
-                document.getElementById('t-mode-full').classList.toggle('active', mode === 'full');
-                document.getElementById('t-mode-live').classList.toggle('active', mode === 'live');
-                toast('송출 표시 모드 변경: ' + (mode === 'full' ? '전체 대진' : '실시간 경기'));
-            } catch (err) { toast('표시 모드 변경 실패: ' + err.message); }
+        async function tToggleFullShow() {
+            const btn = document.getElementById('t-toggle-full');
+            const current = btn.textContent.includes('ON');
+            const newVal = current ? '0' : '1';
+            btn.textContent = '전체대진 ' + (newVal === '1' ? 'ON' : 'OFF');
+            btn.style.background = newVal === '1' ? '#3b82f6' : '#64748b';
+            await updateConfigs({ bracket_full_show: newVal });
+        }
+
+        async function tToggleLiveShow() {
+            const btn = document.getElementById('t-toggle-live');
+            const current = btn.textContent.includes('ON');
+            const newVal = current ? '0' : '1';
+            btn.textContent = '실시간대진 ' + (newVal === '1' ? 'ON' : 'OFF');
+            btn.style.background = newVal === '1' ? '#3b82f6' : '#64748b';
+            await updateConfigs({ bracket_live_show: newVal });
         }
 
         function tReset() {
@@ -2132,62 +1884,7 @@
             } catch (err) { toast('대진표 저장 실패: ' + err.message); }
         }
 
-        // ── 실시간 경기 현황 카드 ──
-        async function tRefreshLive() {
-            const card = document.getElementById('t-live-card');
-            if (!card) return;
-            try {
-                const map = await getConfigMap();
-                if (!map) { card.classList.remove('visible'); return; }
 
-                const active = map.active_tournament || 'none';
-                if (active === 'none') { card.classList.remove('visible'); return; }
-
-                const scale = parseInt(active, 10);
-                const bracketKey = 'tournament_bracket_' + scale;
-                if (!map[bracketKey]) { card.classList.remove('visible'); return; }
-
-                let bracket = { matches: {} };
-                try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
-
-                const curMatch = map.battle_current_match || '';
-                const battleState = map.battle_state || '';
-                if (!curMatch) { card.classList.remove('visible'); return; }
-
-                // Parse: "8_8_1" → scale=8, round=8, idx=1
-                const cp = curMatch.split('_');
-                if (cp.length < 3) { card.classList.remove('visible'); return; }
-                const mRound = parseInt(cp[1]);
-                const mIdx = parseInt(cp[2]);
-                const matchKey = cp[1] + '_' + cp[2];
-                const m = bracket.matches[matchKey] || { left:'', right:'', winner:'' };
-
-                if (!m.left && !m.right) { card.classList.remove('visible'); return; }
-
-                const tt = (mRound === 2) ? '결승전' : (mRound === 4 ? '준결승 ' + mIdx + '조' : (mRound === 8 ? '8강 ' + mIdx + '조' : '16강 ' + mIdx + '조'));
-
-                // Score
-                const scoreKey = 'score_' + scale + '_' + matchKey;
-                let scores = { r1:'', r2:'', r3:'', r4:'' };
-                if (map[scoreKey]) try { scores = JSON.parse(map[scoreKey]); } catch(e){}
-                let ls = 0, rs = 0;
-                ['r1','r2','r3','r4'].forEach(k => {
-                    if (scores[k] === 'left') ls++;
-                    else if (scores[k] === 'right') rs++;
-                });
-
-                const stateMap = { start:'경기 진행 중', r1_end:'1R 종료', r2_end:'2R 종료', r3_end:'3R 종료', r4_ready:'대장전 준비', r4_end:'대장전 종료', final_reveal:'최종 결과 공개' };
-
-                document.getElementById('t-live-match-name').textContent = tt;
-                document.getElementById('t-live-left').textContent = m.left || '?';
-                document.getElementById('t-live-right').textContent = m.right || '?';
-                document.getElementById('t-live-score').textContent = ls + ' : ' + rs;
-                document.getElementById('t-live-round').textContent = stateMap[battleState] || battleState || '';
-                card.classList.add('visible');
-            } catch (err) {
-                card.classList.remove('visible');
-            }
-        }
 
         // Initial Initialization
         window.addEventListener('DOMContentLoaded', () => {
