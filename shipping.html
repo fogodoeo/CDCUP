@@ -2530,7 +2530,7 @@
                 if (baseCost > 0 && state.shipping_type === '배송' && companyCount > 1 && state.shipping_company !== '기타') {
                     totalShipping = baseCost + (companyCount - 1) * 7000;
                 }
-                const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping, winnerAllItems);
+                const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping, state.allItems);
                 const shippingCost = state.shipping_type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
                 
                 const grandTotal = (totalBid * 10000) + shippingCost;
