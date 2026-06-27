@@ -989,14 +989,23 @@
         }
 
         function copyRequestMessage(winnerName) {
+            const state = winnerStateMap[winnerName];
             const selfItems = getSelfItemsOfWinner(winnerName);
             const itemNames = selfItems.map(it => it.name).join(', ');
             const totalBid = selfItems.reduce((sum, it) => sum + (parseFloat(it.soldPrice || it.sold_price) || 0), 0);
 
+            // 합배송 안내 정보 구성
+            let combinedInfo = '';
+            if (state && state.sellerCompanies && state.sellerCompanies.length > 1) {
+                combinedInfo = `■ 합배송 대상 출품사: ${state.sellerCompanies.join(', ')} (묶음배송 적용 및 배송비 분할 정산 대상)\n`;
+            } else if (state && state.sellerCompanies && state.sellerCompanies.length === 1) {
+                combinedInfo = `■ 출품사: ${state.sellerCompanies[0]}\n`;
+            }
+
             const msg = `${winnerName}님, CDCUP 낙찰 및 배송 정보 취합 안내드립니다.
 
 ■ 낙찰 개체: ${itemNames} (총 ${totalBid.toLocaleString()}만원)
-
+${combinedInfo}
 원활한 배송 및 수령을 위해 아래 정보를 회신해 주시면 배송비를 합산한 최종 정산 금액을 안내해 드리겠습니다.
 
 1. 수령 방식 선택: 직접수령(픽업) / 도도시 / 파르게 / 랩팡 / 기타 배송
