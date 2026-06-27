@@ -3432,6 +3432,7 @@ ${winnerName}님 낙찰 정산 안내입니다.
             } catch (err) {
                 console.error(err);
                 showToast('저장 실패: ' + err.message, true);
+                alert('[saveWinnerEditor CRASH]\nMessage: ' + err.message + '\nStack: ' + err.stack);
             } finally {
                 showLoading(false);
             }
