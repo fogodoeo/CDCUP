@@ -3225,6 +3225,7 @@
             // 실시간 전화걸기 및 정산 안내 문자(SMS) 연동
             const callBtn = document.getElementById('editor-info-call-btn');
             const smsBtn = document.getElementById('editor-info-sms-btn');
+            const kakaoBtn = document.getElementById('editor-info-kakao-btn');
             const cleanPhone = (state.phone || '').replace(/[^0-9]/g, '');
 
             if (callBtn) {
@@ -3237,30 +3238,29 @@
                 }
             }
 
-            if (smsBtn) {
-                if (cleanPhone) {
-                    const smsObjects = groupItems.map(it => {
-                        const name = it.name || '이름 없음';
-                        const priceVal = parseFloat(it.soldPrice || it.sold_price) || 0;
-                        return `${name}${priceVal > 0 ? `(${priceVal}만)` : ''}`;
-                    }).join(', ');
+            if (cleanPhone) {
+                const smsObjects = groupItems.map(it => {
+                    const name = it.name || '이름 없음';
+                    const priceVal = parseFloat(it.soldPrice || it.sold_price) || 0;
+                    return `${name}${priceVal > 0 ? `(${priceVal}만)` : ''}`;
+                }).join(', ');
 
-                    let smsShipInfo = '';
-                    if (editorShippingState.type === '직접수령') {
-                        smsShipInfo = '현장 직접 수령';
-                    } else if (editorShippingState.type === '배송') {
-                        if (comp === '기타') {
-                            smsShipInfo = `[기타배송] ${reg}`;
-                        } else if (reg && hub) {
-                            smsShipInfo = `[${comp}] ${reg} (${hub})`;
-                        } else {
-                            smsShipInfo = `배송 거점 미지정`;
-                        }
+                let smsShipInfo = '';
+                if (editorShippingState.type === '직접수령') {
+                    smsShipInfo = '현장 직접 수령';
+                } else if (editorShippingState.type === '배송') {
+                    if (comp === '기타') {
+                        smsShipInfo = `[기타배송] ${reg}`;
+                    } else if (reg && hub) {
+                        smsShipInfo = `[${comp}] ${reg} (${hub})`;
                     } else {
-                        smsShipInfo = '미설정';
+                        smsShipInfo = `배송 거점 미지정`;
                     }
+                } else {
+                    smsShipInfo = '미설정';
+                }
 
-                    const smsText = `[배송관리 - ${selectedCo}]
+                const smsText = `[배송관리 - ${selectedCo}]
 ${winnerName}님 낙찰 정산 안내입니다.
 
 ■ 낙찰개체: ${smsObjects}
@@ -3271,20 +3271,20 @@ ${winnerName}님 낙찰 정산 안내입니다.
 
 확인 부탁드립니다. 감사합니다.`;
 
+                if (smsBtn) {
                     smsBtn.href = `sms:${cleanPhone}?body=${encodeURIComponent(smsText)}`;
                     smsBtn.style.display = 'inline-flex';
-                } else {
+                }
+                if (kakaoBtn) {
+                    kakaoBtn.href = `kakaotalk://send?text=${encodeURIComponent(smsText)}`;
+                    kakaoBtn.style.display = 'inline-flex';
+                }
+            } else {
+                if (smsBtn) {
                     smsBtn.removeAttribute('href');
                     smsBtn.style.display = 'none';
                 }
-            }
-
-            const kakaoBtn = document.getElementById('editor-info-kakao-btn');
-            if (kakaoBtn) {
-                if (cleanPhone) {
-                    kakaoBtn.href = `kakaotalk://send?text=${encodeURIComponent(smsText)}`;
-                    kakaoBtn.style.display = 'inline-flex';
-                } else {
+                if (kakaoBtn) {
                     kakaoBtn.removeAttribute('href');
                     kakaoBtn.style.display = 'none';
                 }
