@@ -2118,7 +2118,6 @@
                     <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span id="editor-info-winner" style="font-size: 16px; font-weight: 800; color: var(--text-title);">낙찰자명</span>
                         <span id="editor-info-phone" style="font-size: 13.5px; color: var(--text-secondary); font-weight: 500;">전화번호</span>
-                        <span id="editor-info-combined-badge" style="margin-left: auto; margin-right: 28px;"></span>
                     </div>
                     <!-- 낙찰개체 정보 한줄로 (회색 텍스트, 말줄임 적용) -->
                     <div id="editor-info-objects" style="margin-top: 6px; font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; font-weight: 500;">
@@ -2184,8 +2183,8 @@
                         <span>이 업체 낙찰금액</span>
                         <strong id="editor-summary-bid">0원</strong>
                     </div>
-                    <div class="editor-total-item" onclick="toggleShippingBreakdown()" style="cursor: pointer;">
-                        <span>이 업체 배송비 <span id="breakdown-toggle-arrow" style="font-size: 10px; margin-left: 4px; transition: transform 0.2s;">&#9660;</span></span>
+                    <div class="editor-total-item">
+                        <span>이 업체 배송비</span>
                         <strong id="editor-summary-ship">0원</strong>
                     </div>
                     <div class="editor-total-item is-grand-total">
@@ -2769,13 +2768,19 @@
             // 3. 전화번호
             document.getElementById('editor-info-phone').textContent = fmtPhone(state.phone) || '연락처 없음';
             
-            // 4. 합배송 뱃지
+            // 4. 합배송 버튼 제어 (합배송이 있을 때만 보이도록 설정)
             const isCombined = otherCoItems.length > 0;
-            const badgeEl = document.getElementById('editor-info-combined-badge');
-            if (badgeEl) {
-                badgeEl.innerHTML = isCombined 
-                    ? `<span class="editor-info-badge badge-combined" style="font-size: 11px; padding: 2px 8px;">합배송</span>`
-                    : `<span class="editor-info-badge badge-single" style="font-size: 11px; padding: 2px 8px;">단독</span>`;
+            const btnToggle = document.getElementById('btn-toggle-breakdown');
+            const sectionBreakdown = document.getElementById('editor-shipping-breakdown');
+            if (btnToggle) {
+                btnToggle.style.display = isCombined ? 'flex' : 'none';
+            }
+            if (sectionBreakdown) {
+                sectionBreakdown.style.display = 'none';
+            }
+            const btnArrow = document.getElementById('btn-breakdown-arrow');
+            if (btnArrow) {
+                btnArrow.textContent = '▼';
             }
             
             // 5. 낙찰개체 정보 한줄로
