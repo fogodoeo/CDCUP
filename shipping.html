@@ -3842,12 +3842,15 @@ ${winnerName}님 낙찰 정산 안내입니다.
             function getSchedule(regName, dayField) {
                 const region = regName || '';
                 if (comp === '도도시') {
-                    // 도도시는 거점별 데이터(dayField)가 있으면 그것을 보여주고, 없으면 기본 요일 제공
+                    // 도도시: 대구 토요일 집하 후 다음 주 지정 요일 도착
                     if (dayField) {
-                        const sendDay = (dayField.includes('일') || dayField.includes('일요일')) ? '목요일' : '화요일';
-                        return `${sendDay} 발송 ➔ ${dayField} 수령`;
+                        let formattedDay = dayField.replace(/\./g, '·');
+                        if (!formattedDay.includes('요일')) {
+                            formattedDay = formattedDay + '요일';
+                        }
+                        return `토요일 집하 ➔ 다음 주 ${formattedDay} 도착`;
                     }
-                    return `화요일 발송 ➔ 목요일 도착 | 목요일 발송 ➔ 일요일 도착`;
+                    return `토요일 집하 ➔ 다음 주 목·일요일 도착`;
                 } else if (comp === '파르게') {
                     // 파르게 공식 주간 배송 타임라인 매핑 (대구 토요일 집하 마감 기준)
                     if (region.includes('제주')) {
