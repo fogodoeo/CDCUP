@@ -236,7 +236,8 @@ async function updateItemShipping(row, shippingData) {
         shipping_type: 'shipping_type',
         shipping_company: 'shipping_company',
         shipping_region: 'shipping_region',
-        shipping_cost: 'shipping_cost'
+        shipping_cost: 'shipping_cost',
+        status: 'status'
     };
     const payload = {};
     for (const [k, v] of Object.entries(shippingData)) {

@@ -352,6 +352,174 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* 모바일 화면 최적화 (768px 이하) */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 12px;
+                border-radius: 8px;
+            }
+
+            .control-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .control-row > * {
+                width: 100% !important;
+                margin-top: 0 !important;
+            }
+
+            /* 테이블을 카드 목록으로 변환 */
+            .table-wrap {
+                border: none;
+                background: transparent;
+                overflow-x: visible;
+            }
+
+            .grid-table {
+                display: block;
+                width: 100%;
+            }
+
+            .grid-table thead {
+                display: none; /* 헤더 숨김 */
+            }
+
+            .grid-table tbody {
+                display: block;
+                width: 100%;
+            }
+
+            .grid-table tr {
+                display: block;
+                background: white;
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 16px;
+                margin-bottom: 16px;
+                box-shadow: var(--shadow);
+                position: relative;
+            }
+
+            .grid-table td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 0;
+                border-bottom: 1px solid #F1F5F9;
+                min-height: 40px;
+                font-size: 13px;
+                width: 100% !important;
+                text-align: right;
+            }
+
+            .grid-table td:last-child {
+                border-bottom: none;
+            }
+
+            /* data-label 속성을 왼쪽 라벨로 표시 */
+            .grid-table td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: var(--text-secondary);
+                text-align: left;
+                width: 40%;
+                font-size: 12px;
+                flex-shrink: 0;
+            }
+
+            .grid-table td > * {
+                max-width: 60% !important;
+                text-align: right;
+                justify-content: flex-end;
+            }
+
+            /* 인풋 필드 모바일 최적화 */
+            .input-text, .select-custom {
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box;
+                padding: 6px 10px;
+                font-size: 13px;
+            }
+
+            /* 거점 검색창 모바일 컨테이너 */
+            [id^="hub-search-container-"] {
+                width: 100% !important;
+            }
+            [id^="hub-search-container-"] input {
+                width: 100% !important;
+            }
+
+            /* 합계 행 스타일 모바일 최적화 */
+            .grid-table tr.subtotal-row {
+                background: var(--accent-light) !important;
+                border: 1.5px solid var(--accent) !important;
+                border-radius: 12px;
+                margin-top: -8px;
+                margin-bottom: 24px;
+            }
+
+            .grid-table tr.subtotal-row td {
+                justify-content: space-between;
+                border-bottom: 1px dashed rgba(59, 130, 246, 0.2);
+            }
+
+            .grid-table tr.subtotal-row td.subtotal-label-cell {
+                display: flex;
+            }
+
+            .grid-table tr.subtotal-row td.subtotal-label-cell::before {
+                display: none; /* 라벨 중복 제거 */
+            }
+
+            .grid-table tr.subtotal-row td.subtotal-label-cell strong {
+                font-size: 14px;
+                color: var(--accent);
+            }
+
+            .grid-table tr.subtotal-row td.subtotal-btns-cell {
+                display: flex;
+                flex-direction: row !important;
+                gap: 8px !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-top: 12px;
+                border-bottom: none;
+            }
+
+            .grid-table tr.subtotal-row td.subtotal-btns-cell::before {
+                display: none;
+            }
+
+            .grid-table tr.subtotal-row td.subtotal-btns-cell button {
+                flex: 1;
+                margin: 0 !important;
+                padding: 10px 0 !important;
+                font-size: 12px !important;
+            }
+
+            /* 소비자용 배송사 탭 모바일 최적화 */
+            .buyer-shipping-options {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 4px;
+            }
+            .buyer-shipping-options button:nth-child(4),
+            .buyer-shipping-options button:nth-child(5) {
+                grid-column: span 1.5;
+            }
+
+            .buyer-form-columns {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -394,15 +562,16 @@
                                 <th style="width: 100px;">낙찰자</th>
                                 <th style="width: 110px;">연락처</th>
                                 <th style="width: 120px;">배송 방식</th>
-                                <th style="width: 160px;">지역 거점샵 / 입력</th>
-                                <th style="width: 90px;">개별 배송비</th>
-                                <th style="width: 130px;">최종 안내 금액</th>
-                                <th>메모 / 상세주소</th>
+                                <th style="width: 200px;">지역 거점샵 / 검색</th>
+                                <th style="width: 110px;">상태</th>
+                                <th style="width: 90px;">배송비</th>
+                                <th style="width: 100px;">안내금액</th>
+                                <th style="width: 120px;">메모</th>
                             </tr>
                         </thead>
                         <tbody id="grid-tbody">
                             <tr>
-                                <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-secondary);">출품 업체를 선택해 주세요.</td>
+                                <td colspan="9" style="text-align: center; padding: 40px; color: var(--text-secondary);">출품 업체를 선택해 주세요.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -770,7 +939,8 @@
                     shipping_company: currentCompany,
                     shipping_region: currentRegion,
                     shipping_hub: currentHub,
-                    phone: firstSelfItem.winner_phone || ''
+                    phone: firstSelfItem.winner_phone || '',
+                    status: firstSelfItem.status || '낙찰-대기'
                 };
 
                 groupItems.forEach(it => {
@@ -793,12 +963,26 @@
                         </select>
                     `;
 
+                    const statusOptions = [
+                        { v: '낙찰-대기', label: '대기' },
+                        { v: '낙찰-연락완료', label: '연락 완료' },
+                        { v: '낙찰-입금완료', label: '입금 완료' }
+                    ];
+                    const currentStatus = firstSelfItem.status || '낙찰-대기';
+                    const statusSelectHtml = `
+                        <select class="select-custom" id="status-${it.row}" style="width: 100px;" onchange="changeRowStatus(${it.row}, '${winnerName}')">
+                            ${statusOptions.map(o => `<option value="${o.v}" ${
+                                currentStatus === o.v || (currentStatus === '낙찰' && o.v === '낙찰-대기') ? 'selected' : ''
+                            }>${o.label}</option>`).join('')}
+                        </select>
+                    `;
+
                     tr.innerHTML = `
-                        <td style="font-weight: 700; color: var(--text-title);">${it.name || '이름 없음'}</td>
-                        <td><span style="font-weight: 700;">${winnerName}</span>${combinedBadge}</td>
-                        <td>${fmtPhone(it.winner_phone)}</td>
-                        <td>${typeSelectHtml}</td>
-                        <td>
+                        <td data-label="개체명" style="font-weight: 700; color: var(--text-title);">${it.name || '이름 없음'}</td>
+                        <td data-label="낙찰자"><span style="font-weight: 700;">${winnerName}</span>${combinedBadge}</td>
+                        <td data-label="연락처">${fmtPhone(it.winner_phone)}</td>
+                        <td data-label="배송 방식">${typeSelectHtml}</td>
+                        <td data-label="지역 거점샵 / 검색">
                             <div id="shipping-controls-${it.row}" style="display: ${currentType === '배송' ? 'flex' : 'none'}; gap: 4px; align-items: center; position: relative;">
                                 <input type="text" class="input-text" id="custom-company-${it.row}" placeholder="배송사 직접기입" style="display:none; width: 100px;" oninput="onCustomCompanyInput(${it.row}, '${winnerName}')">
                                 
@@ -813,10 +997,11 @@
                             </div>
                             <span id="pickup-lbl-${it.row}" style="display: ${currentType === '직접수령' ? 'inline' : 'none'}; color: var(--text-secondary);">현장 직접 수령</span>
                         </td>
-                        <td id="cost-${it.row}" class="price-shipping">0원</td>
-                        <td id="total-${it.row}" class="price-total">0원</td>
-                        <td>
-                            <input type="text" class="input-text" id="memo-${it.row}" placeholder="메모 또는 상세주소" style="width: 100%; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 2px;" value="${it.shipping_region && it.shipping_company && it.shipping_company.indexOf('기타') >= 0 ? it.shipping_region : ''}">
+                        <td data-label="상태">${statusSelectHtml}</td>
+                        <td data-label="배송비" id="cost-${it.row}" class="price-shipping">0원</td>
+                        <td data-label="안내금액" id="total-${it.row}" class="price-total">0원</td>
+                        <td data-label="메모">
+                            <input type="text" class="input-text" id="memo-${it.row}" placeholder="메모" style="width: 100%; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 2px;" value="${it.shipping_region && it.shipping_company && it.shipping_company.indexOf('기타') >= 0 ? it.shipping_region : ''}">
                         </td>
                     `;
 
@@ -828,21 +1013,22 @@
 
                 // 합계 행
                 const subtotalTr = document.createElement('tr');
+                subtotalTr.className = 'subtotal-row';
                 subtotalTr.style.background = '#EEF2F6';
                 subtotalTr.style.borderTop = '1.5px solid var(--border)';
                 subtotalTr.style.borderBottom = '2px solid var(--border)';
                 subtotalTr.innerHTML = `
-                    <td colspan="5" style="text-align: right; font-weight: 700; color: var(--text-title); padding: 10px 12px;">
+                    <td colspan="6" style="text-align: right; font-weight: 700; color: var(--text-title); padding: 10px 12px;" class="subtotal-label-cell">
                         <strong>${winnerName}님 안내 합계:</strong>
                     </td>
-                    <td id="subtotal-cost-${winnerName}" style="font-weight: 700; color: var(--accent); padding: 10px 12px;">0원</td>
-                    <td id="subtotal-total-${winnerName}" style="font-weight: 900; color: #E11D48; font-size: 14px; padding: 10px 12px;">0원</td>
-                    <td style="padding: 6px 12px; display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: center;">
+                    <td data-label="총 배송비" id="subtotal-cost-${winnerName}" style="font-weight: 700; color: var(--accent); padding: 10px 12px;">0원</td>
+                    <td data-label="최종 합계" id="subtotal-total-${winnerName}" style="font-weight: 900; color: #E11D48; font-size: 14px; padding: 10px 12px;">0원</td>
+                    <td data-label="작업" style="padding: 6px 12px; display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: center;" class="subtotal-btns-cell">
                         <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; font-weight: 800; background: #64748B; color: white; border: none; width: 100%;" onclick="copyRequestMessage('${winnerName}')">
                             정보 요청 복사
                         </button>
                         <button class="btn" style="padding: 4px 8px; font-size: 11px; font-weight: 800; border: none; width: 100%;" onclick="copyBillingMessage('${winnerName}')">
-                            최종 확정 복사
+                            안내 메시지 복사
                         </button>
                     </td>
                 `;
@@ -1112,6 +1298,19 @@
                 if (box.id !== `hub-search-results-${rowId}`) box.style.display = 'none';
             });
             filterRowHubs(rowId, winnerName);
+        }
+
+        function changeRowStatus(rowId, winnerName) {
+            const selectStatus = document.getElementById(`status-${rowId}`);
+            const state = winnerStateMap[winnerName];
+            state.status = selectStatus.value;
+
+            // Sync all item rows of this winner
+            const selfItemsOfWinner = getSelfItemsOfWinner(winnerName);
+            selfItemsOfWinner.forEach(it => {
+                const sSelect = document.getElementById(`status-${it.row}`);
+                if (sSelect) sSelect.value = selectStatus.value;
+            });
         }
 
         function changeRowRegion(rowId, winnerName) {
@@ -1407,11 +1606,14 @@ ${combinedInfo}
                         shipping_region = `${shipping_region} [메모: ${memoVal}]`.trim();
                     }
 
+                    let status = state.status || '낙찰-대기';
+
                     await updateItemShipping(it.row, {
                         shipping_type,
                         shipping_company,
                         shipping_region,
-                        shipping_cost
+                        shipping_cost,
+                        status
                     });
                 }
                 showToast('성공적으로 저장되었습니다! 💾');
