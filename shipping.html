@@ -89,6 +89,38 @@
             gap: 4px;
         }
 
+        .search-item {
+            padding: 8px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-item:last-child {
+            border-bottom: none;
+        }
+        .search-item:hover {
+            background: var(--bg);
+        }
+        .search-item-title {
+            font-weight: 600;
+            color: var(--text-title);
+        }
+        .search-item-region {
+            font-size: 11px;
+            color: var(--text-secondary);
+            background: #E2E8F0;
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+        .search-item-price {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
         .control-group label {
             font-size: 11px;
             font-weight: 700;
@@ -424,6 +456,12 @@
                     <div class="control-group" id="b-custom-company-group" style="display: none; margin-bottom: 8px;">
                         <label>배송업체명 직접 기입</label>
                         <input type="text" class="input-text" id="buyer-custom-company" placeholder="배송업체 기입">
+                    </div>
+
+                    <div class="control-group" id="b-hub-search-group" style="margin-bottom: 12px; position: relative;">
+                        <label>거점 검색 (초성 가능)</label>
+                        <input type="text" class="input-text" id="buyer-hub-search" placeholder="지역 또는 지점명 검색 (예: 서대문, ㅋㄹ)" oninput="filterBuyerHubs()" onfocus="showBuyerHubsOnFocus()" autocomplete="off">
+                        <div id="buyer-hub-search-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 6px; margin-top: 4px; background: white; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);"></div>
                     </div>
 
                     <div class="buyer-form-columns" id="b-hub-select-group">
@@ -1338,6 +1376,16 @@ ${combinedInfo}
 
                 if (companyKey !== '픽업' && companyKey !== '기타') {
                     // 지역/거점 옵션 채우기
+                    const searchGroup = document.getElementById('b-hub-search-group');
+                    if (searchGroup) {
+                        searchGroup.style.display = 'block';
+                        if (!isInit) {
+                            document.getElementById('buyer-hub-search').value = '';
+                        } else if (buyerShippingState.region && buyerShippingState.hub) {
+                            document.getElementById('buyer-hub-search').value = `[${buyerShippingState.region}] ${buyerShippingState.hub}`;
+                        }
+                    }
+
                     const compData = SHIPPING_DATA[buyerShippingState.company];
                     const regions = Object.keys(compData.regions);
                     const regionSelect = document.getElementById('buyer-region-select');
@@ -1346,6 +1394,9 @@ ${combinedInfo}
                     if (!isInit) {
                         onBuyerRegionChange();
                     }
+                } else {
+                    const searchGroup = document.getElementById('b-hub-search-group');
+                    if (searchGroup) searchGroup.style.display = 'none';
                 }
             }
 
@@ -1378,6 +1429,146 @@ ${combinedInfo}
 
             recalculateBuyerTotal();
         }
+
+        // ══════════════════════════════════════
+        //  거점 검색 및 초성 검색 기능 구현
+        // ══════════════════════════════════════
+        const CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
+
+        function getChosung(str) {
+            let r = '';
+            for (let i = 0; i < str.length; i++) {
+                const c = str.charCodeAt(i);
+                if (c >= 0xAC00 && c <= 0xD7A3) r += CHO[Math.floor((c - 0xAC00) / 588)];
+                else r += str[i];
+            }
+            return r;
+        }
+
+        function isChosung(str) {
+            return /^[ㄱ-ㅎ\s]+$/.test(str);
+        }
+
+        function scoreMatch(d, words) {
+            const fields = [
+                { v: d.shop || "", w: 3 },
+                { v: d.region || "", w: 2 }
+            ];
+            let total = 0;
+            let allFound = true;
+
+            for (const word of words) {
+                let wordScore = 0;
+                const isCho = isChosung(word);
+
+                for (const f of fields) {
+                    const val = f.v.toLowerCase();
+                    if (isCho) {
+                        const cho = getChosung(f.v);
+                        if (cho.includes(word)) wordScore = Math.max(wordScore, 30 * f.w);
+                    }
+                    if (val === word) wordScore = Math.max(wordScore, 100 * f.w);
+                    else if (val.startsWith(word)) wordScore = Math.max(wordScore, 80 * f.w);
+                    else if (val.includes(word)) wordScore = Math.max(wordScore, 50 * f.w);
+                }
+                if (wordScore === 0) allFound = false;
+                total += wordScore;
+            }
+            return allFound ? total : 0;
+        }
+
+        function filterBuyerHubs() {
+            const q = (document.getElementById('buyer-hub-search').value || '').trim().toLowerCase();
+            const resultsBox = document.getElementById('buyer-hub-search-results');
+            
+            const comp = buyerShippingState.company;
+            if (comp === '픽업' || comp === '기타' || !comp) {
+                resultsBox.style.display = 'none';
+                return;
+            }
+
+            const compData = SHIPPING_DATA[comp];
+            if (!compData || !compData.regions) {
+                resultsBox.style.display = 'none';
+                return;
+            }
+
+            // Flatten all hubs of this company
+            let allHubs = [];
+            Object.keys(compData.regions).forEach(regName => {
+                compData.regions[regName].forEach(h => {
+                    allHubs.push({
+                        region: regName,
+                        shop: h.shop,
+                        cost: h.cost
+                    });
+                });
+            });
+
+            if (!q) {
+                // Show all if focused but empty
+                renderSearchItems(allHubs);
+                return;
+            }
+
+            const words = q.split(/\s+/).filter(Boolean);
+            const scored = allHubs.map(h => {
+                const score = scoreMatch(h, words);
+                return { hub: h, score: score };
+            }).filter(item => item.score > 0)
+              .sort((a, b) => b.score - a.score);
+
+            renderSearchItems(scored.map(item => item.hub));
+        }
+
+        function renderSearchItems(items) {
+            const resultsBox = document.getElementById('buyer-hub-search-results');
+            if (items.length === 0) {
+                resultsBox.innerHTML = '<div style="padding: 12px; font-size: 13px; color: var(--text-secondary); text-align: center;">검색 결과가 없습니다.</div>';
+                resultsBox.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            items.forEach(h => {
+                html += `
+                    <div class="search-item" onclick="selectBuyerHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
+                        <div>
+                            <span class="search-item-region">${h.region}</span>
+                            <span class="search-item-title">${h.shop}</span>
+                        </div>
+                        <span class="search-item-price">${h.cost.toLocaleString()}원</span>
+                    </div>
+                `;
+            });
+            resultsBox.innerHTML = html;
+            resultsBox.style.display = 'block';
+        }
+
+        function selectBuyerHub(region, shop, cost) {
+            document.getElementById('buyer-hub-search').value = `[${region}] ${shop}`;
+            document.getElementById('buyer-hub-search-results').style.display = 'none';
+
+            // Sync with dropdowns
+            const regionSelect = document.getElementById('buyer-region-select');
+            regionSelect.value = region;
+            
+            // Re-populate and select hub
+            onBuyerRegionChange(shop);
+        }
+
+        function showBuyerHubsOnFocus() {
+            filterBuyerHubs();
+        }
+
+        // Close search results when clicking outside
+        document.addEventListener('click', (e) => {
+            const searchGroup = document.getElementById('b-hub-search-group');
+            const resultsBox = document.getElementById('buyer-hub-search-results');
+            if (searchGroup && !searchGroup.contains(e.target) && resultsBox) {
+                resultsBox.style.display = 'none';
+            }
+        });
 
         // 소비자 화면 총 계산
         function recalculateBuyerTotal() {
