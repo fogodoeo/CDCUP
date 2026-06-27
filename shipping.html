@@ -604,7 +604,7 @@
                         Object.keys(pargeRes.data).forEach(regName => {
                             SHIPPING_DATA['파르게'].regions[regName] = pargeRes.data[regName].map(shopItem => ({
                                 shop: shopItem.shop,
-                                cost: regName.includes('제주') ? 10000 : 5000
+                                cost: regName.includes('제주') ? 55000 : 25000 // 파르게 실제 편도 표준 단가 (제주 5.5만, 그외 2.5만)
                             }));
                         });
                         console.log('[Parge] Successfully loaded dynamic parge prices:', Object.keys(SHIPPING_DATA['파르게'].regions).length, 'regions');
@@ -621,7 +621,7 @@
                         Object.keys(wrapangRes.data).forEach(regName => {
                             SHIPPING_DATA['랩팡'].regions[regName] = wrapangRes.data[regName].map(shopItem => ({
                                 shop: shopItem.shop,
-                                cost: regName.includes('제주') ? 10000 : 5000
+                                cost: shopItem.cost || (regName.includes('제주') ? 55000 : 25000) // 랩팡 크롤링된 실제 거점별 단가 반영
                             }));
                         });
                         console.log('[Wrapang] Successfully loaded dynamic wrapang prices:', Object.keys(SHIPPING_DATA['랩팡'].regions).length, 'regions');
@@ -987,7 +987,7 @@
                     return;
                 }
 
-                let baseCost = 5000;
+                let baseCost = 25000;
                 if (state.shipping_company === '도도시' || state.shipping_company === '파르게' || state.shipping_company === '랩팡') {
                     const compData = SHIPPING_DATA[state.shipping_company];
                     if (compData && compData.regions[state.shipping_region]) {
@@ -998,38 +998,59 @@
                     baseCost = 0;
                 }
 
-                let totalGroupShipping = baseCost;
-                if (companyCount > 1) {
-                    totalGroupShipping = baseCost + (companyCount - 1) * 7000;
+                // Get ALL items won by this buyer across all companies in the auction
+                const allItemsOfWinner = allItems.filter(it => {
+                    const clean = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
+                    return clean === winnerName;
+                });
+                const totalGeckoCount = allItemsOfWinner.length;
+
+                // 거점 및 지역별 추가 마리당 요금 (일반 지역 7,000원, 제주도 등은 다르게 책정 가능)
+                let surchargePerGecko = 7000;
+                const isJeju = state.shipping_region && (state.shipping_region.includes('제주') || state.shipping_region.includes('제주도'));
+                if (isJeju) {
+                    if (state.shipping_company === '파르게') {
+                        surchargePerGecko = 20000; // 파르게 제주 추가 마리당 기본값 20,000원
+                    } else if (state.shipping_company === '랩팡') {
+                        surchargePerGecko = 20000; // 랩팡 제주 추가 마리당 기본값 20,000원
+                    } else if (state.shipping_company === '도도시') {
+                        surchargePerGecko = 15000; // 도도시 제주 추가 마리당 기본값 15,000원
+                    }
                 }
 
-                const splitCostPerCompany = Math.round(totalGroupShipping / companyCount);
+                // 총 묶음 배송비 계산: 기본 단가 + (총 마리수 - 1) * 추가 마리당 요금
+                let totalGroupShipping = baseCost;
+                if (totalGeckoCount > 1) {
+                    totalGroupShipping = baseCost + (totalGeckoCount - 1) * surchargePerGecko;
+                }
 
-                selfItemsOfWinner.forEach((it, idx) => {
-                    const rowCost = (idx === 0) ? splitCostPerCompany : 0;
-                    document.getElementById(`cost-${it.row}`).textContent = rowCost.toLocaleString() + '원';
+                // 개체당 배송비 (1/N 균등 배분)
+                const costPerGecko = Math.round(totalGroupShipping / totalGeckoCount);
+
+                let companySubtotalShipping = 0;
+
+                selfItemsOfWinner.forEach(it => {
+                    document.getElementById(`cost-${it.row}`).textContent = costPerGecko.toLocaleString() + '원';
 
                     const itemSold = parseFloat(it.soldPrice || it.sold_price) || 0;
                     let displayTotal = itemSold + '만';
-                    if (rowCost > 0) {
-                        displayTotal += ' ' + rowCost.toLocaleString() + '원';
+                    if (costPerGecko > 0) {
+                        displayTotal += ' ' + costPerGecko.toLocaleString() + '원';
                     }
                     document.getElementById(`total-${it.row}`).textContent = displayTotal;
 
-                    if (idx === 0) {
-                        grandTotalShippingPrice += splitCostPerCompany;
-                    }
+                    companySubtotalShipping += costPerGecko;
                 });
+
+                grandTotalShippingPrice += companySubtotalShipping;
 
                 const subCostEl = document.getElementById(`subtotal-cost-${winnerName}`);
                 const subTotalEl = document.getElementById(`subtotal-total-${winnerName}`);
-                if (subCostEl) {
-                    subCostEl.textContent = splitCostPerCompany.toLocaleString() + '원';
-                }
+                if (subCostEl) subCostEl.textContent = companySubtotalShipping.toLocaleString() + '원';
                 if (subTotalEl) {
                     let totalValStr = winnerBidTotal + '만';
-                    if (splitCostPerCompany > 0) {
-                        totalValStr += ' + ' + splitCostPerCompany.toLocaleString() + '원';
+                    if (companySubtotalShipping > 0) {
+                        totalValStr += ' + ' + companySubtotalShipping.toLocaleString() + '원';
                     }
                     subTotalEl.textContent = totalValStr;
                 }
