@@ -1014,10 +1014,32 @@
                     }
                 }
 
-                // 총 묶음 배송비 계산: 기본 단가 + (총 마리수 - 1) * 추가 마리당 요금
+                // 총 묶음 배송비 계산
                 let totalGroupShipping = baseCost;
                 if (totalGeckoCount > 1) {
-                    totalGroupShipping = baseCost + (totalGeckoCount - 1) * surchargePerGecko;
+                    if (state.shipping_company === '랩팡') {
+                        // 랩팡의 구간별 정액 추가 요금 적용
+                        let wrapangSurcharge = 0;
+                        if (totalGeckoCount === 2) {
+                            wrapangSurcharge = 7000;
+                        } else if (totalGeckoCount === 3) {
+                            wrapangSurcharge = 14000;
+                        } else if (totalGeckoCount === 4) {
+                            wrapangSurcharge = 21000;
+                        } else if (totalGeckoCount >= 5 && totalGeckoCount <= 20) {
+                            wrapangSurcharge = 28000;
+                        } else if (totalGeckoCount >= 21 && totalGeckoCount <= 50) {
+                            wrapangSurcharge = 35000;
+                        } else if (totalGeckoCount >= 51 && totalGeckoCount <= 100) {
+                            wrapangSurcharge = 45000;
+                        } else {
+                            wrapangSurcharge = 45000 + (totalGeckoCount - 100) * 1000;
+                        }
+                        totalGroupShipping = baseCost + wrapangSurcharge;
+                    } else {
+                        // 도도시, 파르게 등 기본 추가 요금 방식 (1/N 균등배분)
+                        totalGroupShipping = baseCost + (totalGeckoCount - 1) * surchargePerGecko;
+                    }
                 }
 
                 // 개체당 배송비 (1/N 균등 배분)
