@@ -799,10 +799,16 @@
                         <td>${fmtPhone(it.winner_phone)}</td>
                         <td>${typeSelectHtml}</td>
                         <td>
-                            <div id="shipping-controls-${it.row}" style="display: ${currentType === '배송' ? 'flex' : 'none'}; gap: 4px; align-items: center;">
+                            <div id="shipping-controls-${it.row}" style="display: ${currentType === '배송' ? 'flex' : 'none'}; gap: 4px; align-items: center; position: relative;">
                                 <input type="text" class="input-text" id="custom-company-${it.row}" placeholder="배송사 직접기입" style="display:none; width: 100px;" oninput="onCustomCompanyInput(${it.row}, '${winnerName}')">
-                                <select class="select-custom" id="region-${it.row}" style="width: 80px;" onchange="changeRowRegion(${it.row}, '${winnerName}')"></select>
-                                <select class="select-custom" id="hub-${it.row}" style="width: 120px;" onchange="changeRowHub(${it.row}, '${winnerName}')"></select>
+                                
+                                <div id="hub-search-container-${it.row}" style="position: relative; display: inline-block;">
+                                    <input type="text" class="input-text" id="hub-search-${it.row}" placeholder="거점 검색 (초성)" style="width: 180px;" oninput="filterRowHubs(${it.row}, '${winnerName}')" onfocus="showRowHubsOnFocus(${it.row}, '${winnerName}')" autocomplete="off">
+                                    <div id="hub-search-results-${it.row}" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 150px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 6px; margin-top: 4px; background: white; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);"></div>
+                                </div>
+
+                                <select class="select-custom" id="region-${it.row}" style="display: none;" onchange="changeRowRegion(${it.row}, '${winnerName}')"></select>
+                                <select class="select-custom" id="hub-${it.row}" style="display: none;" onchange="changeRowHub(${it.row}, '${winnerName}')"></select>
                                 <input type="text" class="input-text" id="custom-region-${it.row}" placeholder="주소 직접기입" style="display:none; width: 140px;" oninput="onCustomRegionInput(${it.row}, '${winnerName}')">
                             </div>
                             <span id="pickup-lbl-${it.row}" style="display: ${currentType === '직접수령' ? 'inline' : 'none'}; color: var(--text-secondary);">현장 직접 수령</span>
@@ -856,17 +862,31 @@
             if (!selectRegion || !selectHub) return;
             if (companyKey === '픽업') return;
 
+            const searchContainer = document.getElementById(`hub-search-container-${rowId}`);
+
             if (companyKey !== '도도시' && companyKey !== '파르게' && companyKey !== '랩팡') {
                 customComp.style.display = 'inline-block';
                 selectRegion.style.display = 'none';
                 selectHub.style.display = 'none';
+                if (searchContainer) searchContainer.style.display = 'none';
                 customReg.style.display = 'inline-block';
                 return;
             }
 
             customComp.style.display = 'none';
-            selectRegion.style.display = 'inline-block';
-            selectHub.style.display = 'inline-block';
+            selectRegion.style.display = 'none';
+            selectHub.style.display = 'none';
+            if (searchContainer) {
+                searchContainer.style.display = 'inline-block';
+                const searchInput = document.getElementById(`hub-search-${rowId}`);
+                if (searchInput) {
+                    if (selectedRegion && selectedHub) {
+                        searchInput.value = `[${selectedRegion}] ${selectedHub}`;
+                    } else {
+                        searchInput.value = '';
+                    }
+                }
+            }
             customReg.style.display = 'none';
 
             const companyData = SHIPPING_DATA[companyKey];
@@ -933,6 +953,118 @@
             });
 
             recalculateAllCosts();
+        }
+
+        // ══════════════════════════════════════
+        //  어드민 테이블 행 내 거점 검색 구현
+        // ══════════════════════════════════════
+        function filterRowHubs(rowId, winnerName) {
+            const q = (document.getElementById(`hub-search-${rowId}`).value || '').trim().toLowerCase();
+            const resultsBox = document.getElementById(`hub-search-results-${rowId}`);
+            
+            const state = winnerStateMap[winnerName];
+            const comp = state.shipping_company;
+            if (!comp || comp === '픽업' || comp === '기타') {
+                resultsBox.style.display = 'none';
+                return;
+            }
+
+            const compData = SHIPPING_DATA[comp];
+            if (!compData || !compData.regions) {
+                resultsBox.style.display = 'none';
+                return;
+            }
+
+            // Flatten all hubs of this company
+            let allHubs = [];
+            Object.keys(compData.regions).forEach(regName => {
+                compData.regions[regName].forEach(h => {
+                    allHubs.push({
+                        region: regName,
+                        shop: h.shop,
+                        cost: h.cost
+                    });
+                });
+            });
+
+            if (!q) {
+                renderRowSearchItems(rowId, winnerName, allHubs);
+                return;
+            }
+
+            const words = q.split(/\s+/).filter(Boolean);
+            const scored = allHubs.map(h => {
+                const score = scoreMatch(h, words);
+                return { hub: h, score: score };
+            }).filter(item => item.score > 0)
+              .sort((a, b) => b.score - a.score);
+
+            renderRowSearchItems(rowId, winnerName, scored.map(item => item.hub));
+        }
+
+        function renderRowSearchItems(rowId, winnerName, items) {
+            const resultsBox = document.getElementById(`hub-search-results-${rowId}`);
+            if (items.length === 0) {
+                resultsBox.innerHTML = '<div style="padding: 10px; font-size: 12px; color: var(--text-secondary); text-align: center;">결과 없음</div>';
+                resultsBox.style.display = 'block';
+                return;
+            }
+
+            let html = '';
+            items.forEach(h => {
+                html += `
+                    <div class="search-item" style="padding: 6px 10px; font-size: 12px;" onclick="selectRowHub(${rowId}, '${winnerName.replace(/'/g, "\\'")}', '${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}')">
+                        <div>
+                            <span class="search-item-region" style="font-size: 10px; padding: 1px 4px;">${h.region}</span>
+                            <span class="search-item-title">${h.shop}</span>
+                        </div>
+                        <span class="search-item-price" style="font-size: 11px;">${h.cost.toLocaleString()}원</span>
+                    </div>
+                `;
+            });
+            resultsBox.innerHTML = html;
+            resultsBox.style.display = 'block';
+        }
+
+        function selectRowHub(rowId, winnerName, region, shop) {
+            const selfItemsOfWinner = getSelfItemsOfWinner(winnerName);
+            
+            // Sync all item rows of this winner
+            selfItemsOfWinner.forEach(it => {
+                const searchInput = document.getElementById(`hub-search-${it.row}`);
+                if (searchInput) searchInput.value = `[${region}] ${shop}`;
+                
+                const resultsBox = document.getElementById(`hub-search-results-${it.row}`);
+                if (resultsBox) resultsBox.style.display = 'none';
+
+                // Update the hidden region select dropdown
+                const selectRegion = document.getElementById(`region-${it.row}`);
+                if (selectRegion) {
+                    selectRegion.value = region;
+                }
+                
+                // Populate hubs dropdown and select the matched hub
+                populateRowHubs(it.row, winnerName, winnerStateMap[winnerName].shipping_company, region, shop);
+            });
+
+            // Update winner state
+            const state = winnerStateMap[winnerName];
+            state.shipping_region = region;
+            state.shipping_hub = shop;
+
+            // Close current row results dropdown
+            document.getElementById(`hub-search-results-${rowId}`).style.display = 'none';
+            
+            // Recalculate
+            recalculateAllCosts();
+        }
+
+        function showRowHubsOnFocus(rowId, winnerName) {
+            // Close other search result boxes
+            document.querySelectorAll('[id^="hub-search-results-"]').forEach(box => {
+                if (box.id !== `hub-search-results-${rowId}`) box.style.display = 'none';
+            });
+            filterRowHubs(rowId, winnerName);
         }
 
         function changeRowRegion(rowId, winnerName) {
@@ -1563,10 +1695,18 @@ ${combinedInfo}
 
         // Close search results when clicking outside
         document.addEventListener('click', (e) => {
+            // Close buyer search results
             const searchGroup = document.getElementById('b-hub-search-group');
             const resultsBox = document.getElementById('buyer-hub-search-results');
             if (searchGroup && !searchGroup.contains(e.target) && resultsBox) {
                 resultsBox.style.display = 'none';
+            }
+
+            // Close admin row search results
+            if (!e.target.closest('[id^="hub-search-container-"]')) {
+                document.querySelectorAll('[id^="hub-search-results-"]').forEach(box => {
+                    box.style.display = 'none';
+                });
             }
         });
 
