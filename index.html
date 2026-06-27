@@ -4087,16 +4087,15 @@
         }
 
         async function loadPrint() {
-            var items = window._lastItems;
-            if (!items || !items.length) {
-                try {
-                    const data = await getItems();
-                    window._lastItems = data || [];
-                    renderPrint(data || []);
-                } catch (e) { console.error('loadPrint getItems failed:', e); }
-                return;
+            try {
+                // 배송관리 페이지 등에서 저장한 최신 배송 정보가 실시간 반영되도록 강제 리로드합니다.
+                const data = await getItems();
+                window._lastItems = data || [];
+                renderPrint(data || []);
+            } catch (e) {
+                console.error('loadPrint getItems failed:', e);
+                if (window._lastItems) renderPrint(window._lastItems);
             }
-            renderPrint(items);
         }
 
         function renderPrint(items) {
