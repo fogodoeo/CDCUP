@@ -4024,6 +4024,36 @@
 
         // ══════════════════════════════════════
         // ═══ 인쇄 탭 ═══
+        // 인쇄 페이지용 배송 텍스트 포맷터 (배송비 제외, 지역 대분류 제외)
+        function fmtShipTextForPrint(it, escapeHtml) {
+            if (it.shipping_type === '직접수령') return '직접수령';
+            if (it.shipping_type !== '배송') return '-';
+            
+            var rawRegion = it.shipping_region || '';
+            var cleanRegion = rawRegion;
+            var m = rawRegion.match(/\(([^)]+)\)/);
+            if (m) {
+                cleanRegion = m[1].trim();
+            }
+            
+            var memoPart = '';
+            var memoMatch = rawRegion.match(/\[메모:[^\]]+\]/);
+            if (memoMatch) {
+                memoPart = ' ' + memoMatch[0];
+                cleanRegion = cleanRegion.replace(/\[메모:[^\]]+\]/, '').trim();
+            }
+            
+            var comp = it.shipping_company || '';
+            var result = '';
+            if (comp === '기타') {
+                result = cleanRegion + memoPart;
+            } else {
+                result = comp && cleanRegion ? comp + ' (' + cleanRegion + ')' + memoPart : (comp || cleanRegion || '-');
+            }
+            
+            return escapeHtml ? esc(result) : result;
+        }
+
         function fmtPriceP(v) { if (!v && v !== 0) return ''; v = parseFloat(v); if (isNaN(v)) return String(v); return v === Math.floor(v) ? Math.floor(v) + '만' : v + '만'; }
         function fmtPhoneP(raw) {
             var ph = (raw || '').replace(/[^0-9]/g, '');
@@ -4069,17 +4099,7 @@
             r += '<td class="pwinner" style="min-width:100px">' + w.name + '</td>';
             r += '<td class="pphone" style="min-width:120px">' + fmtPhoneP(w.phone) + '</td>';
             
-            var shipText = '';
-            if (it.shipping_type === '직접수령') {
-                shipText = '직접수령';
-            } else if (it.shipping_type === '배송') {
-                shipText = (it.shipping_company || '') + ' / ' + (it.shipping_region || '');
-                if (it.shipping_cost) {
-                    shipText += ' / ' + (it.shipping_cost >= 1000 ? Number(it.shipping_cost).toLocaleString() + '원' : it.shipping_cost + '원');
-                }
-            } else {
-                shipText = '-';
-            }
+            var shipText = fmtShipTextForPrint(it, false);
             r += '<td class="pship">' + shipText + '</td>';
             r += '<td class="pstatus" style="' + sc + '">' + sx + '</td>';
             r += '</tr>';
@@ -4284,17 +4304,7 @@
                     ch += '<td class="pwinner">' + esc(w.name) + '</td>';
                     ch += '<td class="pphone">' + esc(fmtPhoneP(w.phone)) + '</td>';
                     
-                    var shipText = '';
-                    if (it.shipping_type === '직접수령') {
-                        shipText = '직접수령';
-                    } else if (it.shipping_type === '배송') {
-                        shipText = esc(it.shipping_company || '') + ' / ' + esc(it.shipping_region || '');
-                        if (it.shipping_cost) {
-                            shipText += ' / ' + (it.shipping_cost >= 1000 ? Number(it.shipping_cost).toLocaleString() + '원' : it.shipping_cost + '원');
-                        }
-                    } else {
-                        shipText = '-';
-                    }
+                    var shipText = fmtShipTextForPrint(it, true);
                     ch += '<td class="pship">' + shipText + '</td>';
                     ch += '<td class="pstatus" style="color:#C84A31;">' + esc(sx) + '</td>';
                     ch += '</tr>';
