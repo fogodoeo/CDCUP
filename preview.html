@@ -746,10 +746,7 @@
                         <option value="4">4강 송출</option>
                     </select>
                 </div>
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <button class="t-btn" id="t-toggle-full" onclick="tToggleFullShow()" style="min-width:120px;">전체대진 ON</button>
-                    <button class="t-btn" id="t-toggle-live" onclick="tToggleLiveShow()" style="min-width:120px;">실시간대진 OFF</button>
-                </div>
+
                 <div class="t-controls">
                     <button class="t-btn danger" onclick="tReset()">초기화</button>
                     <button class="t-btn success" onclick="tRandomFill()">랜덤 배치</button>
@@ -1753,13 +1750,7 @@
                             tScale = parseInt(tActiveTournament);
                         }
                     }
-                    // 토글 버튼 초기화
-                    const fullShow = map.bracket_full_show || '1';
-                    const liveShow = map.bracket_live_show || '0';
-                    const fullBtn = document.getElementById('t-toggle-full');
-                    const liveBtn = document.getElementById('t-toggle-live');
-                    if (fullBtn) { fullBtn.textContent = '전체대진 ' + (fullShow === '1' ? 'ON' : 'OFF'); fullBtn.style.background = fullShow === '1' ? '#3b82f6' : '#64748b'; }
-                    if (liveBtn) { liveBtn.textContent = '실시간대진 ' + (liveShow === '1' ? 'ON' : 'OFF'); liveBtn.style.background = liveShow === '1' ? '#3b82f6' : '#64748b'; }
+
                 }
                 tChangeScale(tScale);
                 await tLoadTeams();
@@ -1909,23 +1900,7 @@
             } catch (err) { toast('송출 모드 갱신 실패: ' + err.message); }
         }
 
-        async function tToggleFullShow() {
-            const btn = document.getElementById('t-toggle-full');
-            const current = btn.textContent.includes('ON');
-            const newVal = current ? '0' : '1';
-            btn.textContent = '전체대진 ' + (newVal === '1' ? 'ON' : 'OFF');
-            btn.style.background = newVal === '1' ? '#3b82f6' : '#64748b';
-            await updateConfigs({ bracket_full_show: newVal });
-        }
 
-        async function tToggleLiveShow() {
-            const btn = document.getElementById('t-toggle-live');
-            const current = btn.textContent.includes('ON');
-            const newVal = current ? '0' : '1';
-            btn.textContent = '실시간대진 ' + (newVal === '1' ? 'ON' : 'OFF');
-            btn.style.background = newVal === '1' ? '#3b82f6' : '#64748b';
-            await updateConfigs({ bracket_live_show: newVal });
-        }
 
         function tReset() {
             if (!confirm('현재 ' + tScale + '강 대진표를 초기화합니까?')) return;
