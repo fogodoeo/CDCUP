@@ -2119,8 +2119,8 @@
                         <span id="editor-info-winner" style="font-size: 16px; font-weight: 800; color: var(--text-title);">낙찰자명</span>
                         <span id="editor-info-phone" style="font-size: 13.5px; color: var(--text-secondary); font-weight: 500;">전화번호</span>
                     </div>
-                    <!-- 낙찰개체 정보 한줄로 (회색 텍스트, 말줄임 적용) -->
-                    <div id="editor-info-objects" style="margin-top: 6px; font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; font-weight: 500;">
+                    <!-- 낙찰개체 정보 (폰트 크기 증대 및 가독성 개선) -->
+                    <div id="editor-info-objects" style="margin-top: 8px; font-size: 15px; color: #334155; font-weight: 700; line-height: 1.4; max-width: 95%;">
                         개체 정보
                     </div>
                 </div>
@@ -2783,12 +2783,14 @@
                 btnArrow.textContent = '▼';
             }
             
-            // 5. 낙찰개체 정보 한줄로
+            // 5. 낙찰개체 정보 한줄로 (No. 제외하고 개체명 + 낙찰가)
             const objectNames = currentCoItems.map(it => {
-                const numberText = it.num ? `No.${it.num} ` : '';
-                return `${numberText}${it.name || '이름 없음'}`;
+                const name = it.name || '이름 없음';
+                const priceVal = parseFloat(it.soldPrice || it.sold_price) || 0;
+                const priceText = priceVal > 0 ? ` (${priceVal}만)` : '';
+                return `${name}${priceText}`;
             }).join(', ');
-            document.getElementById('editor-info-objects').textContent = `낙찰개체: ${objectNames}`;
+            document.getElementById('editor-info-objects').innerHTML = `<span style="color: #64748B; font-weight: 600; font-size: 12.5px; display: block; margin-bottom: 2px;">낙찰 개체</span>${objectNames}`;
 
             // Set Segmented Control Active Button
             setEditorShippingType(editorShippingState.type === '직접수령' ? '픽업' : (editorShippingState.type === '배송' ? editorShippingState.company : '미설정'), true);
