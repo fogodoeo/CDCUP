@@ -2429,9 +2429,8 @@
 
             listContainer.innerHTML = uniqueSellerCompanies.map(co => {
                 return `
-                    <button type="button" class="company-select-item" onclick="selectSellerCompany('${co}')">
+                    <button type="button" class="company-select-item" onclick="selectSellerCompany('${co}')" style="justify-content: center; text-align: center;">
                         <span>${co}</span>
-                        <span style="color: var(--accent); font-size: 18px; font-weight:800;">&rarr;</span>
                     </button>
                 `;
             }).join('');
