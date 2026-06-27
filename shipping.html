@@ -2868,6 +2868,33 @@
             memo: ''
         };
 
+        // 클립보드 정산 문구 자동 복사 및 카카오톡 앱 연동 우회 구현
+        async function copyToClipboardAndOpenKakao(text) {
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    textArea.style.position = "fixed";
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
+                showToast('정산 문구가 복사되었습니다! 카톡에 붙여넣어 전송하세요.');
+                
+                // 카카오톡 실행 딥링크 작동
+                setTimeout(() => {
+                    window.location.href = 'kakaotalk://';
+                }, 800);
+            } catch (err) {
+                console.error('[Copy Kakao] Failed:', err);
+                showToast('복사에 실패했습니다.', true);
+            }
+        }
+
         function alignEditorPanelToViewport() {
             const panelSlot = document.getElementById('editor-panel-slot');
             if (!panelSlot) return;
@@ -3276,7 +3303,12 @@ ${winnerName}님 낙찰 정산 안내입니다.
                     smsBtn.style.display = 'inline-flex';
                 }
                 if (kakaoBtn) {
-                    kakaoBtn.href = `kakaotalk://send?text=${encodeURIComponent(smsText)}`;
+                    kakaoBtn.removeAttribute('href');
+                    kakaoBtn.style.cursor = 'pointer';
+                    kakaoBtn.onclick = (e) => {
+                        e.preventDefault();
+                        copyToClipboardAndOpenKakao(smsText);
+                    };
                     kakaoBtn.style.display = 'inline-flex';
                 }
             } else {
