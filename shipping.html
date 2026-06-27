@@ -1075,6 +1075,58 @@
                 const items = await getItems();
                 allItems = (items || []).filter(it => it.status && it.status.indexOf('낙찰') >= 0);
 
+                // ══════════════════════════════════════
+                //  테스트용 묶음배송 모의 데이터 주입 (김철수/이영희)
+                // ══════════════════════════════════════
+                const mockWinners = [
+                    { name: '김철수', phone: '010-1234-5678' },
+                    { name: '이영희', phone: '010-9876-5432' }
+                ];
+                let mockRowId = 90000;
+                let loadedCompanies = [...new Set(allItems.map(it => (it.company || '').trim()).filter(Boolean))];
+                if (loadedCompanies.length === 0) {
+                    loadedCompanies = ['도도시', '파르게', '랩팡', '기타업체'];
+                }
+
+                loadedCompanies.forEach((co, idx) => {
+                    const winnerInfo = mockWinners[idx % mockWinners.length];
+                    const winnerName = `${winnerInfo.name} / ${winnerInfo.phone}`;
+                    
+                    allItems.push({
+                        row: mockRowId++,
+                        company: co,
+                        num: 991,
+                        name: `[${co}] 테스트 개체 A`,
+                        price: 50000,
+                        note: '테스트용 묶음낙찰 개체',
+                        status: '낙찰-대기',
+                        sold_price: '50000',
+                        winner: winnerName,
+                        winner_phone: winnerInfo.phone,
+                        shipping_type: '직접수령',
+                        shipping_company: '도도시',
+                        shipping_region: '',
+                        shipping_cost: 0
+                    });
+                    
+                    allItems.push({
+                        row: mockRowId++,
+                        company: co,
+                        num: 992,
+                        name: `[${co}] 테스트 개체 B`,
+                        price: 75000,
+                        note: '테스트용 묶음낙찰 개체',
+                        status: '낙찰-대기',
+                        sold_price: '75000',
+                        winner: winnerName,
+                        winner_phone: winnerInfo.phone,
+                        shipping_type: '직접수령',
+                        shipping_company: '도도시',
+                        shipping_region: '',
+                        shipping_cost: 0
+                    });
+                });
+
                 if (isAdminMode) {
                     const companies = allItems.map(it => (it.company || '').trim()).filter(Boolean);
                     uniqueSellerCompanies = [...new Set(companies)].sort();
