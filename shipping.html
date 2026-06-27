@@ -1361,7 +1361,7 @@
 
             const selfItems = allItems.filter(it => (it.company || '').trim() === selectedCo);
             if (selfItems.length === 0) {
-                container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">'${selectedCo}'의 낙찰 정보가 없습니다.</div>';
+                container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">'${selectedCo}'의 낙찰 정보가 없습니다.</div>`;
                 return;
             }
 
@@ -1410,7 +1410,7 @@
                 const otherCos = state.sellerCompanies.filter(c => c !== selectedCo);
                 const isCombined = otherCos.length > 0;
                 const combinedBadge = isCombined 
-                    ? `<span class="combined-shipping-badge">합배송: ${otherCos.join(', ')}</span>` 
+                    ? '<span class="combined-shipping-badge">합배송: ' + otherCos.join(', ') + '</span>' 
                     : '';
 
                 const groupItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
