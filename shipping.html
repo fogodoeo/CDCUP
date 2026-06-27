@@ -2441,183 +2441,220 @@
             }
 
             return allocations;
-        }
+        }        function renderGrid() {
+            try {
+                const selectedCo = document.getElementById('company-select').value;
+                const container = document.getElementById('winner-list-container');
+                if (activeEditorWinner) closeWinnerEditor();
+                container.innerHTML = '';
+                winnerStateMap = {};
 
-        function renderGrid() {
-            const selectedCo = document.getElementById('company-select').value;
-            const container = document.getElementById('winner-list-container');
-            if (activeEditorWinner) closeWinnerEditor();
-            container.innerHTML = '';
-            winnerStateMap = {};
-
-            if (!selectedCo) {
-                container.innerHTML = '<div class="empty-list-state">출품 업체를 선택해 주세요.</div>';
-                return;
-            }
-
-            const selfItems = allItems.filter(it => (it.company || '').trim() === selectedCo);
-            if (selfItems.length === 0) {
-                container.innerHTML = `<div class="empty-list-state">'${selectedCo}'의 낙찰 정보가 없습니다.</div>`;
-                return;
-            }
-
-            // 낙찰자별 그룹핑
-            const winnerGroups = {};
-            selfItems.forEach(it => {
-                const winnerName = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
-                if (!winnerGroups[winnerName]) {
-                    winnerGroups[winnerName] = [];
+                if (!selectedCo) {
+                    container.innerHTML = '<div class="empty-list-state">출품 업체를 선택해 주세요.</div>';
+                    return;
                 }
-                winnerGroups[winnerName].push(it);
-            });
 
-            Object.keys(winnerGroups).forEach(winnerName => {
-                const groupItems = winnerGroups[winnerName];
-                const winnerAllItems = allItems.filter(it => {
-                    const clean = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
-                    return clean === winnerName;
+                const selfItems = allItems.filter(it => (it.company || '').trim() === selectedCo);
+                if (selfItems.length === 0) {
+                    container.innerHTML = `<div class="empty-list-state">'${selectedCo}'의 낙찰 정보가 없습니다.</div>`;
+                    return;
+                }
+
+                // 낙찰자별 그룹핑
+                const winnerGroups = {};
+                selfItems.forEach(it => {
+                    const winnerName = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
+                    if (!winnerGroups[winnerName]) {
+                        winnerGroups[winnerName] = [];
+                    }
+                    winnerGroups[winnerName].push(it);
                 });
 
-                const sellerCos = [...new Set(winnerAllItems.map(it => (it.company || '').trim()))];
-                const firstSelfItem = groupItems[0];
-                
-                // Set initial state
-                winnerStateMap[winnerName] = {
-                    allItems: winnerAllItems,
-                    sellerCompanies: sellerCos,
-                    shipping_type: firstSelfItem.shipping_type || '미설정',
-                    shipping_company: firstSelfItem.shipping_company || '',
-                    shipping_region: firstSelfItem.shipping_region ? firstSelfItem.shipping_region.split(' ')[0] : '',
-                    shipping_hub: firstSelfItem.shipping_region && firstSelfItem.shipping_region.indexOf('(') >= 0 ? firstSelfItem.shipping_region.slice(firstSelfItem.shipping_region.indexOf('(') + 1, -1) : '',
-                    phone: firstSelfItem.winner_phone || '',
-                    status: firstSelfItem.status || '낙찰-대기',
-                    memo: (firstSelfItem.shipping_region && firstSelfItem.shipping_region.indexOf('[메모:') >= 0)
-                        ? firstSelfItem.shipping_region.slice(firstSelfItem.shipping_region.indexOf('[메모:') + 5, -1).trim()
-                        : ''
-                };
-            });
+                Object.keys(winnerGroups).forEach(winnerName => {
+                    const groupItems = winnerGroups[winnerName];
+                    const winnerAllItems = allItems.filter(it => {
+                        const clean = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
+                        return clean === winnerName;
+                    });
 
+                    const sellerCos = [...new Set(winnerAllItems.map(it => (it.company || '').trim()))];
+                    const firstSelfItem = groupItems[0];
+                    
+                    // Set initial state
+                    const rawRegion = String(firstSelfItem.shipping_region || '');
+                    let parsedRegion = '';
+                    let parsedHub = '';
+                    let parsedMemo = '';
 
+                    if (rawRegion) {
+                        // Extract region (first word or before '(')
+                        const spaceIdx = rawRegion.indexOf(' ');
+                        const parenIdx = rawRegion.indexOf('(');
+                        let endIdx = rawRegion.length;
+                        if (spaceIdx >= 0 && (parenIdx < 0 || spaceIdx < parenIdx)) {
+                            endIdx = spaceIdx;
+                        } else if (parenIdx >= 0) {
+                            endIdx = parenIdx;
+                        }
+                        parsedRegion = rawRegion.slice(0, endIdx).trim();
 
+                        // Extract hub inside parens (e.g. "서울 (도도시 강남 거점샵)")
+                        if (parenIdx >= 0) {
+                            const closeParenIdx = rawRegion.indexOf(')', parenIdx);
+                            if (closeParenIdx >= 0) {
+                                parsedHub = rawRegion.slice(parenIdx + 1, closeParenIdx).trim();
+                            } else {
+                                parsedHub = rawRegion.slice(parenIdx + 1).trim();
+                            }
+                        }
 
+                        // Extract memo inside [메모: ...]
+                        const memoIdx = rawRegion.indexOf('[메모:');
+                        if (memoIdx >= 0) {
+                            const closeBracketIdx = rawRegion.indexOf(']', memoIdx);
+                            if (closeBracketIdx >= 0) {
+                                parsedMemo = rawRegion.slice(memoIdx + 5, closeBracketIdx).trim();
+                            } else {
+                                parsedMemo = rawRegion.slice(memoIdx + 5).trim();
+                            }
+                        }
+                    }
 
-            Object.keys(winnerGroups).forEach(winnerName => {
-                const state = winnerStateMap[winnerName];
-                const otherCos = state.sellerCompanies.filter(c => c !== selectedCo);
-                const isCombined = otherCos.length > 0;
-                const combinedBadge = isCombined 
-                    ? '<span class="combined-shipping-badge">합배송: ' + otherCos.join(', ') + '</span>' 
-                    : '';
-
-                const groupItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
-
-                // Calculate pricing
-                let totalBid = 0;
-                groupItems.forEach(it => {
-                    totalBid += (parseInt(String(it.sold_price).replace(/[^0-9]/g, '')) || 0);
+                    winnerStateMap[winnerName] = {
+                        allItems: winnerAllItems,
+                        sellerCompanies: sellerCos,
+                        shipping_type: firstSelfItem.shipping_type || '미설정',
+                        shipping_company: firstSelfItem.shipping_company || '',
+                        shipping_region: parsedRegion,
+                        shipping_hub: parsedHub,
+                        phone: firstSelfItem.winner_phone || '',
+                        status: firstSelfItem.status || '낙찰-대기',
+                        memo: parsedMemo
+                    };
                 });
-                
-                // Get shipping cost split for this company
-                const companyCount = state.sellerCompanies.length;
-                let baseCost = calculateShippingCost(
-                    state.shipping_company,
-                    state.shipping_type,
-                    state.shipping_region,
-                    state.shipping_hub,
-                    1
-                );
-                let totalShipping = baseCost;
-                if (baseCost > 0 && state.shipping_type === '배송' && companyCount > 1 && state.shipping_company !== '기타') {
-                    totalShipping = baseCost + (companyCount - 1) * 7000;
-                }
-                const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping, state.allItems);
-                const shippingCost = state.shipping_type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
-                
-                const grandTotal = (totalBid * 10000) + shippingCost;
-                
-                state.totalBid = totalBid;
-                state.totalShipping = shippingCost;
-                state.grandTotal = grandTotal;
 
-                // Gecko names list
-                const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
-                const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
+                Object.keys(winnerGroups).forEach(winnerName => {
+                    const state = winnerStateMap[winnerName];
+                    const otherCos = state.sellerCompanies.filter(c => c !== selectedCo);
+                    const isCombined = otherCos.length > 0;
+                    const combinedBadge = isCombined 
+                        ? '<span class="combined-shipping-badge">합배송: ' + otherCos.join(', ') + '</span>' 
+                        : '';
 
-                const currentGeckoTagsHtml = currentCoItems.map(it => `
-                    <span class="gecko-tag">${it.name || '이름 없음'}</span>
-                `).join('');
+                    const groupItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
 
-                const otherGeckoTagsHtml = otherCoItems.map(it => `
-                    <span class="gecko-tag gecko-tag-dimmed" style="opacity: 0.45; border: 1.5px dashed var(--text-secondary); filter: grayscale(100%);">[${it.company}] ${it.name || '이름 없음'}</span>
-                `).join('');
+                    // Calculate pricing
+                    let totalBid = 0;
+                    groupItems.forEach(it => {
+                        totalBid += (parseInt(String(it.sold_price).replace(/[^0-9]/g, '')) || 0);
+                    });
+                    
+                    // Get shipping cost split for this company
+                    const companyCount = state.sellerCompanies.length;
+                    let baseCost = calculateShippingCost(
+                        state.shipping_company,
+                        state.shipping_type,
+                        state.shipping_region,
+                        state.shipping_hub,
+                        1
+                    );
+                    let totalShipping = baseCost;
+                    if (baseCost > 0 && state.shipping_type === '배송' && companyCount > 1 && state.shipping_company !== '기타') {
+                        totalShipping = baseCost + (companyCount - 1) * 7000;
+                    }
+                    const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping, state.allItems);
+                    const shippingCost = state.shipping_type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
+                    
+                    const grandTotal = (totalBid * 10000) + shippingCost;
+                    
+                    state.totalBid = totalBid;
+                    state.totalShipping = shippingCost;
+                    state.grandTotal = grandTotal;
 
-                const geckoTagsHtml = currentGeckoTagsHtml + otherGeckoTagsHtml;
+                    // Gecko names list
+                    const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
+                    const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
 
-                // Status label
-                const statusLabels = { '낙찰-대기': '대기', '낙찰-연락완료': '연락 완료', '낙찰-입금완료': '입금 완료' };
-                const statusLabel = statusLabels[state.status] || '대기';
-                const statusClass = 
-                    state.status === '낙찰-연락완료' ? 'status-contacted' :
-                    state.status === '낙찰-입금완료' ? 'status-paid' : 'status-waiting';
+                    const currentGeckoTagsHtml = currentCoItems.map(it => `
+                        <span class="gecko-tag">${it.name || '이름 없음'}</span>
+                    `).join('');
 
-                // Shipping description
-                let shipSummaryText = '미설정 (탭하여 설정)';
-                let shipSummaryStyle = 'color: #B54708;';
-                
-                if (state.shipping_type === '직접수령') {
-                    shipSummaryText = '현장 직접 수령';
-                    shipSummaryStyle = 'color: var(--text-secondary);';
-                } else if (state.shipping_type === '배송' && state.shipping_company) {
-                    if (state.shipping_company === '기타') {
-                        shipSummaryText = `[기타] ${state.shipping_region || '직접기입'}`;
-                        shipSummaryStyle = 'color: #B54708;';
+                    const otherGeckoTagsHtml = otherCoItems.map(it => `
+                        <span class="gecko-tag gecko-tag-dimmed" style="opacity: 0.45; border: 1.5px dashed var(--text-secondary); filter: grayscale(100%);">[${it.company}] ${it.name || '이름 없음'}</span>
+                    `).join('');
+
+                    const geckoTagsHtml = currentGeckoTagsHtml + otherGeckoTagsHtml;
+
+                    // Status label
+                    const statusLabels = { '낙찰-대기': '대기', '낙찰-연락완료': '연락 완료', '낙찰-입금완료': '입금 완료' };
+                    const statusLabel = statusLabels[state.status] || '대기';
+                    const statusClass = 
+                        state.status === '낙찰-연락완료' ? 'status-contacted' :
+                        state.status === '낙찰-입금완료' ? 'status-paid' : 'status-waiting';
+
+                    // Shipping description
+                    let shipSummaryText = '미설정 (탭하여 설정)';
+                    let shipSummaryStyle = 'color: #B54708;';
+                    
+                    if (state.shipping_type === '직접수령') {
+                        shipSummaryText = '현장 직접 수령';
+                        shipSummaryStyle = 'color: var(--text-secondary);';
+                    } else if (state.shipping_type === '배송' && state.shipping_company) {
+                        if (state.shipping_company === '기타') {
+                            shipSummaryText = `[기타] ${state.shipping_region || '직접기입'}`;
+                            shipSummaryStyle = 'color: #B54708;';
+                        } else {
+                            shipSummaryText = `[${state.shipping_company}] ${state.shipping_region} (${state.shipping_hub})`;
+                            shipSummaryStyle = 'color: #2563EB;';
+                        }
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = 'winner-card';
+                    card.dataset.winner = winnerName;
+                    card.onclick = () => openWinnerEditor(winnerName);
+                    card.innerHTML = `
+                        <div class="winner-card-header">
+                            <div>
+                                <span class="winner-card-name">${winnerName}</span>
+                                <span class="winner-card-phone" style="margin-left: 8px;">${fmtPhone(state.phone)}</span>
+                            </div>
+                            ${combinedBadge}
+                        </div>
+                        <div class="winner-card-body">
+                            ${geckoTagsHtml}
+                        </div>
+                        <div class="winner-card-footer">
+                            <div class="winner-card-shipping-summary" style="${shipSummaryStyle}">
+                                ${shipSummaryText}
+                            </div>
+                            <div class="winner-card-status-container">
+                                <span class="status-select ${statusClass}" style="display:inline-block; font-size:11px; padding:3px 8px; border-radius:12px; margin-right: 8px;">${statusLabel}</span>
+                                <span class="winner-card-price">${grandTotal.toLocaleString()}원</span>
+                            </div>
+                        </div>
+                    `;
+
+                    container.appendChild(card);
+                });
+
+                // Populate slider dots indicators
+                const indicators = document.getElementById('slider-indicators');
+                if (indicators) {
+                    const keys = Object.keys(winnerGroups);
+                    if (keys.length > 1) {
+                        indicators.style.display = 'flex';
+                        indicators.innerHTML = keys.map((k, idx) => `
+                            <div class="slider-dot ${idx === 0 ? 'active' : ''}" onclick="scrollToSlide(${idx})"></div>
+                        `).join('');
                     } else {
-                        shipSummaryText = `[${state.shipping_company}] ${state.shipping_region} (${state.shipping_hub})`;
-                        shipSummaryStyle = 'color: #2563EB;';
+                        indicators.style.display = 'none';
                     }
                 }
-
-                const card = document.createElement('div');
-                card.className = 'winner-card';
-                card.dataset.winner = winnerName;
-                card.onclick = () => openWinnerEditor(winnerName);
-                card.innerHTML = `
-                    <div class="winner-card-header">
-                        <div>
-                            <span class="winner-card-name">${winnerName}</span>
-                            <span class="winner-card-phone" style="margin-left: 8px;">${fmtPhone(state.phone)}</span>
-                        </div>
-                        ${combinedBadge}
-                    </div>
-                    <div class="winner-card-body">
-                        ${geckoTagsHtml}
-                    </div>
-                    <div class="winner-card-footer">
-                        <div class="winner-card-shipping-summary" style="${shipSummaryStyle}">
-                            ${shipSummaryText}
-                        </div>
-                        <div class="winner-card-status-container">
-                            <span class="status-select ${statusClass}" style="display:inline-block; font-size:11px; padding:3px 8px; border-radius:12px; margin-right: 8px;">${statusLabel}</span>
-                            <span class="winner-card-price">${grandTotal.toLocaleString()}원</span>
-                        </div>
-                    </div>
-                `;
-
-                container.appendChild(card);
-            });
-
-            // Populate slider dots indicators
-            const indicators = document.getElementById('slider-indicators');
-            if (indicators) {
-                const keys = Object.keys(winnerGroups);
-                if (keys.length > 1) {
-                    indicators.style.display = 'flex';
-                    indicators.innerHTML = keys.map((k, idx) => `
-                        <div class="slider-dot ${idx === 0 ? 'active' : ''}" onclick="scrollToSlide(${idx})"></div>
-                    `).join('');
-                } else {
-                    indicators.style.display = 'none';
-                }
+            } catch (err) {
+                console.error('[renderGrid] CRASH:', err);
+                alert('[renderGrid ERROR] ' + err.message + '\nStack: ' + err.stack);
+                throw err;
             }
         }
 
