@@ -3849,21 +3849,21 @@ ${winnerName}님 낙찰 정산 안내입니다.
                     }
                     return `화요일 발송 ➔ 목요일 도착 | 목요일 발송 ➔ 일요일 도착`;
                 } else if (comp === '파르게') {
-                    // 파르게 공식 주간 배송 타임라인 매핑 (전달받은 주간 스케줄 정보 100% 반영)
+                    // 파르게 공식 주간 배송 타임라인 매핑 (대구 토요일 집하 마감 기준)
                     if (region.includes('제주')) {
-                        return `월요일 집하 ➔ 토요일 도착 (배편·격주)`;
+                        return `토요일 집하 ➔ 다음 주 토요일 도착 (배편·격주)`;
                     } else if (region.includes('서울') || region.includes('경기') || region.includes('인천')) {
-                        return `월요일 집하 ➔ 수~목요일 도착`;
+                        return `토요일 집하 ➔ 다음 주 수~목요일 도착`;
                     } else if (region.includes('충청') || region.includes('대전') || region.includes('세종')) {
-                        return `월요일 집하 ➔ 화요일 도착`;
+                        return `토요일 집하 ➔ 다음 주 화요일 도착`;
                     } else if (region.includes('전라') || region.includes('광주')) {
-                        return `월요일 집하 ➔ 일요일 도착`;
+                        return `토요일 집하 ➔ 다음 주 일요일 도착`;
                     } else if (region.includes('대구') || region.includes('경북') || region.includes('부산') || region.includes('경남') || region.includes('울산') || region.includes('경상')) {
-                        return `월요일 집하 ➔ 수~목요일 도착`;
+                        return `토요일 집하 ➔ 다음 주 수~목요일 도착`;
                     } else if (region.includes('강원')) {
-                        return `월요일 집하 ➔ 금요일 도착`;
+                        return `토요일 집하 ➔ 다음 주 금요일 도착`;
                     }
-                    return `월요일 집하 ➔ 주간 순차 도착`;
+                    return `토요일 집하 ➔ 주간 순차 도착`;
                 } else if (comp === '랩팡') {
                     // 랩팡: 금요일 집하 및 거점별 도착 요일 동적 표시
                     if (dayField) {
