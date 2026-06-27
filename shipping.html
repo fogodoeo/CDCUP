@@ -604,7 +604,7 @@
                         Object.keys(pargeRes.data).forEach(regName => {
                             SHIPPING_DATA['파르게'].regions[regName] = pargeRes.data[regName].map(shopItem => ({
                                 shop: shopItem.shop,
-                                cost: regName.includes('제주') ? 60000 : 25000 // 파르게 실제 편도 표준 단가 (제주 6.0만, 그외 2.5만)
+                                cost: shopItem.cost || (regName.includes('제주') ? 46000 : 19000)
                             }));
                         });
                         console.log('[Parge] Successfully loaded dynamic parge prices:', Object.keys(SHIPPING_DATA['파르게'].regions).length, 'regions');
