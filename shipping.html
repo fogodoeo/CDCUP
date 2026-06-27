@@ -1005,10 +1005,13 @@
                 });
                 const totalGeckoCount = allItemsOfWinner.length;
 
-                // 거점 및 지역별 추가 마리당 요금 (파르게 4,000원, 그 외 업체 7,000원)
+                // 거점 및 지역별 추가 마리당 요금 (파르게 제주일 때만 4,000원, 그 외 전체 7,000원)
                 let surchargePerGecko = 7000;
                 if (state.shipping_company === '파르게') {
-                    surchargePerGecko = 4000;
+                    const isJeju = state.shipping_region && (state.shipping_region.includes('제주') || state.shipping_region.includes('제주도'));
+                    if (isJeju) {
+                        surchargePerGecko = 4000;
+                    }
                 }
 
                 // 총 묶음 배송비 계산: 기본 단가 + (총 마리수 - 1) * 추가 마리당 요금
