@@ -540,16 +540,17 @@
         let allItems = [];
         let uniqueSellerCompanies = [];
         let winnerStateMap = {}; 
-        let isAdminMode = false;
+        let isAdminMode = true;
 
-        // URL 파라미터 감지 (?admin=1)
+        // URL 파라미터 감지 (기본 어드민 모드, ?buyer=1 일 때만 일반 낙찰자 입력 모드)
         const params = new URLSearchParams(window.location.search);
-        if (params.get('admin') === '1') {
+        if (params.get('buyer') === '1') {
+            isAdminMode = false;
+            document.getElementById('buyer-view').style.display = 'block';
+        } else {
             isAdminMode = true;
             document.body.classList.add('admin-mode');
             document.getElementById('admin-view').style.display = 'block';
-        } else {
-            document.getElementById('buyer-view').style.display = 'block';
         }
 
         function showToast(msg, isError = false) {
