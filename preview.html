@@ -1757,6 +1757,19 @@
                         }
                     }
 
+                    // DB 값에 맞춰 토글 버튼의 ON/OFF 상태 강제 동기화
+                    const fullShow = map.bracket_full_show !== undefined ? String(map.bracket_full_show) : '1';
+                    const liveShow = map.bracket_live_show !== undefined ? String(map.bracket_live_show) : '0';
+                    const fullBtn = document.getElementById('t-toggle-full');
+                    const liveBtn = document.getElementById('t-toggle-live');
+                    if (fullBtn) {
+                        fullBtn.textContent = '전체대진 ' + (fullShow === '1' ? 'ON' : 'OFF');
+                        fullBtn.style.background = fullShow === '1' ? '#3b82f6' : '#64748b';
+                    }
+                    if (liveBtn) {
+                        liveBtn.textContent = '실시간대진 ' + (liveShow === '1' ? 'ON' : 'OFF');
+                        liveBtn.style.background = liveShow === '1' ? '#3b82f6' : '#64748b';
+                    }
                 }
                 tChangeScale(tScale);
                 await tLoadTeams();

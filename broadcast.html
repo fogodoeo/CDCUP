@@ -2568,16 +2568,16 @@
                 }
             }
 
-            // Toggles active display mode transitions
+            // Toggles active display mode transitions (배치기 모드일 때는 OFF 설정이어도 레이아웃 가이드를 보여주기 위해 항상 visible)
             if (treeFull) {
-                if (masterShow && fullShow) {
+                if ((masterShow && fullShow) || isBracketPage) {
                     treeFull.classList.add('visible');
                 } else {
                     treeFull.classList.remove('visible');
                 }
             }
             if (treeLive) {
-                if (masterShow && liveShow) {
+                if ((masterShow && liveShow) || isBracketPage) {
                     treeLive.classList.add('visible');
                 } else {
                     treeLive.classList.remove('visible');
@@ -2608,10 +2608,10 @@
             let bracket = { matches: {} };
             try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
 
-            if (fullShow) {
+            if (fullShow || isBracketPage) {
                 renderBracketPageTree(parseInt(active), bracket, map);
             }
-            if (liveShow) {
+            if (liveShow || isBracketPage) {
                 renderBracketLiveView(parseInt(active), bracket, map);
             }
         }
