@@ -3205,6 +3205,7 @@
             renderEditorShippingBreakdown(state, selectedCo, baseCost, totalShipping, shippingAllocations, comp || '배송');
 
             // 실시간 전화걸기 및 정산 안내 문자(SMS) 연동
+            const phoneLink = document.getElementById('editor-info-phone');
             const callBtn = document.getElementById('editor-info-call-btn');
             const smsBtn = document.getElementById('editor-info-sms-btn');
             const cleanPhone = (state.phone || '').replace(/[^0-9]/g, '');
