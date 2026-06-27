@@ -7,18 +7,25 @@
     <script src="supabase-bridge.js"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <style>
+        /* ══════════════════════════════════════
+           PREMIUM DESIGN SYSTEM (TOSS/KAKAOPAY INSPIRE)
+           ══════════════════════════════════════ */
+        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css");
+
         :root {
-            --bg: #F8FAFC;
+            --font-pretendard: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+            --bg: #F2F4F7; /* Ultra soft premium background */
             --card: #FFFFFF;
-            --text-title: #0F172A;
-            --text: #334155;
-            --text-secondary: #64748B;
-            --accent: #2563EB;
-            --accent-hover: #1D4ED8;
-            --accent-light: rgba(37, 99, 235, 0.06);
-            --border: #E2E8F0;
-            --radius: 8px;
-            --shadow: 0 1px 3px rgba(0,0,0,0.05);
+            --text-title: #191F28; /* Deepest black for high contrast */
+            --text: #333D4B; /* Dark grey for comfortable reading */
+            --text-secondary: #8B95A1; /* Cool grey for labels */
+            --accent: #3182F6; /* Toss primary blue */
+            --accent-hover: #1b64da;
+            --accent-light: rgba(49, 130, 246, 0.06);
+            --border: #E5E8EB; /* Thin, soft border */
+            --radius: 20px; /* Highly rounded premium corners */
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.03); /* Soft subtle glow */
+            --shadow-md: 0 16px 40px rgba(0, 0, 0, 0.06);
         }
 
         * {
@@ -28,213 +35,200 @@
         }
 
         body {
-            font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
+            font-family: var(--font-pretendard);
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            padding: 24px 16px;
+            padding: 32px 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            -webkit-font-smoothing: antialiased;
+            letter-spacing: -0.2px;
         }
 
         .container {
             width: 100%;
-            max-width: 680px;
+            max-width: 720px;
+            transition: max-width 0.3s ease;
         }
 
-        /* 어드민 모드일 때는 가로를 넓게 설정 */
         body.admin-mode .container {
-            max-width: 1200px;
+            max-width: 1300px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 24px;
+            margin-bottom: 32px;
         }
 
         .header h1 {
-            font-size: 22px;
+            font-size: 26px;
             font-weight: 800;
             color: var(--text-title);
+            letter-spacing: -0.5px;
         }
 
         .header p {
-            font-size: 13px;
+            font-size: 14px;
             color: var(--text-secondary);
-            margin-top: 4px;
+            margin-top: 6px;
+            font-weight: 500;
         }
 
+        /* Premium Card Design */
         .card {
             background: var(--card);
             border-radius: var(--radius);
-            border: 1px solid var(--border);
-            padding: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+            padding: 24px;
             box-shadow: var(--shadow);
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
         }
 
         .control-row {
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
+            gap: 16px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
 
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-        }
-
-        .search-item {
-            padding: 8px 12px;
-            font-size: 13px;
-            cursor: pointer;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .search-item:last-child {
-            border-bottom: none;
-        }
-        .search-item:hover {
-            background: var(--bg);
-        }
-        .search-item-title {
-            font-weight: 600;
-            color: var(--text-title);
-        }
-        .search-item-region {
-            font-size: 11px;
-            color: var(--text-secondary);
-            background: #E2E8F0;
-            padding: 1px 6px;
-            border-radius: 4px;
-        }
-        .search-item-price {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--accent);
+            gap: 6px;
         }
 
         .control-group label {
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
             color: var(--text-secondary);
+            padding-left: 2px;
         }
 
-        .input-text {
-            padding: 8px 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 6px;
-            font-size: 13px;
-            outline: none;
-            font-family: inherit;
-            background: white;
-            width: 100%;
-        }
-
-        .input-text:focus {
-            border-color: var(--accent);
-        }
-
-        .select-custom {
-            padding: 8px 12px;
-            border: 1.5px solid var(--border);
-            border-radius: 6px;
-            font-size: 13px;
-            outline: none;
-            font-family: inherit;
-            background: white;
-            cursor: pointer;
-        }
-
-        .select-custom:focus {
-            border-color: var(--accent);
-        }
-
-        .btn {
+        /* Styled inputs */
+        .input-text, .select-custom {
             padding: 10px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            outline: none;
+            font-family: inherit;
+            background: #F9FAFB;
+            color: var(--text-title);
+            width: 100%;
+            transition: all 0.2s ease;
+        }
+
+        .input-text:focus, .select-custom:focus {
+            border-color: var(--accent);
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.12);
+        }
+
+        /* Buttons with gradients and shadows */
+        .btn {
+            padding: 10px 18px;
             border: none;
-            border-radius: 6px;
-            background: var(--accent);
+            border-radius: 12px;
+            background: linear-gradient(135deg, #3182F6 0%, #1A64DA 100%);
             color: white;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
             justify-content: center;
-            transition: background 0.2s;
+            box-shadow: 0 4px 12px rgba(49, 130, 246, 0.15);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .btn:hover {
-            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(49, 130, 246, 0.25);
         }
 
         .btn-secondary {
-            background: #E2E8F0;
-            color: #475569;
+            background: #F2F4F7;
+            color: #4E5968;
+            box-shadow: none;
         }
 
         .btn-secondary:hover {
-            background: #CBD5E1;
+            background: #E5E8EB;
+            color: #333D4B;
+            transform: none;
+            box-shadow: none;
         }
 
         .btn-full {
             width: 100%;
-            padding: 12px;
-            font-size: 14px;
+            padding: 14px;
+            font-size: 15px;
+            border-radius: 14px;
         }
 
-        /* 테이블 구조 */
+        /* Table Design */
         .table-wrap {
             overflow-x: auto;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(0, 0, 0, 0.03);
             border-radius: var(--radius);
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            background: var(--card);
+            box-shadow: var(--shadow);
         }
 
         .grid-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 13px;
+            font-size: 14px;
             text-align: left;
         }
 
         .grid-table th {
-            background: #F1F5F9;
-            color: var(--text-title);
+            background: #F9FAFB;
+            color: #4E5968;
             font-weight: 700;
-            padding: 10px 12px;
+            padding: 14px 16px;
             border-bottom: 1.5px solid var(--border);
             white-space: nowrap;
         }
 
         .grid-table td {
-            padding: 8px 12px;
+            padding: 12px 16px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
+            color: var(--text);
+        }
+
+        .grid-table tr:last-child td {
+            border-bottom: none;
         }
 
         .grid-table tr:hover {
-            background: #F8FAFC;
+            background: #F9FAFB;
         }
 
+        /* Badges */
         .combined-shipping-badge {
             font-size: 11px;
             color: #D97706;
             background: #FEF3C7;
-            padding: 2px 6px;
-            border-radius: 4px;
+            padding: 3px 8px;
+            border-radius: 20px;
             font-weight: 700;
             display: inline-block;
             margin-top: 4px;
+            border: 1px solid #FDE68A;
         }
 
         .price-shipping {
@@ -245,78 +239,88 @@
         .price-total {
             font-weight: 800;
             color: #E11D48;
-            font-size: 14px;
+            font-size: 15px;
         }
 
-        /* 소비자/낙찰자 개별 정보 폼 */
+        /* Buyer UI option tabs */
         .buyer-item-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
+            padding: 14px 18px;
             border: 1px solid var(--border);
-            border-radius: 6px;
-            margin-bottom: 8px;
-            background: #F8FAFC;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            background: #F9FAFB;
+            font-weight: 600;
         }
 
         .buyer-shipping-options {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
-            margin-top: 8px;
-            margin-bottom: 12px;
+            gap: 8px;
+            margin-top: 10px;
+            margin-bottom: 16px;
         }
 
         .buyer-option-btn {
-            padding: 12px 6px;
+            padding: 14px 8px;
             border: 1.5px solid var(--border);
-            border-radius: 6px;
+            border-radius: 12px;
             background: white;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
-            color: var(--text);
+            color: #4E5968;
             cursor: pointer;
             text-align: center;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .buyer-option-btn:hover {
+            background: #F9FAFB;
+            border-color: #CBD5E1;
         }
 
         .buyer-option-btn.active {
             border-color: var(--accent);
             background: var(--accent-light);
             color: var(--accent);
+            box-shadow: 0 0 0 1px var(--accent);
         }
 
         .buyer-form-detail {
-            background: #F8FAFC;
+            background: #F9FAFB;
             border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 16px;
-            margin-bottom: 16px;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
         .buyer-form-columns {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 12px;
+            margin-top: 12px;
         }
 
-        /* 토스트 */
+        /* Toast notifications */
         .toast {
             position: fixed;
-            bottom: 24px;
+            bottom: 32px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: #0F172A;
+            background: rgba(25, 31, 40, 0.95);
+            backdrop-filter: blur(8px);
             color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 13px;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
             font-weight: 700;
-            z-index: 1000;
+            z-index: 5000;
             opacity: 0;
-            transition: transform 0.3s, opacity 0.3s;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transition: transform 0.35s cubic-bezier(0.32, 0.94, 0.6, 1), opacity 0.3s;
         }
 
         .toast.show {
@@ -327,13 +331,14 @@
         .loading-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.7);
-            z-index: 2000;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 4000;
             display: none;
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .loading-overlay.active {
@@ -341,45 +346,82 @@
         }
 
         .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid var(--border);
+            width: 36px;
+            height: 36px;
+            border: 3.5px solid var(--border);
             border-top-color: var(--accent);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
-        /* 모달 스타일 */
+
+        /* Status Pills */
+        .status-select {
+            font-weight: 700 !important;
+            border-radius: 20px !important;
+            padding: 4px 10px !important;
+            font-size: 12px !important;
+            border: none !important;
+            cursor: pointer;
+            text-align: center;
+            text-align-last: center;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .status-select.status-waiting {
+            background-color: #F1F5F9;
+            color: #475569;
+        }
+        .status-select.status-contacted {
+            background-color: #E0E7FF;
+            color: #4338CA;
+        }
+        .status-select.status-paid {
+            background-color: #DCFCE7;
+            color: #15803D;
+        }
+
+        /* Premium Modal Overlays (Toss Bottom Sheets) */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(8px);
             z-index: 3000;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            padding: 24px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease-out;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
         }
 
         .modal-content {
             background: white;
-            border-radius: 12px;
+            border-radius: 24px;
             width: 100%;
             max-width: 500px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            box-shadow: var(--shadow-md);
             display: flex;
             flex-direction: column;
-            max-height: 85vh;
-            animation: modalFadeIn 0.2s ease-out;
+            max-height: 80vh;
+            transform: scale(0.95);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
         }
 
-        @keyframes modalFadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
+        .bottom-sheet-handle {
+            display: none;
         }
 
         .modal-header {
-            padding: 16px;
+            padding: 20px 24px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -387,25 +429,30 @@
         }
 
         .modal-header h3 {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 800;
             color: var(--text-title);
             margin: 0;
+            letter-spacing: -0.3px;
         }
 
         .modal-close-btn {
             background: transparent;
             border: none;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 300;
             color: var(--text-secondary);
             cursor: pointer;
             line-height: 1;
             padding: 0;
+            transition: color 0.2s;
+        }
+        .modal-close-btn:hover {
+            color: var(--text-title);
         }
 
         .modal-body {
-            padding: 16px;
+            padding: 24px;
             overflow-y: auto;
             flex: 1;
         }
@@ -413,48 +460,75 @@
         .modal-results-list {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
             max-height: 380px;
             overflow-y: auto;
-            border: 1.5px solid var(--border);
-            border-radius: 8px;
-            padding: 4px;
-            background: #F8FAFC;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 6px;
+            background: #F9FAFB;
+        }
+
+        .search-item {
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: none;
+            background: white;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s ease;
+        }
+        .search-item:hover {
+            background: #F2F4F7 !important;
+            transform: translateY(-1px);
+        }
+
+        .search-item-region {
+            font-size: 11px;
+            font-weight: 800;
+            color: #4E5968;
+            background: #E5E8EB;
+            padding: 3px 8px;
+            border-radius: 20px;
         }
 
         .form-group {
-            margin-bottom: 12px;
+            margin-bottom: 16px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
             text-align: left;
         }
         .form-group label {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 700;
             color: var(--text-secondary);
-            text-align: left;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* 모바일 화면 최적화 (768px 이하) */
+        /* ══════════════════════════════════════
+           MOBILE COLLAPSIBLE CARD VIEW & BOTTOM SHEET
+           ══════════════════════════════════════ */
         @media (max-width: 768px) {
+            body {
+                padding: 16px 8px;
+            }
+
             .container {
-                padding: 10px;
+                padding: 0 4px;
             }
 
             .card {
-                padding: 12px;
-                border-radius: 8px;
+                padding: 16px;
+                border-radius: 16px;
             }
 
             .control-row {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 8px;
+                gap: 10px;
             }
 
             .control-row > * {
@@ -462,11 +536,39 @@
                 margin-top: 0 !important;
             }
 
-            /* 테이블을 카드 목록으로 변환 */
+            /* 슬라이드 업 바텀시트 변환 */
+            .modal-overlay {
+                align-items: flex-end;
+                padding: 0;
+            }
+
+            .modal-content {
+                max-width: 100%;
+                border-radius: 24px 24px 0 0;
+                transform: translateY(100%);
+                max-height: 85vh;
+                transition: transform 0.28s cubic-bezier(0.32, 0.94, 0.6, 1);
+            }
+            .modal-overlay.active .modal-content {
+                transform: translateY(0);
+            }
+
+            .bottom-sheet-handle {
+                display: block;
+                width: 40px;
+                height: 5px;
+                background: #E5E8EB;
+                border-radius: 3px;
+                margin: 12px auto 0;
+                flex-shrink: 0;
+            }
+
+            /* 테이블을 모바일 카드 목록으로 변환 */
             .table-wrap {
                 border: none;
                 background: transparent;
                 overflow-x: visible;
+                box-shadow: none;
             }
 
             .grid-table {
@@ -475,7 +577,7 @@
             }
 
             .grid-table thead {
-                display: none; /* 헤더 숨김 */
+                display: none;
             }
 
             .grid-table tbody {
@@ -486,8 +588,8 @@
             .grid-table tr {
                 display: block;
                 background: white;
-                border: 1px solid var(--border);
-                border-radius: 12px;
+                border: 1px solid rgba(0, 0, 0, 0.03);
+                border-radius: 16px;
                 padding: 16px;
                 margin-bottom: 16px;
                 box-shadow: var(--shadow);
@@ -498,9 +600,9 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 8px 0;
-                border-bottom: 1px solid #F1F5F9;
-                min-height: 40px;
+                padding: 10px 0;
+                border-bottom: 1px solid #F2F4F7;
+                min-height: 44px;
                 font-size: 13px;
                 width: 100% !important;
                 text-align: right;
@@ -510,52 +612,40 @@
                 border-bottom: none;
             }
 
-            /* data-label 속성을 왼쪽 라벨로 표시 */
             .grid-table td::before {
                 content: attr(data-label);
                 font-weight: 700;
                 color: var(--text-secondary);
                 text-align: left;
-                width: 40%;
+                width: 35%;
                 font-size: 12px;
                 flex-shrink: 0;
             }
 
             .grid-table td > * {
-                max-width: 60% !important;
+                max-width: 65% !important;
                 text-align: right;
                 justify-content: flex-end;
             }
 
             /* 인풋 필드 모바일 최적화 */
             .input-text, .select-custom {
-                width: 100% !important;
-                max-width: 100% !important;
-                box-sizing: border-box;
-                padding: 6px 10px;
+                padding: 8px 12px;
                 font-size: 13px;
-            }
-
-            /* 거점 검색창 모바일 컨테이너 */
-            [id^="hub-search-container-"] {
-                width: 100% !important;
-            }
-            [id^="hub-search-container-"] input {
-                width: 100% !important;
             }
 
             /* 합계 행 스타일 모바일 최적화 */
             .grid-table tr.subtotal-row {
                 background: var(--accent-light) !important;
                 border: 1.5px solid var(--accent) !important;
-                border-radius: 12px;
+                border-radius: 16px;
                 margin-top: -8px;
                 margin-bottom: 24px;
             }
 
             .grid-table tr.subtotal-row td {
                 justify-content: space-between;
-                border-bottom: 1px dashed rgba(59, 130, 246, 0.2);
+                border-bottom: 1px dashed rgba(49, 130, 246, 0.15);
             }
 
             .grid-table tr.subtotal-row td.subtotal-label-cell {
@@ -563,7 +653,7 @@
             }
 
             .grid-table tr.subtotal-row td.subtotal-label-cell::before {
-                display: none; /* 라벨 중복 제거 */
+                display: none;
             }
 
             .grid-table tr.subtotal-row td.subtotal-label-cell strong {
@@ -581,21 +671,17 @@
                 border-bottom: none;
             }
 
-            .grid-table tr.subtotal-row td.subtotal-btns-cell::before {
-                display: none;
-            }
-
             .grid-table tr.subtotal-row td.subtotal-btns-cell button {
                 flex: 1;
                 margin: 0 !important;
-                padding: 10px 0 !important;
-                font-size: 12px !important;
+                padding: 12px 0 !important;
+                font-size: 13px !important;
             }
 
             /* 소비자용 배송사 탭 모바일 최적화 */
             .buyer-shipping-options {
                 grid-template-columns: repeat(3, 1fr);
-                gap: 4px;
+                gap: 6px;
             }
             .buyer-shipping-options button:nth-child(4),
             .buyer-shipping-options button:nth-child(5) {
@@ -604,7 +690,7 @@
 
             .buyer-form-columns {
                 grid-template-columns: 1fr;
-                gap: 8px;
+                gap: 10px;
             }
         }
     </style>
@@ -760,6 +846,7 @@
     <!-- 거점 검색/선택 모달 -->
     <div id="hub-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
+            <div class="bottom-sheet-handle"></div>
             <div class="modal-header">
                 <h3 id="hub-modal-title">거점 검색 및 선택</h3>
                 <button class="modal-close-btn" onclick="closeHubModal()">&times;</button>
@@ -774,6 +861,7 @@
     <!-- 기타 배송사 직접입력 모달 -->
     <div id="custom-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
+            <div class="bottom-sheet-handle"></div>
             <div class="modal-header">
                 <h3>배송 정보 직접 입력</h3>
                 <button class="modal-close-btn" onclick="closeCustomModal()">&times;</button>
@@ -1078,7 +1166,10 @@
                     ];
                     const currentStatus = firstSelfItem.status || '낙찰-대기';
                     const statusSelectHtml = `
-                        <select class="select-custom" id="status-${it.row}" style="width: 100px;" onchange="changeRowStatus(${it.row}, '${winnerName}')">
+                        <select class="status-select ${
+                            currentStatus === '낙찰-대기' || currentStatus === '낙찰' ? 'status-waiting' :
+                            currentStatus === '낙찰-연락완료' ? 'status-contacted' : 'status-paid'
+                        }" id="status-${it.row}" style="width: 100px;" onchange="changeRowStatus(${it.row}, '${winnerName}')">
                             ${statusOptions.map(o => `<option value="${o.v}" ${
                                 currentStatus === o.v || (currentStatus === '낙찰' && o.v === '낙찰-대기') ? 'selected' : ''
                             }>${o.label}</option>`).join('')}
@@ -1437,7 +1528,16 @@
             const selfItemsOfWinner = getSelfItemsOfWinner(winnerName);
             selfItemsOfWinner.forEach(it => {
                 const sSelect = document.getElementById(`status-${it.row}`);
-                if (sSelect) sSelect.value = selectStatus.value;
+                if (sSelect) {
+                    sSelect.value = selectStatus.value;
+                    sSelect.className = 'status-select';
+                    if (selectStatus.value === '낙찰-대기' || selectStatus.value === '낙찰') sSelect.classList.add('status-waiting');
+                    else if (selectStatus.value === '낙찰-연락완료') sSelect.classList.add('status-contacted');
+                    else if (selectStatus.value === '낙찰-입금완료') sSelect.classList.add('status-paid');
+                }
+                
+                // PERSIST IN MEMORY FOR CROSS-COMPANY SYNC
+                it.status = selectStatus.value;
             });
         }
 
@@ -2343,7 +2443,10 @@ ${combinedInfo}
 
             document.getElementById('hub-modal-title').textContent = `[${comp}] 거점 검색 및 선택`;
             // Show modal
-            document.getElementById('hub-modal').style.display = 'flex';
+            const modal = document.getElementById('hub-modal');
+            modal.style.display = 'flex';
+            modal.offsetHeight; // trigger reflow
+            modal.classList.add('active');
             setTimeout(() => {
                 const searchInput = document.getElementById('hub-modal-search');
                 if (searchInput) {
@@ -2357,7 +2460,11 @@ ${combinedInfo}
         }
 
         function closeHubModal() {
-            document.getElementById('hub-modal').style.display = 'none';
+            const modal = document.getElementById('hub-modal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 250);
         }
 
         function filterModalHubs() {
@@ -2604,12 +2711,21 @@ ${combinedInfo}
                 regionInput.value = document.getElementById('buyer-custom-region').value;
             }
 
-            document.getElementById('custom-modal').style.display = 'flex';
-            companyInput.focus();
+            const modal = document.getElementById('custom-modal');
+            modal.style.display = 'flex';
+            modal.offsetHeight; // trigger reflow
+            modal.classList.add('active');
+            setTimeout(() => {
+                companyInput.focus();
+            }, 50);
         }
 
         function closeCustomModal() {
-            document.getElementById('custom-modal').style.display = 'none';
+            const modal = document.getElementById('custom-modal');
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 250);
         }
 
         function submitCustomModal() {
