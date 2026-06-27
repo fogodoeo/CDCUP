@@ -764,6 +764,7 @@
 
         /* ── 대진표 오버레이 스타일 ── */
         #bracket-page-container {
+            --bracket-fs: 14px;
             background: transparent !important;
             transition: backdrop-filter 0.6s ease;
             backdrop-filter: blur(0px);
@@ -796,7 +797,7 @@
             background: rgba(15, 23, 42, 0.6);
             border: 2px solid rgba(255,255,255,0.06);
             border-radius: 12px;
-            width: 240px;
+            width: calc(var(--bracket-fs) * 17);
             padding: 10px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             position: relative;
@@ -808,7 +809,7 @@
             background: rgba(30, 41, 59, 0.8);
         }
         .bracket-page-match-title {
-            font-size: 11px;
+            font-size: calc(var(--bracket-fs) * 0.78);
             color: #94a3b8;
             font-weight: 800;
             text-align: center;
@@ -817,13 +818,13 @@
             letter-spacing: 0.05em;
         }
         .bracket-page-slot {
-            height: 38px;
+            height: calc(var(--bracket-fs) * 2.7);
             border-radius: 6px;
             margin: 4px 0;
             display: flex;
             align-items: center;
             padding: 0 12px;
-            font-size: 13px;
+            font-size: var(--bracket-fs);
             font-weight: 700;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.08);
@@ -842,7 +843,7 @@
             content: '👑';
             position: absolute;
             right: 12px;
-            font-size: 14px;
+            font-size: var(--bracket-fs);
         }
         .bracket-page-team-text {
             max-width: 80%;
@@ -2519,7 +2520,6 @@
                 treeFull.style.width = bWidth;
                 treeFull.style.height = bHeight;
                 treeFull.style.display = 'flex';
-                treeFull.style.fontSize = bFontSize + 'px';
             }
             if (treeLive) {
                 treeLive.style.position = 'absolute';
@@ -2528,7 +2528,12 @@
                 treeLive.style.width = bWidth;
                 treeLive.style.height = bHeight;
                 treeLive.style.display = 'flex';
-                treeLive.style.fontSize = bFontSize + 'px';
+            }
+
+            // Apply font-size via CSS variable on the container
+            const containerEl = document.getElementById('bracket-page-container');
+            if (containerEl) {
+                containerEl.style.setProperty('--bracket-fs', bFontSize + 'px');
             }
 
             // Control the visibility of the entire bracket container (On/Off master toggle)
@@ -2678,21 +2683,21 @@
                     const activeStyle = currentMatch === fullKey ? 'border-color:#3b82f6;background:rgba(59,130,246,0.08);' : '';
 
                     // 스코어 배지
-                    const scoreBadge = hasScore ? `<span style="position:absolute;right:8px;font-size:11px;font-weight:800;color:${leftWin||rightWin?'#10b981':'#94a3b8'};letter-spacing:0.05em;">${ls}:${rs}</span>` : '';
+                    const scoreBadge = hasScore ? `<span style="position:absolute;right:8px;font-size:0.85em;font-weight:800;color:${leftWin||rightWin?'#10b981':'#94a3b8'};letter-spacing:0.05em;">${ls}:${rs}</span>` : '';
 
                     node.innerHTML = `
                         <div class="bracket-page-match-title">${titleText}${currentMatch === fullKey ? ' ⚡' : ''}</div>
                         <div class="bracket-page-slot" style="${leftWin ? winStyle : ''}${leftLose ? loseStyle : ''}${activeStyle}">
                             <span class="bracket-page-team-text">${leftText}</span>
-                            ${leftWin ? '<span style="position:absolute;right:8px;font-size:13px;">✅</span>' : ''}
-                            ${leftLose ? '<span style="position:absolute;right:8px;font-size:11px;color:#ef4444;">패</span>' : ''}
+                            ${leftWin ? '<span style="position:absolute;right:8px;font-size:1em;">✅</span>' : ''}
+                            ${leftLose ? '<span style="position:absolute;right:8px;font-size:0.85em;color:#ef4444;">패</span>' : ''}
                         </div>
                         <div class="bracket-page-slot" style="${rightWin ? winStyle : ''}${rightLose ? loseStyle : ''}${activeStyle}">
                             <span class="bracket-page-team-text">${rightText}</span>
-                            ${rightWin ? '<span style="position:absolute;right:8px;font-size:13px;">✅</span>' : ''}
-                            ${rightLose ? '<span style="position:absolute;right:8px;font-size:11px;color:#ef4444;">패</span>' : ''}
+                            ${rightWin ? '<span style="position:absolute;right:8px;font-size:1em;">✅</span>' : ''}
+                            ${rightLose ? '<span style="position:absolute;right:8px;font-size:0.85em;color:#ef4444;">패</span>' : ''}
                         </div>
-                        ${hasScore ? `<div style="text-align:center;font-size:11px;font-weight:800;color:#64748b;margin-top:4px;letter-spacing:0.06em;">SCORE ${ls} : ${rs}</div>` : ''}
+                        ${hasScore ? `<div style="text-align:center;font-size:0.85em;font-weight:800;color:#64748b;margin-top:4px;letter-spacing:0.06em;">SCORE ${ls} : ${rs}</div>` : ''}
                     `;
                     col.appendChild(node);
                 }

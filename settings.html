@@ -345,6 +345,15 @@
             <div class="form-group"><label>대회명 문구</label><input type="text" id="cfg-scoreboard-label" placeholder="CRE WORLD CUP"></div>
         </div>
 
+        <!-- ══ 3P 대진표 설정 ══ -->
+        <div class="card">
+            <div class="card-title">🏆 3P 대진표</div>
+            <div class="section-desc">대진표 오버레이(3페이지)의 표시 스타일 설정</div>
+            <div class="form-row">
+                <div class="form-group"><label>대진표 폰트 크기 (px)</label><input type="number" id="cfg-bracket-font-size" placeholder="14" min="8" max="40"></div>
+            </div>
+        </div>
+
         <!-- ══ 안내사항 (룰) 설정 ══ -->
         <div class="card">
             <div class="card-title">📋 방송 안내사항 (룰 카드)</div>
@@ -775,6 +784,7 @@
                 host_role1: document.getElementById('cfg-host-role1').value,
                 host_role2: document.getElementById('cfg-host-role2').value,
                 nametag_font_size: document.getElementById('cfg-nametag-font-size').value,
+                bracket_font_size: document.getElementById('cfg-bracket-font-size').value || '14',
             };
             // banners
             document.querySelectorAll('.cfg-banner-url').forEach((input, i) => {
@@ -881,6 +891,7 @@
                 document.getElementById('cfg-host-role1').value = cfg.host_role1 || '';
                 document.getElementById('cfg-host-role2').value = cfg.host_role2 || '';
                 document.getElementById('cfg-nametag-font-size').value = cfg.nametag_font_size || '';
+                document.getElementById('cfg-bracket-font-size').value = cfg.bracket_font_size || '14';
             }).getConfigMap();
         }
 
