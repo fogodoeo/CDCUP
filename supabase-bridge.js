@@ -594,6 +594,21 @@ async function getParents() {
     }));
 }
 
+/**
+ * 도도시 가격표 데이터 조회
+ */
+async function getDodosiData() {
+    try {
+        const resp = await fetch('dodosi_data.json');
+        if (!resp.ok) throw new Error('dodosi_data.json 로드 실패');
+        const data = await resp.json();
+        return { success: true, data: data.items, updated: data.updated };
+    } catch (e) {
+        console.error('[SB] getDodosiData failed:', e);
+        return { success: false, error: '도도시 가격표 로딩 오류: ' + e.message };
+    }
+}
+
 // ── google.script.run 호환 래퍼 제거됨 ──
 // 모든 HTML 파일이 이제 Supabase 함수를 직접 호출합니다.
 

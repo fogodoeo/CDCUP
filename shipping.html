@@ -573,6 +573,29 @@
         window.addEventListener('DOMContentLoaded', async () => {
             showLoading(true, '데이터를 불러오는 중...');
             try {
+                // 도도시 동적 가격표 로드
+                try {
+                    const dodosiRes = await getDodosiData();
+                    if (dodosiRes && dodosiRes.success && dodosiRes.data && dodosiRes.data.length > 0) {
+                        SHIPPING_DATA['도도시'].regions = {};
+                        dodosiRes.data.forEach(item => {
+                            const regName = item.region || '기타';
+                            if (!SHIPPING_DATA['도도시'].regions[regName]) {
+                                SHIPPING_DATA['도도시'].regions[regName] = [];
+                            }
+                            let label = item.shop;
+                            if (item.sub) label = `${item.sub} [${item.shop}]`;
+                            SHIPPING_DATA['도도시'].regions[regName].push({
+                                shop: label,
+                                cost: item.price || 5000
+                            });
+                        });
+                        console.log('[Dodosi] Successfully loaded dynamic dodosi prices:', Object.keys(SHIPPING_DATA['도도시'].regions).length, 'regions');
+                    }
+                } catch (dodosiErr) {
+                    console.warn('[Dodosi] Failed to load dynamic dodosi data, using fallback:', dodosiErr);
+                }
+
                 const items = await getItems();
                 allItems = (items || []).filter(it => it.status && it.status.indexOf('낙찰') >= 0);
 
