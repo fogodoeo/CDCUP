@@ -1989,6 +1989,26 @@
             color: #FFFFFF;
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
         }
+
+        /* 전화/문자 연동 아이콘 버튼 */
+        .action-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #F1F5F9;
+            border: 1px solid #E2E8F0;
+            transition: all 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .action-icon-btn:hover {
+            background: #E2E8F0;
+            transform: scale(1.15);
+        }
     </style>
 </head>
 <body>
@@ -2157,10 +2177,14 @@
                         <span id="editor-info-company" style="font-size: 20px; font-weight: 850; color: var(--accent); letter-spacing: -0.5px;">출품업체</span>
                         <button class="modal-close-btn" type="button" aria-label="편집 패널 닫기" onclick="closeWinnerEditor()" style="margin: 0; position: absolute; right: 20px; top: 16px;">&times;</button>
                     </div>
-                    <!-- 그다음 낙찰자명, 전화번호 (뚜렷하게) -->
-                    <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span id="editor-info-winner" style="font-size: 16px; font-weight: 800; color: var(--text-title);">낙찰자명</span>
-                        <a id="editor-info-phone" href="#" style="font-size: 13.5px; color: var(--accent); font-weight: 700; text-decoration: underline; cursor: pointer;">전화번호</a>
+                    <!-- 그다음 낙찰자명, 전화번호 + 통화/문자 연동 (뚜렷하게) -->
+                    <div style="margin-top: 6px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <span id="editor-info-winner" style="font-size: 17px; font-weight: 850; color: var(--text-title);">낙찰자명</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <a id="editor-info-phone" href="#" style="font-size: 14.5px; color: var(--accent); font-weight: 750; text-decoration: underline; cursor: pointer;">전화번호</a>
+                            <a id="editor-info-call-btn" href="#" class="action-icon-btn" title="전화걸기" style="font-size: 14px;">📞</a>
+                            <a id="editor-info-sms-btn" href="#" class="action-icon-btn" title="문자발송" style="font-size: 14px;">💬</a>
+                        </div>
                     </div>
                     <!-- 낙찰개체 정보 (폰트 크기 증대 및 가독성 개선) -->
                     <div id="editor-info-objects" style="margin-top: 8px; font-size: 15px; color: #334155; font-weight: 700; line-height: 1.4; max-width: 95%;">
@@ -2862,21 +2886,10 @@
             // 2. 낙찰자명
             document.getElementById('editor-info-winner').textContent = winnerName;
             
-            // 3. 전화번호 (통화 연결 가능하도록 tel 링크 매핑)
+            // 3. 전화번호 단순 바인딩 (통화/문자 상세는 updateEditorPricing 에서 실시간 세팅)
             const phoneLink = document.getElementById('editor-info-phone');
             if (phoneLink) {
-                const rawPhone = (state.phone || '').replace(/[^0-9]/g, '');
-                if (rawPhone) {
-                    phoneLink.href = `tel:${rawPhone}`;
-                    phoneLink.textContent = fmtPhone(state.phone);
-                    phoneLink.style.color = 'var(--accent)';
-                    phoneLink.style.textDecoration = 'underline';
-                } else {
-                    phoneLink.removeAttribute('href');
-                    phoneLink.textContent = '연락처 없음';
-                    phoneLink.style.color = 'var(--text-secondary)';
-                    phoneLink.style.textDecoration = 'none';
-                }
+                phoneLink.textContent = fmtPhone(state.phone) || '연락처 없음';
             }
             
             // 4. 합배송 버튼 제어 (합배송이 있을 때만 보이도록 설정)
@@ -3190,6 +3203,75 @@
             document.getElementById('editor-summary-ship').textContent = shipCost.toLocaleString() + '원';
             document.getElementById('editor-summary-total').textContent = grandTotal.toLocaleString() + '원';
             renderEditorShippingBreakdown(state, selectedCo, baseCost, totalShipping, shippingAllocations, comp || '배송');
+
+            // 실시간 전화걸기 및 정산 안내 문자(SMS) 연동
+            const callBtn = document.getElementById('editor-info-call-btn');
+            const smsBtn = document.getElementById('editor-info-sms-btn');
+            const cleanPhone = (state.phone || '').replace(/[^0-9]/g, '');
+
+            if (phoneLink) {
+                if (cleanPhone) {
+                    phoneLink.href = `tel:${cleanPhone}`;
+                    phoneLink.style.color = 'var(--accent)';
+                    phoneLink.style.textDecoration = 'underline';
+                } else {
+                    phoneLink.removeAttribute('href');
+                    phoneLink.style.color = 'var(--text-secondary)';
+                    phoneLink.style.textDecoration = 'none';
+                }
+            }
+
+            if (callBtn) {
+                if (cleanPhone) {
+                    callBtn.href = `tel:${cleanPhone}`;
+                    callBtn.style.display = 'inline-flex';
+                } else {
+                    callBtn.removeAttribute('href');
+                    callBtn.style.display = 'none';
+                }
+            }
+
+            if (smsBtn) {
+                if (cleanPhone) {
+                    const smsObjects = groupItems.map(it => {
+                        const name = it.name || '이름 없음';
+                        const priceVal = parseFloat(it.soldPrice || it.sold_price) || 0;
+                        return `${name}${priceVal > 0 ? `(${priceVal}만)` : ''}`;
+                    }).join(', ');
+
+                    let smsShipInfo = '';
+                    if (editorShippingState.type === '직접수령') {
+                        smsShipInfo = '현장 직접 수령';
+                    } else if (editorShippingState.type === '배송') {
+                        if (comp === '기타') {
+                            smsShipInfo = `[기타배송] ${reg}`;
+                        } else if (reg && hub) {
+                            smsShipInfo = `[${comp}] ${reg} (${hub})`;
+                        } else {
+                            smsShipInfo = `배송 거점 미지정`;
+                        }
+                    } else {
+                        smsShipInfo = '미설정';
+                    }
+
+                    const smsText = `[배송관리 - ${selectedCo}]
+${winnerName}님 낙찰 정산 안내입니다.
+
+■ 낙찰개체: ${smsObjects}
+■ 낙찰금액: ${(totalBid * 10000).toLocaleString()}원
+■ 배송방식: ${smsShipInfo}
+■ 배송금액: ${shipCost.toLocaleString()}원
+■ 최종 입금액: ${grandTotal.toLocaleString()}원
+
+확인 부탁드립니다. 감사합니다.`;
+
+                    smsBtn.href = `sms:${cleanPhone}?body=${encodeURIComponent(smsText)}`;
+                    smsBtn.style.display = 'inline-flex';
+                } else {
+                    smsBtn.removeAttribute('href');
+                    smsBtn.style.display = 'none';
+                }
+            }
         }
 
         async function saveWinnerEditor() {
