@@ -1893,6 +1893,56 @@
                 justify-content: space-between;
             }
         }
+
+        /* 배송 정보 요약 카드 */
+        .editor-info-card {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .editor-info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+        .editor-info-label {
+            font-size: 13px;
+            color: #64748B;
+            font-weight: 600;
+        }
+        .editor-info-val {
+            font-size: 14.5px;
+            color: #1E293B;
+            font-weight: 750;
+        }
+        .editor-info-badge {
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: -0.2px;
+        }
+        .badge-company {
+            background: #EFF6FF;
+            color: #1D4ED8;
+            border: 1.5px solid #DBEAFE;
+        }
+        .badge-single {
+            background: #F0FDF4;
+            color: #15803D;
+            border: 1.5px solid #DCFCE7;
+        }
+        .badge-combined {
+            background: #FFF7ED;
+            color: #C2410C;
+            border: 1.5px solid #FFEDD5;
+        }
     </style>
 </head>
 <body>
@@ -2060,11 +2110,13 @@
             <div class="modal-header">
                 <div class="editor-header-main">
                     <h3 id="editor-modal-title">배송 정보 설정</h3>
-                    <div id="editor-object-summary" class="editor-object-summary"></div>
+                    <div id="editor-object-summary" class="editor-object-summary" style="display:none;"></div>
                 </div>
                 <button class="modal-close-btn" type="button" aria-label="편집 패널 닫기" onclick="closeWinnerEditor()">&times;</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <!-- 낙찰자 정보 요약 카드 -->
+                <div id="editor-info-summary-card" class="editor-info-card"></div>
 
                 <!-- 패널 진입 즉시 배송사부터 선택 -->
                 <div class="segmented-control" aria-label="배송 방식">
@@ -2101,6 +2153,10 @@
                     </div>
                 </div>
 
+                <!-- 합배송 상세내역 토글 버튼 -->
+                <button type="button" class="btn btn-secondary btn-full" id="btn-toggle-breakdown" onclick="toggleShippingBreakdown()" style="margin: 4px 0; font-weight: 700; justify-content: center; display: flex; align-items: center; gap: 6px;">
+                    합배송 상세내역 <span id="btn-breakdown-arrow">▼</span>
+                </button>
                 <!-- 합배송 구성과 업체별 수령 금액 -->
                 <section id="editor-shipping-breakdown" class="shipping-breakdown" aria-live="polite" style="display: none;"></section>
 
@@ -2695,16 +2751,37 @@
             document.getElementById('editor-modal-title').textContent = `${winnerName}님 배송 설정`;
             const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
             const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
+            const isCombined = otherCoItems.length > 0;
+            const combinedStatusHtml = isCombined 
+                ? `<span class="editor-info-badge badge-combined">합배송 (${state.sellerCompanies.length}개 업체)</span>`
+                : `<span class="editor-info-badge badge-single">단독배송</span>`;
+
             const objectNames = currentCoItems.map(it => {
                 const numberText = it.num ? `No.${it.num} ` : '';
                 return `${numberText}${it.name || '이름 없음'}`;
-            });
-            const objectSummary = document.getElementById('editor-object-summary');
-            objectSummary.innerHTML = `
-                <span class="editor-object-label">개체정보</span>
-                <span class="editor-object-names">${objectNames.join(', ')}</span>
-                ${otherCoItems.length > 0 ? `<span class="editor-combined-count">합배송 ${otherCoItems.length}개</span>` : ''}
-            `;
+            }).join(', ');
+
+            const infoCard = document.getElementById('editor-info-summary-card');
+            if (infoCard) {
+                infoCard.innerHTML = `
+                    <div class="editor-info-row" style="margin-bottom: 4px;">
+                        <span class="editor-info-val" style="font-size: 19px; color: var(--text-title);">${winnerName}</span>
+                        ${combinedStatusHtml}
+                    </div>
+                    <div class="editor-info-row">
+                        <span class="editor-info-label">연락처</span>
+                        <span class="editor-info-val" style="font-size: 14px;">${fmtPhone(state.phone) || '연락처 없음'}</span>
+                    </div>
+                    <div class="editor-info-row">
+                        <span class="editor-info-label">출품 업체</span>
+                        <span class="editor-info-badge badge-company" style="font-size: 13px; font-weight:800;">${selectedCo}</span>
+                    </div>
+                    <div class="editor-info-row" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 4px; border-top: 1px solid #F1F5F9; padding-top: 8px;">
+                        <span class="editor-info-label" style="margin-bottom: 2px;">낙찰 개체 (${currentCoItems.length}마리)</span>
+                        <span class="editor-info-val" style="font-size: 13.5px; font-weight: 500; line-height: 1.4; color: #475569; word-break: break-all;">${objectNames}</span>
+                    </div>
+                `;
+            }
 
             // Set Segmented Control Active Button
             setEditorShippingType(editorShippingState.type === '직접수령' ? '픽업' : (editorShippingState.type === '배송' ? editorShippingState.company : '미설정'), true);
@@ -2812,6 +2889,10 @@
                         filterEmbeddedHubs('editor');
                         if (!isInit) {
                             requestAnimationFrame(alignEditorPanelToViewport);
+                            setTimeout(() => {
+                                const sInput = document.getElementById('editor-hub-search');
+                                if (sInput) sInput.focus();
+                            }, 150);
                         }
                     }
                 } else {
@@ -2823,6 +2904,10 @@
                     if (!isInit) {
                         document.getElementById('editor-custom-company').value = '';
                         document.getElementById('editor-custom-region').value = '';
+                        setTimeout(() => {
+                            const customCompInput = document.getElementById('editor-custom-company');
+                            if (customCompInput) customCompInput.focus();
+                        }, 150);
                     } else {
                         const winnerState = winnerStateMap[activeEditorWinner];
                         if (winnerState && winnerState.shipping_company !== '도도시' && winnerState.shipping_company !== '파르게' && winnerState.shipping_company !== '랩팡') {
@@ -2848,11 +2933,15 @@
         function toggleShippingBreakdown() {
             const section = document.getElementById('editor-shipping-breakdown');
             const arrow = document.getElementById('breakdown-toggle-arrow');
+            const btnArrow = document.getElementById('btn-breakdown-arrow');
             if (!section) return;
             const isHidden = section.style.display === 'none';
             section.style.display = isHidden ? 'block' : 'none';
             if (arrow) {
                 arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+            }
+            if (btnArrow) {
+                btnArrow.textContent = isHidden ? '▲' : '▼';
             }
             if (isHidden) {
                 setTimeout(() => section.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
