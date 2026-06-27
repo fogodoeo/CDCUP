@@ -3839,11 +3839,35 @@ ${winnerName}님 낙찰 정산 안내입니다.
 
             // Helper to get dispatch and receipt schedule (소비자 관점에서 직관적인 전달일로 변경)
             function getSchedule(regName, dayField) {
+                const region = regName || '';
                 if (comp === '도도시') {
+                    // 도도시는 거점별 데이터(dayField)가 있으면 그것을 보여주고, 없으면 기본 요일 제공
+                    if (dayField) {
+                        const sendDay = (dayField.includes('일') || dayField.includes('일요일')) ? '목요일' : '화요일';
+                        return `${sendDay} 발송 ➔ ${dayField} 수령`;
+                    }
                     return `화요일 발송 ➔ 목요일 도착 | 목요일 발송 ➔ 일요일 도착`;
                 } else if (comp === '파르게') {
-                    return `토요일 일괄 취합 ➔ 다음 주 수요일 도착`;
+                    // 파르게: 토요일까지 대구 본진 취합 완료 기준 권역별 상세 도착
+                    if (region.includes('서울') || region.includes('경기') || region.includes('인천')) {
+                        return `토요일 일괄 취합 ➔ 다음 주 화~수요일 도착`;
+                    } else if (region.includes('충청') || region.includes('대전') || region.includes('세종')) {
+                        return `토요일 일괄 취합 ➔ 다음 주 화요일 도착`;
+                    } else if (region.includes('전라') || region.includes('광주')) {
+                        return `토요일 일괄 취합 ➔ 다음 주 수요일 도착`;
+                    } else if (region.includes('대구') || region.includes('경북')) {
+                        return `토요일 일괄 취합 ➔ 다음 주 월~화요일 도착`;
+                    } else if (region.includes('부산') || region.includes('경남') || region.includes('울산') || region.includes('경상')) {
+                        return `토요일 일괄 취합 ➔ 다음 주 화요일 도착`;
+                    } else if (region.includes('제주')) {
+                        return `토요일 일괄 취합 ➔ 다음 주 목요일 도착`;
+                    }
+                    return `토요일 일괄 취합 ➔ 다음 주 수요일 전후 도착`;
                 } else if (comp === '랩팡') {
+                    // 랩팡: 월요일, 목요일 발송 기준
+                    if (region.includes('제주')) {
+                        return `월/목요일 발송 ➔ 다음 주 화/금요일 도착 (제주 1~2일 추가 소요)`;
+                    }
                     return `월요일 발송 ➔ 화요일 도착 | 목요일 발송 ➔ 금요일 도착`;
                 }
                 return '';
