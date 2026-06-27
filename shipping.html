@@ -8,24 +8,26 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <style>
         /* ══════════════════════════════════════
-           PREMIUM DESIGN SYSTEM (TOSS/KAKAOPAY INSPIRE)
+           PREMIUM OBSIDIAN SPACE GLASS DESIGN SYSTEM
+           (VERCEL / LINEAR STYLE / DARK GLASSMORPHISM)
            ══════════════════════════════════════ */
         @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css");
 
         :root {
             --font-pretendard: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            --bg: #F2F4F7; /* Ultra soft premium background */
-            --card: #FFFFFF;
-            --text-title: #191F28; /* Deepest black for high contrast */
-            --text: #333D4B; /* Dark grey for comfortable reading */
-            --text-secondary: #8B95A1; /* Cool grey for labels */
-            --accent: #3182F6; /* Toss primary blue */
-            --accent-hover: #1b64da;
-            --accent-light: rgba(49, 130, 246, 0.06);
-            --border: #E5E8EB; /* Thin, soft border */
-            --radius: 20px; /* Highly rounded premium corners */
-            --shadow: 0 8px 30px rgba(0, 0, 0, 0.03); /* Soft subtle glow */
-            --shadow-md: 0 16px 40px rgba(0, 0, 0, 0.06);
+            --bg: #05070B; /* Deep Space Black */
+            --bg-gradient: radial-gradient(circle at 50% 0%, #111A2E 0%, #05070B 70%);
+            --card: rgba(13, 18, 30, 0.7); /* Frosted Glass Obsidian */
+            --text-title: #FFFFFF; /* Glowing Pure White */
+            --text: #E2E8F0; /* Soft Silver */
+            --text-secondary: #94A3B8; /* Cool Grey */
+            --accent: #3182F6; /* Cyber Neon Blue */
+            --accent-hover: #60A5FA;
+            --accent-light: rgba(49, 130, 246, 0.1);
+            --border: rgba(255, 255, 255, 0.08); /* Frosted glass border */
+            --radius: 24px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --shadow-md: 0 16px 48px rgba(0, 0, 0, 0.7);
         }
 
         * {
@@ -37,59 +39,69 @@
         body {
             font-family: var(--font-pretendard);
             background: var(--bg);
+            background-image: var(--bg-gradient);
             color: var(--text);
             min-height: 100vh;
-            padding: 32px 16px;
+            padding: 40px 16px;
             display: flex;
             flex-direction: column;
             align-items: center;
             -webkit-font-smoothing: antialiased;
-            letter-spacing: -0.2px;
+            letter-spacing: -0.3px;
         }
 
         .container {
             width: 100%;
-            max-width: 720px;
+            max-width: 740px;
             transition: max-width 0.3s ease;
         }
 
         body.admin-mode .container {
-            max-width: 1300px;
+            max-width: 1350px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 40px;
+            position: relative;
         }
 
         .header h1 {
-            font-size: 26px;
-            font-weight: 800;
+            font-size: 28px;
+            font-weight: 900;
             color: var(--text-title);
-            letter-spacing: -0.5px;
+            letter-spacing: -0.8px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #94A3B8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
         }
 
         .header p {
             font-size: 14px;
             color: var(--text-secondary);
-            margin-top: 6px;
+            margin-top: 8px;
             font-weight: 500;
         }
 
-        /* Premium Card Design */
+        /* Glassmorphic Obsidian Card */
         .card {
             background: var(--card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border-radius: var(--radius);
-            border: 1px solid rgba(0, 0, 0, 0.03);
-            padding: 24px;
+            border: 1px solid var(--border);
+            padding: 28px;
             box-shadow: var(--shadow);
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             width: 100%;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
             box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
         }
 
         .control-row {
@@ -103,7 +115,7 @@
         .control-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
         }
 
         .control-group label {
@@ -111,79 +123,85 @@
             font-weight: 700;
             color: var(--text-secondary);
             padding-left: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* Styled inputs */
         .input-text, .select-custom {
-            padding: 10px 16px;
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
+            padding: 12px 18px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
             font-size: 14px;
             font-weight: 600;
             outline: none;
             font-family: inherit;
-            background: #F9FAFB;
-            color: var(--text-title);
+            background: rgba(10, 15, 26, 0.6);
+            color: #FFFFFF;
             width: 100%;
             transition: all 0.2s ease;
         }
 
         .input-text:focus, .select-custom:focus {
             border-color: var(--accent);
-            background: #FFFFFF;
-            box-shadow: 0 0 0 3px rgba(49, 130, 246, 0.12);
+            background: rgba(10, 15, 26, 0.9);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
         }
 
-        /* Buttons with gradients and shadows */
+        /* Buttons with gradients and neon shadows */
         .btn {
-            padding: 10px 18px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #3182F6 0%, #1A64DA 100%);
+            border-radius: 14px;
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
             color: white;
             font-size: 14px;
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(49, 130, 246, 0.15);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .btn:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 16px rgba(49, 130, 246, 0.25);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
         }
 
         .btn-secondary {
-            background: #F2F4F7;
-            color: #4E5968;
+            background: rgba(255, 255, 255, 0.05);
+            color: #E2E8F0;
+            border: 1px solid var(--border);
             box-shadow: none;
         }
 
         .btn-secondary:hover {
-            background: #E5E8EB;
-            color: #333D4B;
+            background: rgba(255, 255, 255, 0.1);
+            color: #FFFFFF;
+            border-color: rgba(255, 255, 255, 0.2);
             transform: none;
             box-shadow: none;
         }
 
         .btn-full {
             width: 100%;
-            padding: 14px;
+            padding: 16px;
             font-size: 15px;
-            border-radius: 14px;
+            border-radius: 16px;
         }
 
         /* Table Design */
         .table-wrap {
             overflow-x: auto;
-            border: 1px solid rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border);
             border-radius: var(--radius);
-            margin-bottom: 24px;
+            margin-bottom: 28px;
             background: var(--card);
+            backdrop-filter: blur(20px);
             box-shadow: var(--shadow);
         }
 
@@ -195,19 +213,21 @@
         }
 
         .grid-table th {
-            background: #F9FAFB;
-            color: #4E5968;
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
             font-weight: 700;
-            padding: 14px 16px;
+            padding: 16px;
             border-bottom: 1.5px solid var(--border);
             white-space: nowrap;
+            letter-spacing: 0.5px;
+            font-size: 13px;
         }
 
         .grid-table td {
-            padding: 12px 16px;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--border);
             vertical-align: middle;
-            color: var(--text);
+            color: #E2E8F0;
         }
 
         .grid-table tr:last-child td {
@@ -215,31 +235,32 @@
         }
 
         .grid-table tr:hover {
-            background: #F9FAFB;
+            background: rgba(255, 255, 255, 0.01);
         }
 
         /* Badges */
         .combined-shipping-badge {
             font-size: 11px;
-            color: #D97706;
-            background: #FEF3C7;
-            padding: 3px 8px;
+            color: #F59E0B;
+            background: rgba(245, 158, 11, 0.15);
+            padding: 3px 10px;
             border-radius: 20px;
             font-weight: 700;
             display: inline-block;
             margin-top: 4px;
-            border: 1px solid #FDE68A;
+            border: 1px solid rgba(245, 158, 11, 0.25);
         }
 
         .price-shipping {
             font-weight: 700;
-            color: var(--accent);
+            color: #60A5FA;
         }
 
         .price-total {
-            font-weight: 800;
-            color: #E11D48;
+            font-weight: 900;
+            color: #EF4444;
             font-size: 15px;
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
         }
 
         /* Buyer UI option tabs */
@@ -247,61 +268,61 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 14px 18px;
+            padding: 16px 20px;
             border: 1px solid var(--border);
-            border-radius: 12px;
-            margin-bottom: 10px;
-            background: #F9FAFB;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            background: rgba(255, 255, 255, 0.02);
             font-weight: 600;
         }
 
         .buyer-shipping-options {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
+            gap: 10px;
             margin-top: 10px;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .buyer-option-btn {
-            padding: 14px 8px;
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            background: white;
+            padding: 16px 8px;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
             font-size: 14px;
             font-weight: 700;
-            color: #4E5968;
+            color: var(--text-secondary);
             cursor: pointer;
             text-align: center;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.25s ease;
         }
 
         .buyer-option-btn:hover {
-            background: #F9FAFB;
-            border-color: #CBD5E1;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #FFFFFF;
         }
 
         .buyer-option-btn.active {
             border-color: var(--accent);
             background: var(--accent-light);
-            color: var(--accent);
-            box-shadow: 0 0 0 1px var(--accent);
+            color: #FFFFFF;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
         }
 
         .buyer-form-detail {
-            background: #F9FAFB;
+            background: rgba(255, 255, 255, 0.01);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 20px;
-            margin-bottom: 20px;
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 24px;
         }
 
         .buyer-form-columns {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 12px;
+            gap: 16px;
+            margin-top: 16px;
         }
 
         /* Toast notifications */
@@ -310,16 +331,18 @@
             bottom: 32px;
             left: 50%;
             transform: translateX(-50%) translateY(100px);
-            background: rgba(25, 31, 40, 0.95);
-            backdrop-filter: blur(8px);
+            background: rgba(13, 18, 30, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             color: white;
-            padding: 12px 24px;
+            padding: 14px 28px;
             border-radius: 30px;
             font-size: 14px;
             font-weight: 700;
             z-index: 5000;
             opacity: 0;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             transition: transform 0.35s cubic-bezier(0.32, 0.94, 0.6, 1), opacity 0.3s;
         }
 
@@ -331,14 +354,15 @@
         .loading-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255, 255, 255, 0.75);
-            backdrop-filter: blur(4px);
+            background: rgba(5, 7, 11, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             z-index: 4000;
             display: none;
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
         }
 
         .loading-overlay.active {
@@ -346,46 +370,50 @@
         }
 
         .spinner {
-            width: 36px;
-            height: 36px;
-            border: 3.5px solid var(--border);
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
             border-top-color: var(--accent);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
 
-        /* Status Pills */
+        /* Status Pills (Glassmorphic Badges) */
         .status-select {
             font-weight: 700 !important;
             border-radius: 20px !important;
-            padding: 4px 10px !important;
+            padding: 6px 12px !important;
             font-size: 12px !important;
             border: none !important;
             cursor: pointer;
             text-align: center;
             text-align-last: center;
             outline: none;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
         }
         .status-select.status-waiting {
-            background-color: #F1F5F9;
-            color: #475569;
+            background-color: rgba(148, 163, 184, 0.15) !important;
+            color: #94A3B8 !important;
+            border: 1px solid rgba(148, 163, 184, 0.25) !important;
         }
         .status-select.status-contacted {
-            background-color: #E0E7FF;
-            color: #4338CA;
+            background-color: rgba(99, 102, 241, 0.15) !important;
+            color: #818CF8 !important;
+            border: 1px solid rgba(99, 102, 241, 0.3) !important;
         }
         .status-select.status-paid {
-            background-color: #DCFCE7;
-            color: #15803D;
+            background-color: rgba(16, 185, 129, 0.15) !important;
+            color: #34D399 !important;
+            border: 1px solid rgba(16, 185, 129, 0.3) !important;
         }
 
         /* Premium Modal Overlays (Toss Bottom Sheets) */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 23, 42, 0.4);
-            backdrop-filter: blur(8px);
+            background: rgba(5, 7, 11, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             z-index: 3000;
             display: flex;
             align-items: center;
@@ -401,8 +429,9 @@
         }
 
         .modal-content {
-            background: white;
-            border-radius: 24px;
+            background: #0D121E;
+            border: 1px solid var(--border);
+            border-radius: 28px;
             width: 100%;
             max-width: 500px;
             box-shadow: var(--shadow-md);
@@ -421,7 +450,7 @@
         }
 
         .modal-header {
-            padding: 20px 24px;
+            padding: 22px 28px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -439,8 +468,8 @@
         .modal-close-btn {
             background: transparent;
             border: none;
-            font-size: 28px;
-            font-weight: 300;
+            font-size: 32px;
+            font-weight: 200;
             color: var(--text-secondary);
             cursor: pointer;
             line-height: 1;
@@ -452,7 +481,7 @@
         }
 
         .modal-body {
-            padding: 24px;
+            padding: 28px;
             overflow-y: auto;
             flex: 1;
         }
@@ -460,42 +489,43 @@
         .modal-results-list {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             max-height: 380px;
             overflow-y: auto;
             border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 6px;
-            background: #F9FAFB;
+            border-radius: 20px;
+            padding: 8px;
+            background: rgba(5, 7, 11, 0.5);
         }
 
         .search-item {
-            padding: 12px 16px;
-            border-radius: 12px;
-            border: none;
-            background: white;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            background: rgba(255, 255, 255, 0.02);
+            box-shadow: none;
             transition: all 0.2s ease;
         }
         .search-item:hover {
-            background: #F2F4F7 !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+            border-color: rgba(255, 255, 255, 0.1);
             transform: translateY(-1px);
         }
 
         .search-item-region {
             font-size: 11px;
             font-weight: 800;
-            color: #4E5968;
-            background: #E5E8EB;
-            padding: 3px 8px;
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3px 10px;
             border-radius: 20px;
         }
 
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
             text-align: left;
         }
         .form-group label {
@@ -513,7 +543,7 @@
            ══════════════════════════════════════ */
         @media (max-width: 768px) {
             body {
-                padding: 16px 8px;
+                padding: 24px 8px;
             }
 
             .container {
@@ -521,14 +551,14 @@
             }
 
             .card {
-                padding: 16px;
-                border-radius: 16px;
+                padding: 20px;
+                border-radius: 20px;
             }
 
             .control-row {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 10px;
+                gap: 12px;
             }
 
             .control-row > * {
@@ -544,9 +574,14 @@
 
             .modal-content {
                 max-width: 100%;
-                border-radius: 24px 24px 0 0;
+                border-radius: 28px 28px 0 0;
                 transform: translateY(100%);
                 max-height: 85vh;
+                background: #0D121E;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                border-left: none;
+                border-right: none;
+                border-bottom: none;
                 transition: transform 0.28s cubic-bezier(0.32, 0.94, 0.6, 1);
             }
             .modal-overlay.active .modal-content {
@@ -555,9 +590,9 @@
 
             .bottom-sheet-handle {
                 display: block;
-                width: 40px;
+                width: 44px;
                 height: 5px;
-                background: #E5E8EB;
+                background: rgba(255, 255, 255, 0.15);
                 border-radius: 3px;
                 margin: 12px auto 0;
                 flex-shrink: 0;
@@ -587,11 +622,11 @@
 
             .grid-table tr {
                 display: block;
-                background: white;
-                border: 1px solid rgba(0, 0, 0, 0.03);
-                border-radius: 16px;
-                padding: 16px;
-                margin-bottom: 16px;
+                background: var(--card);
+                border: 1px solid var(--border);
+                border-radius: 20px;
+                padding: 20px;
+                margin-bottom: 20px;
                 box-shadow: var(--shadow);
                 position: relative;
             }
@@ -600,10 +635,10 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                padding: 10px 0;
-                border-bottom: 1px solid #F2F4F7;
-                min-height: 44px;
-                font-size: 13px;
+                padding: 12px 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                min-height: 48px;
+                font-size: 14px;
                 width: 100% !important;
                 text-align: right;
             }
@@ -630,7 +665,7 @@
 
             /* 인풋 필드 모바일 최적화 */
             .input-text, .select-custom {
-                padding: 8px 12px;
+                padding: 10px 14px;
                 font-size: 13px;
             }
 
@@ -638,14 +673,14 @@
             .grid-table tr.subtotal-row {
                 background: var(--accent-light) !important;
                 border: 1.5px solid var(--accent) !important;
-                border-radius: 16px;
+                border-radius: 20px;
                 margin-top: -8px;
                 margin-bottom: 24px;
             }
 
             .grid-table tr.subtotal-row td {
                 justify-content: space-between;
-                border-bottom: 1px dashed rgba(49, 130, 246, 0.15);
+                border-bottom: 1px dashed rgba(59, 130, 246, 0.15);
             }
 
             .grid-table tr.subtotal-row td.subtotal-label-cell {
@@ -671,17 +706,21 @@
                 border-bottom: none;
             }
 
+            .grid-table tr.subtotal-row td.subtotal-btns-cell::before {
+                display: none;
+            }
+
             .grid-table tr.subtotal-row td.subtotal-btns-cell button {
                 flex: 1;
                 margin: 0 !important;
-                padding: 12px 0 !important;
+                padding: 14px 0 !important;
                 font-size: 13px !important;
             }
 
             /* 소비자용 배송사 탭 모바일 최적화 */
             .buyer-shipping-options {
                 grid-template-columns: repeat(3, 1fr);
-                gap: 6px;
+                gap: 8px;
             }
             .buyer-shipping-options button:nth-child(4),
             .buyer-shipping-options button:nth-child(5) {
@@ -1211,7 +1250,7 @@
                 // 합계 행
                 const subtotalTr = document.createElement('tr');
                 subtotalTr.className = 'subtotal-row';
-                subtotalTr.style.background = '#EEF2F6';
+                subtotalTr.style.background = 'rgba(255, 255, 255, 0.02)';
                 subtotalTr.style.borderTop = '1.5px solid var(--border)';
                 subtotalTr.style.borderBottom = '2px solid var(--border)';
                 subtotalTr.innerHTML = `
@@ -1219,12 +1258,12 @@
                         <strong>${winnerName}님 안내 합계:</strong>
                     </td>
                     <td data-label="총 배송비" id="subtotal-cost-${winnerName}" style="font-weight: 700; color: var(--accent); padding: 10px 12px;">0원</td>
-                    <td data-label="최종 합계" id="subtotal-total-${winnerName}" style="font-weight: 900; color: #E11D48; font-size: 14px; padding: 10px 12px;">0원</td>
+                    <td data-label="최종 합계" id="subtotal-total-${winnerName}" style="font-weight: 900; color: #EF4444; font-size: 15px; padding: 10px 12px; text-shadow: 0 0 10px rgba(239, 68, 68, 0.15);" class="price-total">0원</td>
                     <td data-label="작업" style="padding: 6px 12px; display: flex; flex-direction: column; gap: 4px; align-items: center; justify-content: center;" class="subtotal-btns-cell">
-                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 11px; font-weight: 800; background: #64748B; color: white; border: none; width: 100%;" onclick="copyRequestMessage('${winnerName}')">
+                        <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; font-weight: 800; width: 100%;" onclick="copyRequestMessage('${winnerName}')">
                             정보 요청 복사
                         </button>
-                        <button class="btn" style="padding: 4px 8px; font-size: 11px; font-weight: 800; border: none; width: 100%;" onclick="copyBillingMessage('${winnerName}')">
+                        <button class="btn" style="padding: 6px 12px; font-size: 11px; font-weight: 800; width: 100%;" onclick="copyBillingMessage('${winnerName}')">
                             안내 메시지 복사
                         </button>
                     </td>
@@ -1235,6 +1274,51 @@
             recalculateAllCosts();
         }
 
+        // ══════════════════════════════════════
+        //  배송 정보 버튼 렌더링 헬퍼 함수
+        // ══════════════════════════════════════
+        function styleHubButton(btn, companyKey, region, hub) {
+            if (!btn) return;
+            btn.className = "btn btn-secondary";
+            let bg = "";
+            let color = "";
+            let border = "";
+            let text = "";
+
+            if (companyKey === '도도시') {
+                bg = "linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(15, 23, 42, 0.4) 100%)";
+                color = "#A5B4FC";
+                border = "rgba(99, 102, 241, 0.25)";
+                text = `📍 [도도시] ${region} (${hub})`;
+            } else if (companyKey === '파르게') {
+                bg = "linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(15, 23, 42, 0.4) 100%)";
+                color = "#93C5FD";
+                border = "rgba(59, 130, 246, 0.25)";
+                text = `📍 [파르게] ${region} (${hub})`;
+            } else if (companyKey === '랩팡') {
+                bg = "linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(15, 23, 42, 0.4) 100%)";
+                color = "#C084FC";
+                border = "rgba(139, 92, 246, 0.25)";
+                text = `📍 [랩팡] ${region} (${hub})`;
+            } else {
+                // Custom
+                bg = "linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.4) 100%)";
+                color = "#FCD34D";
+                border = "rgba(245, 158, 11, 0.25)";
+                text = `📦 [${companyKey || '기타'}] ${region || '직접기입'}`;
+            }
+
+            btn.style.cssText = `padding: 8px 12px; font-size: 13px; font-weight: 700; background: ${bg}; color: ${color}; border: 1px solid ${border}; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);`;
+            btn.innerHTML = `<span>${text}</span> <span style="font-size: 11px; opacity: 0.6; padding-left: 6px;">변경</span>`;
+        }
+
+        function styleHubButtonEmpty(btn, isCustom = false) {
+            if (!btn) return;
+            btn.className = "btn";
+            btn.style.cssText = "padding: 8px 12px; font-size: 13px; font-weight: 700; background: rgba(255, 255, 255, 0.04); color: #94A3B8; border: 1px solid rgba(255, 255, 255, 0.08); text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
+            btn.innerHTML = isCustom ? `<span>🔍 배송지 직접 입력</span>` : `<span>🔍 거점 선택하기</span>`;
+        }
+ 
         // 인풋 세팅
         function populateRowInputs(rowId, winnerName, companyKey, selectedRegion = null, selectedHub = null) {
             const selectRegion = document.getElementById(`region-${rowId}`);
@@ -1242,10 +1326,10 @@
             const customComp = document.getElementById(`custom-company-${rowId}`);
             const customReg = document.getElementById(`custom-region-${rowId}`);
             const btn = document.getElementById(`hub-select-btn-${rowId}`);
-
+ 
             if (!selectRegion || !selectHub) return;
             if (companyKey === '픽업') return;
-
+ 
             // 1. If custom company (기타)
             if (companyKey !== '도도시' && companyKey !== '파르게' && companyKey !== '랩팡') {
                 const compVal = companyKey === '기타' ? '' : companyKey;
@@ -1253,16 +1337,12 @@
                 
                 if (customComp) customComp.value = compVal;
                 if (customReg) customReg.value = regVal;
-
+ 
                 if (btn) {
                     if (compVal || regVal) {
-                        btn.className = "btn btn-secondary";
-                        btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
-                        btn.innerHTML = `<span>📦 [${compVal || '기타'}] ${regVal || '직접기입'}</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
+                        styleHubButton(btn, compVal || '기타', regVal, '');
                     } else {
-                        btn.className = "btn";
-                        btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB; text-align: left; width: 100%;";
-                        btn.innerHTML = `🔍 배송지 직접 입력`;
+                        styleHubButtonEmpty(btn, true);
                     }
                 }
                 return;
@@ -1283,13 +1363,9 @@
             // Update button badge UI
             if (btn) {
                 if (selectedRegion && selectedHub) {
-                    btn.className = "btn btn-secondary";
-                    btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
-                    btn.innerHTML = `<span>📍 [${companyKey}] ${selectedRegion} (${selectedHub})</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
+                    styleHubButton(btn, companyKey, selectedRegion, selectedHub);
                 } else {
-                    btn.className = "btn";
-                    btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB; text-align: left; width: 100%;";
-                    btn.innerHTML = `🔍 거점 선택하기`;
+                    styleHubButtonEmpty(btn, false);
                 }
             }
         }
@@ -1984,13 +2060,9 @@ ${combinedInfo}
 
                     if (btn) {
                         if (buyerShippingState.region && buyerShippingState.hub) {
-                            btn.className = "btn btn-secondary";
-                            btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;";
-                            btn.innerHTML = `<span>📍 [${comp}] ${buyerShippingState.region} (${buyerShippingState.hub})</span> <span style="font-size: 11px; opacity: 0.6;">변경</span>`;
+                            styleHubButton(btn, comp, buyerShippingState.region, buyerShippingState.hub);
                         } else {
-                            btn.className = "btn";
-                            btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;";
-                            btn.innerHTML = `<span>🔍 거점 선택하기</span>`;
+                            styleHubButtonEmpty(btn, false);
                         }
                     }
 
@@ -2005,13 +2077,9 @@ ${combinedInfo}
 
                     if (btn) {
                         if (regVal) {
-                            btn.className = "btn btn-secondary";
-                            btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A;";
-                            btn.innerHTML = `<span>📦 [${compVal}] ${regVal}</span> <span style="font-size: 11px; opacity: 0.6;">변경</span>`;
+                            styleHubButton(btn, compVal, regVal, '');
                         } else {
-                            btn.className = "btn";
-                            btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;";
-                            btn.innerHTML = `<span>🔍 배송지 직접 입력</span>`;
+                            styleHubButtonEmpty(btn, true);
                         }
                     }
 
@@ -2649,9 +2717,7 @@ ${combinedInfo}
                     // Update the button UI inside the cell directly!
                     const btn = document.getElementById(`hub-select-btn-${it.row}`);
                     if (btn) {
-                        btn.className = "btn btn-secondary";
-                        btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
-                        btn.innerHTML = `<span>📍 [${winnerStateMap[winnerName].shipping_company}] ${region} (${shop})</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
+                        styleHubButton(btn, winnerStateMap[winnerName].shipping_company, region, shop);
                     }
 
                     // PERSIST IN MEMORY FOR CROSS-COMPANY SYNC
@@ -2682,9 +2748,7 @@ ${combinedInfo}
                 // Update search button text
                 const btn = document.getElementById('buyer-hub-btn');
                 if (btn) {
-                    btn.className = "btn btn-secondary";
-                    btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;";
-                    btn.innerHTML = `<span>📍 [${buyerShippingState.company}] ${region} (${shop})</span> <span style="font-size: 11px; opacity: 0.6;">변경</span>`;
+                    styleHubButton(btn, buyerShippingState.company, region, shop);
                 }
 
                 recalculateBuyerTotal();
@@ -2749,9 +2813,7 @@ ${combinedInfo}
                     // Update button badge UI
                     const btn = document.getElementById(`hub-select-btn-${it.row}`);
                     if (btn) {
-                        btn.className = "btn btn-secondary";
-                        btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
-                        btn.innerHTML = `<span>📦 [${compVal}] ${regVal}</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
+                        styleHubButton(btn, compVal, regVal, '');
                     }
 
                     // PERSIST IN MEMORY FOR CROSS-COMPANY SYNC
@@ -2775,9 +2837,7 @@ ${combinedInfo}
                 // Update search button text
                 const btn = document.getElementById('buyer-hub-btn');
                 if (btn) {
-                    btn.className = "btn btn-secondary";
-                    btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A;";
-                    btn.innerHTML = `<span>📦 [${compVal}] ${regVal}</span> <span style="font-size: 11px; opacity: 0.6;">변경</span>`;
+                    styleHubButton(btn, compVal, regVal, '');
                 }
 
                 recalculateBuyerTotal();
