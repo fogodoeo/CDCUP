@@ -2758,7 +2758,6 @@
             };
 
             // 상단에는 긴 목록 대신 현재 업체의 개체 정보만 한 줄로 요약한다.
-            document.getElementById('editor-modal-title').textContent = `${winnerName}님 배송 설정`;
             const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
             const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
             // 1. 업체명 최상단
