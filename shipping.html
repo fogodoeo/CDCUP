@@ -2013,6 +2013,11 @@
             box-shadow: none !important;
             transform: none !important;
         }
+
+        #btn-toggle-breakdown:hover {
+            background: #E2E8F0 !important;
+            color: #1E293B !important;
+        }
     </style>
 </head>
 <body>
@@ -2201,7 +2206,13 @@
 
                 <!-- 2. 낙찰 개체 정보 영역 (그 아래 깔끔한 라인과 함께) -->
                 <div style="margin-top: 16px; border-top: 1px dashed #E2E8F0; padding-top: 12px; min-width: 0;">
-                    <div style="color: #64748B; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">낙찰 개체</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <div style="color: #64748B; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;">낙찰 개체</div>
+                        <!-- 콤팩트형 합배송 토글 단추 -->
+                        <div id="btn-toggle-breakdown" onclick="toggleShippingBreakdown()" style="display: none; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 8px; background: #F1F5F9; border: 1.5px solid #E2E8F0; font-size: 11px; font-weight: 850; color: #475569; cursor: pointer; user-select: none; transition: all 0.15s;">
+                            합배송 <span id="btn-breakdown-arrow">▼</span>
+                        </div>
+                    </div>
                     <div id="editor-info-objects" style="font-size: 14.5px; color: #334155; font-weight: 750; line-height: 1.4; word-break: break-all;">
                         개체 정보
                     </div>
@@ -2247,10 +2258,7 @@
                     </div>
                 </div>
 
-                <!-- 합배송 상세내역 토글 버튼 -->
-                <button type="button" class="btn btn-secondary btn-full" id="btn-toggle-breakdown" onclick="toggleShippingBreakdown()" style="margin: 4px 0; font-weight: 700; justify-content: center; display: flex; align-items: center; gap: 6px;">
-                    합배송 상세내역 <span id="btn-breakdown-arrow">▼</span>
-                </button>
+
                 <!-- 합배송 구성과 업체별 수령 금액 -->
                 <section id="editor-shipping-breakdown" class="shipping-breakdown" aria-live="polite" style="display: none;"></section>
 
