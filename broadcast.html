@@ -868,13 +868,35 @@
         body.bracket-page #hc-rules-stack,
         body.bracket-page #hc-banner-float,
         body.bracket-page .hc-bottom-bar,
-        body.bracket-page .host-nametag {
+        body.bracket-page .host-nametag,
+        body.bracket-page .scoreboard-wrap,
+        body.bracket-page #battle-matchup-card {
             display: none !important;
+        }
+        /* ── 3P 대진표 모드일 때 bracket 컨테이너 즉시 표시 보장 ── */
+        body.bracket-page #bracket-page-container {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        body.bracket-page .bracket-tree-view {
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            transform: none !important;
         }
     </style>
 </head>
 
 <body>
+    <script>
+        // 가장 빠른 시점에 bracket-page 클래스 부여 (JS 타이밍 이슈 원천 차단)
+        (function() {
+            var p = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase();
+            if (p === 'bracket' || p === '3' || p === '3p') {
+                document.body.classList.add('bracket-page');
+            }
+        })();
+    </script>
     <div class="empty" id="empty">경매 대기중...</div>
 
     <div class="broadcast" id="broadcast">
