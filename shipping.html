@@ -2642,6 +2642,15 @@ ${combinedInfo}
             }
 
             let html = '';
+            if (exact.length === 0 && nearby.length > 0) {
+                html += `
+                    <div style="padding: 14px; margin: 4px 4px 12px 4px; border-radius: 16px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); color: #FBBF24; font-size: 13.5px; font-weight: 700; line-height: 1.5; text-align: left;">
+                        ⚠️ 입력하신 <strong>"${q}"</strong> 지역의 직영 거점샵이 없습니다.<br>
+                        <span style="font-size: 11px; opacity: 0.8; font-weight: 500; color: #FCD34D;">동일 노선 또는 가장 가까운 인근 거점을 추천해 드립니다.</span>
+                    </div>
+                `;
+            }
+
             if (exact.length > 0) {
                 exact.forEach(h => {
                     const finalCost = getFinalCost(h.cost, h.region);
@@ -2659,7 +2668,7 @@ ${combinedInfo}
                             </div>
                             <div style="text-align: right;">
                                 <div class="search-item-price" style="font-size: 13px;">${h.cost.toLocaleString()}원</div>
-                                ${itemCount > 1 ? `<div style="font-size: 10px; color: #E11D48; font-weight: 700; margin-top: 2px;">총 ${itemCount}마리 합산: ${finalCost.toLocaleString()}원</div>` : ''}
+                                ${itemCount > 1 ? `<div style="font-size: 10px; color: #EF4444; font-weight: 700; margin-top: 2px;">총 ${itemCount}마리 합산: ${finalCost.toLocaleString()}원</div>` : ''}
                             </div>
                         </div>
                     `;
@@ -2667,11 +2676,13 @@ ${combinedInfo}
             }
 
             if (nearby.length > 0) {
-                html += `
-                    <div style="padding: 8px 12px; font-size: 11px; font-weight: 800; color: var(--accent); background: var(--accent-light); border-top: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border); display: flex; align-items: center; gap: 4px;">
-                        📍 인근 노선/권역 추천 거점샵
-                    </div>
-                `;
+                if (exact.length > 0) {
+                    html += `
+                        <div style="padding: 8px 12px; font-size: 11px; font-weight: 800; color: var(--accent); background: var(--accent-light); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 4px; border-radius: 6px; margin: 8px 4px 4px 4px;">
+                            📍 인근 노선/권역 추천 거점샵
+                        </div>
+                    `;
+                }
                 nearby.forEach(h => {
                     const finalCost = getFinalCost(h.cost, h.region);
                     const schedule = getSchedule(h.region, h.day);
