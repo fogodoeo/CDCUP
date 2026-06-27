@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CDCUP - 낙찰자 배송 정보 입력</title>
+    <script src="supabase-bridge.js"></script>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+        :root {
+            --bg: #F8FAFC;
+            --card: #FFFFFF;
+            --text-title: #0F172A;
+            --text: #334155;
+            --text-secondary: #64748B;
+            --accent: #2563EB;
+            --accent-hover: #1D4ED8;
+            --accent-light: rgba(37, 99, 235, 0.08);
+            --border: #E2E8F0;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Pretendard Variable', 'Pretendard', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--text-title);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+        }
+
+        .input-text {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        .input-text:focus {
+            border-color: var(--accent);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: var(--accent);
+            color: white;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: #E2E8F0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #CBD5E1;
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+        }
+
+        /* 결과 목록 */
+        .result-header {
+            margin-bottom: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-title);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-count {
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        .item-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            background: #F8FAFC;
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed var(--border);
+            padding-bottom: 8px;
+        }
+
+        .item-title {
+            font-weight: 700;
+            color: var(--text-title);
+            font-size: 15px;
+        }
+
+        .item-price {
+            font-weight: 800;
+            color: #E11D48;
+            font-size: 15px;
+        }
+
+        .item-company {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* 배송 옵션 */
+        .option-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .option-btn {
+            padding: 10px;
+            border: 1.5px solid var(--border);
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .option-btn.active {
+            border-color: var(--accent);
+            background: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .shipping-detail-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-row label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+        }
+
+        .select-custom {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            font-family: inherit;
+            background: white;
+        }
+
+        .shipping-cost-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* 토스트 */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #0F172A;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            opacity: 0;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        /* 로딩 오버레이 */
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>🏆 배송/수령 정보 입력</h1>
+            <p>경매 낙찰 개체의 배송 또는 수령 방식을 선택해주세요.</p>
+        </div>
+
+        <!-- 1단계: 검색 카드 -->
+        <div class="card" id="search-card">
+            <h3 style="margin-bottom: 12px; font-size: 16px; font-weight: 800; color: var(--text-title);">낙찰자 조회</h3>
+            <div class="search-box">
+                <input type="text" id="winner-name-input" class="input-text" placeholder="낙찰자 이름 또는 전화번호 입력" onkeyup="if(event.key==='Enter') searchWinner()">
+                <button class="btn" onclick="searchWinner()">
+                    <span class="material-symbols-rounded">search</span> 조회
+                </button>
+            </div>
+            <p style="font-size: 12px; color: var(--text-secondary); margin-top: 8px;">* 낙찰 시 등록하신 성함이나 연락처 뒷자리 등을 입력하세요.</p>
+        </div>
+
+        <!-- 2단계: 낙찰 목록 및 배송정보 입력 (기본 숨김) -->
+        <div class="card" id="result-card" style="display: none;">
+            <div class="result-header">
+                <div>🎉 <span id="winner-display-name">홍길동</span>님의 낙찰 목록</div>
+                <span class="result-count" id="result-count-badge">0건</span>
+            </div>
+
+            <div id="items-container">
+                <!-- 동적 렌더링 -->
+            </div>
+
+            <!-- 합산 금액 정보 -->
+            <div id="total-summary-card" style="margin-top: 16px; margin-bottom: 16px; padding: 16px; background: #F1F5F9; border-radius: 8px; border: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 14px; font-weight: 500;">
+                    <span>총 낙찰 금액</span>
+                    <span id="summary-items-price" style="font-weight: 700;">0만</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; font-weight: 500;">
+                    <span>총 배송비</span>
+                    <span id="summary-shipping-price" style="font-weight: 700;">0원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px dashed #CBD5E1; font-size: 16px; font-weight: 800; color: var(--text-title);">
+                    <span>최종 합산 금액</span>
+                    <span id="summary-total-price" style="color: #E11D48;">0만 + 0원</span>
+                </div>
+            </div>
+
+            <button class="btn btn-full" onclick="submitAllShippingInfo()" style="margin-top: 10px;">
+                <span class="material-symbols-rounded">send</span> 배송 정보 제출하기
+            </button>
+        </div>
+    </div>
+
+    <!-- 토스트 & 로딩 -->
+    <div class="toast" id="toast"></div>
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <div style="font-weight: 700; color: var(--text-title);" id="loading-text">데이터를 저장하는 중...</div>
+    </div>
+
+    <script>
+        // 배송업체 데이터 및 연동 정보
+        const SHIPPING_COMPANIES = [
+            { name: '도도시', regions: ['서울', '경기 북부', '경기 남부', '인천', '부산', '대구', '대전', '광주'], defaultCost: 5000 },
+            { name: '파충류택배', regions: ['수도권', '충청', '경상', '전라', '강원', '제주'], defaultCost: 5000 },
+            { name: '기타 (직접입력)', regions: [], defaultCost: 0 }
+        ];
+
+        let loadedItems = [];
+        let searchKeyword = '';
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.style.background = isError ? '#EF4444' : '#0F172A';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        function showLoading(active, text = '로딩 중...') {
+            const overlay = document.getElementById('loading-overlay');
+            const txt = document.getElementById('loading-text');
+            txt.textContent = text;
+            if (active) overlay.classList.add('active');
+            else overlay.classList.remove('active');
+        }
+
+        // 검색 기능
+        async function searchWinner() {
+            const keyword = document.getElementById('winner-name-input').value.trim();
+            if (!keyword) {
+                showToast('검색어를 입력해주세요.', true);
+                return;
+            }
+
+            showLoading(true, '낙찰 결과를 조회하는 중...');
+            try {
+                const items = await getItems();
+                // 낙찰 상태이면서, winner 이름 또는 winner_phone에 검색어 포함되는 항목 필터링
+                const normalizedKeyword = keyword.replace(/[^0-9a-zA-Z가-힣]/g, '').toLowerCase();
+
+                loadedItems = (items || []).filter(it => {
+                    if (!it.status || it.status.indexOf('낙찰') < 0) return false;
+                    
+                    const winnerClean = (it.winner || '').replace(/[^0-9a-zA-Z가-힣]/g, '').toLowerCase();
+                    const phoneClean = (it.winner_phone || '').replace(/[^0-9]/g, '');
+                    
+                    return winnerClean.indexOf(normalizedKeyword) >= 0 || phoneClean.indexOf(normalizedKeyword) >= 0;
+                });
+
+                if (loadedItems.length === 0) {
+                    showToast('해당하는 낙찰 내역이 없습니다.', true);
+                    document.getElementById('result-card').style.display = 'none';
+                } else {
+                    searchKeyword = keyword;
+                    // 첫 매치의 낙찰자 이름 추출하여 표시
+                    const firstWinner = loadedItems[0].winner || keyword;
+                    // 이중 괄호 등 제거 깔끔하게
+                    const displayName = firstWinner.replace(/[\[\]]/g, '').split('/')[0].trim();
+                    document.getElementById('winner-display-name').textContent = displayName;
+                    document.getElementById('result-count-badge').textContent = loadedItems.length + '건';
+
+                    renderItems();
+                    document.getElementById('result-card').style.display = 'block';
+                    // 검색창 포커스 아웃
+                    document.activeElement.blur();
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('조회 중 오류가 발생했습니다: ' + err.message, true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // 낙찰 아이템 리스트 렌더링
+        function renderItems() {
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+
+            loadedItems.forEach((it, idx) => {
+                const card = document.createElement('div');
+                card.className = 'item-card';
+                card.id = `item-card-${it.row}`;
+
+                // 시작 시 기본값 바인딩
+                const currentType = it.shipping_type || '직접수령';
+                const currentCompany = it.shipping_company || '도도시';
+                const currentRegion = it.shipping_region || '서울';
+                const currentCost = it.shipping_cost || 0;
+
+                // 낙찰가 천단위 쉼표 포맷
+                let priceText = it.soldPrice || '';
+                if (!isNaN(priceText) && priceText !== '') {
+                    priceText = parseFloat(priceText) + '만';
+                }
+
+                card.innerHTML = `
+                    <div class="item-header">
+                        <div>
+                            <div class="item-title">${it.name || '이름 없음'}</div>
+                            <div class="item-company">${it.company || ''}</div>
+                        </div>
+                        <div class="item-price">${priceText}</div>
+                    </div>
+                    
+                    <div class="form-row" style="margin-bottom: 8px;">
+                        <label>수령 방법</label>
+                        <div class="option-group">
+                            <button type="button" class="option-btn ${currentType === '직접수령' ? 'active' : ''}" 
+                                id="btn-pickup-${it.row}" onclick="setShippingType(${it.row}, '직접수령')">직접수령</button>
+                            <button type="button" class="option-btn ${currentType === '배송' ? 'active' : ''}" 
+                                id="btn-ship-${it.row}" onclick="setShippingType(${it.row}, '배송')">배송</button>
+                        </div>
+                    </div>
+
+                    <div class="shipping-detail-form" id="detail-form-${it.row}" style="display: ${currentType === '배송' ? 'block' : 'none'};">
+                        <div class="form-row" style="margin-bottom: 8px;">
+                            <label>배송업체</label>
+                            <select class="select-custom" id="select-company-${it.row}" onchange="onCompanyChange(${it.row})">
+                                ${SHIPPING_COMPANIES.map(c => `<option value="${c.name}" ${currentCompany === c.name ? 'selected' : ''}>${c.name}</option>`).join('')}
+                            </select>
+                        </div>
+
+                        <!-- 기타 업체 수동 입력 필드 -->
+                        <div class="form-row" id="custom-company-row-${it.row}" style="display: ${currentCompany === '기타 (직접입력)' ? 'flex' : 'none'}; margin-bottom: 8px;">
+                            <label>배송업체명 입력</label>
+                            <input type="text" class="input-text" id="input-custom-company-${it.row}" placeholder="배송업체명을 기입해주세요." value="${currentCompany !== '도도시' && currentCompany !== '파충류택배' && currentCompany !== '기타 (직접입력)' ? currentCompany : ''}">
+                        </div>
+
+                        <div class="form-row" id="region-select-row-${it.row}" style="display: ${currentCompany !== '기타 (직접입력)' ? 'flex' : 'none'}; margin-bottom: 8px;">
+                            <label>지역 거점샵</label>
+                            <select class="select-custom" id="select-region-${it.row}" onchange="updateCalculatedCost(${it.row})">
+                                <!-- 동적 렌더링 -->
+                            </select>
+                        </div>
+
+                        <!-- 기타 지역 수동 입력 필드 -->
+                        <div class="form-row" id="custom-region-row-${it.row}" style="display: ${currentCompany === '기타 (직접입력)' ? 'flex' : 'none'}; margin-bottom: 8px;">
+                            <label>배송지/거점 주소 입력</label>
+                            <input type="text" class="input-text" id="input-custom-region-${it.row}" placeholder="받으실 지역명 또는 상세주소를 기입해주세요." value="${currentCompany === '기타 (직접입력)' || (currentCompany !== '도도시' && currentCompany !== '파충류택배') ? currentRegion : ''}">
+                        </div>
+
+                        <div class="shipping-cost-info">
+                            <span>예상 배송비</span>
+                            <span id="cost-display-${it.row}" style="color: var(--accent);">${Number(currentCost).toLocaleString()}원</span>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+                
+                // 배송 업체별 지역 채워놓기
+                populateRegions(it.row, currentCompany, currentRegion);
+            });
+            recalculateGrandTotal();
+        }
+
+        // 수령 방법 토글
+        function setShippingType(rowId, type) {
+            const pickupBtn = document.getElementById(`btn-pickup-${rowId}`);
+            const shipBtn = document.getElementById(`btn-ship-${rowId}`);
+            const detailForm = document.getElementById(`detail-form-${rowId}`);
+
+            if (type === '직접수령') {
+                pickupBtn.classList.add('active');
+                shipBtn.classList.remove('active');
+                detailForm.style.display = 'none';
+                recalculateGrandTotal();
+            } else {
+                pickupBtn.classList.remove('active');
+                shipBtn.classList.add('active');
+                detailForm.style.display = 'block';
+                // 배송 전환 시 금액 자동 계산 업데이트
+                updateCalculatedCost(rowId);
+            }
+        }
+
+        // 배송지역 셀렉트 박스 구축
+        function populateRegions(rowId, companyName, selectedRegion) {
+            const selectRegion = document.getElementById(`select-region-${rowId}`);
+            if (!selectRegion) return;
+
+            const company = SHIPPING_COMPANIES.find(c => c.name === companyName);
+            if (!company || company.regions.length === 0) {
+                return;
+            }
+
+            selectRegion.innerHTML = company.regions.map(r => 
+                `<option value="${r}" ${selectedRegion === r ? 'selected' : ''}>${r}</option>`
+            ).join('');
+
+            updateCalculatedCost(rowId);
+        }
+
+        // 배송업체 변경 이벤트
+        function onCompanyChange(rowId) {
+            const selectCompany = document.getElementById(`select-company-${rowId}`);
+            const customCompanyRow = document.getElementById(`custom-company-row-${rowId}`);
+            const regionSelectRow = document.getElementById(`region-select-row-${rowId}`);
+            const customRegionRow = document.getElementById(`custom-region-row-${rowId}`);
+
+            const val = selectCompany.value;
+
+            if (val === '기타 (직접입력)') {
+                customCompanyRow.style.display = 'flex';
+                regionSelectRow.style.display = 'none';
+                customRegionRow.style.display = 'flex';
+            } else {
+                customCompanyRow.style.display = 'none';
+                regionSelectRow.style.display = 'flex';
+                customRegionRow.style.display = 'none';
+                populateRegions(rowId, val);
+            }
+
+            updateCalculatedCost(rowId);
+        }
+
+        // 예상 비용 및 정보 갱신
+        function updateCalculatedCost(rowId) {
+            const selectCompany = document.getElementById(`select-company-${rowId}`);
+            const costDisplay = document.getElementById(`cost-display-${rowId}`);
+            if (!selectCompany || !costDisplay) return;
+
+            const val = selectCompany.value;
+            let cost = 0;
+
+            if (val === '도도시' || val === '파충류택배') {
+                cost = 5000; // 가이드라인 기본금
+            }
+
+            costDisplay.textContent = cost.toLocaleString() + '원';
+            recalculateGrandTotal();
+        }
+
+        // 최종 합산 계산
+        function recalculateGrandTotal() {
+            let totalBid = 0;
+            let totalShipping = 0;
+
+            loadedItems.forEach(it => {
+                const soldVal = parseFloat(it.soldPrice) || 0;
+                totalBid += soldVal;
+
+                const pickupBtn = document.getElementById(`btn-pickup-${it.row}`);
+                if (pickupBtn && !pickupBtn.classList.contains('active')) {
+                    const costDisplay = document.getElementById(`cost-display-${it.row}`);
+                    if (costDisplay) {
+                        const costVal = parseInt(costDisplay.textContent.replace(/[^0-9]/g, '')) || 0;
+                        totalShipping += costVal;
+                    }
+                }
+            });
+
+            document.getElementById('summary-items-price').textContent = totalBid + '만';
+            document.getElementById('summary-shipping-price').textContent = totalShipping.toLocaleString() + '원';
+            
+            let totalStr = totalBid + '만';
+            if (totalShipping > 0) {
+                totalStr += ' + ' + totalShipping.toLocaleString() + '원';
+            }
+            document.getElementById('summary-total-price').textContent = totalStr;
+        }
+
+        // 정보 최종 제출
+        async function submitAllShippingInfo() {
+            showLoading(true, '배송 정보를 전송하고 있습니다...');
+            try {
+                for (const it of loadedItems) {
+                    const pickupBtn = document.getElementById(`btn-pickup-${it.row}`);
+                    const isPickup = pickupBtn.classList.contains('active');
+
+                    let shipping_type = '직접수령';
+                    let shipping_company = '';
+                    let shipping_region = '';
+                    let shipping_cost = 0;
+
+                    if (!isPickup) {
+                        shipping_type = '배송';
+                        const selectCompany = document.getElementById(`select-company-${it.row}`).value;
+                        
+                        if (selectCompany === '기타 (직접입력)') {
+                            shipping_company = document.getElementById(`input-custom-company-${it.row}`).value.trim() || '기타';
+                            shipping_region = document.getElementById(`input-custom-region-${it.row}`).value.trim() || '상세주소 미입력';
+                            shipping_cost = 0; // 기타 업체 직접 수령 등은 0원 또는 별도 정산
+                        } else {
+                            shipping_company = selectCompany;
+                            shipping_region = document.getElementById(`select-region-${it.row}`).value;
+                            shipping_cost = 5000; // 도도시 / 파충류택배 고정 예상금
+                        }
+                    }
+
+                    // Supabase 업데이트 요청
+                    await updateItemShipping(it.row, {
+                        shipping_type,
+                        shipping_company,
+                        shipping_region,
+                        shipping_cost
+                    });
+                }
+
+                showToast('배송 정보가 성공적으로 반영되었습니다! 🚚');
+                
+                // 정보 재호출 및 새로고침
+                setTimeout(() => {
+                    searchWinner();
+                }, 1000);
+            } catch (err) {
+                console.error(err);
+                showToast('제출 도중 오류 발생: ' + err.message, true);
+            } finally {
+                showLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>

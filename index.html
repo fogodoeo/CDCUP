@@ -1542,19 +1542,70 @@
         /* 인쇄 탭 */
         .print-sub-btn {
             padding: 6px 14px;
-            border: 1px solid var(--input-border);
+            border: 1px solid #cbd5e1;
             border-radius: 20px;
-            background: var(--card);
-            color: var(--text2);
+            background: #ffffff;
+            color: #475569;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
         }
 
         .print-sub-btn.active {
-            background: #111;
-            color: #fff;
-            border-color: #111;
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        #tab-print {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+        }
+
+        #tab-print .print-controls {
+            color: #475569 !important;
+            background: #f8fafc !important;
+        }
+
+        #tab-print .print-controls span {
+            color: #475569 !important;
+        }
+
+        #tab-print .print-sub {
+            background: #ffffff !important;
+            color: #0f172a !important;
+        }
+
+        #tab-print .print-sub span[id$="-meta"] {
+            color: #64748b !important;
+        }
+
+        #tab-print .pc-filter {
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        #tab-print .pc-filter select {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+
+        #tab-print .pc-filter .filter-chip {
+            background: #f1f5f9 !important;
+            color: #475569 !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+
+        #tab-print .pc-filter .filter-chip.active {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            border-color: #0f172a !important;
         }
 
         .print-sub {
@@ -3982,14 +4033,24 @@
             var w = parseWinnerP(it.winner);
             var shortName = truncatePrintListName(it.name, 10);
             var r = '<tr>';
-            r += '<td class="pnum">' + (it.num || '') + '</td>';
             if (showCo) r += '<td class="pcomp">' + (it.company || '') + '</td>';
             r += '<td class="pname">' + shortName + '</td>';
-            r += '<td class="pprice">' + fmtPriceP(it.startPrice) + '</td>';
             r += '<td class="psold">' + (it.soldPrice ? fmtPriceP(it.soldPrice) : '') + '</td>';
             r += '<td class="pwinner" style="min-width:100px">' + w.name + '</td>';
             r += '<td class="pphone" style="min-width:120px">' + fmtPhoneP(w.phone) + '</td>';
-            r += '<td class="pship"></td>';
+            
+            var shipText = '';
+            if (it.shipping_type === '직접수령') {
+                shipText = '직접수령';
+            } else if (it.shipping_type === '배송') {
+                shipText = (it.shipping_company || '') + ' / ' + (it.shipping_region || '');
+                if (it.shipping_cost) {
+                    shipText += ' / ' + (it.shipping_cost >= 1000 ? Number(it.shipping_cost).toLocaleString() + '원' : it.shipping_cost + '원');
+                }
+            } else {
+                shipText = '-';
+            }
+            r += '<td class="pship">' + shipText + '</td>';
             r += '<td class="pstatus" style="' + sc + '">' + sx + '</td>';
             r += '</tr>';
             return r;
@@ -4016,19 +4077,19 @@
 
             // 경매 리스트
             document.getElementById('pl-meta').textContent = dateStr + ' · 총 ' + items.length + '개체';
-            var lh = '<table class="ptable" style="table-layout:fixed"><thead><tr><th style="width:40px">번호</th><th style="width:70px">업체</th><th style="width:80px">이름</th><th style="width:55px">시작가</th><th>정보</th></tr></thead><tbody>';
+            var lh = '<table class="ptable" style="table-layout:fixed"><thead><tr><th style="width:100px">업체</th><th style="width:120px">이름</th><th>정보</th></tr></thead><tbody>';
             items.forEach(function (it) {
                 var cl = pChecklist(it.checklist), info = []; var t = pTraits(cl); if (t) info.push(t); if (it.note) info.push(it.note);
                 var infoStr = info.join(' / ');
                 var shortName = truncatePrintListName(it.name, 10);
-                lh += '<tr><td class="pnum">' + (it.num || '') + '</td><td class="pcomp">' + (it.company || '') + '</td><td class="pname">' + shortName + '</td><td class="pprice">' + fmtPriceP(it.startPrice) + '</td><td class="pinfo" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + infoStr + '</td></tr>';
+                lh += '<tr><td class="pcomp">' + (it.company || '') + '</td><td class="pname">' + shortName + '</td><td class="pinfo" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + infoStr + '</td></tr>';
             });
             lh += '</tbody></table>';
             document.getElementById('pl-body').innerHTML = lh;
 
             // 낙찰 결과
             document.getElementById('pr-meta').textContent = dateStr + ' · 낙찰 ' + sold.length + '건 / 유찰 ' + unsold.length + '건 / 전체 ' + items.length + '건 · 총매출 ' + fmtPriceP(total);
-            var rh = '<table class="ptable"><thead><tr><th>번호</th><th>업체</th><th>이름</th><th>시작가</th><th>낙찰가</th><th style="min-width:100px">낙찰자</th><th style="min-width:120px">연락처</th><th>배송</th><th>상태</th></tr></thead><tbody>';
+            var rh = '<table class="ptable"><thead><tr><th>업체</th><th>이름</th><th>낙찰가</th><th style="min-width:100px">낙찰자</th><th style="min-width:120px">연락처</th><th>배송</th><th>상태</th></tr></thead><tbody>';
             items.forEach(function (it) { rh += buildRow(it, true); });
             rh += '</tbody></table>';
             document.getElementById('pr-body').innerHTML = rh;
@@ -4180,7 +4241,7 @@
 
                 var ch = '<div class="pc-wrapper" id="pc-wrapper">';
                 ch += '<table class="ptable" id="pc-table"><thead><tr>';
-                ch += '<th>업체</th><th>번호</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
+                ch += '<th>업체</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
                 ch += '</tr></thead><tbody>';
                 sold.forEach(function (it) {
                     var w = parseWinnerP(it.winner);
@@ -4189,12 +4250,23 @@
                     var shortName = truncatePrintListName(it.name, 10);
                     ch += '<tr class="pc-selected-row">';
                     ch += '<td class="pcomp" style="font-weight:700;white-space:nowrap;">' + esc((it.company || '').trim() || '(미입력)') + '</td>';
-                    ch += '<td class="pnum">' + esc(it.num || '') + '</td>';
                     ch += '<td class="pname">' + esc(shortName) + '</td>';
                     ch += '<td class="psold">' + (it.soldPrice ? fmtPriceP(it.soldPrice) : '') + '</td>';
                     ch += '<td class="pwinner">' + esc(w.name) + '</td>';
                     ch += '<td class="pphone">' + esc(fmtPhoneP(w.phone)) + '</td>';
-                    ch += '<td class="pship"></td>';
+                    
+                    var shipText = '';
+                    if (it.shipping_type === '직접수령') {
+                        shipText = '직접수령';
+                    } else if (it.shipping_type === '배송') {
+                        shipText = esc(it.shipping_company || '') + ' / ' + esc(it.shipping_region || '');
+                        if (it.shipping_cost) {
+                            shipText += ' / ' + (it.shipping_cost >= 1000 ? Number(it.shipping_cost).toLocaleString() + '원' : it.shipping_cost + '원');
+                        }
+                    } else {
+                        shipText = '-';
+                    }
+                    ch += '<td class="pship">' + shipText + '</td>';
                     ch += '<td class="pstatus" style="color:#C84A31;">' + esc(sx) + '</td>';
                     ch += '</tr>';
                 });
@@ -4261,7 +4333,7 @@
             // 테이블 생성
             var ch = '<div class="pc-wrapper" id="pc-wrapper">';
             ch += '<table class="ptable" id="pc-table"><thead><tr>';
-            ch += '<th>낙찰자</th><th>연락처</th><th>업체</th><th>번호</th><th>이름</th><th>낙찰가</th><th>배송</th><th>상태</th>';
+            ch += '<th>낙찰자</th><th>연락처</th><th>업체</th><th>이름</th><th>낙찰가</th><th>배송</th><th>상태</th>';
             ch += '</tr></thead><tbody>';
 
             var multiCount = 0;
@@ -4296,10 +4368,21 @@
                     var compStyle = isOtherCo ? 'color:#999;' : 'font-weight:700;';
                     var shortName = truncatePrintListName(it.name, 10);
                     ch += '<td class="pcomp" style="' + compStyle + 'white-space:nowrap;">' + co + '</td>';
-                    ch += '<td class="pnum">' + (it.num || '') + '</td>';
                     ch += '<td class="pname">' + shortName + '</td>';
                     ch += '<td class="psold">' + (it.soldPrice ? fmtPriceP(it.soldPrice) : '') + '</td>';
-                    ch += '<td class="pship"></td>';
+                    
+                    var shipText = '';
+                    if (it.shipping_type === '직접수령') {
+                        shipText = '직접수령';
+                    } else if (it.shipping_type === '배송') {
+                        shipText = (it.shipping_company || '') + ' / ' + (it.shipping_region || '');
+                        if (it.shipping_cost) {
+                            shipText += ' / ' + (it.shipping_cost >= 1000 ? Number(it.shipping_cost).toLocaleString() + '원' : it.shipping_cost + '원');
+                        }
+                    } else {
+                        shipText = '-';
+                    }
+                    ch += '<td class="pship">' + shipText + '</td>';
                     ch += '<td class="pstatus" style="' + sc + '">' + sx + '</td>';
                     ch += '</tr>';
                 });

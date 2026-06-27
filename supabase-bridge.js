@@ -98,6 +98,10 @@ async function getItems() {
         soldPrice: r.sold_price || '',
         sireName: r.sire_id && parentMap[r.sire_id] ? parentMap[r.sire_id].name : '',
         damName: r.dam_id && parentMap[r.dam_id] ? parentMap[r.dam_id].name : '',
+        shipping_type: r.shipping_type || '',
+        shipping_company: r.shipping_company || '',
+        shipping_region: r.shipping_region || '',
+        shipping_cost: r.shipping_cost || 0
     }));
 }
 
@@ -202,7 +206,9 @@ async function updateItem(row, data, pw) {
         photoSibling: 'photo_sibling', photo_sibling: 'photo_sibling',
         status: 'status', soldPrice: 'sold_price', sold_price: 'sold_price',
         winner: 'winner', winner_phone: 'winner_phone',
-        checklist: 'checklist', sireId: 'sire_id', damId: 'dam_id'
+        checklist: 'checklist', sireId: 'sire_id', damId: 'dam_id',
+        shipping_type: 'shipping_type', shipping_company: 'shipping_company',
+        shipping_region: 'shipping_region', shipping_cost: 'shipping_cost'
     };
     const payload = {};
     for (const [k, v] of Object.entries(data)) {
@@ -214,6 +220,28 @@ async function updateItem(row, data, pw) {
         payload.checklist_parsed = formatChecklist(data.checklist);
     }
 
+    await _sbFetch(`items?id=eq.${row}`, {
+        method: 'PATCH',
+        headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload),
+    });
+    return { success: true };
+}
+
+/**
+ * 배송 정보 업데이트 (낙찰자용 패스워드 없는 버전)
+ */
+async function updateItemShipping(row, shippingData) {
+    const mapping = {
+        shipping_type: 'shipping_type',
+        shipping_company: 'shipping_company',
+        shipping_region: 'shipping_region',
+        shipping_cost: 'shipping_cost'
+    };
+    const payload = {};
+    for (const [k, v] of Object.entries(shippingData)) {
+        if (mapping[k] !== undefined) payload[mapping[k]] = v;
+    }
     await _sbFetch(`items?id=eq.${row}`, {
         method: 'PATCH',
         headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
