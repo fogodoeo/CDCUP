@@ -348,6 +348,93 @@
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
         }
+        /* 모달 스타일 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 3000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+            animation: modalFadeIn 0.2s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-title);
+            margin: 0;
+        }
+
+        .modal-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            font-weight: 300;
+            color: var(--text-secondary);
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 380px;
+            overflow-y: auto;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            padding: 4px;
+            background: #F8FAFC;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            text-align: left;
+        }
+        .form-group label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-align: left;
+        }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
@@ -622,31 +709,17 @@
 
                 <!-- 배송 세부 정보 -->
                 <div class="buyer-form-detail" id="buyer-detail-box" style="display: none;">
-                    <div class="control-group" id="b-custom-company-group" style="display: none; margin-bottom: 8px;">
-                        <label>배송업체명 직접 기입</label>
-                        <input type="text" class="input-text" id="buyer-custom-company" placeholder="배송업체 기입">
-                    </div>
+                    <!-- Hidden fields to hold values for DB submit -->
+                    <input type="hidden" id="buyer-custom-company">
+                    <input type="hidden" id="buyer-custom-region">
+                    <select id="buyer-region-select" style="display: none;"></select>
+                    <select id="buyer-hub-select" style="display: none;"></select>
 
-                    <div class="control-group" id="b-hub-search-group" style="margin-bottom: 12px; position: relative;">
-                        <label>거점 검색 (초성 가능)</label>
-                        <input type="text" class="input-text" id="buyer-hub-search" placeholder="지역 또는 지점명 검색 (예: 서대문, ㅋㄹ)" oninput="filterBuyerHubs()" onfocus="showBuyerHubsOnFocus()" autocomplete="off">
-                        <div id="buyer-hub-search-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 200px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 6px; margin-top: 4px; background: white; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);"></div>
-                    </div>
-
-                    <div class="buyer-form-columns" id="b-hub-select-group">
-                        <div class="control-group">
-                            <label>지역</label>
-                            <select class="select-custom" id="buyer-region-select" onchange="onBuyerRegionChange()"></select>
-                        </div>
-                        <div class="control-group">
-                            <label>거점샵</label>
-                            <select class="select-custom" id="buyer-hub-select" onchange="onBuyerHubChange()"></select>
-                        </div>
-                    </div>
-
-                    <div class="control-group" id="b-custom-region-group" style="display: none; margin-top: 8px;">
-                        <label>주소 / 거점지 직접 기입</label>
-                        <input type="text" class="input-text" id="buyer-custom-region" placeholder="상세 주소 또는 희망 위치 입력">
+                    <div class="control-group" id="b-hub-search-group" style="margin-bottom: 12px;">
+                        <label>수령 거점 / 배송지 정보</label>
+                        <button type="button" class="btn" id="buyer-hub-btn" style="text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;" onclick="onBuyerHubButtonClick()">
+                            🔍 거점 선택하기
+                        </button>
                     </div>
                 </div>
 
@@ -682,6 +755,41 @@
     <div class="loading-overlay" id="loading-overlay">
         <div class="spinner"></div>
         <div style="font-weight: 700; color: var(--text-title); font-size: 13px;" id="loading-text">로딩 중...</div>
+    </div>
+
+    <!-- 거점 검색/선택 모달 -->
+    <div id="hub-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="hub-modal-title">거점 검색 및 선택</h3>
+                <button class="modal-close-btn" onclick="closeHubModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
+                <input type="text" id="hub-modal-search" class="input-text" placeholder="지점명 또는 권역 초성 검색 (예: ㅋㄹ)" autocomplete="off">
+                <div id="hub-modal-results" class="modal-results-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 기타 배송사 직접입력 모달 -->
+    <div id="custom-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>배송 정보 직접 입력</h3>
+                <button class="modal-close-btn" onclick="closeCustomModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="form-group">
+                    <label>배송사 이름</label>
+                    <input type="text" id="custom-modal-company" class="input-text" placeholder="예: 경동택배, 우체국 등">
+                </div>
+                <div class="form-group">
+                    <label>배송지 주소 / 수령 정보</label>
+                    <input type="text" id="custom-modal-region" class="input-text" placeholder="상세 주소를 입력해 주세요">
+                </div>
+                <button class="btn btn-full" onclick="submitCustomModal()">입력 완료</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -983,17 +1091,15 @@
                         <td data-label="연락처">${fmtPhone(it.winner_phone)}</td>
                         <td data-label="배송 방식">${typeSelectHtml}</td>
                         <td data-label="지역 거점샵 / 검색">
-                            <div id="shipping-controls-${it.row}" style="display: ${currentType === '배송' ? 'flex' : 'none'}; gap: 4px; align-items: center; position: relative;">
-                                <input type="text" class="input-text" id="custom-company-${it.row}" placeholder="배송사 직접기입" style="display:none; width: 100px;" oninput="onCustomCompanyInput(${it.row}, '${winnerName}')">
-                                
-                                <div id="hub-search-container-${it.row}" style="position: relative; display: inline-block;">
-                                    <input type="text" class="input-text" id="hub-search-${it.row}" placeholder="거점 검색 (초성)" style="width: 180px;" oninput="filterRowHubs(${it.row}, '${winnerName}')" onfocus="showRowHubsOnFocus(${it.row}, '${winnerName}')" autocomplete="off">
-                                    <div id="hub-search-results-${it.row}" style="display: none; position: absolute; top: 100%; left: 0; right: 0; max-height: 150px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 6px; margin-top: 4px; background: white; z-index: 1000; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);"></div>
-                                </div>
-
-                                <select class="select-custom" id="region-${it.row}" style="display: none;" onchange="changeRowRegion(${it.row}, '${winnerName}')"></select>
-                                <select class="select-custom" id="hub-${it.row}" style="display: none;" onchange="changeRowHub(${it.row}, '${winnerName}')"></select>
-                                <input type="text" class="input-text" id="custom-region-${it.row}" placeholder="주소 직접기입" style="display:none; width: 140px;" oninput="onCustomRegionInput(${it.row}, '${winnerName}')">
+                            <div id="shipping-controls-${it.row}" style="display: ${currentType === '배송' ? 'block' : 'none'}; width: 100%;">
+                                <button type="button" class="btn" id="hub-select-btn-${it.row}" style="width: 100%; font-size: 12px; font-weight: 700; text-align: left; padding: 6px 10px;" onclick="onHubButtonClick(${it.row}, '${winnerName}')">
+                                    🔍 거점 선택하기
+                                </button>
+                                <!-- Hidden inputs to hold values for DB submit -->
+                                <input type="hidden" id="custom-company-${it.row}">
+                                <input type="hidden" id="custom-region-${it.row}">
+                                <select id="region-${it.row}" style="display: none;"></select>
+                                <select id="hub-${it.row}" style="display: none;"></select>
                             </div>
                             <span id="pickup-lbl-${it.row}" style="display: ${currentType === '직접수령' ? 'inline' : 'none'}; color: var(--text-secondary);">현장 직접 수령</span>
                         </td>
@@ -1044,37 +1150,34 @@
             const selectHub = document.getElementById(`hub-${rowId}`);
             const customComp = document.getElementById(`custom-company-${rowId}`);
             const customReg = document.getElementById(`custom-region-${rowId}`);
+            const btn = document.getElementById(`hub-select-btn-${rowId}`);
 
             if (!selectRegion || !selectHub) return;
             if (companyKey === '픽업') return;
 
-            const searchContainer = document.getElementById(`hub-search-container-${rowId}`);
-
+            // 1. If custom company (기타)
             if (companyKey !== '도도시' && companyKey !== '파르게' && companyKey !== '랩팡') {
-                customComp.style.display = 'inline-block';
-                selectRegion.style.display = 'none';
-                selectHub.style.display = 'none';
-                if (searchContainer) searchContainer.style.display = 'none';
-                customReg.style.display = 'inline-block';
+                const compVal = companyKey === '기타' ? '' : companyKey;
+                const regVal = selectedRegion || '';
+                
+                if (customComp) customComp.value = compVal;
+                if (customReg) customReg.value = regVal;
+
+                if (btn) {
+                    if (compVal || regVal) {
+                        btn.className = "btn btn-secondary";
+                        btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
+                        btn.innerHTML = `<span>📦 [${compVal || '기타'}] ${regVal || '직접기입'}</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
+                    } else {
+                        btn.className = "btn";
+                        btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB; text-align: left; width: 100%;";
+                        btn.innerHTML = `🔍 배송지 직접 입력`;
+                    }
+                }
                 return;
             }
 
-            customComp.style.display = 'none';
-            selectRegion.style.display = 'none';
-            selectHub.style.display = 'none';
-            if (searchContainer) {
-                searchContainer.style.display = 'inline-block';
-                const searchInput = document.getElementById(`hub-search-${rowId}`);
-                if (searchInput) {
-                    if (selectedRegion && selectedHub) {
-                        searchInput.value = `[${selectedRegion}] ${selectedHub}`;
-                    } else {
-                        searchInput.value = '';
-                    }
-                }
-            }
-            customReg.style.display = 'none';
-
+            // 2. If Dodosi, Parge, Wrapang
             const companyData = SHIPPING_DATA[companyKey];
             if (!companyData) return;
 
@@ -1085,6 +1188,19 @@
             }
 
             populateRowHubs(rowId, winnerName, companyKey, selectRegion.value, selectedHub);
+
+            // Update button badge UI
+            if (btn) {
+                if (selectedRegion && selectedHub) {
+                    btn.className = "btn btn-secondary";
+                    btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
+                    btn.innerHTML = `<span>📍 [${companyKey}] ${selectedRegion} (${selectedHub})</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
+                } else {
+                    btn.className = "btn";
+                    btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB; text-align: left; width: 100%;";
+                    btn.innerHTML = `🔍 거점 선택하기`;
+                }
+            }
         }
 
         function populateRowHubs(rowId, winnerName, companyKey, regionName, selectedHub = null) {
@@ -1117,7 +1233,7 @@
                     if (controls) controls.style.display = 'none';
                     if (pickupLbl) pickupLbl.style.display = 'inline';
                 } else {
-                    if (controls) controls.style.display = 'flex';
+                    if (controls) controls.style.display = 'block';
                     if (pickupLbl) pickupLbl.style.display = 'none';
                 }
             });
@@ -1130,6 +1246,9 @@
             } else {
                 state.shipping_type = '배송';
                 state.shipping_company = val;
+                // Reset region and hub on type change so they choose again
+                state.shipping_region = '';
+                state.shipping_hub = '';
             }
 
             selfItemsOfWinner.forEach(it => {
@@ -1139,6 +1258,15 @@
             });
 
             recalculateAllCosts();
+
+            // Auto-trigger modal popup when changing type to shipping
+            if (val !== '픽업') {
+                if (val === '기타') {
+                    openCustomModalForWinner(rowId, winnerName, 'admin');
+                } else {
+                    openHubModalForWinner(rowId, winnerName, 'admin');
+                }
+            }
         }
 
         // ══════════════════════════════════════
@@ -1713,9 +1841,7 @@ ${combinedInfo}
             btns.forEach(b => document.getElementById(`b-opt-${b}`).classList.remove('active'));
 
             const detailBox = document.getElementById('buyer-detail-box');
-            const customCompanyGroup = document.getElementById('b-custom-company-group');
-            const hubSelectGroup = document.getElementById('b-hub-select-group');
-            const customRegionGroup = document.getElementById('b-custom-region-group');
+            const btn = document.getElementById('buyer-hub-btn');
 
             if (companyKey === '픽업') {
                 document.getElementById('b-opt-pickup').classList.add('active');
@@ -1732,52 +1858,68 @@ ${combinedInfo}
                 if (companyKey === '도도시') {
                     document.getElementById('b-opt-dodosi').classList.add('active');
                     buyerShippingState.company = '도도시';
-                    customCompanyGroup.style.display = 'none';
-                    hubSelectGroup.style.display = 'grid';
-                    customRegionGroup.style.display = 'none';
                 } else if (companyKey === '파르게') {
                     document.getElementById('b-opt-parge').classList.add('active');
                     buyerShippingState.company = '파르게';
-                    customCompanyGroup.style.display = 'none';
-                    hubSelectGroup.style.display = 'grid';
-                    customRegionGroup.style.display = 'none';
                 } else if (companyKey === '랩팡') {
                     document.getElementById('b-opt-wrapang').classList.add('active');
                     buyerShippingState.company = '랩팡';
-                    customCompanyGroup.style.display = 'none';
-                    hubSelectGroup.style.display = 'grid';
-                    customRegionGroup.style.display = 'none';
                 } else {
                     document.getElementById('b-opt-custom').classList.add('active');
-                    buyerShippingState.company = '기타 (직접입력)';
-                    customCompanyGroup.style.display = 'block';
-                    hubSelectGroup.style.display = 'none';
-                    customRegionGroup.style.display = 'block';
+                    buyerShippingState.company = '기타';
                 }
 
+                // If Dodosi, Parge, Wrapang
                 if (companyKey !== '픽업' && companyKey !== '기타') {
-                    // 지역/거점 옵션 채우기
-                    const searchGroup = document.getElementById('b-hub-search-group');
-                    if (searchGroup) {
-                        searchGroup.style.display = 'block';
+                    const comp = buyerShippingState.company;
+                    const compData = SHIPPING_DATA[comp];
+                    if (compData) {
+                        const regions = Object.keys(compData.regions);
+                        const regionSelect = document.getElementById('buyer-region-select');
+                        regionSelect.innerHTML = regions.map(r => `<option value="${r}">${r}</option>`).join('');
+                        
                         if (!isInit) {
-                            document.getElementById('buyer-hub-search').value = '';
-                        } else if (buyerShippingState.region && buyerShippingState.hub) {
-                            document.getElementById('buyer-hub-search').value = `[${buyerShippingState.region}] ${buyerShippingState.hub}`;
+                            onBuyerRegionChange();
                         }
                     }
 
-                    const compData = SHIPPING_DATA[buyerShippingState.company];
-                    const regions = Object.keys(compData.regions);
-                    const regionSelect = document.getElementById('buyer-region-select');
-                    regionSelect.innerHTML = regions.map(r => `<option value="${r}">${r}</option>`).join('');
-                    
+                    if (btn) {
+                        if (buyerShippingState.region && buyerShippingState.hub) {
+                            btn.className = "btn btn-secondary";
+                            btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;";
+                            btn.innerHTML = `<span>📍 [${comp}] ${buyerShippingState.region} (${buyerShippingState.hub})</span> <span style="font-size: 11px; opacity: 0.6;">변경</span>`;
+                        } else {
+                            btn.className = "btn";
+                            btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;";
+                            btn.innerHTML = `<span>🔍 거점 선택하기</span>`;
+                        }
+                    }
+
+                    // Auto popup on click
                     if (!isInit) {
-                        onBuyerRegionChange();
+                        openHubModalForWinner(0, '', 'buyer');
                     }
                 } else {
-                    const searchGroup = document.getElementById('b-hub-search-group');
-                    if (searchGroup) searchGroup.style.display = 'none';
+                    // Custom
+                    const compVal = document.getElementById('buyer-custom-company').value || '기타';
+                    const regVal = document.getElementById('buyer-custom-region').value || '';
+
+                    if (btn) {
+                        if (regVal) {
+                            btn.className = "btn btn-secondary";
+                            btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A;";
+                            btn.innerHTML = `<span>📦 [${compVal}] ${regVal}</span> <span style="font-size: 11px; opacity: 0.6;">변경</span>`;
+                        } else {
+                            btn.className = "btn";
+                            btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;";
+                            btn.innerHTML = `<span>🔍 배송지 직접 입력</span>`;
+                        }
+                    }
+
+                    // Auto popup on click
+                    if (!isInit) {
+                        openCustomModalForWinner(0, '', 'buyer');
+                    }
                 }
             }
 
@@ -2183,6 +2325,305 @@ ${combinedInfo}
             }
         }
 
+
+        // ══════════════════════════════════════
+        //  거점 선택 및 기타 입력 모달 (팝업) 구현
+        // ══════════════════════════════════════
+        let activeModalRow = null;
+        let activeModalWinner = null;
+        let activeModalSource = null; // 'admin' or 'buyer'
+
+        function openHubModalForWinner(rowId, winnerName, source = 'admin') {
+            activeModalRow = rowId;
+            activeModalWinner = winnerName;
+            activeModalSource = source;
+
+            const comp = source === 'admin' 
+                ? winnerStateMap[winnerName].shipping_company 
+                : buyerShippingState.company;
+
+            document.getElementById('hub-modal-title').textContent = `[${comp}] 거점 검색 및 선택`;
+            const searchInput = document.getElementById('hub-modal-search');
+            searchInput.value = '';
+            
+            // Show modal
+            document.getElementById('hub-modal').style.display = 'flex';
+            searchInput.focus();
+
+            // Perform initial load (show all hubs)
+            filterModalHubs();
+        }
+
+        function closeHubModal() {
+            document.getElementById('hub-modal').style.display = 'none';
+        }
+
+        function filterModalHubs() {
+            const q = (document.getElementById('hub-modal-search').value || '').trim().toLowerCase();
+            const resultsBox = document.getElementById('hub-modal-results');
+            
+            const comp = activeModalSource === 'admin' 
+                ? winnerStateMap[activeModalWinner].shipping_company 
+                : buyerShippingState.company;
+
+            const compData = SHIPPING_DATA[comp];
+            if (!compData || !compData.regions) {
+                resultsBox.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-secondary);">데이터가 없습니다.</div>';
+                return;
+            }
+
+            // Flatten all hubs of this company
+            let allHubs = [];
+            Object.keys(compData.regions).forEach(regName => {
+                compData.regions[regName].forEach(h => {
+                    allHubs.push({
+                        region: regName,
+                        shop: h.shop,
+                        cost: h.cost
+                    });
+                });
+            });
+
+            let exact = [];
+            let nearby = [];
+
+            if (!q) {
+                exact = allHubs;
+            } else {
+                const words = q.split(/\s+/).filter(Boolean);
+                const scored = allHubs.map(h => {
+                    const score = scoreMatch(h, words);
+                    return { hub: h, score: score };
+                }).filter(item => item.score > 0)
+                  .sort((a, b) => b.score - a.score);
+
+                exact = scored.map(item => item.hub);
+
+                // Geographical proximity recommendations
+                let geoRoutes = [];
+                words.forEach(w => {
+                    geoRoutes.push(...findRoutesByLocation(w));
+                });
+                geoRoutes = [...new Set(geoRoutes)];
+
+                if (exact.length <= 4) {
+                    const compMap = GEO_TO_COMPANY_REGION[comp];
+                    if (compMap) {
+                        let targetRegs = [];
+                        geoRoutes.forEach(gr => {
+                            if (compMap[gr]) targetRegs.push(...compMap[gr]);
+                        });
+                        targetRegs = [...new Set(targetRegs)];
+
+                        if (targetRegs.length > 0) {
+                            nearby = allHubs.filter(h => targetRegs.includes(h.region) && !exact.some(ex => ex.shop === h.shop));
+                        }
+                    }
+                }
+            }
+
+            // Render
+            if (exact.length === 0 && nearby.length === 0) {
+                resultsBox.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-secondary);">검색 결과가 없습니다.</div>';
+                return;
+            }
+
+            let html = '';
+            if (exact.length > 0) {
+                exact.forEach(h => {
+                    html += `
+                        <div class="search-item" style="padding: 12px 14px; font-weight: 500;" onclick="selectModalHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
+                            <div>
+                                <span class="search-item-region">${h.region}</span>
+                                <span class="search-item-title" style="font-size: 14px;">${h.shop}</span>
+                            </div>
+                            <span class="search-item-price" style="font-size: 13px;">${h.cost.toLocaleString()}원</span>
+                        </div>
+                    `;
+                });
+            }
+
+            if (nearby.length > 0) {
+                html += `
+                    <div style="padding: 8px 12px; font-size: 11px; font-weight: 800; color: var(--accent); background: var(--accent-light); border-top: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border); display: flex; align-items: center; gap: 4px;">
+                        📍 인근 노선/권역 추천 거점샵
+                    </div>
+                `;
+                nearby.forEach(h => {
+                    html += `
+                        <div class="search-item" style="opacity: 0.75; padding: 12px 14px;" onclick="selectModalHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
+                            <div>
+                                <span class="search-item-region" style="background: #E2E8F0; color: #475569;">${h.region}</span>
+                                <span class="search-item-title" style="font-weight: 500; font-size: 14px;">${h.shop}</span>
+                            </div>
+                            <span class="search-item-price" style="color: #64748B; font-size: 13px;">${h.cost.toLocaleString()}원</span>
+                        </div>
+                    `;
+                });
+            }
+
+            resultsBox.innerHTML = html;
+        }
+
+        function selectModalHub(region, shop, cost) {
+            closeHubModal();
+
+            if (activeModalSource === 'admin') {
+                const winnerName = activeModalWinner;
+                const selfItemsOfWinner = getSelfItemsOfWinner(winnerName);
+                
+                // Sync all item rows of this winner
+                selfItemsOfWinner.forEach(it => {
+                    // Update hidden region select dropdown
+                    const selectRegion = document.getElementById(`region-${it.row}`);
+                    if (selectRegion) selectRegion.value = region;
+                    
+                    // Populate hubs and select
+                    populateRowHubs(it.row, winnerName, winnerStateMap[winnerName].shipping_company, region, shop);
+
+                    // Update the button UI inside the cell directly!
+                    const btn = document.getElementById(`hub-select-btn-${it.row}`);
+                    if (btn) {
+                        btn.className = "btn btn-secondary";
+                        btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
+                        btn.innerHTML = `<span>📍 [${winnerStateMap[winnerName].shipping_company}] ${region} (${shop})</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
+                    }
+                });
+
+                // Update winner state
+                const state = winnerStateMap[winnerName];
+                state.shipping_region = region;
+                state.shipping_hub = shop;
+
+                recalculateAllCosts();
+            } else {
+                // Buyer view
+                // Sync with dropdowns
+                const regionSelect = document.getElementById('buyer-region-select');
+                regionSelect.value = region;
+                
+                // Re-populate and select hub
+                onBuyerRegionChange(shop);
+
+                buyerShippingState.region = region;
+                buyerShippingState.hub = shop;
+                buyerShippingState.cost = cost;
+
+                // Update search button text
+                const btn = document.getElementById('buyer-hub-btn');
+                if (btn) {
+                    btn.className = "btn btn-secondary";
+                    btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE;";
+                    btn.innerHTML = `<span>📍 [${buyerShippingState.company}] ${region} (${shop})</span> <span style="font-size: 11px; opacity: 0.6;">변경</span>`;
+                }
+
+                recalculateBuyerTotal();
+            }
+        }
+
+        function openCustomModalForWinner(rowId, winnerName, source = 'admin') {
+            activeModalRow = rowId;
+            activeModalWinner = winnerName;
+            activeModalSource = source;
+
+            const companyInput = document.getElementById('custom-modal-company');
+            const regionInput = document.getElementById('custom-modal-region');
+
+            if (source === 'admin') {
+                const state = winnerStateMap[winnerName];
+                companyInput.value = state.shipping_company === '기타' ? '' : state.shipping_company;
+                companyInput.placeholder = "예: 경동택배, 우체국 등";
+                
+                const customRegionInput = document.getElementById(`custom-region-${rowId}`);
+                regionInput.value = customRegionInput ? customRegionInput.value : '';
+            } else {
+                companyInput.value = document.getElementById('buyer-custom-company').value;
+                regionInput.value = document.getElementById('buyer-custom-region').value;
+            }
+
+            document.getElementById('custom-modal').style.display = 'flex';
+            companyInput.focus();
+        }
+
+        function closeCustomModal() {
+            document.getElementById('custom-modal').style.display = 'none';
+        }
+
+        function submitCustomModal() {
+            const compVal = (document.getElementById('custom-modal-company').value || '').trim() || '기타';
+            const regVal = (document.getElementById('custom-modal-region').value || '').trim() || '직접기입';
+
+            closeCustomModal();
+
+            if (activeModalSource === 'admin') {
+                const winnerName = activeModalWinner;
+                const selfItemsOfWinner = getSelfItemsOfWinner(winnerName);
+
+                selfItemsOfWinner.forEach(it => {
+                    // Update hidden inputs
+                    const customComp = document.getElementById(`custom-company-${it.row}`);
+                    if (customComp) customComp.value = compVal;
+
+                    const customReg = document.getElementById(`custom-region-${it.row}`);
+                    if (customReg) customReg.value = regVal;
+
+                    // Update button badge UI
+                    const btn = document.getElementById(`hub-select-btn-${it.row}`);
+                    if (btn) {
+                        btn.className = "btn btn-secondary";
+                        btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
+                        btn.innerHTML = `<span>📦 [${compVal}] ${regVal}</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
+                    }
+                });
+
+                // Update winner state
+                const state = winnerStateMap[winnerName];
+                state.shipping_company = compVal;
+                state.shipping_region = regVal;
+                state.shipping_hub = '';
+
+                recalculateAllCosts();
+            } else {
+                // Buyer view
+                document.getElementById('buyer-custom-company').value = compVal;
+                document.getElementById('buyer-custom-region').value = regVal;
+
+                // Update search button text
+                const btn = document.getElementById('buyer-hub-btn');
+                if (btn) {
+                    btn.className = "btn btn-secondary";
+                    btn.style.cssText = "text-align: left; width: 100%; justify-content: space-between; font-size: 13px; font-weight: 700; padding: 10px 14px; background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A;";
+                    btn.innerHTML = `<span>📦 [${compVal}] ${regVal}</span> <span style="font-size: 11px; opacity: 0.6;">변경</span>`;
+                }
+
+                recalculateBuyerTotal();
+            }
+        }
+
+        function onHubButtonClick(rowId, winnerName) {
+            const state = winnerStateMap[winnerName];
+            const comp = state.shipping_company;
+            if (comp === '기타') {
+                openCustomModalForWinner(rowId, winnerName, 'admin');
+            } else {
+                openHubModalForWinner(rowId, winnerName, 'admin');
+            }
+        }
+
+        function onBuyerHubButtonClick() {
+            const comp = buyerShippingState.company;
+            if (comp === '기타') {
+                openCustomModalForWinner(0, '', 'buyer');
+            } else {
+                openHubModalForWinner(0, '', 'buyer');
+            }
+        }
+
+        // Initialize modal event listener
+        document.addEventListener('DOMContentLoaded', () => {
+            const modalSearch = document.getElementById('hub-modal-search');
+            if (modalSearch) modalSearch.addEventListener('input', filterModalHubs);
+        });
 
         // 전화번호 포맷 헬퍼
         function fmtPhone(raw) {
