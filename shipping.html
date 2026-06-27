@@ -1302,43 +1302,37 @@
             display: flex;
             gap: 6px;
             width: 100%;
-            padding: 5px;
-            overflow-x: auto;
-            scroll-snap-type: x proximity;
-            scrollbar-width: none;
-            background: #F4F6F9;
-            border: 1px solid #E4E9F0;
-            border-radius: 12px;
-        }
-
-        .segmented-control::-webkit-scrollbar {
-            display: none;
+            padding: 6px;
+            background: #F1F5F9;
+            border: 1.5px solid #E2E8F0;
+            border-radius: 16px;
         }
 
         .segmented-btn {
-            flex: 0 0 90px;
-            scroll-snap-align: start;
-            padding: 11px 10px;
+            flex: 1 1 0; /* 5개 옵션을 100% 너비로 균등 분할 */
+            padding: 12px 0;
             border: 0;
-            border-radius: 9px;
+            border-radius: 11px;
             background: transparent;
-            color: #667085;
+            color: #475569;
             font-family: inherit;
-            font-size: 12px;
-            font-weight: 750;
+            font-size: 13.5px;
+            font-weight: 850;
+            text-align: center;
             cursor: pointer;
-            transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .segmented-btn:hover {
-            color: var(--text-title);
-            background: #FFFFFF;
+            color: #1E293B;
+            background: rgba(255, 255, 255, 0.6);
         }
 
         .segmented-btn.active {
-            color: #FFFFFF;
-            background: var(--accent);
-            box-shadow: 0 3px 8px rgba(37, 99, 235, 0.20);
+            color: #FFFFFF !important;
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%) !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+            transform: translateY(-0.5px);
         }
 
         .shipping-breakdown {
@@ -2216,6 +2210,9 @@
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px; padding: 20px 24px;">
 
                 <!-- 패널 진입 즉시 배송사부터 선택 -->
+                <div style="font-size: 13.5px; font-weight: 850; color: #475569; margin-bottom: 2px; letter-spacing: -0.2px; display: flex; align-items: center; gap: 6px;">
+                    <span style="color: #2563EB; font-size: 10px;">●</span> 배송 및 수령 방식
+                </div>
                 <div class="segmented-control" aria-label="배송 방식">
                     <button type="button" class="segmented-btn" id="seg-pickup" onclick="setEditorShippingType('픽업')">픽업</button>
                     <button type="button" class="segmented-btn" id="seg-dodosi" onclick="setEditorShippingType('도도시')">도도시</button>
