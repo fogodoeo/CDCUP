@@ -1943,6 +1943,45 @@
             color: #C2410C;
             border: 1.5px solid #FFEDD5;
         }
+
+        /* 대형 수평 스크롤 업체 선택창 */
+        .company-tab-container {
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 16px 4px;
+            margin-bottom: 24px;
+            border-bottom: 1.5px solid #E2E8F0;
+            -ms-overflow-style: none; /* IE, Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        .company-tab-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        .company-tab-btn {
+            display: inline-block;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 850;
+            border-radius: 14px;
+            background: #FFFFFF;
+            border: 1.5px solid #E2E8F0;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-right: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .company-tab-btn:hover {
+            border-color: #CBD5E1;
+            color: #1E293B;
+            background: #F8FAFC;
+        }
+        .company-tab-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #FFFFFF;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+        }
     </style>
 </head>
 <body>
@@ -1951,36 +1990,13 @@
         
         <!-- 어드민 전용 레이아웃 -->
         <div id="admin-view" style="display: none; width: 100%;">
-            <div class="header">
-                <h1>낙찰자 배송/수령 관리 (관리자)</h1>
-                <p>출품 업체별 낙찰 개체 확인, 배송 옵션 일괄 계산 및 정산 테이블입니다.</p>
-            </div>
-
-            <div class="card" style="padding: 14px 20px;">
-                <div class="control-row">
-                    <div class="control-group" style="width: 160px;">
-                        <label>출품 업체 필터</label>
-                        <input type="text" id="company-filter-input" class="input-text" placeholder="업체명 검색..." oninput="onCompanyFilterInput()">
-                    </div>
-                    <div class="control-group" style="width: 200px;">
-                        <label>출품 업체 선택</label>
-                        <select id="company-select" class="select-custom" onchange="onCompanySelectChange()">
-                            <!-- 동적 로딩 -->
-                        </select>
-                    </div>
-                    <button class="btn btn-secondary" onclick="clearCompanyFilter()" style="margin-top: 16px;">필터 초기화</button>
-                </div>
+            <!-- 대형 스크롤 업체 선택창 -->
+            <div id="company-selector-wrap" class="company-tab-container">
+                <div id="company-tab-list" class="company-tab-list"></div>
             </div>
 
             <div class="admin-workspace">
                 <section class="winner-column" aria-label="낙찰자 목록">
-                    <div class="workspace-heading">
-                        <div>
-                            <span class="workspace-kicker">낙찰자 목록</span>
-                            <h2>배송 정보를 관리할 낙찰자를 선택하세요</h2>
-                        </div>
-                        <span class="workspace-guide">카드를 누르면 배송 설정 화면이 열립니다</span>
-                    </div>
 
                     <div id="winner-list-container" class="winner-list-grid">
                         <div class="empty-list-state">출품 업체를 선택해 주세요.</div>
@@ -2386,59 +2402,46 @@
             }
         });
 
-        // 출품 업체 선택 필터 함수 정의
+        let activeSellerCompany = '';
+
         function populateCompanySelect() {
-            const select = document.getElementById('company-select');
-            if (!select) return;
-            
-            const prevValue = select.value;
-            select.innerHTML = uniqueSellerCompanies.map(co => `
-                <option value="${co}">${co}</option>
-            `).join('');
-            
-            if (prevValue && uniqueSellerCompanies.includes(prevValue)) {
-                select.value = prevValue;
-            } else if (uniqueSellerCompanies.length > 0) {
-                select.value = uniqueSellerCompanies[0];
+            const listContainer = document.getElementById('company-tab-list');
+            if (!listContainer) return;
+
+            if (uniqueSellerCompanies.length === 0) {
+                listContainer.innerHTML = '<div style="color: var(--text-secondary); padding: 8px;">출품 업체가 없습니다.</div>';
+                return;
             }
+
+            if (!activeSellerCompany || !uniqueSellerCompanies.includes(activeSellerCompany)) {
+                activeSellerCompany = uniqueSellerCompanies[0];
+            }
+
+            listContainer.innerHTML = uniqueSellerCompanies.map(co => {
+                const isActive = co === activeSellerCompany;
+                return `
+                    <button type="button" class="company-tab-btn ${isActive ? 'active' : ''}" onclick="selectSellerCompany('${co}')">
+                        ${co}
+                    </button>
+                `;
+            }).join('');
         }
 
-        function onCompanySelectChange() {
+        function selectSellerCompany(co) {
+            activeSellerCompany = co;
+            
+            const btns = document.querySelectorAll('.company-tab-btn');
+            btns.forEach(btn => {
+                const isActive = btn.textContent.trim() === co;
+                btn.classList.toggle('active', isActive);
+            });
+
             renderGrid();
         }
 
-        function clearCompanyFilter() {
-            const select = document.getElementById('company-select');
-            const filterInput = document.getElementById('company-filter-input');
-            if (filterInput) filterInput.value = '';
-            populateCompanySelect();
-            if (select && select.options.length > 0) {
-                select.selectedIndex = 0;
-                renderGrid();
-            }
-        }
-
-        function onCompanyFilterInput() {
-            const q = (document.getElementById('company-filter-input').value || '').trim().toLowerCase();
-            const select = document.getElementById('company-select');
-            if (!select) return;
-
-            const prevValue = select.value;
-            const filtered = q
-                ? uniqueSellerCompanies.filter(co => co.toLowerCase().includes(q))
-                : uniqueSellerCompanies;
-
-            select.innerHTML = filtered.map(co => `
-                <option value="${co}">${co}</option>
-            `).join('');
-
-            if (prevValue && filtered.includes(prevValue)) {
-                select.value = prevValue;
-            } else if (filtered.length > 0) {
-                select.value = filtered[0];
-                renderGrid();
-            }
-        }
+        function onCompanySelectChange() {}
+        function clearCompanyFilter() {}
+        function onCompanyFilterInput() {}
 
         // ══════════════════════════════════════
         //  배송비 연산 공통 헬퍼 함수
@@ -2508,7 +2511,7 @@
             return allocations;
         }        function renderGrid() {
             try {
-                const selectedCo = document.getElementById('company-select').value;
+                const selectedCo = activeSellerCompany;
                 const container = document.getElementById('winner-list-container');
                 if (activeEditorWinner) closeWinnerEditor();
                 container.innerHTML = '';
