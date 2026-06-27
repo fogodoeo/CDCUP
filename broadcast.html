@@ -2544,9 +2544,9 @@
             // Apply font-size via CSS variable on the container
             // + Control the visibility of the entire bracket container (On/Off master toggle)
             const containerEl = document.getElementById('bracket-page-container');
+            const masterShow = (bShow === '1') && (isBracketPage || active !== 'none');
             if (containerEl) {
                 containerEl.style.setProperty('--bracket-fs', bFontSize + 'px');
-                const masterShow = (bShow === '1') && (isBracketPage || active !== 'none');
                 if (masterShow) {
                     containerEl.classList.add('visible');
                 } else {
