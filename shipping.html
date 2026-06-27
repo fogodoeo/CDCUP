@@ -407,6 +407,40 @@
             border: 1px solid rgba(16, 185, 129, 0.3) !important;
         }
 
+        /* Region Categories Quick Tabs */
+        .modal-regions-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+
+        .region-tab-btn {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.02);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .region-tab-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #FFFFFF;
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .region-tab-btn.active {
+            background: rgba(49, 130, 246, 0.15);
+            color: #FFFFFF;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(49, 130, 246, 0.2);
+        }
+
         /* Premium Modal Overlays (Toss Bottom Sheets) */
         .modal-overlay {
             position: fixed;
@@ -892,6 +926,7 @@
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 12px;">
                 <input type="text" id="hub-modal-search" class="input-text" placeholder="지점명 또는 권역 초성 검색 (예: ㅋㄹ)" autocomplete="off">
+                <div id="hub-modal-regions" class="modal-regions-tabs"></div>
                 <div id="hub-modal-results" class="modal-results-list"></div>
             </div>
         </div>
@@ -2571,17 +2606,65 @@ ${combinedInfo}
         let activeModalRow = null;
         let activeModalWinner = null;
         let activeModalSource = null; // 'admin' or 'buyer'
+        let activeModalRegion = '전체';
+
+        function renderModalRegionTabs(comp) {
+            const container = document.getElementById('hub-modal-regions');
+            if (!container) return;
+
+            const compData = SHIPPING_DATA[comp];
+            if (!compData || !compData.regions) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const regions = Object.keys(compData.regions);
+            if (regions.length <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = `<button class="region-tab-btn ${activeModalRegion === '전체' ? 'active' : ''}" onclick="selectModalRegion('전체')">전체</button>`;
+            regions.forEach(reg => {
+                html += `<button class="region-tab-btn ${activeModalRegion === reg ? 'active' : ''}" onclick="selectModalRegion('${reg}')">${reg}</button>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function selectModalRegion(regionName) {
+            activeModalRegion = regionName;
+            
+            // Clear search input text so the list shows all items in that region cleanly
+            document.getElementById('hub-modal-search').value = '';
+            
+            // Highlight the active button
+            const btns = document.querySelectorAll('.region-tab-btn');
+            btns.forEach(btn => {
+                if (btn.textContent === regionName) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            filterModalHubs();
+        }
 
         function openHubModalForWinner(rowId, winnerName, source = 'admin') {
             activeModalRow = rowId;
             activeModalWinner = winnerName;
             activeModalSource = source;
+            activeModalRegion = '전체';
 
             const comp = source === 'admin' 
                 ? winnerStateMap[winnerName].shipping_company 
                 : buyerShippingState.company;
 
             document.getElementById('hub-modal-title').textContent = `[${comp}] 거점 검색 및 선택`;
+            
+            // Render region navigation tabs dynamically!
+            renderModalRegionTabs(comp);
+
             // Show modal
             const modal = document.getElementById('hub-modal');
             modal.style.display = 'flex';
@@ -2611,6 +2694,16 @@ ${combinedInfo}
             const q = (document.getElementById('hub-modal-search').value || '').trim().toLowerCase();
             const resultsBox = document.getElementById('hub-modal-results');
             
+            // If search text exists, clear region tabs highlights
+            if (q && activeModalRegion !== '전체') {
+                activeModalRegion = '전체';
+                const btns = document.querySelectorAll('.region-tab-btn');
+                btns.forEach(btn => {
+                    if (btn.textContent === '전체') btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            }
+
             const comp = activeModalSource === 'admin' 
                 ? winnerStateMap[activeModalWinner].shipping_company 
                 : buyerShippingState.company;
@@ -2639,6 +2732,11 @@ ${combinedInfo}
                     });
                 });
             });
+
+            // Filter by Region Tab
+            if (activeModalRegion !== '전체') {
+                allHubs = allHubs.filter(h => h.region === activeModalRegion);
+            }
 
             let exact = [];
             let nearby = [];
