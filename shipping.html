@@ -2424,7 +2424,7 @@
                 }
 
                 console.log('[INIT] Step 3: Loading wrapang...');
-                // 랩팡 동적 가격표 로드
+                // 랩팡 동적 가격표 로드 (day 속성을 추출하여 바인딩)
                 try {
                     const wrapangRes = await getWrapangData();
                     if (wrapangRes && wrapangRes.success && wrapangRes.data) {
@@ -2432,7 +2432,8 @@
                         Object.keys(wrapangRes.data).forEach(regName => {
                             SHIPPING_DATA['랩팡'].regions[regName] = wrapangRes.data[regName].map(shopItem => ({
                                 shop: shopItem.shop,
-                                cost: shopItem.cost || (regName.includes('제주') ? 55000 : 25000)
+                                cost: shopItem.cost || (regName.includes('제주') ? 55000 : 25000),
+                                day: shopItem.day || shopItem.arrival_day || shopItem.delivery_day || ''
                             }));
                         });
                         console.log('[Wrapang] Successfully loaded dynamic wrapang prices:', Object.keys(SHIPPING_DATA['랩팡'].regions).length, 'regions');
@@ -3864,11 +3865,14 @@ ${winnerName}님 낙찰 정산 안내입니다.
                     }
                     return `월요일 집하 ➔ 주간 순차 도착`;
                 } else if (comp === '랩팡') {
-                    // 랩팡: 월요일, 목요일 발송 기준
-                    if (region.includes('제주')) {
-                        return `월/목요일 발송 ➔ 다음 주 화/금요일 도착 (제주 1~2일 추가 소요)`;
+                    // 랩팡: 금요일 집하 및 거점별 도착 요일 동적 표시
+                    if (dayField) {
+                        return `금요일 집하 ➔ ${dayField} 도착`;
                     }
-                    return `월요일 발송 ➔ 화요일 도착 | 목요일 발송 ➔ 금요일 도착`;
+                    if (region.includes('제주')) {
+                        return `금요일 집하 ➔ 다음 주 토요일 도착 (배편·격주)`;
+                    }
+                    return `금요일 집하 ➔ 토요일 도착`;
                 }
                 return '';
             }
