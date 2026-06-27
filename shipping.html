@@ -1450,14 +1450,20 @@
                     totalBid += (parseInt(String(it.sold_price).replace(/[^0-9]/g, '')) || 0);
                 });
                 
-                // Get shipping cost for this company
-                const shippingCost = calculateShippingCost(
+                // Get shipping cost split for this company
+                const companyCount = state.sellerCompanies.length;
+                let baseCost = calculateShippingCost(
                     state.shipping_company,
                     state.shipping_type,
                     state.shipping_region,
                     state.shipping_hub,
-                    groupItems.length
+                    1
                 );
+                let totalShipping = baseCost;
+                if (state.shipping_type === '배송' && companyCount > 1 && state.shipping_company !== '기타') {
+                    totalShipping = baseCost + (companyCount - 1) * 7000;
+                }
+                const shippingCost = state.shipping_type === '배송' ? Math.round(totalShipping / companyCount) : 0;
                 
                 const grandTotal = (totalBid * 10000) + shippingCost;
                 
@@ -1466,9 +1472,18 @@
                 state.grandTotal = grandTotal;
 
                 // Gecko names list
-                const geckoTagsHtml = groupItems.map(it => `
+                const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
+                const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
+
+                const currentGeckoTagsHtml = currentCoItems.map(it => `
                     <span class="gecko-tag">🦎 ${it.name || '이름 없음'}</span>
                 `).join('');
+
+                const otherGeckoTagsHtml = otherCoItems.map(it => `
+                    <span class="gecko-tag gecko-tag-dimmed" style="opacity: 0.45; border: 1.5px dashed var(--text-secondary); filter: grayscale(100%);">🦎 [${it.company}] ${it.name || '이름 없음'}</span>
+                `).join('');
+
+                const geckoTagsHtml = currentGeckoTagsHtml + otherGeckoTagsHtml;
 
                 // Status label
                 const statusLabels = { '낙찰-대기': '대기', '낙찰-연락완료': '연락 완료', '낙찰-입금완료': '입금 완료' };
@@ -1569,10 +1584,10 @@
 
             // Render Gecko List inside modal
             const geckoListContainer = document.getElementById('editor-gecko-list');
-            const selectedCo = document.getElementById('company-select').value;
-            const selfItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
+            const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
+            const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
             
-            geckoListContainer.innerHTML = selfItems.map(it => {
+            const currentHtml = currentCoItems.map(it => {
                 const price = (parseInt(String(it.sold_price).replace(/[^0-9]/g, '')) || 0);
                 return `
                     <div class="modal-gecko-item">
@@ -1581,6 +1596,18 @@
                     </div>
                 `;
             }).join('');
+
+            const otherHtml = otherCoItems.map(it => {
+                const price = (parseInt(String(it.sold_price).replace(/[^0-9]/g, '')) || 0);
+                return `
+                    <div class="modal-gecko-item" style="opacity: 0.45; filter: grayscale(100%);">
+                        <span>🦎 [${it.company}] ${it.name || '이름 없음'}</span>
+                        <span style="font-weight:700; text-decoration: line-through;">${(price * 10000).toLocaleString()}원</span>
+                    </div>
+                `;
+            }).join('');
+            
+            geckoListContainer.innerHTML = currentHtml + otherHtml;
 
             // Set Segmented Control Active Button
             setEditorShippingType(editorShippingState.type === '직접수령' ? '픽업' : editorShippingState.company, true);
@@ -1720,7 +1747,6 @@
 
             const selectedCo = document.getElementById('company-select').value;
             const groupItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
-            const itemCount = groupItems.length;
 
             let totalBid = 0;
             groupItems.forEach(it => {
@@ -1739,7 +1765,16 @@
                 hub = '';
             }
 
-            const shipCost = calculateShippingCost(comp, editorShippingState.type, reg, hub, itemCount);
+            // Calculate split shipping cost
+            const sellerCos = state.sellerCompanies;
+            const companyCount = sellerCos.length;
+            
+            let baseCost = calculateShippingCost(comp, editorShippingState.type, reg, hub, 1);
+            let totalShipping = baseCost;
+            if (editorShippingState.type === '배송' && companyCount > 1 && comp !== '기타') {
+                totalShipping = baseCost + (companyCount - 1) * 7000;
+            }
+            const shipCost = editorShippingState.type === '배송' ? Math.round(totalShipping / companyCount) : 0;
             const grandTotal = (totalBid * 10000) + shipCost;
 
             document.getElementById('editor-summary-bid').textContent = (totalBid * 10000).toLocaleString() + '원';
@@ -1767,33 +1802,44 @@
                     }
                 }
 
-                const selectedCo = document.getElementById('company-select').value;
-                const groupItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
-                
                 const memoVal = document.getElementById('editor-memo').value.trim();
                 if (memoVal) {
                     region = `${region} [메모: ${memoVal}]`.trim();
                 }
 
-                const shippingCost = calculateShippingCost(
+                // Calculate split shipping cost
+                const sellerCos = state.sellerCompanies;
+                const companyCount = sellerCos.length;
+                
+                let baseCost = calculateShippingCost(
                     company,
                     type,
                     editorShippingState.region,
                     editorShippingState.hub,
-                    groupItems.length
+                    1
                 );
-
+                let totalShipping = baseCost;
+                if (type === '배송' && companyCount > 1 && company !== '기타') {
+                    totalShipping = baseCost + (companyCount - 1) * 7000;
+                }
+                const splitCostPerCompany = type === '배송' ? Math.round(totalShipping / companyCount) : 0;
                 const status = editorShippingState.status;
 
-                const promises = groupItems.map(it => 
-                    updateItemShipping(it.row, {
-                        shipping_type: type === '직접수령' ? '직접수령' : '배송',
-                        shipping_company: company,
-                        shipping_region: region,
-                        shipping_cost: shippingCost,
-                        status: status
-                    })
-                );
+                const promises = [];
+                for (const co of sellerCos) {
+                    const coItems = state.allItems.filter(it => (it.company || '').trim() === co);
+                    coItems.forEach((it, idx) => {
+                        promises.push(
+                            updateItemShipping(it.row, {
+                                shipping_type: type === '직접수령' ? '직접수령' : '배송',
+                                shipping_company: company,
+                                shipping_region: region,
+                                shipping_cost: (idx === 0) ? splitCostPerCompany : 0,
+                                status: status
+                            })
+                        );
+                    });
+                }
 
                 await Promise.all(promises);
 
