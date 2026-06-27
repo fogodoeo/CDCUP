@@ -2160,7 +2160,7 @@
                     <!-- 그다음 낙찰자명, 전화번호 (뚜렷하게) -->
                     <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span id="editor-info-winner" style="font-size: 16px; font-weight: 800; color: var(--text-title);">낙찰자명</span>
-                        <span id="editor-info-phone" style="font-size: 13.5px; color: var(--text-secondary); font-weight: 500;">전화번호</span>
+                        <a id="editor-info-phone" href="#" style="font-size: 13.5px; color: var(--accent); font-weight: 700; text-decoration: underline; cursor: pointer;">전화번호</a>
                     </div>
                     <!-- 낙찰개체 정보 (폰트 크기 증대 및 가독성 개선) -->
                     <div id="editor-info-objects" style="margin-top: 8px; font-size: 15px; color: #334155; font-weight: 700; line-height: 1.4; max-width: 95%;">
@@ -2454,12 +2454,12 @@
             if (savedCompany && uniqueSellerCompanies.includes(savedCompany)) {
                 activeSellerCompany = savedCompany;
             }
-            tempSelectedCompany = activeSellerCompany;
+            // 처음 팝업 생성 시에는 선택 없음(비활성)으로 초기 설정
+            tempSelectedCompany = '';
 
             listContainer.innerHTML = uniqueSellerCompanies.map(co => {
-                const isActive = co === tempSelectedCompany;
                 return `
-                    <button type="button" class="company-select-item ${isActive ? 'active' : ''}" data-co="${co}" onclick="clickModalCompanyItem('${co}')" style="justify-content: center; text-align: center;">
+                    <button type="button" class="company-select-item" data-co="${co}" onclick="clickModalCompanyItem('${co}')" style="justify-content: center; text-align: center;">
                         <span>${co}</span>
                     </button>
                 `;
@@ -2515,6 +2515,11 @@
         function openCompanySelectModal() {
             const modal = document.getElementById('company-select-modal');
             if (modal) {
+                tempSelectedCompany = '';
+                const items = document.querySelectorAll('.company-select-item');
+                items.forEach(item => item.classList.remove('active'));
+                updateConfirmButtonState();
+                
                 modal.style.display = 'flex';
                 modal.classList.add('active');
             }
@@ -2857,8 +2862,22 @@
             // 2. 낙찰자명
             document.getElementById('editor-info-winner').textContent = winnerName;
             
-            // 3. 전화번호
-            document.getElementById('editor-info-phone').textContent = fmtPhone(state.phone) || '연락처 없음';
+            // 3. 전화번호 (통화 연결 가능하도록 tel 링크 매핑)
+            const phoneLink = document.getElementById('editor-info-phone');
+            if (phoneLink) {
+                const rawPhone = (state.phone || '').replace(/[^0-9]/g, '');
+                if (rawPhone) {
+                    phoneLink.href = `tel:${rawPhone}`;
+                    phoneLink.textContent = fmtPhone(state.phone);
+                    phoneLink.style.color = 'var(--accent)';
+                    phoneLink.style.textDecoration = 'underline';
+                } else {
+                    phoneLink.removeAttribute('href');
+                    phoneLink.textContent = '연락처 없음';
+                    phoneLink.style.color = 'var(--text-secondary)';
+                    phoneLink.style.textDecoration = 'none';
+                }
+            }
             
             // 4. 합배송 버튼 제어 (합배송이 있을 때만 보이도록 설정)
             const isCombined = otherCoItems.length > 0;
@@ -2982,9 +3001,11 @@
                         embedSearchWrap.style.display = 'flex';
                         const searchInput = document.getElementById('editor-hub-search');
                         if (searchInput) {
-                            searchInput.value = isInit && editorShippingState.region && editorShippingState.hub
-                                ? `${editorShippingState.region} ${editorShippingState.hub}`
-                                : '';
+                            if (isInit) {
+                                searchInput.value = editorShippingState.region && editorShippingState.hub
+                                    ? `${editorShippingState.region} ${editorShippingState.hub}`
+                                    : '';
+                            }
                         }
                         renderEmbeddedRegionTabs(companyKey, 'editor');
                         filterEmbeddedHubs('editor');
