@@ -625,10 +625,16 @@
                     <div class="resize-handle resize-handle-se" id="resize-nametag2" title="크기 조절" style="border-color: #EC4899;"></div>
                 </div>
 
-                <!-- 5. Draggable Bracket (PAGE3 only) -->
-                <div class="draggable-element draggable-bracket" id="draggable-bracket" data-type="bracket" style="display:none; z-index:10;">
-                    <div class="element-label">🏆 대진표 (브라켓)</div>
-                    <div class="resize-handle resize-handle-se" id="resize-bracket" title="크기 조절" style="border-color: #3b82f6;"></div>
+                <!-- 5. Draggable Full Bracket (PAGE3 only) -->
+                <div class="draggable-element draggable-bracket" id="draggable-bracket-full" data-type="bracket_full" style="display:none; z-index:10;">
+                    <div class="element-label">🏆 전체대진</div>
+                    <div class="resize-handle resize-handle-se" id="resize-bracket-full" title="크기 조절" style="border-color: #3b82f6;"></div>
+                </div>
+
+                <!-- 5b. Draggable Live Bracket (PAGE3 only) -->
+                <div class="draggable-element draggable-bracket" id="draggable-bracket-live" data-type="bracket_live" style="display:none; z-index:10;">
+                    <div class="element-label">🔴 실시간대진</div>
+                    <div class="resize-handle resize-handle-se" id="resize-bracket-live" title="크기 조절" style="border-color: #ef4444;"></div>
                 </div>
 
                 <!-- 6. Draggable Bracket Title (PAGE3 only) -->
@@ -665,9 +671,13 @@
                         <span>🏷️ 네임택2 노출</span>
                         <input type="checkbox" id="toggle-nametag2-show" class="switch-input" checked onchange="toggleShowState('nametag2')">
                     </div>
-                    <div class="switch-container" id="toggle-bracket-show-group" style="display:none;">
-                        <span>🏆 대진표 노출</span>
-                        <input type="checkbox" id="toggle-bracket-show" class="switch-input" checked onchange="toggleShowState('bracket')">
+                    <div class="switch-container" id="toggle-bracket-full-show-group" style="display:none;">
+                        <span>🏆 전체대진 노출</span>
+                        <input type="checkbox" id="toggle-bracket-full-show" class="switch-input" checked onchange="toggleShowState('bracket_full')">
+                    </div>
+                    <div class="switch-container" id="toggle-bracket-live-show-group" style="display:none;">
+                        <span>🔴 실시간대진 노출</span>
+                        <input type="checkbox" id="toggle-bracket-live-show" class="switch-input" onchange="toggleShowState('bracket_live')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-title-show-group" style="display:none;">
                         <span>👑 타이틀 노출</span>
@@ -707,7 +717,8 @@
                     <span id="ticker-coords-group">자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong></span>
                     <span id="nametag1-coords" style="display:none;"> | 네임택1: <strong id="nametag1-val-top">0%</strong>, <strong id="nametag1-val-left">0%</strong></span>
                     <span id="nametag2-coords" style="display:none;"> | 네임택2: <strong id="nametag2-val-top">0%</strong>, <strong id="nametag2-val-left">0%</strong></span>
-                    <span id="bracket-coords" style="display:none;">대진표: Top <strong id="bracket-val-top">0%</strong>, Left <strong id="bracket-val-left">0%</strong></span>
+                    <span id="bracket-coords" style="display:none;">전체대진: Top <strong id="bracket-val-top">0%</strong>, Left <strong id="bracket-val-left">0%</strong></span>
+                    <span id="bracket-live-coords" style="display:none;"> | 실시간대진: Top <strong id="bracket-live-val-top">0%</strong>, Left <strong id="bracket-live-val-left">0%</strong></span>
                     <span id="bracket-title-coords" style="display:none;"> | 타이틀: <strong id="bracket-title-val-top">0%</strong>, <strong id="bracket-title-val-left">0%</strong></span>
                     <span id="battle-ann-coords" style="display:none;"> | 경기자막: <strong id="battle-ann-val-top">0%</strong>, <strong id="battle-ann-val-left">0%</strong></span>
                     <span id="save-status" style="margin-left: 10px; color: var(--green); display: none;">✓ 저장 완료</span>
@@ -802,15 +813,18 @@
         // PAGE3 전용 요소 표시 + 배너/자막 숨김 (3P는 오버레이 전용)
         if (pageNum === '3') {
             // 3P 전용 드래그 요소 표시
-            document.getElementById('draggable-bracket').style.display = '';
+            document.getElementById('draggable-bracket-full').style.display = '';
+            document.getElementById('draggable-bracket-live').style.display = '';
             document.getElementById('draggable-bracket-title').style.display = 'none'; // Hidden per user request
             document.getElementById('draggable-battle-ann').style.display = 'none';
-            document.getElementById('toggle-bracket-show-group').style.display = '';
+            document.getElementById('toggle-bracket-full-show-group').style.display = '';
+            document.getElementById('toggle-bracket-live-show-group').style.display = '';
             document.getElementById('toggle-bracket-title-show-group').style.display = 'none'; // Hidden per user request
             document.getElementById('toggle-battle-ann-show-group').style.display = 'none';
             document.getElementById('toggle-bracket-scale-group').style.display = '';
             document.getElementById('toggle-bracket-mode-group').style.display = '';
             document.getElementById('bracket-coords').style.display = '';
+            document.getElementById('bracket-live-coords').style.display = '';
             document.getElementById('bracket-title-coords').style.display = 'none'; // Hidden per user request
             document.getElementById('battle-ann-coords').style.display = 'none';
             // 배너/자막 완전 숨김 (3P 오버레이에 불필요)
@@ -857,10 +871,15 @@
 
         // PAGE3 전용: 대진표 (브라켓) 드래그 설정
         if (pageNum === '3') {
-            elements.bracket = {
-                el: document.getElementById('draggable-bracket'),
+            elements.bracket_full = {
+                el: document.getElementById('draggable-bracket-full'),
                 top: "120px", left: "0px", right: "auto", bottom: "auto",
                 show: "1", width: "100%", height: "calc(100% - 120px)"
+            };
+            elements.bracket_live = {
+                el: document.getElementById('draggable-bracket-live'),
+                top: "0px", left: "0px", right: "auto", bottom: "auto",
+                show: "0", width: "100%", height: "100%"
             };
             elements.bracket_title = {
                 el: document.getElementById('draggable-bracket-title'),
@@ -954,15 +973,24 @@
                 }
 
                 // Load Bracket values (PAGE3 only)
-                if (elements.bracket) {
-                    elements.bracket.top = cfg.bracket_top || '120px';
-                    elements.bracket.left = cfg.bracket_left || '0px';
-                    elements.bracket.right = cfg.bracket_right || 'auto';
-                    elements.bracket.bottom = cfg.bracket_bottom || 'auto';
-                    elements.bracket.show = cfg.bracket_show !== undefined ? String(cfg.bracket_show) : '1';
-                    elements.bracket.width = cfg.bracket_width || '100%';
-                    elements.bracket.height = cfg.bracket_height || 'calc(100% - 120px)';
-                    elements.bracket.fontSize = cfg.bracket_font_size || '14';
+                if (elements.bracket_full) {
+                    elements.bracket_full.top = cfg.bracket_full_top || cfg.bracket_top || '120px';
+                    elements.bracket_full.left = cfg.bracket_full_left || cfg.bracket_left || '0px';
+                    elements.bracket_full.right = cfg.bracket_full_right || 'auto';
+                    elements.bracket_full.bottom = cfg.bracket_full_bottom || 'auto';
+                    elements.bracket_full.show = cfg.bracket_full_show !== undefined ? String(cfg.bracket_full_show) : '1';
+                    elements.bracket_full.width = cfg.bracket_full_width || cfg.bracket_width || '100%';
+                    elements.bracket_full.height = cfg.bracket_full_height || cfg.bracket_height || 'calc(100% - 120px)';
+                    elements.bracket_full.fontSize = cfg.bracket_font_size || '14';
+                }
+                if (elements.bracket_live) {
+                    elements.bracket_live.top = cfg.bracket_live_top || '0px';
+                    elements.bracket_live.left = cfg.bracket_live_left || '0px';
+                    elements.bracket_live.right = cfg.bracket_live_right || 'auto';
+                    elements.bracket_live.bottom = cfg.bracket_live_bottom || 'auto';
+                    elements.bracket_live.show = cfg.bracket_live_show !== undefined ? String(cfg.bracket_live_show) : '0';
+                    elements.bracket_live.width = cfg.bracket_live_width || '100%';
+                    elements.bracket_live.height = cfg.bracket_live_height || '100%';
                 }
                 if (elements.bracket_title) {
                     elements.bracket_title.top = cfg.bracket_title_top || '40px';
@@ -988,7 +1016,8 @@
                 applyVisualState('ticker');
                 if (elements.nametag1) applyVisualState('nametag1');
                 if (elements.nametag2) applyVisualState('nametag2');
-                if (elements.bracket) applyVisualState('bracket');
+                if (elements.bracket_full) applyVisualState('bracket_full');
+                if (elements.bracket_live) applyVisualState('bracket_live');
                 if (elements.bracket_title) applyVisualState('bracket_title');
                 if (elements.battle_ann) applyVisualState('battle_ann');
 
@@ -997,7 +1026,8 @@
                 document.getElementById('toggle-ticker-show').checked = elements.ticker.show === "1";
                 if (elements.nametag1) document.getElementById('toggle-nametag1-show').checked = elements.nametag1.show === "1";
                 if (elements.nametag2) document.getElementById('toggle-nametag2-show').checked = elements.nametag2.show === "1";
-                if (elements.bracket) document.getElementById('toggle-bracket-show').checked = elements.bracket.show === "1";
+                if (elements.bracket_full) document.getElementById('toggle-bracket-full-show').checked = elements.bracket_full.show === "1";
+                if (elements.bracket_live) document.getElementById('toggle-bracket-live-show').checked = elements.bracket_live.show === "1";
                 if (elements.bracket_title) document.getElementById('toggle-bracket-title-show').checked = elements.bracket_title.show === "1";
                 if (elements.battle_ann) document.getElementById('toggle-battle-ann-show').checked = elements.battle_ann.show === "1";
 
@@ -1019,9 +1049,13 @@
                     elements.nametag2.el.style.height = convertToPercent(elements.nametag2.height);
                 }
                 // 대진표 크기 적용
-                if (elements.bracket) {
-                    elements.bracket.el.style.width = convertToPercent(elements.bracket.width);
-                    elements.bracket.el.style.height = convertToPercent(elements.bracket.height);
+                if (elements.bracket_full) {
+                    elements.bracket_full.el.style.width = convertToPercent(elements.bracket_full.width);
+                    elements.bracket_full.el.style.height = convertToPercent(elements.bracket_full.height);
+                }
+                if (elements.bracket_live) {
+                    elements.bracket_live.el.style.width = convertToPercent(elements.bracket_live.width);
+                    elements.bracket_live.el.style.height = convertToPercent(elements.bracket_live.height);
                 }
                 if (elements.bracket_title) {
                     elements.bracket_title.el.style.width = convertToPercent(elements.bracket_title.width);
@@ -1162,12 +1196,19 @@
                 document.getElementById('nametag2-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}` + ` (${n.width})`;
             }
             if (pageNum === '3') {
-                if (elements.bracket) {
-                    const br = elements.bracket;
+                if (elements.bracket_full) {
+                    const br = elements.bracket_full;
                     const brXStr = br.left !== 'auto' ? `Left ${br.left}` : `Right ${br.right}`;
                     const brYStr = br.top !== 'auto' ? `Top ${br.top}` : `Bottom ${br.bottom}`;
                     document.getElementById('bracket-val-top').textContent = brYStr;
                     document.getElementById('bracket-val-left').textContent = `${brXStr} (${br.width}×${br.height})`;
+                }
+                if (elements.bracket_live) {
+                    const bl = elements.bracket_live;
+                    const blXStr = bl.left !== 'auto' ? `Left ${bl.left}` : `Right ${bl.right}`;
+                    const blYStr = bl.top !== 'auto' ? `Top ${bl.top}` : `Bottom ${bl.bottom}`;
+                    document.getElementById('bracket-live-val-top').textContent = blYStr;
+                    document.getElementById('bracket-live-val-left').textContent = `${blXStr} (${bl.width}×${bl.height})`;
                 }
                 if (elements.bracket_title) {
                     const bt = elements.bracket_title;
@@ -1231,10 +1272,15 @@
 
         // 대진표 리사이즈 핸들 (PAGE3 only)
         if (pageNum === '3') {
-            const resizeBracket = document.getElementById('resize-bracket');
-            if (resizeBracket) {
-                resizeBracket.addEventListener('mousedown', (e) => startResize(e, 'bracket'));
-                resizeBracket.addEventListener('touchstart', (e) => startResize(e, 'bracket'), { passive: false });
+            const resizeBracketFull = document.getElementById('resize-bracket-full');
+            if (resizeBracketFull) {
+                resizeBracketFull.addEventListener('mousedown', (e) => startResize(e, 'bracket_full'));
+                resizeBracketFull.addEventListener('touchstart', (e) => startResize(e, 'bracket_full'), { passive: false });
+            }
+            const resizeBracketLive = document.getElementById('resize-bracket-live');
+            if (resizeBracketLive) {
+                resizeBracketLive.addEventListener('mousedown', (e) => startResize(e, 'bracket_live'));
+                resizeBracketLive.addEventListener('touchstart', (e) => startResize(e, 'bracket_live'), { passive: false });
             }
             const resizeBracketTitle = document.getElementById('resize-bracket-title');
             if (resizeBracketTitle) {
@@ -1301,13 +1347,20 @@
                     elements.nametag1.el.style.height = convertToPercent(unifiedH);
                     elements.nametag2.el.style.width = convertToPercent(unifiedW);
                     elements.nametag2.el.style.height = convertToPercent(unifiedH);
-                } else if (resizeTarget === 'bracket') {
+                } else if (resizeTarget === 'bracket_full' && elements.bracket_full) {
                     const newW = Math.max(100, resizeStartW + dx);
                     const newH = Math.max(100, resizeStartH + dy);
-                    elements.bracket.width = ((newW / containerRect.width) * 100).toFixed(1) + '%';
-                    elements.bracket.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
-                    elements.bracket.el.style.width = convertToPercent(elements.bracket.width);
-                    elements.bracket.el.style.height = convertToPercent(elements.bracket.height);
+                    elements.bracket_full.width = ((newW / containerRect.width) * 100).toFixed(1) + '%';
+                    elements.bracket_full.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
+                    elements.bracket_full.el.style.width = convertToPercent(elements.bracket_full.width);
+                    elements.bracket_full.el.style.height = convertToPercent(elements.bracket_full.height);
+                } else if (resizeTarget === 'bracket_live' && elements.bracket_live) {
+                    const newW = Math.max(100, resizeStartW + dx);
+                    const newH = Math.max(100, resizeStartH + dy);
+                    elements.bracket_live.width = ((newW / containerRect.width) * 100).toFixed(1) + '%';
+                    elements.bracket_live.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
+                    elements.bracket_live.el.style.width = convertToPercent(elements.bracket_live.width);
+                    elements.bracket_live.el.style.height = convertToPercent(elements.bracket_live.height);
                 } else if (resizeTarget === 'bracket_title') {
                     const newW = Math.max(80, resizeStartW + dx);
                     const newH = Math.max(20, resizeStartH + dy);
@@ -1396,12 +1449,18 @@
                 
                 applyVisualState('nametag1');
                 applyVisualState('nametag2');
-            } else if (activeDragKey === 'bracket') {
-                elements.bracket.left = ((x / containerRect.width) * 100).toFixed(1) + "%";
-                elements.bracket.top = ((y / containerRect.height) * 100).toFixed(1) + "%";
-                elements.bracket.right = 'auto';
-                elements.bracket.bottom = 'auto';
-                applyVisualState('bracket');
+            } else if (activeDragKey === 'bracket_full' && elements.bracket_full) {
+                elements.bracket_full.left = ((x / containerRect.width) * 100).toFixed(1) + "%";
+                elements.bracket_full.top = ((y / containerRect.height) * 100).toFixed(1) + "%";
+                elements.bracket_full.right = 'auto';
+                elements.bracket_full.bottom = 'auto';
+                applyVisualState('bracket_full');
+            } else if (activeDragKey === 'bracket_live' && elements.bracket_live) {
+                elements.bracket_live.left = ((x / containerRect.width) * 100).toFixed(1) + "%";
+                elements.bracket_live.top = ((y / containerRect.height) * 100).toFixed(1) + "%";
+                elements.bracket_live.right = 'auto';
+                elements.bracket_live.bottom = 'auto';
+                applyVisualState('bracket_live');
             } else if (activeDragKey === 'bracket_title') {
                 elements.bracket_title.left = ((x / containerRect.width) * 100).toFixed(1) + "%";
                 elements.bracket_title.top = ((y / containerRect.height) * 100).toFixed(1) + "%";
@@ -1477,15 +1536,24 @@
             configMap[cfgPrefix+'ticker_height'] = elements.ticker.height;
 
             if (pageNum === '3') {
-                if (elements.bracket) {
-                    configMap['bracket_top'] = elements.bracket.top;
-                    configMap['bracket_left'] = elements.bracket.left;
-                    configMap['bracket_right'] = elements.bracket.right;
-                    configMap['bracket_bottom'] = elements.bracket.bottom;
-                    configMap['bracket_width'] = elements.bracket.width;
-                    configMap['bracket_height'] = elements.bracket.height;
-                    configMap['bracket_show'] = elements.bracket.show;
-                    configMap['bracket_font_size'] = elements.bracket.fontSize || '14';
+                if (elements.bracket_full) {
+                    configMap['bracket_full_top'] = elements.bracket_full.top;
+                    configMap['bracket_full_left'] = elements.bracket_full.left;
+                    configMap['bracket_full_right'] = elements.bracket_full.right;
+                    configMap['bracket_full_bottom'] = elements.bracket_full.bottom;
+                    configMap['bracket_full_width'] = elements.bracket_full.width;
+                    configMap['bracket_full_height'] = elements.bracket_full.height;
+                    configMap['bracket_full_show'] = elements.bracket_full.show;
+                    configMap['bracket_font_size'] = elements.bracket_full.fontSize || '14';
+                }
+                if (elements.bracket_live) {
+                    configMap['bracket_live_top'] = elements.bracket_live.top;
+                    configMap['bracket_live_left'] = elements.bracket_live.left;
+                    configMap['bracket_live_right'] = elements.bracket_live.right;
+                    configMap['bracket_live_bottom'] = elements.bracket_live.bottom;
+                    configMap['bracket_live_width'] = elements.bracket_live.width;
+                    configMap['bracket_live_height'] = elements.bracket_live.height;
+                    configMap['bracket_live_show'] = elements.bracket_live.show;
                 }
                 if (elements.bracket_title) {
                     configMap['bracket_title_top'] = elements.bracket_title.top;
@@ -1596,18 +1664,31 @@
             }
 
             if (pageNum === '3') {
-                if (elements.bracket) {
-                    elements.bracket.top = "120px";
-                    elements.bracket.left = "0px";
-                    elements.bracket.right = "auto";
-                    elements.bracket.bottom = "auto";
-                    elements.bracket.show = "1";
-                    elements.bracket.width = "100%";
-                    elements.bracket.height = "calc(100% - 120px)";
-                    elements.bracket.el.style.width = '100%';
-                    elements.bracket.el.style.height = 'calc(100% - 120px)';
-                    document.getElementById('toggle-bracket-show').checked = true;
-                    applyVisualState('bracket');
+                if (elements.bracket_full) {
+                    elements.bracket_full.top = "120px";
+                    elements.bracket_full.left = "0px";
+                    elements.bracket_full.right = "auto";
+                    elements.bracket_full.bottom = "auto";
+                    elements.bracket_full.show = "1";
+                    elements.bracket_full.width = "100%";
+                    elements.bracket_full.height = "calc(100% - 120px)";
+                    elements.bracket_full.el.style.width = '100%';
+                    elements.bracket_full.el.style.height = 'calc(100% - 120px)';
+                    document.getElementById('toggle-bracket-full-show').checked = true;
+                    applyVisualState('bracket_full');
+                }
+                if (elements.bracket_live) {
+                    elements.bracket_live.top = "0px";
+                    elements.bracket_live.left = "0px";
+                    elements.bracket_live.right = "auto";
+                    elements.bracket_live.bottom = "auto";
+                    elements.bracket_live.show = "0";
+                    elements.bracket_live.width = "100%";
+                    elements.bracket_live.height = "100%";
+                    elements.bracket_live.el.style.width = '100%';
+                    elements.bracket_live.el.style.height = '100%';
+                    document.getElementById('toggle-bracket-live-show').checked = false;
+                    applyVisualState('bracket_live');
                 }
                 if (elements.bracket_title) {
                     elements.bracket_title.top = "40px";

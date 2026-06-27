@@ -2518,27 +2518,32 @@
             // Apply bracket positioning & size
             const treeFull = document.getElementById('bracket-page-tree-full');
             const treeLive = document.getElementById('bracket-page-tree-live');
-            
-            const bTop = map.bracket_top || (liveShow ? '0px' : '120px');
-            const bLeft = map.bracket_left || '0px';
-            const bWidth = map.bracket_width || '100%';
-            const bHeight = map.bracket_height || (liveShow ? '100%' : 'calc(100% - 120px)');
+
+            const fullTop = map.bracket_full_top || map.bracket_top || '120px';
+            const fullLeft = map.bracket_full_left || map.bracket_left || '0px';
+            const fullWidth = map.bracket_full_width || map.bracket_width || '100%';
+            const fullHeight = map.bracket_full_height || map.bracket_height || 'calc(100% - 120px)';
             const bFontSize = map.bracket_font_size || '14';
+
+            const liveTop = map.bracket_live_top || '0px';
+            const liveLeft = map.bracket_live_left || '0px';
+            const liveWidth = map.bracket_live_width || '100%';
+            const liveHeight = map.bracket_live_height || '100%';
 
             if (treeFull) {
                 treeFull.style.position = 'absolute';
-                treeFull.style.top = bTop;
-                treeFull.style.left = bLeft;
-                treeFull.style.width = bWidth;
-                treeFull.style.height = bHeight;
+                treeFull.style.top = fullTop;
+                treeFull.style.left = fullLeft;
+                treeFull.style.width = fullWidth;
+                treeFull.style.height = fullHeight;
                 treeFull.style.display = 'flex';
             }
             if (treeLive) {
                 treeLive.style.position = 'absolute';
-                treeLive.style.top = bTop;
-                treeLive.style.left = bLeft;
-                treeLive.style.width = bWidth;
-                treeLive.style.height = bHeight;
+                treeLive.style.top = liveTop;
+                treeLive.style.left = liveLeft;
+                treeLive.style.width = liveWidth;
+                treeLive.style.height = liveHeight;
                 treeLive.style.display = 'flex';
             }
 
