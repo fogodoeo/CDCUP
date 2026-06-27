@@ -596,6 +596,40 @@
                     console.warn('[Dodosi] Failed to load dynamic dodosi data, using fallback:', dodosiErr);
                 }
 
+                // 파르게 동적 가격표 로드
+                try {
+                    const pargeRes = await getPargeData();
+                    if (pargeRes && pargeRes.success && pargeRes.data) {
+                        SHIPPING_DATA['파르게'].regions = {};
+                        Object.keys(pargeRes.data).forEach(regName => {
+                            SHIPPING_DATA['파르게'].regions[regName] = pargeRes.data[regName].map(shopItem => ({
+                                shop: shopItem.shop,
+                                cost: regName.includes('제주') ? 10000 : 5000
+                            }));
+                        });
+                        console.log('[Parge] Successfully loaded dynamic parge prices:', Object.keys(SHIPPING_DATA['파르게'].regions).length, 'regions');
+                    }
+                } catch (pargeErr) {
+                    console.warn('[Parge] Failed to load dynamic parge data, using fallback:', pargeErr);
+                }
+
+                // 랩팡 동적 가격표 로드
+                try {
+                    const wrapangRes = await getWrapangData();
+                    if (wrapangRes && wrapangRes.success && wrapangRes.data) {
+                        SHIPPING_DATA['랩팡'].regions = {};
+                        Object.keys(wrapangRes.data).forEach(regName => {
+                            SHIPPING_DATA['랩팡'].regions[regName] = wrapangRes.data[regName].map(shopItem => ({
+                                shop: shopItem.shop,
+                                cost: regName.includes('제주') ? 10000 : 5000
+                            }));
+                        });
+                        console.log('[Wrapang] Successfully loaded dynamic wrapang prices:', Object.keys(SHIPPING_DATA['랩팡'].regions).length, 'regions');
+                    }
+                } catch (wrapangErr) {
+                    console.warn('[Wrapang] Failed to load dynamic wrapang data, using fallback:', wrapangErr);
+                }
+
                 const items = await getItems();
                 allItems = (items || []).filter(it => it.status && it.status.indexOf('낙찰') >= 0);
 

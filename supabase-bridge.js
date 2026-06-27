@@ -609,6 +609,36 @@ async function getDodosiData() {
     }
 }
 
+/**
+ * 파르게 가격표 데이터 조회
+ */
+async function getPargeData() {
+    try {
+        const resp = await fetch('parge_data.json');
+        if (!resp.ok) throw new Error('parge_data.json 로드 실패');
+        const data = await resp.json();
+        return { success: true, data: data.data, updated: data.updated };
+    } catch (e) {
+        console.error('[SB] getPargeData failed:', e);
+        return { success: false, error: '파르게 가격표 로딩 오류: ' + e.message };
+    }
+}
+
+/**
+ * 랩팡 가격표 데이터 조회
+ */
+async function getWrapangData() {
+    try {
+        const resp = await fetch('wrapang_data.json');
+        if (!resp.ok) throw new Error('wrapang_data.json 로드 실패');
+        const data = await resp.json();
+        return { success: true, data: data.data, updated: data.updated };
+    } catch (e) {
+        console.error('[SB] getWrapangData failed:', e);
+        return { success: false, error: '랩팡 가격표 로딩 오류: ' + e.message };
+    }
+}
+
 // ── google.script.run 호환 래퍼 제거됨 ──
 // 모든 HTML 파일이 이제 Supabase 함수를 직접 호출합니다.
 
