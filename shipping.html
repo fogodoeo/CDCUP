@@ -848,6 +848,839 @@
                 border-radius: 4px;
             }
         }
+
+        /* ══════════════════════════════════════
+           WHITE OPERATIONS WORKSPACE
+           목록과 편집기를 한 화면에 묶은 배송 관리 UI
+           ══════════════════════════════════════ */
+        :root {
+            --bg: #F5F7FB;
+            --bg-gradient: linear-gradient(180deg, #F8FAFD 0%, #F3F6FA 100%);
+            --card: #FFFFFF;
+            --text-title: #172033;
+            --text: #334155;
+            --text-secondary: #6B7280;
+            --accent: #2563EB;
+            --accent-hover: #1D4ED8;
+            --accent-light: #EFF6FF;
+            --border: #E4E9F1;
+            --radius: 18px;
+            --shadow: 0 8px 24px rgba(23, 32, 51, 0.06);
+            --shadow-md: 0 18px 44px rgba(23, 32, 51, 0.10);
+        }
+
+        body {
+            background: var(--bg);
+            background-image: var(--bg-gradient);
+            color: var(--text);
+            padding: 32px 20px 64px;
+        }
+
+        .container {
+            max-width: 760px;
+        }
+
+        body.admin-mode .container {
+            max-width: 1480px;
+        }
+
+        #admin-view .header {
+            text-align: left;
+            margin-bottom: 28px;
+        }
+
+        .header h1 {
+            color: var(--text-title);
+            background: none;
+            -webkit-background-clip: initial;
+            -webkit-text-fill-color: initial;
+            font-size: 30px;
+            font-weight: 850;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            margin-top: 7px;
+        }
+
+        .card,
+        .table-wrap {
+            background: #FFFFFF;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .card:hover {
+            border-color: #D8DEE8;
+            box-shadow: var(--shadow);
+            transform: none;
+        }
+
+        #admin-view > .card {
+            padding: 18px 20px !important;
+            margin-bottom: 22px;
+        }
+
+        #admin-view > .card .control-row {
+            margin-bottom: 0;
+        }
+
+        .control-group label,
+        .form-group label {
+            color: #667085;
+            text-transform: none;
+            letter-spacing: -0.1px;
+        }
+
+        .input-text,
+        .select-custom {
+            background: #FFFFFF;
+            color: var(--text-title);
+            border-color: #DCE2EA;
+            border-radius: 11px;
+            box-shadow: 0 1px 2px rgba(16, 24, 40, 0.02);
+        }
+
+        .input-text::placeholder {
+            color: #A0A8B7;
+        }
+
+        .input-text:focus,
+        .select-custom:focus {
+            background: #FFFFFF;
+            border-color: #7AA7F8;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+        }
+
+        .btn {
+            border-radius: 11px;
+            background: var(--accent);
+            box-shadow: none;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            box-shadow: none;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #F7F9FC;
+            color: #475467;
+            border-color: #E1E6EE;
+        }
+
+        .btn-secondary:hover {
+            background: #EEF2F7;
+            color: #344054;
+            border-color: #D7DEE8;
+        }
+
+        .admin-workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 470px;
+            gap: 22px;
+            align-items: start;
+        }
+
+        .winner-column {
+            min-width: 0;
+        }
+
+        .workspace-heading {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 16px;
+            margin: 2px 2px 14px;
+        }
+
+        .workspace-kicker {
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .workspace-heading h2 {
+            color: var(--text-title);
+            font-size: 17px;
+            line-height: 1.4;
+            margin-top: 3px;
+        }
+
+        .workspace-guide {
+            color: #98A2B3;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .winner-list-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 14px;
+            width: 100%;
+            margin-bottom: 24px;
+        }
+
+        .empty-list-state {
+            grid-column: 1 / -1;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 72px 24px;
+            background: #FFFFFF;
+            border: 1px dashed #D7DEE8;
+            border-radius: var(--radius);
+        }
+
+        .winner-card {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 15px;
+            padding: 19px;
+            box-shadow: 0 3px 12px rgba(23, 32, 51, 0.035);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+            position: relative;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+        }
+
+        .winner-card:hover {
+            border-color: #AFC8F4;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+            transform: translateY(-1px);
+        }
+
+        .winner-card.is-selected {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.09);
+        }
+
+        .winner-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            border-bottom: 1px solid #EEF1F5;
+            padding-bottom: 11px;
+        }
+
+        .winner-card-name {
+            color: var(--text-title);
+            font-size: 16px;
+            font-weight: 800;
+        }
+
+        .winner-card-phone {
+            color: #7C8798;
+            font-size: 12px;
+        }
+
+        .winner-card-body {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            min-height: 26px;
+        }
+
+        .gecko-tag {
+            display: inline-flex;
+            align-items: center;
+            color: #3F5FA8;
+            background: #F3F6FC;
+            border: 1px solid #E1E8F5;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .winner-card-footer {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .winner-card-shipping-summary {
+            display: flex;
+            align-items: center;
+            min-width: 0;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .winner-card-status-container {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .winner-card-price {
+            color: var(--text-title);
+            font-size: 16px;
+            font-weight: 850;
+        }
+
+        .combined-shipping-badge {
+            color: #B54708;
+            background: #FFFAEB;
+            border-color: #FEDF89;
+            margin-top: 0;
+        }
+
+        .editor-panel-slot {
+            position: sticky;
+            top: 20px;
+            min-height: 520px;
+            max-height: calc(100vh - 40px);
+            overflow: hidden;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .editor-empty-state {
+            min-height: 520px;
+            padding: 48px 36px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .editor-empty-icon {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            background: var(--accent-light);
+            color: var(--accent);
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .editor-empty-state strong {
+            color: var(--text-title);
+            font-size: 16px;
+        }
+
+        .editor-empty-state p {
+            max-width: 300px;
+            margin-top: 8px;
+            font-size: 13px;
+            line-height: 1.65;
+        }
+
+        #winner-edit-modal {
+            position: static;
+            inset: auto;
+            width: 100%;
+            height: auto;
+            min-height: 0;
+            padding: 0;
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            opacity: 1;
+            pointer-events: auto;
+            align-items: stretch;
+            justify-content: stretch;
+            transition: none;
+        }
+
+        #winner-edit-modal .modal-content {
+            width: 100%;
+            max-width: none !important;
+            max-height: calc(100vh - 40px);
+            background: #FFFFFF;
+            border: 0;
+            border-radius: 18px;
+            box-shadow: none;
+            transform: none;
+            transition: none;
+            overflow: hidden;
+        }
+
+        #winner-edit-modal.active .modal-content {
+            transform: none;
+        }
+
+        #winner-edit-modal .modal-header {
+            flex-shrink: 0;
+            gap: 14px;
+            padding: 17px 20px;
+            background: #FFFFFF;
+            border-bottom-color: #E9EDF3;
+        }
+
+        #winner-edit-modal .modal-header h3 {
+            color: var(--text-title);
+            font-size: 17px;
+        }
+
+        .editor-header-main {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .editor-object-summary {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+            margin-top: 7px;
+            color: #667085;
+            font-size: 11.5px;
+        }
+
+        .editor-object-label {
+            flex-shrink: 0;
+            color: #2563EB;
+            font-weight: 800;
+        }
+
+        .editor-object-names {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 650;
+        }
+
+        .editor-combined-count {
+            flex-shrink: 0;
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: #FFF7E8;
+            color: #B54708;
+            font-weight: 750;
+        }
+
+        .modal-close-btn {
+            width: 32px;
+            height: 32px;
+            display: grid;
+            place-items: center;
+            border-radius: 9px;
+            background: #F4F6F8;
+            color: #667085;
+            font-size: 25px;
+        }
+
+        .modal-close-btn:hover {
+            background: #EDEFF3;
+            color: var(--text-title);
+        }
+
+        #winner-edit-modal .modal-body {
+            padding: 16px 20px 18px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        #winner-edit-modal .modal-body > .control-group,
+        #winner-edit-modal .modal-body > .form-group {
+            margin-bottom: 0;
+        }
+
+        .segmented-control {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            width: 100%;
+            padding: 4px;
+            background: #F4F6F9;
+            border: 1px solid #E4E9F0;
+            border-radius: 12px;
+        }
+
+        .segmented-btn {
+            padding: 11px 4px;
+            border: 0;
+            border-radius: 9px;
+            background: transparent;
+            color: #667085;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 750;
+            cursor: pointer;
+            transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+        }
+
+        .segmented-btn:hover {
+            color: var(--text-title);
+            background: #FFFFFF;
+        }
+
+        .segmented-btn.active {
+            color: #FFFFFF;
+            background: var(--accent);
+            box-shadow: 0 3px 8px rgba(37, 99, 235, 0.20);
+        }
+
+        .modal-gecko-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            padding: 5px 13px;
+            margin-bottom: 0;
+            background: #F8FAFC;
+            border: 1px solid #E7EBF1;
+            border-radius: 12px;
+        }
+
+        .modal-gecko-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 9px 0;
+            border-bottom: 1px solid #E9EDF2;
+            color: #475467;
+            font-size: 12px;
+        }
+
+        .modal-gecko-item:last-child {
+            border-bottom: 0;
+        }
+
+        #editor-shipping-details.has-details {
+            padding: 0;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+        }
+
+        #editor-hub-results,
+        #buyer-hub-results {
+            max-height: 320px !important;
+            padding: 6px;
+            background: #FFFFFF !important;
+            border-color: #E2E7EE !important;
+            border-radius: 11px !important;
+        }
+
+        /* 관리자 패널 자체가 고정 스크롤 영역이므로 거점 목록의 이중 스크롤은 없앤다. */
+        #editor-hub-results {
+            max-height: none !important;
+            overflow-y: visible !important;
+        }
+
+        .modal-results-list {
+            gap: 5px;
+            background: #FFFFFF;
+            border-color: #E2E7EE;
+        }
+
+        .search-empty-hint {
+            padding: 24px 16px;
+            color: #7C8798;
+            text-align: center;
+            font-size: 12.5px;
+            line-height: 1.55;
+        }
+
+        .search-item {
+            background: #FFFFFF;
+            border: 1px solid #E8ECF2;
+            border-radius: 10px;
+            color: var(--text);
+        }
+
+        .search-item:hover {
+            background: #F8FAFD !important;
+            border-color: #BFD2F4;
+            transform: none;
+        }
+
+        .search-item-region {
+            color: #35578E;
+            background: #EDF3FC;
+        }
+
+        .region-tab-btn {
+            color: #667085;
+            background: #FFFFFF;
+            border-color: #DDE3EB;
+        }
+
+        .region-tab-btn:hover {
+            color: var(--text-title);
+            background: #F8FAFC;
+            border-color: #C9D2DE;
+        }
+
+        .region-tab-btn.active {
+            color: #1D4ED8;
+            background: #EFF6FF;
+            border-color: #93B4EE;
+            box-shadow: none;
+        }
+
+        #editor-pickup-wrap {
+            background: #FFFFFF !important;
+            border-color: #CBD5E1 !important;
+        }
+
+        .editor-action-footer {
+            flex-shrink: 0;
+            padding: 13px 20px 16px;
+            background: #FFFFFF;
+            border-top: 1px solid #E7EBF1;
+            box-shadow: 0 -10px 28px rgba(23, 32, 51, 0.055);
+        }
+
+        .editor-total-strip {
+            display: grid;
+            grid-template-columns: 1fr 0.8fr 1.2fr;
+            gap: 8px;
+            margin-bottom: 11px;
+        }
+
+        .editor-total-item {
+            min-width: 0;
+            padding: 8px 9px;
+            border-radius: 9px;
+            background: #F7F9FC;
+        }
+
+        .editor-total-item span,
+        .editor-total-item strong {
+            display: block;
+        }
+
+        .editor-total-item span {
+            margin-bottom: 3px;
+            color: #7C8798;
+            font-size: 10.5px;
+            font-weight: 650;
+        }
+
+        .editor-total-item strong {
+            overflow: hidden;
+            color: var(--text-title);
+            font-size: 12.5px;
+            font-weight: 800;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .editor-total-item.is-grand-total {
+            background: #FFF4F2;
+        }
+
+        .editor-total-item.is-grand-total span {
+            color: #B42318;
+        }
+
+        #winner-edit-modal .modal-body > div[style*="padding: 16px"] {
+            background: #F8FAFC !important;
+            border-color: #E5EAF0 !important;
+            border-radius: 12px !important;
+        }
+
+        #editor-summary-total,
+        #b-summary-total {
+            color: #D92D20 !important;
+            text-shadow: none !important;
+        }
+
+        #editor-summary-ship {
+            color: var(--accent) !important;
+        }
+
+        .status-select.status-waiting {
+            color: #667085 !important;
+            background-color: #F2F4F7 !important;
+            border-color: #D0D5DD !important;
+        }
+
+        .status-select.status-contacted {
+            color: #4338CA !important;
+            background-color: #EEF2FF !important;
+            border-color: #C7D2FE !important;
+        }
+
+        .status-select.status-paid {
+            color: #027A48 !important;
+            background-color: #ECFDF3 !important;
+            border-color: #ABEFC6 !important;
+        }
+
+        .buyer-item-row,
+        .buyer-form-detail {
+            background: #F8FAFC;
+            border-color: #E4E9F0;
+        }
+
+        .buyer-option-btn {
+            color: #667085;
+            background: #FFFFFF;
+            border-color: #DDE3EB;
+            border-radius: 12px;
+        }
+
+        .buyer-option-btn:hover {
+            color: var(--text-title);
+            background: #F8FAFC;
+            border-color: #BAC5D3;
+        }
+
+        .buyer-option-btn.active {
+            color: #1D4ED8;
+            background: #EFF6FF;
+            border-color: #7AA7F8;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+        }
+
+        @media (max-width: 1100px) {
+            .admin-workspace {
+                grid-template-columns: minmax(0, 1fr) 420px;
+            }
+
+            .winner-list-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 820px) {
+            body {
+                padding: 22px 12px 48px;
+            }
+
+            .container {
+                padding: 0;
+            }
+
+            #admin-view .header {
+                margin-bottom: 22px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .admin-workspace {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .winner-column {
+                width: 100%;
+            }
+
+            .workspace-heading {
+                align-items: flex-start;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .workspace-guide {
+                white-space: normal;
+            }
+
+            .editor-panel-slot {
+                display: none;
+                order: -1;
+                position: static;
+                width: 100%;
+                min-height: 0;
+                max-height: none;
+                overflow: visible;
+            }
+
+            .editor-panel-slot.is-active {
+                display: block;
+            }
+
+            .editor-empty-state {
+                display: none;
+            }
+
+            #winner-edit-modal .modal-content {
+                max-height: none;
+                border-radius: 16px;
+            }
+
+            #winner-edit-modal .modal-body {
+                overflow: visible;
+                padding: 18px;
+            }
+
+            #winner-edit-modal .modal-header {
+                padding: 18px;
+            }
+
+            .editor-action-footer {
+                position: static;
+                padding: 14px 18px 18px;
+                box-shadow: none;
+            }
+
+            .bottom-sheet-handle {
+                display: none;
+            }
+
+            .winner-list-grid {
+                display: grid !important;
+                grid-template-columns: 1fr !important;
+                gap: 12px !important;
+                width: 100% !important;
+                margin: 0 0 22px !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            .winner-card {
+                flex: none !important;
+                width: 100%;
+            }
+
+            .slider-indicators {
+                display: none !important;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .card {
+                padding: 18px;
+            }
+
+            .segmented-control,
+            .buyer-shipping-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .buyer-shipping-options button:nth-child(4),
+            .buyer-shipping-options button:nth-child(5) {
+                grid-column: auto;
+            }
+
+            .segmented-btn:first-child,
+            .buyer-option-btn:first-child {
+                grid-column: 1 / -1;
+            }
+
+            .winner-card-footer {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .winner-card-status-container {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
     </style>
 </head>
 <body>
@@ -877,12 +1710,32 @@
                 </div>
             </div>
 
-            <div id="winner-list-container" class="winner-list-grid">
-                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">출품 업체를 선택해 주세요.</div>
-            </div>
+            <div class="admin-workspace">
+                <section class="winner-column" aria-label="낙찰자 목록">
+                    <div class="workspace-heading">
+                        <div>
+                            <span class="workspace-kicker">낙찰자 목록</span>
+                            <h2>배송 정보를 관리할 낙찰자를 선택하세요</h2>
+                        </div>
+                        <span class="workspace-guide">카드를 누르면 배송 설정 화면이 열립니다</span>
+                    </div>
 
-            <!-- 모바일 슬라이더 페이징 표시기 -->
-            <div class="slider-indicators" id="slider-indicators" style="display: none; justify-content: center; gap: 8px; margin: 12px 0 24px;"></div>
+                    <div id="winner-list-container" class="winner-list-grid">
+                        <div class="empty-list-state">출품 업체를 선택해 주세요.</div>
+                    </div>
+
+                    <!-- 모바일 슬라이더 페이징 표시기 -->
+                    <div class="slider-indicators" id="slider-indicators" style="display: none; justify-content: center; gap: 8px; margin: 12px 0 24px;"></div>
+                </section>
+
+                <aside id="editor-panel-slot" class="editor-panel-slot" aria-label="배송 정보 편집 패널">
+                    <div id="editor-empty-state" class="editor-empty-state">
+                        <div class="editor-empty-icon">→</div>
+                        <strong>낙찰자를 선택해 주세요</strong>
+                        <p>목록의 카드를 누르면 이 자리에서 배송 방식과 정산 상태를 설정할 수 있습니다.</p>
+                    </div>
+                </aside>
+            </div>
         </div>
 
         <!-- 낙찰자 셀프서비스 입력 레이아웃 (?buyer=1 모드) -->
@@ -988,45 +1841,33 @@
 
 
 
-    <!-- 상세 정산 및 배송 정보 편집 모달 (Toss 바텀 시트 겸용) -->
+    <!-- 목록 옆에 고정되는 배송/정산 편집 패널 -->
     <div id="winner-edit-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="max-width: 540px;">
             <div class="bottom-sheet-handle"></div>
             <div class="modal-header">
-                <h3 id="editor-modal-title">배송 정보 설정</h3>
-                <button class="modal-close-btn" onclick="closeWinnerEditor()">&times;</button>
+                <div class="editor-header-main">
+                    <h3 id="editor-modal-title">배송 정보 설정</h3>
+                    <div id="editor-object-summary" class="editor-object-summary"></div>
+                </div>
+                <button class="modal-close-btn" type="button" aria-label="편집 패널 닫기" onclick="closeWinnerEditor()">&times;</button>
             </div>
             <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
-                
-                <!-- 낙찰 개체 요약 리스트 -->
-                <div class="control-group">
-                    <label>낙찰 개체 목록</label>
-                    <div id="editor-gecko-list" class="modal-gecko-list">
-                        <!-- JS 렌더링 -->
-                    </div>
-                </div>
 
-                <!-- 배송 방식 선택 (Segmented Control) -->
-                <div class="control-group">
-                    <label>배송 방식 선택</label>
-                    <div class="segmented-control">
-                        <button type="button" class="segmented-btn" id="seg-pickup" onclick="setEditorShippingType('픽업')">픽업</button>
-                        <button type="button" class="segmented-btn" id="seg-dodosi" onclick="setEditorShippingType('도도시')">도도시</button>
-                        <button type="button" class="segmented-btn" id="seg-parge" onclick="setEditorShippingType('파르게')">파르게</button>
-                        <button type="button" class="segmented-btn" id="seg-wrapang" onclick="setEditorShippingType('랩팡')">랩팡</button>
-                        <button type="button" class="segmented-btn" id="seg-custom" onclick="setEditorShippingType('기타')">기타</button>
-                    </div>
+                <!-- 패널 진입 즉시 배송사부터 선택 -->
+                <div class="segmented-control" aria-label="배송 방식">
+                    <button type="button" class="segmented-btn" id="seg-pickup" onclick="setEditorShippingType('픽업')">픽업</button>
+                    <button type="button" class="segmented-btn" id="seg-dodosi" onclick="setEditorShippingType('도도시')">도도시</button>
+                    <button type="button" class="segmented-btn" id="seg-parge" onclick="setEditorShippingType('파르게')">파르게</button>
+                    <button type="button" class="segmented-btn" id="seg-wrapang" onclick="setEditorShippingType('랩팡')">랩팡</button>
+                    <button type="button" class="segmented-btn" id="seg-custom" onclick="setEditorShippingType('기타')">기타</button>
                 </div>
 
                 <!-- 세부 배송지 정보 입력 영역 -->
                 <div id="editor-shipping-details">
-                    <!-- Embedded Hub Search & Selection (도도시, 파르게, 랩팡 전용) -->
-                    <div id="editor-hub-select-wrap" style="display: none; flex-direction: column; gap: 12px;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>거점 검색</label>
-                            <input type="text" id="editor-hub-search" class="input-text" placeholder="거점명 또는 권역 초성 검색..." autocomplete="off">
-                        </div>
-                        <div id="editor-hub-regions" class="modal-regions-tabs" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
+                    <!-- 배송사 선택 직후 검색창과 결과가 바로 이어짐 -->
+                    <div id="editor-hub-select-wrap" style="display: none; flex-direction: column; gap: 8px;">
+                        <input type="text" id="editor-hub-search" class="input-text" placeholder="지역 또는 거점명으로 바로 검색" aria-label="거점 검색" autocomplete="off">
                         <div id="editor-hub-results" class="modal-results-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px; background: rgba(0,0,0,0.2);"></div>
                     </div>
 
@@ -1063,30 +1904,25 @@
                     <label>메모</label>
                     <input type="text" id="editor-memo" class="input-text" placeholder="특이사항 메모 입력">
                 </div>
+            </div>
 
-                <!-- 합산 금액 정보 -->
-                <div style="padding: 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 18px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; font-weight: 500;">
-                        <span>총 낙찰 금액</span>
-                        <span id="editor-summary-bid" style="font-weight: 700; color: var(--text-title);">0원</span>
+            <!-- 데스크톱에서는 스크롤과 무관하게 항상 보이는 하단 정산/저장 영역 -->
+            <div class="editor-action-footer">
+                <div class="editor-total-strip">
+                    <div class="editor-total-item">
+                        <span>낙찰금액</span>
+                        <strong id="editor-summary-bid">0원</strong>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; font-weight: 500;">
-                        <span>총 배송비</span>
-                        <span id="editor-summary-ship" style="font-weight: 700; color: var(--accent);">0원</span>
+                    <div class="editor-total-item">
+                        <span>배송비</span>
+                        <strong id="editor-summary-ship">0원</strong>
                     </div>
-                    <div style="display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px dashed rgba(255, 255, 255, 0.08); font-size: 15px; font-weight: 800; color: var(--text-title);">
+                    <div class="editor-total-item is-grand-total">
                         <span>최종 안내액</span>
-                        <span id="editor-summary-total" style="color: #EF4444; text-shadow: 0 0 10px rgba(239, 68, 68, 0.15);">0원</span>
+                        <strong id="editor-summary-total">0원</strong>
                     </div>
                 </div>
-
-                <!-- 저장 버튼 -->
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <button class="btn btn-full" style="padding: 16px 0; background: linear-gradient(135deg, #10B981 0%, #059669 100%); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);" onclick="saveWinnerEditor()">
-                        저장 및 적용 완료
-                    </button>
-                </div>
-
+                <button class="btn btn-full" style="padding: 14px 0;" onclick="saveWinnerEditor()">저장 및 적용 완료</button>
             </div>
         </div>
     </div>
@@ -1155,6 +1991,13 @@
         let uniqueSellerCompanies = [];
         let winnerStateMap = {}; 
         let isAdminMode = true;
+
+        // 관리자 편집기는 별도 팝업이 아니라 목록 옆의 고정 작업 패널에 배치한다.
+        const editorPanelSlot = document.getElementById('editor-panel-slot');
+        const winnerEditPanel = document.getElementById('winner-edit-modal');
+        if (editorPanelSlot && winnerEditPanel) {
+            editorPanelSlot.appendChild(winnerEditPanel);
+        }
 
         // URL 파라미터 감지 (기본 어드민 모드, ?buyer=1 일 때만 일반 낙찰자 입력 모드)
         const params = new URLSearchParams(window.location.search);
@@ -1347,17 +2190,18 @@
         function renderGrid() {
             const selectedCo = document.getElementById('company-select').value;
             const container = document.getElementById('winner-list-container');
+            if (activeEditorWinner) closeWinnerEditor();
             container.innerHTML = '';
             winnerStateMap = {};
 
             if (!selectedCo) {
-                container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">출품 업체를 선택해 주세요.</div>';
+                container.innerHTML = '<div class="empty-list-state">출품 업체를 선택해 주세요.</div>';
                 return;
             }
 
             const selfItems = allItems.filter(it => (it.company || '').trim() === selectedCo);
             if (selfItems.length === 0) {
-                container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-secondary);">'${selectedCo}'의 낙찰 정보가 없습니다.</div>`;
+                container.innerHTML = `<div class="empty-list-state">'${selectedCo}'의 낙찰 정보가 없습니다.</div>`;
                 return;
             }
 
@@ -1385,8 +2229,8 @@
                 winnerStateMap[winnerName] = {
                     allItems: winnerAllItems,
                     sellerCompanies: sellerCos,
-                    shipping_type: firstSelfItem.shipping_type || '직접수령',
-                    shipping_company: firstSelfItem.shipping_company || '도도시',
+                    shipping_type: firstSelfItem.shipping_type || '미설정',
+                    shipping_company: firstSelfItem.shipping_company || '',
                     shipping_region: firstSelfItem.shipping_region ? firstSelfItem.shipping_region.split(' ')[0] : '',
                     shipping_hub: firstSelfItem.shipping_region && firstSelfItem.shipping_region.indexOf('(') >= 0 ? firstSelfItem.shipping_region.slice(firstSelfItem.shipping_region.indexOf('(') + 1, -1) : '',
                     phone: firstSelfItem.winner_phone || '',
@@ -1461,7 +2305,7 @@
 
                 // Shipping description
                 let shipSummaryText = '미설정 (탭하여 설정)';
-                let shipSummaryStyle = 'color: #FBBF24;'; // yellow glow
+                let shipSummaryStyle = 'color: #B54708;';
                 
                 if (state.shipping_type === '직접수령') {
                     shipSummaryText = '현장 직접 수령';
@@ -1469,15 +2313,16 @@
                 } else if (state.shipping_type === '배송' && state.shipping_company) {
                     if (state.shipping_company === '기타') {
                         shipSummaryText = `[기타] ${state.shipping_region || '직접기입'}`;
-                        shipSummaryStyle = 'color: #FCD34D;';
+                        shipSummaryStyle = 'color: #B54708;';
                     } else {
                         shipSummaryText = `[${state.shipping_company}] ${state.shipping_region} (${state.shipping_hub})`;
-                        shipSummaryStyle = 'color: #60A5FA;';
+                        shipSummaryStyle = 'color: #2563EB;';
                     }
                 }
 
                 const card = document.createElement('div');
                 card.className = 'winner-card';
+                card.dataset.winner = winnerName;
                 card.onclick = () => openWinnerEditor(winnerName);
                 card.innerHTML = `
                     <div class="winner-card-header">
@@ -1520,7 +2365,7 @@
         }
 
         // ══════════════════════════════════════
-        //  상세 정산 및 배송 정보 편집기 모달 제어
+        //  상세 정산 및 배송 정보 인라인 편집 패널 제어
         // ══════════════════════════════════════
         let activeEditorWinner = null;
         let editorShippingState = {
@@ -1531,6 +2376,13 @@
             status: '낙찰-대기',
             memo: ''
         };
+
+        function alignEditorPanelToViewport() {
+            const panelSlot = document.getElementById('editor-panel-slot');
+            if (!panelSlot) return;
+            const targetTop = panelSlot.getBoundingClientRect().top + window.scrollY - 20;
+            window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+        }
 
         function openWinnerEditor(winnerName) {
             const selectedCo = document.getElementById('company-select').value;
@@ -1547,35 +2399,20 @@
                 memo: state.memo || ''
             };
 
-            // Set Title
-            document.getElementById('editor-modal-title').textContent = `${winnerName}님 배송/정산 설정`;
-
-            // Render Gecko List inside modal
-            const geckoListContainer = document.getElementById('editor-gecko-list');
+            // 상단에는 긴 목록 대신 현재 업체의 개체 정보만 한 줄로 요약한다.
+            document.getElementById('editor-modal-title').textContent = `${winnerName}님 배송 설정`;
             const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
             const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
-            
-            const currentHtml = currentCoItems.map(it => {
-                const price = (parseInt(String(it.sold_price).replace(/[^0-9]/g, '')) || 0);
-                return `
-                    <div class="modal-gecko-item">
-                        <span>No. ${it.num || ''} ${it.name || '이름 없음'}</span>
-                        <span style="font-weight:700;">${(price * 10000).toLocaleString()}원</span>
-                    </div>
-                `;
-            }).join('');
-
-            const otherHtml = otherCoItems.map(it => {
-                const price = (parseInt(String(it.sold_price).replace(/[^0-9]/g, '')) || 0);
-                return `
-                    <div class="modal-gecko-item" style="opacity: 0.45; filter: grayscale(100%);">
-                        <span>[${it.company}] ${it.name || '이름 없음'}</span>
-                        <span style="font-weight:700; text-decoration: line-through;">${(price * 10000).toLocaleString()}원</span>
-                    </div>
-                `;
-            }).join('');
-            
-            geckoListContainer.innerHTML = currentHtml + otherHtml;
+            const objectNames = currentCoItems.map(it => {
+                const numberText = it.num ? `No.${it.num} ` : '';
+                return `${numberText}${it.name || '이름 없음'}`;
+            });
+            const objectSummary = document.getElementById('editor-object-summary');
+            objectSummary.innerHTML = `
+                <span class="editor-object-label">개체정보</span>
+                <span class="editor-object-names">${objectNames.join(', ')}</span>
+                ${otherCoItems.length > 0 ? `<span class="editor-combined-count">합배송 ${otherCoItems.length}개</span>` : ''}
+            `;
 
             // Set Segmented Control Active Button
             setEditorShippingType(editorShippingState.type === '직접수령' ? '픽업' : (editorShippingState.type === '배송' ? editorShippingState.company : '미설정'), true);
@@ -1591,18 +2428,33 @@
 
             // Show Modal
             const modal = document.getElementById('winner-edit-modal');
+            const panelSlot = document.getElementById('editor-panel-slot');
+            const emptyState = document.getElementById('editor-empty-state');
             modal.style.display = 'flex';
-            modal.offsetHeight; // trigger reflow
             modal.classList.add('active');
+            if (panelSlot) panelSlot.classList.add('is-active');
+            if (emptyState) emptyState.style.display = 'none';
+
+            document.querySelectorAll('.winner-card').forEach(card => {
+                card.classList.toggle('is-selected', card.dataset.winner === winnerName);
+            });
+
+            // 편집을 시작하면 작업 영역을 화면 상단에 맞춰 하단 금액/저장 영역도 함께 보이게 한다.
+            if (panelSlot) {
+                requestAnimationFrame(alignEditorPanelToViewport);
+            }
         }
 
         function closeWinnerEditor() {
             const modal = document.getElementById('winner-edit-modal');
+            const panelSlot = document.getElementById('editor-panel-slot');
+            const emptyState = document.getElementById('editor-empty-state');
             modal.classList.remove('active');
-            setTimeout(() => {
-                modal.style.display = 'none';
-                activeEditorWinner = null;
-            }, 250);
+            modal.style.display = 'none';
+            if (panelSlot) panelSlot.classList.remove('is-active');
+            if (emptyState) emptyState.style.display = '';
+            document.querySelectorAll('.winner-card').forEach(card => card.classList.remove('is-selected'));
+            activeEditorWinner = null;
         }
 
         function setEditorShippingType(companyKey, isInit = false) {
@@ -1612,6 +2464,9 @@
             const customWrap = document.getElementById('editor-custom-wrap');
             const pickupWrap = document.getElementById('editor-pickup-wrap');
             const embedSearchWrap = document.getElementById('editor-hub-select-wrap');
+            const shippingDetails = document.getElementById('editor-shipping-details');
+            const hasDetails = Boolean(companyKey && companyKey !== '미설정');
+            if (shippingDetails) shippingDetails.classList.toggle('has-details', hasDetails);
 
             if (!companyKey || companyKey === '미설정') {
                 customWrap.style.display = 'none';
@@ -1637,8 +2492,14 @@
                 editorShippingState.type = '배송';
 
                 if (companyKey === '도도시' || companyKey === '파르게' || companyKey === '랩팡') {
+                    const companyChanged = editorShippingState.company !== companyKey;
                     customWrap.style.display = 'none';
                     editorShippingState.company = companyKey;
+                    if (!isInit && companyChanged) {
+                        editorShippingState.region = '';
+                        editorShippingState.hub = '';
+                        activeEmbeddedRegion.editor = '전체';
+                    }
                     
                     if (companyKey === '도도시') document.getElementById('seg-dodosi').classList.add('active');
                     else if (companyKey === '파르게') document.getElementById('seg-parge').classList.add('active');
@@ -1648,13 +2509,15 @@
                         embedSearchWrap.style.display = 'flex';
                         const searchInput = document.getElementById('editor-hub-search');
                         if (searchInput) {
-                            searchInput.value = '';
-                            if (!isInit) {
-                                setTimeout(() => searchInput.focus(), 50);
-                            }
+                            searchInput.value = isInit && editorShippingState.region && editorShippingState.hub
+                                ? `${editorShippingState.region} ${editorShippingState.hub}`
+                                : '';
                         }
                         renderEmbeddedRegionTabs(companyKey, 'editor');
                         filterEmbeddedHubs('editor');
+                        if (!isInit) {
+                            requestAnimationFrame(alignEditorPanelToViewport);
+                        }
                     }
                 } else {
                     document.getElementById('seg-custom').classList.add('active');
@@ -1725,9 +2588,12 @@
             const sellerCos = state.sellerCompanies;
             const companyCount = sellerCos.length;
             
-            let baseCost = calculateShippingCost(comp, editorShippingState.type, reg, hub, 1);
+            let baseCost = 0;
+            if (editorShippingState.type === '배송' && comp !== '기타' && reg && hub) {
+                baseCost = calculateShippingCost(comp, editorShippingState.type, reg, hub, 1);
+            }
             let totalShipping = baseCost;
-            if (editorShippingState.type === '배송' && companyCount > 1 && comp !== '기타') {
+            if (baseCost > 0 && companyCount > 1 && comp !== '기타') {
                 totalShipping = baseCost + (companyCount - 1) * 7000;
             }
             const shipCost = editorShippingState.type === '배송' ? Math.round(totalShipping / companyCount) : 0;
@@ -1742,6 +2608,24 @@
             const winnerName = activeEditorWinner;
             const state = winnerStateMap[winnerName];
             if (!state) return;
+
+            if (editorShippingState.type === '미설정') {
+                showToast('배송 방식을 먼저 선택해 주세요.', true);
+                return;
+            }
+
+            if (editorShippingState.type === '배송' && editorShippingState.company !== '기타' &&
+                (!editorShippingState.region || !editorShippingState.hub)) {
+                showToast('수령 거점을 선택해 주세요.', true);
+                return;
+            }
+
+            if (editorShippingState.type === '배송' && editorShippingState.company === '기타' &&
+                (!document.getElementById('editor-custom-company').value.trim() ||
+                 !document.getElementById('editor-custom-region').value.trim())) {
+                showToast('배송사와 배송지 정보를 입력해 주세요.', true);
+                return;
+            }
 
             showLoading(true, '배송 정보를 전송하는 중...');
             try {
@@ -1828,7 +2712,7 @@
         // ════════════════════════════════════════════
         let buyerFoundItems = [];
         let buyerShippingState = {
-            type: '직접수령',
+            type: '미설정',
             company: '',
             region: '',
             hub: '',
@@ -1942,11 +2826,18 @@
                 buyerShippingState.type = '배송';
 
                 if (companyKey === '도도시' || companyKey === '파르게' || companyKey === '랩팡') {
+                    const companyChanged = buyerShippingState.company !== companyKey;
                     if (companyKey === '도도시') document.getElementById('b-opt-dodosi').classList.add('active');
                     else if (companyKey === '파르게') document.getElementById('b-opt-parge').classList.add('active');
                     else if (companyKey === '랩팡') document.getElementById('b-opt-wrapang').classList.add('active');
 
                     buyerShippingState.company = companyKey;
+                    if (!isInit && companyChanged) {
+                        buyerShippingState.region = '';
+                        buyerShippingState.hub = '';
+                        buyerShippingState.cost = 0;
+                        activeEmbeddedRegion.buyer = '전체';
+                    }
                     if (customWrap) customWrap.style.display = 'none';
 
                     if (embedSearchWrap) {
@@ -2179,6 +3070,11 @@
                 return;
             }
 
+            if (target === 'editor' && !q) {
+                resultsBox.innerHTML = '<div class="search-empty-hint">지역 또는 거점명을 입력하면<br>검색 결과가 여기에 표시됩니다.</div>';
+                return;
+            }
+
             // Flatten all hubs of this company
             let allHubs = [];
             Object.keys(compData.regions).forEach(regName => {
@@ -2356,6 +3252,17 @@
                 
                 filterEmbeddedHubs('editor');
                 updateEditorPricing();
+
+                // 모바일은 고정 바가 키보드를 가리지 않도록 유지하고,
+                // 거점 선택 직후 정산/저장 영역으로 자연스럽게 이동한다.
+                if (window.innerWidth <= 820) {
+                    requestAnimationFrame(() => {
+                        const footer = document.querySelector('.editor-action-footer');
+                        if (!footer) return;
+                        const targetTop = footer.getBoundingClientRect().bottom + window.scrollY - window.innerHeight + 16;
+                        window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+                    });
+                }
             } else {
                 buyerShippingState.region = region;
                 buyerShippingState.hub = shop;
@@ -2385,7 +3292,7 @@
                 } else {
                     const baseCost = buyerShippingState.cost;
                     totalShipping = baseCost;
-                    if (companyCount > 1) {
+                    if (baseCost > 0 && companyCount > 1) {
                         totalShipping = baseCost + (companyCount - 1) * 7000;
                     }
                 }
@@ -2401,6 +3308,24 @@
         // 낙찰자 셀프서비스 제출
         async function submitBuyerShipping() {
             if (buyerFoundItems.length === 0) return;
+
+            if (buyerShippingState.type === '미설정') {
+                showToast('수령 방법을 먼저 선택해 주세요.', true);
+                return;
+            }
+
+            if (buyerShippingState.type === '배송' && buyerShippingState.company !== '기타' &&
+                (!buyerShippingState.region || !buyerShippingState.hub)) {
+                showToast('수령 거점을 선택해 주세요.', true);
+                return;
+            }
+
+            if (buyerShippingState.type === '배송' && buyerShippingState.company === '기타' &&
+                (!document.getElementById('buyer-custom-company-input').value.trim() ||
+                 !document.getElementById('buyer-custom-region-input').value.trim())) {
+                showToast('배송사와 배송지 정보를 입력해 주세요.', true);
+                return;
+            }
 
             showLoading(true, '배송 정보를 전송하는 중...');
             try {
