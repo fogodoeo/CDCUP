@@ -2876,83 +2876,91 @@
         }
 
         function openWinnerEditor(winnerName) {
-            const selectedCo = activeSellerCompany;
-            const state = winnerStateMap[winnerName];
-            if (!state) return;
+            try {
+                const selectedCo = activeSellerCompany;
+                const state = winnerStateMap[winnerName];
+                if (!state) {
+                    alert('[openWinnerEditor] state가 없습니다: ' + winnerName);
+                    return;
+                }
 
-            activeEditorWinner = winnerName;
-            editorShippingState = {
-                type: state.shipping_type || '미설정',
-                company: state.shipping_company || '',
-                region: state.shipping_region || '',
-                hub: state.shipping_hub || '',
-                memo: state.memo || ''
-            };
+                activeEditorWinner = winnerName;
+                editorShippingState = {
+                    type: state.shipping_type || '미설정',
+                    company: state.shipping_company || '',
+                    region: state.shipping_region || '',
+                    hub: state.shipping_hub || '',
+                    memo: state.memo || ''
+                };
 
-            // 상단에는 긴 목록 대신 현재 업체의 개체 정보만 한 줄로 요약한다.
-            const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
-            const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
-            // 1. 낙찰자명
-            document.getElementById('editor-info-winner').textContent = winnerName;
-            
-            // 2. 전화번호 단순 바인딩
-            const phoneLabel = document.getElementById('editor-info-phone');
-            if (phoneLabel) {
-                phoneLabel.textContent = fmtPhone(state.phone) || '연락처 없음';
-            }
-            
-            // 3. 합배송 버튼 제어 (합배송이 있을 때만 보이도록 설정)
-            const isCombined = otherCoItems.length > 0;
-            const btnToggle = document.getElementById('btn-toggle-breakdown');
-            const sectionBreakdown = document.getElementById('editor-shipping-breakdown');
-            if (btnToggle) {
-                btnToggle.style.display = isCombined ? 'flex' : 'none';
-            }
-            if (sectionBreakdown) {
-                sectionBreakdown.style.display = 'none';
-            }
-            const btnArrow = document.getElementById('btn-breakdown-arrow');
-            if (btnArrow) {
-                btnArrow.textContent = '▼';
-            }
-            
-            // 4. 낙찰개체 정보 한줄로 (No. 제외하고 개체명 + 낙찰가)
-            const objectNames = currentCoItems.map(it => {
-                const name = it.name || '이름 없음';
-                const priceVal = parseFloat(it.soldPrice || it.sold_price) || 0;
-                const priceText = priceVal > 0 ? ` (${priceVal}만)` : '';
-                return `${name}${priceText}`;
-            }).join(', ');
-            document.getElementById('editor-info-objects').textContent = objectNames;
+                // 상단에는 긴 목록 대신 현재 업체의 개체 정보만 한 줄로 요약한다.
+                const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
+                const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
+                // 1. 낙찰자명
+                document.getElementById('editor-info-winner').textContent = winnerName;
+                
+                // 2. 전화번호 단순 바인딩
+                const phoneLabel = document.getElementById('editor-info-phone');
+                if (phoneLabel) {
+                    phoneLabel.textContent = fmtPhone(state.phone) || '연락처 없음';
+                }
+                
+                // 3. 합배송 버튼 제어 (합배송이 있을 때만 보이도록 설정)
+                const isCombined = otherCoItems.length > 0;
+                const btnToggle = document.getElementById('btn-toggle-breakdown');
+                const sectionBreakdown = document.getElementById('editor-shipping-breakdown');
+                if (btnToggle) {
+                    btnToggle.style.display = isCombined ? 'flex' : 'none';
+                }
+                if (sectionBreakdown) {
+                    sectionBreakdown.style.display = 'none';
+                }
+                const btnArrow = document.getElementById('btn-breakdown-arrow');
+                if (btnArrow) {
+                    btnArrow.textContent = '▼';
+                }
+                
+                // 4. 낙찰개체 정보 한줄로 (No. 제외하고 개체명 + 낙찰가)
+                const objectNames = currentCoItems.map(it => {
+                    const name = it.name || '이름 없음';
+                    const priceVal = parseFloat(it.soldPrice || it.sold_price) || 0;
+                    const priceText = priceVal > 0 ? ` (${priceVal}만)` : '';
+                    return `${name}${priceText}`;
+                }).join(', ');
+                document.getElementById('editor-info-objects').textContent = objectNames;
 
-            // Set Segmented Control Active Button
-            setEditorShippingType(editorShippingState.type === '직접수령' ? '픽업' : (editorShippingState.type === '배송' ? editorShippingState.company : '미설정'), true);
+                // Set Segmented Control Active Button
+                setEditorShippingType(editorShippingState.type === '직접수령' ? '픽업' : (editorShippingState.type === '배송' ? editorShippingState.company : '미설정'), true);
 
-            // Set Memo
-            document.getElementById('editor-memo').value = editorShippingState.memo;
+                // Set Memo
+                document.getElementById('editor-memo').value = editorShippingState.memo;
 
-            // Recalculate Modal Pricing
-            updateEditorPricing();
+                // Recalculate Modal Pricing
+                updateEditorPricing();
 
-            // Show Modal
-            const modal = document.getElementById('winner-edit-modal');
-            const panelSlot = document.getElementById('editor-panel-slot');
-            const emptyState = document.getElementById('editor-empty-state');
-            modal.style.display = 'flex';
-            modal.classList.add('active');
-            if (panelSlot) panelSlot.classList.add('is-active');
-            if (emptyState) emptyState.style.display = 'none';
-            const workspace = document.querySelector('.admin-workspace');
-            if (workspace) workspace.classList.add('is-editing');
-            document.body.classList.add('editor-open');
+                // Show Modal
+                const modal = document.getElementById('winner-edit-modal');
+                const panelSlot = document.getElementById('editor-panel-slot');
+                const emptyState = document.getElementById('editor-empty-state');
+                modal.style.display = 'flex';
+                modal.classList.add('active');
+                if (panelSlot) panelSlot.classList.add('is-active');
+                if (emptyState) emptyState.style.display = 'none';
+                const workspace = document.querySelector('.admin-workspace');
+                if (workspace) workspace.classList.add('is-editing');
+                document.body.classList.add('editor-open');
 
-            document.querySelectorAll('.winner-card').forEach(card => {
-                card.classList.toggle('is-selected', card.dataset.winner === winnerName);
-            });
+                document.querySelectorAll('.winner-card').forEach(card => {
+                    card.classList.toggle('is-selected', card.dataset.winner === winnerName);
+                });
 
-            // 편집을 시작하면 작업 영역을 화면 상단에 맞춰 하단 금액/저장 영역도 함께 보이게 한다.
-            if (panelSlot) {
-                requestAnimationFrame(alignEditorPanelToViewport);
+                // 편집을 시작하면 작업 영역을 화면 상단에 맞춰 하단 금액/저장 영역도 함께 보이게 한다.
+                if (panelSlot) {
+                    requestAnimationFrame(alignEditorPanelToViewport);
+                }
+            } catch (openErr) {
+                console.error('[openWinnerEditor ERROR]', openErr);
+                alert('[openWinnerEditor CRASH]\nMessage: ' + openErr.message + '\nStack: ' + openErr.stack);
             }
         }
 
@@ -3168,9 +3176,10 @@
         }
 
         function updateEditorPricing() {
-            const winnerName = activeEditorWinner;
-            const state = winnerStateMap[winnerName];
-            if (!state) return;
+            try {
+                const winnerName = activeEditorWinner;
+                const state = winnerStateMap[winnerName];
+                if (!state) return;
 
             const selectedCo = activeSellerCompany;
             const groupItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
@@ -3279,6 +3288,10 @@ ${winnerName}님 낙찰 정산 안내입니다.
                     kakaoBtn.removeAttribute('href');
                     kakaoBtn.style.display = 'none';
                 }
+            }
+            } catch (pricingErr) {
+                console.error('[updateEditorPricing ERROR]', pricingErr);
+                alert('[updateEditorPricing CRASH]\nMessage: ' + pricingErr.message + '\nStack: ' + pricingErr.stack);
             }
         }
 
