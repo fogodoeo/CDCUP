@@ -860,6 +860,17 @@
             pointer-events: none;
             user-select: none;
         }
+        /* ── 3P 대진표 모드일 때 경매 관련 모든 UI 강제 숨김 ── */
+        body.bracket-page #broadcast,
+        body.bracket-page #empty,
+        body.bracket-page #hc-header-float,
+        body.bracket-page #hc-traits-container,
+        body.bracket-page #hc-rules-stack,
+        body.bracket-page #hc-banner-float,
+        body.bracket-page .hc-bottom-bar,
+        body.bracket-page .host-nametag {
+            display: none !important;
+        }
     </style>
 </head>
 
@@ -1059,11 +1070,16 @@
         // URL 파라미터 확인 후 host-mode 적용
         const urlParams = new URLSearchParams(window.location.search);
         const isHostMode = urlParams.get('mode') === 'host' || urlParams.get('page') === '1';
+        const _pgValTemp = (urlParams.get('page') || '').toLowerCase();
+        const isBracketPageTemp = _pgValTemp === 'bracket' || _pgValTemp === '3' || _pgValTemp === '3p';
 
         // DOM 파싱 완료 후 데이터 로드 시작
         window.addEventListener('DOMContentLoaded', () => {
             if (isHostMode) {
                 document.body.classList.add('host-mode');
+            }
+            if (isBracketPageTemp) {
+                document.body.classList.add('bracket-page');
             }
             if (isHostMode) {
                 maybeRefreshHostConfig(true);
@@ -1214,7 +1230,7 @@
             if (!bottomBar || !stage) return;
 
             const _bp = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase();
-            const isBracketPage = _bp === 'bracket' || _bp === '3';
+            const isBracketPage = _bp === 'bracket' || _bp === '3' || _bp === '3p';
             if (isBracketPage) {
                 resetTickerMotion();
                 stage.innerHTML = '';
@@ -1604,7 +1620,7 @@
             const bannerOpacity = normalizeOpacity(cfg.banner_opacity, 0.93);
 
             const _bp2 = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase();
-            const isBracketPage = _bp2 === 'bracket' || _bp2 === '3';
+            const isBracketPage = _bp2 === 'bracket' || _bp2 === '3' || _bp2 === '3p';
             applyBannerPlacement(container, layout);
             container.style.setProperty('--banner-opacity', bannerOpacity);
             const bannerShowOff = cfg[bp + 'banner_show'] === '0' || container.dataset.bannerHiddenByToggle === '1' || isBracketPage;
@@ -1936,6 +1952,15 @@
 
 
         function render(item) {
+            const _bp = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase();
+            const isBracketPage = _bp === 'bracket' || _bp === '3' || _bp === '3p';
+            if (isBracketPage) {
+                const empty = document.getElementById("empty");
+                const bc = document.getElementById("broadcast");
+                if (empty) empty.style.display = "none";
+                if (bc) bc.style.display = "none";
+                return;
+            }
             window.activeItem = item;
             updateProgressText();
             let configPart = '';
@@ -2439,7 +2464,7 @@
         // ══════════════════════════════════════
         const params = new URLSearchParams(window.location.search);
         const _pgVal = (params.get('page') || '').toLowerCase();
-        const isBracketPage = _pgVal === 'bracket' || _pgVal === '3';
+        const isBracketPage = _pgVal === 'bracket' || _pgVal === '3' || _pgVal === '3p';
         
         if (isBracketPage) {
             // 일반 경매 카드 숨기고 대진표 전체화면 노출
@@ -2533,6 +2558,10 @@
                             <div style="font-size:12px;color:#475569;margin-top:8px;">preview.html?page=3 → 방송 송출 → 16강/8강/4강 선택</div>
                         </div>
                     `;
+                    treeFull.classList.add('visible');
+                }
+                if (treeLive) {
+                    treeLive.classList.remove('visible');
                 }
                 return;
             }
@@ -2576,85 +2605,127 @@
                 if (match.right) teamToLetter[match.right.trim()] = rightLetter;
             }
             
-            const rounds = [];
-            let r = scale;
-            while (r >= 2) { rounds.push(r); r = r / 2; }
-            
-            rounds.forEach(round => {
-                const col = document.createElement('div');
-                col.className = 'bracket-page-column';
-                
-                const matchCount = round / 2;
-                for (let i = 1; i <= matchCount; i++) {
-                    const matchKey = round + '_' + i;
-                    const fullKey = scale + '_' + matchKey;
-                    const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
-                    
-                    // 이 매치의 스코어 가져오기
-                    const scoreKey = 'score_' + scale + '_' + matchKey;
-                    let scores = { r1:'', r2:'', r3:'', r4:'' };
-                    if (map[scoreKey]) try { scores = JSON.parse(map[scoreKey]); } catch(e){}
-                    let ls = 0, rs = 0;
-                    ['r1','r2','r3','r4'].forEach(k => {
-                        if (scores[k] === 'left') ls++;
-                        else if (scores[k] === 'right') rs++;
-                    });
-                    const hasScore = ls > 0 || rs > 0;
-                    
-                    const node = document.createElement('div');
-                    node.className = 'bracket-page-match';
-                    if (currentMatch === fullKey) {
-                        node.classList.add('active-match');
-                    }
-                    
-                    const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
-                    
-                    const leftL = String.fromCharCode(65 + (i-1)*2);
-                    const rightL = String.fromCharCode(65 + (i-1)*2 + 1);
-                    
-                    const getSlotText = (teamName, defaultLetter, isFirstRound) => {
-                        if (!teamName) return '대기중...';
-                        const letter = teamToLetter[teamName.trim()] || defaultLetter;
-                        if (match.winner) {
-                            return isFirstRound ? `[${letter}팀] ${teamName}` : teamName;
-                        }
-                        return `${letter}팀`;
-                    };
-                    
-                    const leftText = getSlotText(match.left, leftL, round === scale);
-                    const rightText = getSlotText(match.right, rightL, round === scale);
-
-                    // 승패 상태 스타일
-                    const leftWin = match.winner === 'left';
-                    const rightWin = match.winner === 'right';
-                    const leftLose = match.winner === 'right';
-                    const rightLose = match.winner === 'left';
-                    
-                    const winStyle = 'background:linear-gradient(90deg,rgba(16,185,129,0.18),rgba(16,185,129,0.04));border-color:#10b981;color:#10b981;';
-                    const loseStyle = 'opacity:0.45;';
-                    const activeStyle = currentMatch === fullKey ? 'border-color:#3b82f6;background:rgba(59,130,246,0.08);' : '';
-
-                    // 스코어 배지
-                    const scoreBadge = hasScore ? `<span style="position:absolute;right:8px;font-size:0.85em;font-weight:800;color:${leftWin||rightWin?'#10b981':'#94a3b8'};letter-spacing:0.05em;">${ls}:${rs}</span>` : '';
-
-                    node.innerHTML = `
-                        <div class="bracket-page-match-title">${titleText}${currentMatch === fullKey ? ' ⚡' : ''}</div>
-                        <div class="bracket-page-slot" style="${leftWin ? winStyle : ''}${leftLose ? loseStyle : ''}${activeStyle}">
-                            <span class="bracket-page-team-text">${leftText}</span>
-                            ${leftWin ? '<span style="position:absolute;right:8px;font-size:1em;">✅</span>' : ''}
-                            ${leftLose ? '<span style="position:absolute;right:8px;font-size:0.85em;color:#ef4444;">패</span>' : ''}
-                        </div>
-                        <div class="bracket-page-slot" style="${rightWin ? winStyle : ''}${rightLose ? loseStyle : ''}${activeStyle}">
-                            <span class="bracket-page-team-text">${rightText}</span>
-                            ${rightWin ? '<span style="position:absolute;right:8px;font-size:1em;">✅</span>' : ''}
-                            ${rightLose ? '<span style="position:absolute;right:8px;font-size:0.85em;color:#ef4444;">패</span>' : ''}
-                        </div>
-                        ${hasScore ? `<div style="text-align:center;font-size:0.85em;font-weight:800;color:#64748b;margin-top:4px;letter-spacing:0.06em;">SCORE ${ls} : ${rs}</div>` : ''}
-                    `;
-                    col.appendChild(node);
+            // 타겟 라운드 결정 (bracket_view_round가 있으면 그것을 사용, 없으면 battle_current_match에서 파싱, 그것도 없으면 scale 기본값)
+            let targetRound = parseInt(map.bracket_view_round, 10);
+            if (!targetRound && map.battle_current_match) {
+                const parts = map.battle_current_match.split('_');
+                if (parts.length >= 2) {
+                    targetRound = parseInt(parts[1], 10);
                 }
-                tree.appendChild(col);
-            });
+            }
+            if (!targetRound) {
+                targetRound = scale;
+            }
+
+            // 만약 scale이 8강인데 targetRound가 16강이 되어 있다면 scale 이하로 제한
+            if (targetRound > scale) {
+                targetRound = scale;
+            }
+
+            const round = targetRound;
+            const col = document.createElement('div');
+            col.className = 'bracket-page-grid';
+            
+            const rMatchCount = round / 2;
+
+            // 그리드 레이아웃 설정
+            col.style.display = 'grid';
+            col.style.width = '95%';
+            col.style.margin = '0 auto';
+            col.style.justifyContent = 'center';
+            col.style.alignItems = 'center';
+
+            if (rMatchCount === 8) {
+                col.style.gridTemplateColumns = 'repeat(4, 1fr)';
+                col.style.gridGap = '24px 30px';
+                col.style.maxWidth = '1500px';
+            } else if (rMatchCount === 4) {
+                col.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                col.style.gridGap = '32px 50px';
+                col.style.maxWidth = '1000px';
+            } else if (rMatchCount === 2) {
+                col.style.gridTemplateColumns = 'repeat(2, 1fr)';
+                col.style.gridGap = '50px';
+                col.style.maxWidth = '900px';
+            } else { // 결승 (rMatchCount === 1)
+                col.style.display = 'flex';
+                col.style.justifyContent = 'center';
+                col.style.width = '100%';
+            }
+
+            for (let i = 1; i <= rMatchCount; i++) {
+                const matchKey = round + '_' + i;
+                const fullKey = scale + '_' + matchKey;
+                const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
+                
+                // 이 매치의 스코어 가져오기
+                const scoreKey = 'score_' + scale + '_' + matchKey;
+                let scores = { r1:'', r2:'', r3:'', r4:'' };
+                if (map[scoreKey]) try { scores = JSON.parse(map[scoreKey]); } catch(e){}
+                let ls = 0, rs = 0;
+                ['r1','r2','r3','r4'].forEach(k => {
+                    if (scores[k] === 'left') ls++;
+                    else if (scores[k] === 'right') rs++;
+                });
+                const hasScore = ls > 0 || rs > 0;
+                
+                const node = document.createElement('div');
+                node.className = 'bracket-page-match';
+                node.style.width = '100%';
+                node.style.maxWidth = rMatchCount === 1 ? '460px' : '360px';
+                node.style.margin = '0 auto';
+                if (rMatchCount === 1) {
+                    node.style.transform = 'scale(1.25)';
+                }
+                
+                if (currentMatch === fullKey) {
+                    node.classList.add('active-match');
+                }
+                
+                const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
+                
+                const leftL = String.fromCharCode(65 + (i-1)*2);
+                const rightL = String.fromCharCode(65 + (i-1)*2 + 1);
+                
+                const getSlotText = (teamName, defaultLetter, isFirstRound) => {
+                    if (!teamName) return '대기중...';
+                    const letter = teamToLetter[teamName.trim()] || defaultLetter;
+                    if (match.winner) {
+                        return isFirstRound ? `[${letter}팀] ${teamName}` : teamName;
+                    }
+                    return `${letter}팀`;
+                };
+                
+                const leftText = getSlotText(match.left, leftL, round === scale);
+                const rightText = getSlotText(match.right, rightL, round === scale);
+
+                // 승패 상태 스타일
+                const leftWin = match.winner === 'left';
+                const rightWin = match.winner === 'right';
+                const leftLose = match.winner === 'right';
+                const rightLose = match.winner === 'left';
+                
+                const winStyle = 'background:linear-gradient(90deg,rgba(16,185,129,0.18),rgba(16,185,129,0.04));border-color:#10b981;color:#10b981;';
+                const loseStyle = 'opacity:0.45;';
+                const activeStyle = currentMatch === fullKey ? 'border-color:#3b82f6;background:rgba(59,130,246,0.08);' : '';
+
+                node.innerHTML = `
+                    <div class="bracket-page-match-title">${titleText}${currentMatch === fullKey ? ' ⚡' : ''}</div>
+                    <div class="bracket-page-slot" style="${leftWin ? winStyle : ''}${leftLose ? loseStyle : ''}${activeStyle}">
+                        <span class="bracket-page-team-text">${leftText}</span>
+                        ${leftWin ? '<span style="position:absolute;right:8px;font-size:1em;">✅</span>' : ''}
+                        ${leftLose ? '<span style="position:absolute;right:8px;font-size:0.85em;color:#ef4444;">패</span>' : ''}
+                    </div>
+                    <div class="bracket-page-slot" style="${rightWin ? winStyle : ''}${rightLose ? loseStyle : ''}${activeStyle}">
+                        <span class="bracket-page-team-text">${rightText}</span>
+                        ${rightWin ? '<span style="position:absolute;right:8px;font-size:1em;">✅</span>' : ''}
+                        ${rightLose ? '<span style="position:absolute;right:8px;font-size:0.85em;color:#ef4444;">패</span>' : ''}
+                    </div>
+                    ${hasScore ? `<div style="text-align:center;font-size:0.85em;font-weight:800;color:#64748b;margin-top:4px;letter-spacing:0.06em;">SCORE ${ls} : ${rs}</div>` : ''}
+                `;
+                col.appendChild(node);
+            }
+            tree.appendChild(col);
         }
 
         async function renderBracketLiveView(scale, bracket, map) {
