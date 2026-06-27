@@ -2235,6 +2235,7 @@
         window.addEventListener('DOMContentLoaded', async () => {
             showLoading(true, '데이터를 불러오는 중...');
             try {
+                console.log('[INIT] Step 1: Loading dodosi...');
                 // 도도시 동적 가격표 로드
                 try {
                     const dodosiRes = await getDodosiData();
@@ -2261,6 +2262,7 @@
                     console.warn('[Dodosi] Failed to load dynamic dodosi data, using fallback:', dodosiErr);
                 }
 
+                console.log('[INIT] Step 2: Loading parge...');
                 // 파르게 동적 가격표 로드
                 try {
                     const pargeRes = await getPargeData();
@@ -2278,6 +2280,7 @@
                     console.warn('[Parge] Failed to load dynamic parge data, using fallback:', pargeErr);
                 }
 
+                console.log('[INIT] Step 3: Loading wrapang...');
                 // 랩팡 동적 가격표 로드
                 try {
                     const wrapangRes = await getWrapangData();
@@ -2286,7 +2289,7 @@
                         Object.keys(wrapangRes.data).forEach(regName => {
                             SHIPPING_DATA['랩팡'].regions[regName] = wrapangRes.data[regName].map(shopItem => ({
                                 shop: shopItem.shop,
-                                cost: shopItem.cost || (regName.includes('제주') ? 55000 : 25000) // 랩팡 크롤링된 실제 거점별 단가 반영
+                                cost: shopItem.cost || (regName.includes('제주') ? 55000 : 25000)
                             }));
                         });
                         console.log('[Wrapang] Successfully loaded dynamic wrapang prices:', Object.keys(SHIPPING_DATA['랩팡'].regions).length, 'regions');
@@ -2295,17 +2298,23 @@
                     console.warn('[Wrapang] Failed to load dynamic wrapang data, using fallback:', wrapangErr);
                 }
 
+                console.log('[INIT] Step 4: Loading items...');
                 const items = await getItems();
                 allItems = (items || []).filter(it => it.status && it.status.indexOf('낙찰') >= 0);
+                console.log('[INIT] Step 5: Got', allItems.length, 'items, isAdminMode:', isAdminMode);
 
                 if (isAdminMode) {
                     const companies = allItems.map(it => (it.company || '').trim()).filter(Boolean);
                     uniqueSellerCompanies = [...new Set(companies)].sort();
+                    console.log('[INIT] Step 6: Companies:', uniqueSellerCompanies);
                     populateCompanySelect();
+                    console.log('[INIT] Step 7: Calling renderGrid...');
                     renderGrid();
+                    console.log('[INIT] Step 8: renderGrid complete');
                 }
             } catch (err) {
-                console.error(err);
+                console.error('[INIT] CRASH:', err);
+                console.error('[INIT] Stack:', err.stack);
                 showToast('로딩 실패: ' + err.message, true);
             } finally {
                 showLoading(false);
