@@ -2187,10 +2187,11 @@
                         </div>
                     </div>
                     
-                    <!-- 대형 통화/문자 버튼 세트 (우측 정렬) -->
-                    <div style="display: flex; align-items: center; gap: 8px; margin-right: 24px;">
-                        <a id="editor-info-call-btn" href="#" class="action-icon-btn" title="전화걸기" style="width: 42px; height: 42px; font-size: 18px; border-radius: 50%; background: #EFF6FF; border: 1.5px solid #DBEAFE; color: var(--accent); display: flex; align-items: center; justify-content: center; text-decoration: none;">📞</a>
-                        <a id="editor-info-sms-btn" href="#" class="action-icon-btn" title="문자발송" style="width: 42px; height: 42px; font-size: 18px; border-radius: 50%; background: #F0FDF4; border: 1.5px solid #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; text-decoration: none;">💬</a>
+                    <!-- 대형 통화/문자/카톡 버튼 세트 (우측 정렬) -->
+                    <div style="display: flex; align-items: center; gap: 6px; margin-right: 24px;">
+                        <a id="editor-info-call-btn" href="#" class="action-icon-btn" title="전화걸기" style="width: 40px; height: 40px; font-size: 17px; border-radius: 50%; background: #EFF6FF; border: 1.5px solid #DBEAFE; color: var(--accent); display: flex; align-items: center; justify-content: center; text-decoration: none;">📞</a>
+                        <a id="editor-info-sms-btn" href="#" class="action-icon-btn" title="문자발송" style="width: 40px; height: 40px; font-size: 17px; border-radius: 50%; background: #F0FDF4; border: 1.5px solid #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; text-decoration: none;">💬</a>
+                        <a id="editor-info-kakao-btn" href="#" class="action-icon-btn" title="카카오톡 전송" style="width: 40px; height: 40px; font-size: 13.5px; font-weight: 900; border-radius: 50%; background: #FEE500; border: 1.5px solid #F3D900; color: #191919; display: flex; align-items: center; justify-content: center; text-decoration: none;">톡</a>
                     </div>
                 </div>
 
@@ -3267,6 +3268,17 @@ ${winnerName}님 낙찰 정산 안내입니다.
                     smsBtn.style.display = 'none';
                 }
             }
+
+            const kakaoBtn = document.getElementById('editor-info-kakao-btn');
+            if (kakaoBtn) {
+                if (cleanPhone) {
+                    kakaoBtn.href = `kakaotalk://send?text=${encodeURIComponent(smsText)}`;
+                    kakaoBtn.style.display = 'inline-flex';
+                } else {
+                    kakaoBtn.removeAttribute('href');
+                    kakaoBtn.style.display = 'none';
+                }
+            }
         }
 
         async function saveWinnerEditor() {
@@ -3825,15 +3837,14 @@ ${winnerName}님 낙찰 정산 안내입니다.
                 return baseCost;
             }
 
-            // Helper to get dispatch and receipt schedule
+            // Helper to get dispatch and receipt schedule (소비자 관점에서 직관적인 전달일로 변경)
             function getSchedule(regName, dayField) {
                 if (comp === '도도시') {
-                    const days = dayField || '목.일';
-                    return `[배송: 화/목 발송 | 수령일: ${days}]`;
+                    return `화요일 발송 ➔ 목요일 도착 | 목요일 발송 ➔ 일요일 도착`;
                 } else if (comp === '파르게') {
-                    return `[배송: 수/금 발송 | 수령일: 목/토]`;
+                    return `수요일 발송 ➔ 목요일 도착 | 금요일 발송 ➔ 토요일 도착`;
                 } else if (comp === '랩팡') {
-                    return `[배송: 월/목 발송 | 수령일: 화/금]`;
+                    return `월요일 발송 ➔ 화요일 도착 | 목요일 발송 ➔ 금요일 도착`;
                 }
                 return '';
             }
