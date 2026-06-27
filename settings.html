@@ -415,16 +415,19 @@
         }
 
         // ── Quick Toggles ──
-        function quickToggle(key) {
+        async function quickToggle(key) {
             const cur = _toggleStates[key];
             _toggleStates[key] = cur === '1' ? '0' : '1';
             updateToggleUI();
             const map = {};
             map[key + '_show'] = _toggleStates[key];
-            google.script.run.withSuccessHandler(() => {
+            try {
+                await updateConfigs(map);
                 toast(key === 'ticker' ? '자막 ' : '배너 ' + (_toggleStates[key]==='1'?'ON':'OFF'));
                 pushToPreview();
-            }).updateConfigs(map);
+            } catch(e) {
+                console.error('toggle error', e);
+            }
         }
 
         function updateToggleUI() {
@@ -439,9 +442,9 @@
 
         // ── Photo toggle ──
         let _photoShow = true;
-        function loadPhotoState() {
-            // hiddenPhotos config key로 사진 표시 상태 확인
-            google.script.run.withSuccessHandler(cfg => {
+        async function loadPhotoState() {
+            try {
+                const cfg = await getConfigMap();
                 if (!cfg) return;
                 _photoShow = cfg.hiddenPhotos !== '1';
                 const el = document.getElementById('qt-photo');
@@ -449,24 +452,33 @@
                     el.querySelector('.dot').className = 'dot ' + (_photoShow?'on':'off');
                     el.querySelector('span').textContent = '사진 ' + (_photoShow?'ON':'OFF');
                 }
-            }).getConfigMap();
+            } catch(e) {
+                console.error('loadPhotoState error', e);
+            }
         }
-        function toggleBroadcastPhotos() {
+        async function toggleBroadcastPhotos() {
             _photoShow = !_photoShow;
-            google.script.run.withSuccessHandler(() => {
+            try {
+                await updateConfigs({ hiddenPhotos: _photoShow ? '' : '1' });
                 loadPhotoState();
                 toast(_photoShow ? '사진 ON' : '사진 OFF');
-            }).updateConfigs({ hiddenPhotos: _photoShow ? '' : '1' });
+            } catch(e) {
+                console.error('toggleBroadcastPhotos error', e);
+            }
         }
 
         // ── Shuffle ──
-        function doShuffle() {
+        async function doShuffle() {
             if (!confirm('순서를 균등 분산하시겠습니까?')) return;
             toast('순서 섞는 중...');
-            google.script.run.withSuccessHandler(r => {
+            try {
+                const r = await shuffleRoundRobin();
                 if (r && !r.success) toast('실패: ' + r.error, true);
                 else toast('순서 배정 완료!');
-            }).shuffleRoundRobin();
+            } catch(e) {
+                console.error('doShuffle error', e);
+                toast('오류: ' + e.message, true);
+            }
         }
 
         // ── Banner Slots ──
@@ -737,8 +749,9 @@
         }
 
         // ── Password ──
-        function loadPwStatus() {
-            google.script.run.withSuccessHandler(r => {
+        async function loadPwStatus() {
+            try {
+                const r = await getAdminPwStatus();
                 const st = document.getElementById('pw-status');
                 if (r.isSet) {
                     st.innerHTML = '<b style="color:var(--green)">설정됨</b>';
@@ -746,16 +759,21 @@
                 } else {
                     st.innerHTML = '<b style="color:var(--red)">미설정</b>';
                 }
-            }).getAdminPwStatus();
+            } catch(e) {
+                console.error('loadPwStatus error', e);
+            }
         }
-        function savePw() {
+        async function savePw() {
             const cur = document.getElementById('pw-current').value;
             const nw = document.getElementById('pw-new').value;
             if (!nw) { toast('새 비밀번호를 입력하세요', true); return; }
-            google.script.run.withSuccessHandler(r => {
+            try {
+                const r = await setAdminPw(cur, nw);
                 if (r.success) { toast('비밀번호 변경 완료'); loadPwStatus(); }
                 else toast(r.error || '오류', true);
-            }).setAdminPw(cur, nw);
+            } catch(e) {
+                toast('오류: ' + e.message, true);
+            }
         }
 
         // ── Build Config Map ──
@@ -810,27 +828,29 @@
         }
 
         // ── Save All ──
-        function saveBroadcastSettings() {
+        async function saveBroadcastSettings() {
             const fab = document.querySelector('.save-fab');
             fab.textContent = '⏳';
             fab.style.pointerEvents = 'none';
             const configMap = buildConfigMap();
-            google.script.run.withSuccessHandler(() => {
+            try {
+                await updateConfigs(configMap);
                 fab.textContent = '✓';
                 fab.style.background = 'var(--green)';
                 toast('전체 설정이 저장되었습니다!');
                 pushToPreview();
                 setTimeout(() => { fab.textContent = '💾'; fab.style.pointerEvents = ''; }, 1500);
-            }).withFailureHandler(e => {
+            } catch(e) {
                 fab.textContent = '💾';
                 fab.style.pointerEvents = '';
                 toast('저장 실패: ' + e.message, true);
-            }).updateConfigs(configMap);
+            }
         }
 
         // ── Load All ──
-        function loadAll() {
-            google.script.run.withSuccessHandler(cfg => {
+        async function loadAll() {
+            try {
+                const cfg = await getConfigMap();
                 if (!cfg) return;
                 _cfg = cfg;
                 document.getElementById('cfg-ticker').value = cfg.ticker || '';
@@ -892,7 +912,9 @@
                 document.getElementById('cfg-host-role2').value = cfg.host_role2 || '';
                 document.getElementById('cfg-nametag-font-size').value = cfg.nametag_font_size || '';
                 document.getElementById('cfg-bracket-font-size').value = cfg.bracket_font_size || '14';
-            }).getConfigMap();
+            } catch(e) {
+                console.error('loadAll error', e);
+            }
         }
 
         window.addEventListener('DOMContentLoaded', () => {

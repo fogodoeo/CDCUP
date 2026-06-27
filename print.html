@@ -646,12 +646,14 @@
         }
 
         // 데이터 로드
-        google.script.run
-            .withSuccessHandler(renderAll)
-            .withFailureHandler(function (err) {
+        (async function() {
+            try {
+                const items = await getItems();
+                renderAll(items);
+            } catch(err) {
                 document.getElementById('result-body').innerHTML = '<div class="loading" style="color:red">오류: ' + err.message + '</div>';
-            })
-            .getItems();
+            }
+        })();
 
         function applySettings() {
             var fs = document.getElementById('ctrl-font').value;

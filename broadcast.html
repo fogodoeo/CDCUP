@@ -1021,23 +1021,13 @@
             const now = Date.now();
             if (now - window._lastCountFetchTime < 15000 && window._totalItemsCount > 0) return;
             
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run
-                    .withSuccessHandler(function (items) {
-                        if (Array.isArray(items)) {
-                            processItemsList(items);
-                        }
-                    })
-                    .getItems();
-            } else {
-                try {
-                    const items = await getItems();
-                    if (Array.isArray(items)) {
-                        processItemsList(items);
-                    }
-                } catch(e) {
-                    console.error("Failed to fetch items count", e);
+            try {
+                const items = await getItems();
+                if (Array.isArray(items)) {
+                    processItemsList(items);
                 }
+            } catch(e) {
+                console.error("Failed to fetch items count", e);
             }
         }
 
@@ -1066,19 +1056,9 @@
             });
         }
 
-        // URL 파라미터 확인 후 host-mode 적용 (일반 웹)
+        // URL 파라미터 확인 후 host-mode 적용
         const urlParams = new URLSearchParams(window.location.search);
         const isHostMode = urlParams.get('mode') === 'host' || urlParams.get('page') === '1';
-
-        // 구글 앱스 스크립트 웹앱 환경 전용 파라미터 읽기
-        if (typeof google !== 'undefined' && google.script && google.script.url) {
-            google.script.url.getLocation(function (location) {
-                const isHost = location.parameter.mode === 'host' || location.parameter.page === '1';
-                if (isHost) {
-                    document.body.classList.add('host-mode');
-                }
-            });
-        }
 
         // DOM 파싱 완료 후 데이터 로드 시작
         window.addEventListener('DOMContentLoaded', () => {
@@ -1937,17 +1917,11 @@
         }
 
         async function loadHostConfig() {
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run.withSuccessHandler(function (cfg) {
-                    applyLoadedHostConfig(cfg);
-                }).getConfigMap();
-            } else {
-                try {
-                    const cfg = await getConfigMap();
-                    applyLoadedHostConfig(cfg);
-                } catch (err) {
-                    console.error('loadHostConfig error', err);
-                }
+            try {
+                const cfg = await getConfigMap();
+                applyLoadedHostConfig(cfg);
+            } catch (err) {
+                console.error('loadHostConfig error', err);
             }
         }
 
@@ -2213,22 +2187,12 @@
             if (document.hidden) return;
             maybeRefreshHostConfig(false);
             refreshTotalCount();
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run
-                    .withSuccessHandler(function (item) {
-                        hasActive = !!item;
-                        render(item);
-                    })
-                    .withFailureHandler(err => console.log("err", err))
-                    .getActiveItem();
-            } else {
-                try {
-                    const item = await getActiveItem();
-                    hasActive = !!item;
-                    render(item);
-                } catch (err) {
-                    console.error("smartRefresh error", err);
-                }
+            try {
+                const item = await getActiveItem();
+                hasActive = !!item;
+                render(item);
+            } catch (err) {
+                console.error("smartRefresh error", err);
             }
         }
         smartRefresh();
@@ -2587,19 +2551,11 @@
         }
 
         async function refreshBracketPage() {
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run
-                    .withSuccessHandler(function (map) {
-                        applyBracketPageMap(map);
-                    })
-                    .getConfigMap();
-            } else {
-                try {
-                    const map = await getConfigMap();
-                    applyBracketPageMap(map);
-                } catch (err) {
-                    console.error('refreshBracketPage error', err);
-                }
+            try {
+                const map = await getConfigMap();
+                applyBracketPageMap(map);
+            } catch (err) {
+                console.error('refreshBracketPage error', err);
             }
         }
 

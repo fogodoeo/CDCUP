@@ -2429,11 +2429,14 @@
         let _pmPhotoBase64 = '';
         let _ppTarget = { eid: 0, key: '' };  // 팝업에서 선택 중인 대상
 
-        function loadParents(cb) {
-            google.script.run
-                .withSuccessHandler(function (list) { parentCache = list || []; if (cb) cb(); })
-                .withFailureHandler(function (e) { console.log('loadParents failed:', e); })
-                .getParents();
+        async function loadParents(cb) {
+            try {
+                const list = await getParents();
+                parentCache = list || [];
+                if (cb) cb();
+            } catch (e) {
+                console.log('loadParents failed:', e);
+            }
         }
 
         // ── 카드 피커 ──
@@ -2551,7 +2554,7 @@
             reader.readAsDataURL(input.files[0]);
         }
 
-        function submitParentsBatch() {
+        async function submitParentsBatch() {
             var items = [];
             for (var i = 0; i < _pmEntries.length; i++) {
                 var e = _pmEntries[i];
@@ -2574,35 +2577,33 @@
             btn.textContent = '등록중... (' + items.length + '개 일괄 처리)';
             btn.disabled = true;
 
-            google.script.run
-                .withSuccessHandler(function (r) {
-                    btn.textContent = '일괄 등록';
-                    btn.disabled = false;
-                    if (r && !r.success) { toast('등록 실패: ' + (r.error || ''), true); return; }
-                    _pmEntries = [];
-                    _pmEntryId = 0;
-                    document.getElementById('pm-entries').innerHTML = '';
-                    addPmEntry();
-                    loadParents(function () { renderParentList(); });
-                    toast(r.count + '개 부모개체 등록 완료');
-                })
-                .withFailureHandler(function (err) {
-                    btn.textContent = '일괄 등록';
-                    btn.disabled = false;
-                    toast('오류: ' + err.message, true);
-                })
-                .addParentsBatch(items);
+            try {
+                const r = await addParentsBatch(items);
+                btn.textContent = '일괄 등록';
+                btn.disabled = false;
+                if (r && !r.success) { toast('등록 실패: ' + (r.error || ''), true); return; }
+                _pmEntries = [];
+                _pmEntryId = 0;
+                document.getElementById('pm-entries').innerHTML = '';
+                addPmEntry();
+                loadParents(function () { renderParentList(); });
+                toast(r.count + '개 부모개체 등록 완료');
+            } catch (err) {
+                btn.textContent = '일괄 등록';
+                btn.disabled = false;
+                toast('오류: ' + err.message, true);
+            }
         }
 
-        function deleteParentItem(pid) {
+        async function deleteParentItem(pid) {
             if (!confirm('삭제하시겠습니까?')) return;
-            google.script.run
-                .withSuccessHandler(function () {
-                    loadParents(function () { renderParentList(); });
-                    toast('삭제됨');
-                })
-                .withFailureHandler(function (e) { alert('삭제 실패: ' + e.message); })
-                .deleteParent(pid);
+            try {
+                await deleteParent(pid);
+                loadParents(function () { renderParentList(); });
+                toast('삭제됨');
+            } catch (e) {
+                alert('삭제 실패: ' + e.message);
+            }
         }
 
         function renderParentList() {
@@ -2834,12 +2835,7 @@
                 if (photoArray.length > 0) {
                     fill.style.width = '10%';
                     btn.textContent = '사진 ' + photoArray.length + '장 업로드중...';
-                    const urls = await new Promise((ok, ng) => {
-                        google.script.run
-                            .withSuccessHandler(ok)
-                            .withFailureHandler(ng)
-                            .uploadPhotos(photoArray);
-                    });
+                    const urls = await uploadPhotos(photoArray);
                     // 결과 매핑
                     for (let i = 0; i < urls.length; i++) {
                         const pi = photoIndex[i];
@@ -2879,12 +2875,8 @@
                     };
                 });
 
-                await new Promise((ok, ng) => {
-                    google.script.run.withSuccessHandler(r => {
-                        if (r && r.success === false) { ng(new Error(r.error || '등록 실패')); return; }
-                        ok(r);
-                    }).withFailureHandler(ng).registerBatch(itemsData);
-                });
+                const regResult = await registerBatch(itemsData);
+                if (regResult && regResult.success === false) { throw new Error(regResult.error || '등록 실패'); }
 
                 fill.style.width = '100%';
                 toast(entries.length + '개 등록 완료');
@@ -2971,34 +2963,34 @@
         // ── 목록 (10초 자동갱신) ──
         let listInterval = null;
         let isEditing = false; // 수정 중일 때 자동갱신 중단 플래그
-        function loadList() {
+        async function loadList() {
             // 수정 중이거나 체크된 항목이 있으면 자동갱신 무시
             if (isEditing || document.querySelectorAll('.row-cb:checked').length > 0) return;
             const el = document.getElementById('item-list');
             if (!el.innerHTML || el.innerHTML.indexOf('item-card') < 0)
                 el.innerHTML = '<div class="loading"><div class="spinner"></div>데이터를 불러오는 중입니다</div>';
             try {
-                google.script.run.withSuccessHandler(function (items) {
-                    try { renderList(items); } catch (err) {
-                        el.innerHTML = '<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F04452" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p style="margin-top:16px;font-weight:600;color:#F04452;">데이터를 불러오지 못했습니다</p><p style="font-size:12px;color:var(--text3);margin-top:8px;">' + err.message + '</p></div>';
-                    }
-                }).withFailureHandler(function (e) {
-                    el.innerHTML = '<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F04452" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p style="margin-top:16px;font-weight:600;color:#F04452;">데이터를 불러오지 못했습니다</p><p style="font-size:12px;color:var(--text3);margin-top:8px;">' + e.message + '</p></div>';
-                }).getItems();
+                const items = await getItems();
+                try { renderList(items); } catch (err) {
+                    el.innerHTML = '<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F04452" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p style="margin-top:16px;font-weight:600;color:#F04452;">데이터를 불러오지 못했습니다</p><p style="font-size:12px;color:var(--text3);margin-top:8px;">' + err.message + '</p></div>';
+                }
             } catch (err2) {
                 el.innerHTML = '<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F04452" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p style="margin-top:16px;font-weight:600;color:#F04452;">데이터를 불러오지 못했습니다</p><p style="font-size:12px;color:var(--text3);margin-top:8px;">' + err2.message + '</p></div>';
             }
             // 자동갱신 시작
             if (!listInterval) {
-                listInterval = setInterval(() => {
+                listInterval = setInterval(async () => {
                     if (isEditing) return; // 수정 중이면 갱신 안 함!
                     if (activeBsRow) return; // 바텀시트 열린 중이면 갱신 안 함!
                     if (document.querySelectorAll('.row-cb:checked').length > 0) return; // 체크된 항목이 있으면 갱신 안 함!
                     if (window._isDragReordering) return; // 드래그 순서변경 중이면 갱신 안 함!
                     if (document.getElementById('tab-list').classList.contains('active')) {
-                        google.script.run.withSuccessHandler(renderList).getItems();
+                        try {
+                            const items = await getItems();
+                            renderList(items);
+                        } catch (e) { console.error('auto-refresh getItems failed:', e); }
                         // 사진 토글 상태도 동기화
-                        try { google.script.run.withSuccessHandler(function (arr) { _bsHiddenPhotos = arr || []; updatePhotoToggleBtn(); }).getHiddenPhotos(); } catch (e) { }
+                        try { const arr = await getHiddenPhotos(); _bsHiddenPhotos = arr || []; updatePhotoToggleBtn(); } catch (e) { }
                     }
                 }, 10000);
             }
@@ -3074,47 +3066,46 @@
 
 
         // ── 라운드 로빈 순서 배정 ──
-        function doShuffle() {
+        async function doShuffle() {
             if (!confirm('라운드 로빈 순서 배정을 하시겠습니까?\n업체별로 번갈아가며 순서가 배정됩니다.')) return;
             var pw = prompt('관리자 비밀번호를 입력하세요:');
             if (!pw) return;
             toast('순서 배정 중...');
-            google.script.run.withSuccessHandler(function (r) {
+            try {
+                const r = await shuffleRoundRobin(pw);
                 if (r.success) {
                     toast('순서 배정 완료! ' + r.count + '개체 / ' + r.companies + '업체');
                     loadList();
                 } else {
                     toast(r.error || '실패');
                 }
-            }).withFailureHandler(function (e) {
+            } catch (e) {
                 toast('오류: ' + e.message);
-            }).shuffleRoundRobin(pw);
+            }
         }
 
         // ── 개별 사진 방송 표시/숨김 ──
         let _bsHiddenPhotos = [];
-        function persistHiddenPhotos(successMsg) {
+        async function persistHiddenPhotos(successMsg) {
             const nextHidden = _bsHiddenPhotos.slice();
-            google.script.run
-                .withSuccessHandler(function (resp) {
-                    if (resp && Array.isArray(resp.hiddenPhotos)) {
-                        _bsHiddenPhotos = resp.hiddenPhotos.slice();
-                    }
-                    try {
-                        new BroadcastChannel('auction-photos').postMessage({
-                            type: 'hiddenPhotos',
-                            hidden: _bsHiddenPhotos.slice()
-                        });
-                    } catch (e) { }
-                    updatePhotoToggleBtn();
-                    if (window._lastItems) renderList(window._lastItems, true);
-                    if (successMsg) toast(successMsg);
-                })
-                .withFailureHandler(function (err) {
-                    console.error('setHiddenPhotos failed', err);
-                    toast('방송 사진 설정 저장 실패');
-                })
-                .setHiddenPhotos(nextHidden);
+            try {
+                const resp = await setHiddenPhotos(nextHidden);
+                if (resp && Array.isArray(resp.hiddenPhotos)) {
+                    _bsHiddenPhotos = resp.hiddenPhotos.slice();
+                }
+                try {
+                    new BroadcastChannel('auction-photos').postMessage({
+                        type: 'hiddenPhotos',
+                        hidden: _bsHiddenPhotos.slice()
+                    });
+                } catch (e) { }
+                updatePhotoToggleBtn();
+                if (window._lastItems) renderList(window._lastItems, true);
+                if (successMsg) toast(successMsg);
+            } catch (err) {
+                console.error('setHiddenPhotos failed', err);
+                toast('방송 사진 설정 저장 실패');
+            }
         }
         function toggleBsPhoto(key) {
             const idx = _bsHiddenPhotos.indexOf(key);
@@ -3130,7 +3121,7 @@
                 else { el.classList.remove('hidden-photo'); }
             }
             // 서버에 저장
-            google.script.run.setHiddenPhotos(_bsHiddenPhotos);
+            setHiddenPhotos(_bsHiddenPhotos).catch(e => console.error(e));
             // 방송에 즉시 전달
             try { new BroadcastChannel('auction-photos').postMessage({ type: 'hiddenPhotos', hidden: _bsHiddenPhotos.slice() }); } catch (e) { }
             toast(_bsHiddenPhotos.indexOf(key) >= 0 ? '방송에서 숨김' : '방송에 표시');
@@ -3145,7 +3136,7 @@
             } else {
                 _bsHiddenPhotos = [];
             }
-            google.script.run.setHiddenPhotos(_bsHiddenPhotos);
+            setHiddenPhotos(_bsHiddenPhotos).catch(e => console.error(e));
             try { new BroadcastChannel('auction-photos').postMessage({ type: 'hiddenPhotos', hidden: _bsHiddenPhotos.slice() }); } catch (e) { }
             toast(_bsHiddenPhotos.length > 0 ? '방송 사진 전체 숨김' : '방송 사진 전체 표시');
             updatePhotoToggleBtn();
@@ -3202,10 +3193,10 @@
         }
         // 초기 상태 동기화
         try {
-            google.script.run.withSuccessHandler(function (arr) {
+            getHiddenPhotos().then(function (arr) {
                 _bsHiddenPhotos = arr || [];
                 updatePhotoToggleBtn();
-            }).getHiddenPhotos();
+            }).catch(function (e) { console.error(e); });
         } catch (e) { }
 
         let activeBsRow = null;
@@ -3215,7 +3206,7 @@
             activeBsRow = row;
             // 서버에서 최신 hiddenPhotos 동기화
             try {
-                google.script.run.withSuccessHandler(function (arr) {
+                getHiddenPhotos().then(function (arr) {
                     _bsHiddenPhotos = arr || [];
                     updatePhotoToggleBtn();
                     // 바텀시트 내 사진 상태 갱신
@@ -3226,7 +3217,7 @@
                             else el.classList.remove('hidden-photo');
                         }
                     });
-                }).getHiddenPhotos();
+                }).catch(function (e) { console.error(e); });
             } catch (e) { }
             const cl = parseChecklist(it.checklist);
             const detailIsActive = getStatusClass(it.status || '') === 'st-active';
@@ -3295,7 +3286,7 @@
             document.getElementById('lb-img').src = '';
         }
 
-        function delItemFromBs() {
+        async function delItemFromBs() {
             if (activeBsRow) {
                 const cb = document.querySelector('.row-cb[value="' + activeBsRow + '"]');
                 if (cb) {
@@ -3309,10 +3300,11 @@
                     if (!pw) return;
                     if (!confirm('이 개체를 삭제하시겠습니까?')) return;
                     closeBottomSheet();
-                    google.script.run.withSuccessHandler(r => {
+                    try {
+                        const r = await deleteItem(activeBsRow, pw);
                         if (r && r.error) { clearAdminPw(); toast(r.error, true); return; }
                         toast('삭제 완료'); loadList();
-                    }).withFailureHandler(e => toast('오류: ' + e.message, true)).deleteItem(activeBsRow, pw);
+                    } catch (e) { toast('오류: ' + e.message, true); }
                 }
             }
         }
@@ -3600,17 +3592,14 @@
 
                 // 서버 동기화
                 if (updates.length > 0) {
-                    google.script.run
-                        .withSuccessHandler(function (r) {
-                            window._isDragReordering = false;
-                            if (r && r.success) showToast(updates.length + '개 순서 변경 완료');
-                            else showToast('순서 저장 실패', true);
-                        })
-                        .withFailureHandler(function () {
-                            window._isDragReordering = false;
-                            showToast('순서 저장 실패', true);
-                        })
-                        .reorderItems(updates);
+                    reorderItems(updates).then(function (r) {
+                        window._isDragReordering = false;
+                        if (r && r.success) showToast(updates.length + '개 순서 변경 완료');
+                        else showToast('순서 저장 실패', true);
+                    }).catch(function () {
+                        window._isDragReordering = false;
+                        showToast('순서 저장 실패', true);
+                    });
                 } else {
                     window._isDragReordering = false;
                 }
@@ -3632,7 +3621,7 @@
 
         // ── 선택 삭제 ──
         let _deleting = false;
-        function deleteSelected() {
+        async function deleteSelected() {
             if (_deleting) return; // 더블클릭 방어
             const cbs = document.querySelectorAll('.row-cb:checked');
             if (cbs.length === 0) { toast('삭제할 항목을 선택해주세요', true); return; }
@@ -3645,7 +3634,8 @@
             _deleting = true;
             const rows = Array.from(cbs).map(cb => parseInt(cb.value));
             document.getElementById('item-list').innerHTML = '<div class="loading"><div class="spinner"></div>데이터를 불러오는 중입니다</div>';
-            google.script.run.withSuccessHandler(r => {
+            try {
+                const r = await deleteItems(rows, pw);
                 if (r && r.error) {
                     document.getElementById('item-list').innerHTML = '<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#F04452" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><p style="margin-top:16px;font-weight:600;color:#F04452;">데이터를 불러오지 못했습니다</p><p style="font-size:12px;color:var(--text3);margin-top:8px;">' + r.error + '</p></div>';
                     return;
@@ -3654,9 +3644,9 @@
                 exitEditMode(); // 삭제 후 편집모드 해제
                 _deleting = false;
                 loadList();
-            }).withFailureHandler(e => {
+            } catch (e) {
                 toast('오류: ' + e.message, true); _deleting = false; loadList();
-            }).deleteItems(rows, pw);
+            }
         }
 
         // ── 선택 수정 (바텀 시트 인라인) ──
@@ -3881,9 +3871,7 @@
             if (photosToUpload.length > 0) {
                 toast('사진 업로드 중...');
                 try {
-                    const urls = await new Promise((ok, ng) => {
-                        google.script.run.withSuccessHandler(ok).withFailureHandler(ng).uploadPhotos(photosToUpload);
-                    });
+                    const urls = await uploadPhotos(photosToUpload);
                     for (let i = 0; i < urls.length; i++) {
                         data[photoIndex[i]] = urls[i];
                     }
@@ -3919,30 +3907,31 @@
                 }
             }
 
-            google.script.run
-                .withSuccessHandler(r => {
-                    if (r && r.error) { clearAdminPw(); toast(r.error, true); if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장 완료'; } return; }
-                    // 부모개체 ID 저장
-                    google.script.run.updateParentIds(row, edSireId, edDamId);
-                    toast('수정 완료');
-                    closeBottomSheet();
-                    loadList();
-                })
-                .withFailureHandler(e => {
-                    toast('오류: ' + e.message, true);
-                    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장 완료'; }
-                })
-                .updateItem(row, data, pw);
+            try {
+                const r = await updateItem(row, data, pw);
+                if (r && r.error) { clearAdminPw(); toast(r.error, true); if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장 완료'; } return; }
+                // 부모개체 ID 저장
+                updateParentIds(row, edSireId, edDamId).catch(e => console.error(e));
+                toast('수정 완료');
+                closeBottomSheet();
+                loadList();
+            } catch (e) {
+                toast('오류: ' + e.message, true);
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장 완료'; }
+            }
         }
 
-        function delItem(row) {
+        async function delItem(row) {
             const pw = getAdminPw();
             if (!pw) return;
             if (!confirm('이 개체를 삭제하시겠습니까?')) return;
-            google.script.run.withSuccessHandler(r => {
+            try {
+                const r = await deleteItem(row, pw);
                 if (r && r.error) { clearAdminPw(); toast(r.error, true); return; }
                 toast('삭제 완료'); loadList();
-            }).withFailureHandler(e => toast('오류: ' + e.message, true)).deleteItem(row, pw);
+            } catch (e) {
+                toast('오류: ' + e.message, true);
+            }
         }
 
         // 선택삭제, 수정 기능으로 대체되므로 전체삭제 함수를 내부적으로만 남김 (필요시 호출)
@@ -4007,10 +3996,14 @@
             return r;
         }
 
-        function loadPrint() {
+        async function loadPrint() {
             var items = window._lastItems;
             if (!items || !items.length) {
-                google.script.run.withSuccessHandler(function (data) { window._lastItems = data || []; renderPrint(data || []); }).getItems();
+                try {
+                    const data = await getItems();
+                    window._lastItems = data || [];
+                    renderPrint(data || []);
+                } catch (e) { console.error('loadPrint getItems failed:', e); }
                 return;
             }
             renderPrint(items);
@@ -4502,25 +4495,23 @@
         let dodosiCache = null;
         let dodosiActiveRoute = null;
 
-        function loadDodosiData() {
+        async function loadDodosiData() {
             if (dodosiCache) { renderDodosiFilters(); filterDodosi(); return; }
             const el = document.getElementById('dodosi-empty');
             const list = document.getElementById('dodosi-list');
             el.style.display = 'block'; list.innerHTML = '';
-            google.script.run
-                .withSuccessHandler(r => {
-                    el.style.display = 'none';
-                    if (!r.success) { list.innerHTML = '<div style="color:red;padding:20px;font-size:13px;">' + esc(r.error) + '</div>'; return; }
-                    dodosiCache = r.data || [];
-                    if (r.updated) document.getElementById('dodosi-updated').textContent = '업데이트: ' + r.updated;
-                    renderDodosiFilters();
-                    filterDodosi();
-                })
-                .withFailureHandler(e => {
-                    el.style.display = 'none';
-                    list.innerHTML = '<div style="color:red;padding:20px;font-size:13px;">로딩 실패: ' + esc(e.message) + '</div>';
-                })
-                .getDodosiData();
+            try {
+                const r = await getDodosiData();
+                el.style.display = 'none';
+                if (!r.success) { list.innerHTML = '<div style="color:red;padding:20px;font-size:13px;">' + esc(r.error) + '</div>'; return; }
+                dodosiCache = r.data || [];
+                if (r.updated) document.getElementById('dodosi-updated').textContent = '업데이트: ' + r.updated;
+                renderDodosiFilters();
+                filterDodosi();
+            } catch (e) {
+                el.style.display = 'none';
+                list.innerHTML = '<div style="color:red;padding:20px;font-size:13px;">로딩 실패: ' + esc(e.message) + '</div>';
+            }
         }
 
         function renderDodosiFilters() {
@@ -4753,14 +4744,11 @@
             addEntry();
             loadList();
             // 도도시 데이터 백그라운드 프리로드 (탭 클릭 전에 미리 가져오기)
-            google.script.run
-                .withSuccessHandler(function (r) {
-                    if (r && r.success) {
-                        dodosiCache = r.data || [];
-                    }
-                })
-                .withFailureHandler(function () { /* 프리로드 실패는 무시 — 탭 클릭 시 재시도 */ })
-                .getDodosiData();
+            getDodosiData().then(function (r) {
+                if (r && r.success) {
+                    dodosiCache = r.data || [];
+                }
+            }).catch(function () { /* 프리로드 실패는 무시 — 탭 클릭 시 재시도 */ });
         } catch (initErr) {
             document.getElementById('item-list').innerHTML = '<div style="color:red;padding:20px;">초기화 오류: ' + initErr.message + '</div>';
         }
