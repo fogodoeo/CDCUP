@@ -1230,7 +1230,7 @@
                     status: firstSelfItem.status || '낙찰-대기'
                 };
 
-                groupItems.forEach(it => {
+                groupItems.forEach((it, idx) => {
                     const tr = document.createElement('tr');
                     tr.id = `row-${it.row}`;
 
@@ -1239,8 +1239,18 @@
                     const combinedBadge = isCombined ? `<br><span class="combined-shipping-badge">합배송: ${otherCos.join(', ')}</span>` : '';
 
                     const typeOptions = ['픽업', '도도시', '파르게', '랩팡', '기타'];
+                    const isFirst = (idx === 0);
+
+                    const winnerHtml = isFirst 
+                        ? `<span style="font-weight: 700;">${winnerName}</span>${combinedBadge}`
+                        : `<span style="color: var(--text-secondary); opacity: 0.35; font-weight: 900; font-size: 16px; padding-left: 12px;">"</span>`;
+                        
+                    const phoneHtml = isFirst 
+                        ? fmtPhone(it.winner_phone) 
+                        : '';
+
                     const typeSelectHtml = `
-                        <select class="select-custom" id="type-${it.row}" onchange="changeRowType(${it.row}, '${winnerName}')">
+                        <select class="select-custom" id="type-${it.row}" style="${isFirst ? '' : 'display: none;'}" onchange="changeRowType(${it.row}, '${winnerName}')">
                             ${typeOptions.map(t => `<option value="${t}" ${
                                 (currentType === '직접수령' && t === '픽업') ||
                                 (currentType === '배송' && currentCompany === t) ||
@@ -1248,6 +1258,7 @@
                                 ? 'selected' : ''
                             }>${t}</option>`).join('')}
                         </select>
+                        ${isFirst ? '' : `<span style="color: var(--text-secondary); font-size: 13px; font-weight: 500; opacity: 0.6;">(합배송)</span>`}
                     `;
 
                     const statusOptions = [
@@ -1260,43 +1271,52 @@
                         <select class="status-select ${
                             currentStatus === '낙찰-대기' || currentStatus === '낙찰' ? 'status-waiting' :
                             currentStatus === '낙찰-연락완료' ? 'status-contacted' : 'status-paid'
-                        }" id="status-${it.row}" style="width: 100px;" onchange="changeRowStatus(${it.row}, '${winnerName}')">
+                        }" id="status-${it.row}" style="width: 100px; ${isFirst ? '' : 'display: none;'}" onchange="changeRowStatus(${it.row}, '${winnerName}')">
                             ${statusOptions.map(o => `<option value="${o.v}" ${
                                 currentStatus === o.v || (currentStatus === '낙찰' && o.v === '낙찰-대기') ? 'selected' : ''
                             }>${o.label}</option>`).join('')}
                         </select>
+                        ${isFirst ? '' : `<span style="color: var(--text-secondary); font-size: 12px; opacity: 0.4;">-</span>`}
+                    `;
+
+                    const hubHtml = `
+                        <div id="shipping-controls-${it.row}" style="display: ${!isFirst ? 'none !important' : (currentType === '배송' ? 'block' : 'none')}; width: 100%;">
+                            <button type="button" class="btn" id="hub-select-btn-${it.row}" style="width: 100%; font-size: 12px; font-weight: 700; text-align: left; padding: 6px 10px;" onclick="onHubButtonClick(${it.row}, '${winnerName}')">
+                                🔍 거점 선택하기
+                            </button>
+                            <!-- Hidden inputs to hold values for DB submit -->
+                            <input type="hidden" id="custom-company-${it.row}">
+                            <input type="hidden" id="custom-region-${it.row}">
+                            <select id="region-${it.row}" style="display: none;"></select>
+                            <select id="hub-${it.row}" style="display: none;"></select>
+                        </div>
+                        <span id="pickup-lbl-${it.row}" style="display: ${!isFirst ? 'none !important' : (currentType === '직접수령' ? 'inline' : 'none')}; color: var(--text-secondary);">현장 직접 수령</span>
+                        ${isFirst ? '' : `<span style="color: var(--text-secondary); font-size: 13px; font-weight: 500; opacity: 0.6;">(위 개체와 합배송)</span>`}
+                    `;
+
+                    const memoHtml = `
+                        <input type="text" class="input-text" id="memo-${it.row}" placeholder="메모" style="width: 100%; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 2px; ${isFirst ? '' : 'display: none;'}" value="${it.shipping_region && it.shipping_company && it.shipping_company.indexOf('기타') >= 0 ? it.shipping_region : ''}">
+                        ${isFirst ? '' : `<span style="color: var(--text-secondary); font-size: 12px; opacity: 0.4;">-</span>`}
                     `;
 
                     tr.innerHTML = `
                         <td data-label="개체명" style="font-weight: 700; color: var(--text-title);">${it.name || '이름 없음'}</td>
-                        <td data-label="낙찰자"><span style="font-weight: 700;">${winnerName}</span>${combinedBadge}</td>
-                        <td data-label="연락처">${fmtPhone(it.winner_phone)}</td>
+                        <td data-label="낙찰자">${winnerHtml}</td>
+                        <td data-label="연락처">${phoneHtml}</td>
                         <td data-label="배송 방식">${typeSelectHtml}</td>
-                        <td data-label="지역 거점샵 / 검색">
-                            <div id="shipping-controls-${it.row}" style="display: ${currentType === '배송' ? 'block' : 'none'}; width: 100%;">
-                                <button type="button" class="btn" id="hub-select-btn-${it.row}" style="width: 100%; font-size: 12px; font-weight: 700; text-align: left; padding: 6px 10px;" onclick="onHubButtonClick(${it.row}, '${winnerName}')">
-                                    🔍 거점 선택하기
-                                </button>
-                                <!-- Hidden inputs to hold values for DB submit -->
-                                <input type="hidden" id="custom-company-${it.row}">
-                                <input type="hidden" id="custom-region-${it.row}">
-                                <select id="region-${it.row}" style="display: none;"></select>
-                                <select id="hub-${it.row}" style="display: none;"></select>
-                            </div>
-                            <span id="pickup-lbl-${it.row}" style="display: ${currentType === '직접수령' ? 'inline' : 'none'}; color: var(--text-secondary);">현장 직접 수령</span>
-                        </td>
+                        <td data-label="지역 거점샵 / 검색">${hubHtml}</td>
                         <td data-label="상태">${statusSelectHtml}</td>
                         <td data-label="배송비" id="cost-${it.row}" class="price-shipping">0원</td>
                         <td data-label="안내금액" id="total-${it.row}" class="price-total">0원</td>
-                        <td data-label="메모">
-                            <input type="text" class="input-text" id="memo-${it.row}" placeholder="메모" style="width: 100%; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 2px;" value="${it.shipping_region && it.shipping_company && it.shipping_company.indexOf('기타') >= 0 ? it.shipping_region : ''}">
-                        </td>
+                        <td data-label="메모">${memoHtml}</td>
                     `;
 
                     tbody.appendChild(tr);
 
-                    const companyKey = currentType === '직접수령' ? '픽업' : currentCompany;
-                    populateRowInputs(it.row, winnerName, companyKey, currentRegion, currentHub);
+                    if (isFirst) {
+                        const companyKey = currentType === '직접수령' ? '픽업' : currentCompany;
+                        populateRowInputs(it.row, winnerName, companyKey, currentRegion, currentHub);
+                    }
                 });
 
                 // 합계 행
