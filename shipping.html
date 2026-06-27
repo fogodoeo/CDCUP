@@ -1322,6 +1322,35 @@
             }
         });
 
+        // 출품 업체 선택 필터 함수 정의
+        function populateCompanySelect() {
+            const select = document.getElementById('company-select');
+            if (!select) return;
+            
+            const prevValue = select.value;
+            select.innerHTML = uniqueSellerCompanies.map(co => `
+                <option value="${co}">${co}</option>
+            `).join('');
+            
+            if (prevValue && uniqueSellerCompanies.includes(prevValue)) {
+                select.value = prevValue;
+            } else if (uniqueSellerCompanies.length > 0) {
+                select.value = uniqueSellerCompanies[0];
+            }
+        }
+
+        function onCompanySelectChange() {
+            renderGrid();
+        }
+
+        function clearCompanyFilter() {
+            const select = document.getElementById('company-select');
+            if (select && select.options.length > 0) {
+                select.selectedIndex = 0;
+                renderGrid();
+            }
+        }
+
         // ══════════════════════════════════════
         //  배송비 연산 공통 헬퍼 함수
         // ══════════════════════════════════════
