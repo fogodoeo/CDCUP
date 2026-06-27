@@ -1226,7 +1226,7 @@
 
         #winner-edit-modal .modal-header h3 {
             color: var(--text-title);
-            font-size: 17px;
+            font-size: 18px;
         }
 
         .editor-header-main {
@@ -1237,15 +1237,18 @@
         .editor-object-summary {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 9px;
             min-width: 0;
-            margin-top: 7px;
-            color: #667085;
-            font-size: 11.5px;
+            margin-top: 9px;
+            color: #344054;
+            font-size: 14px;
         }
 
         .editor-object-label {
             flex-shrink: 0;
+            padding: 4px 8px;
+            border-radius: 7px;
+            background: #EFF6FF;
             color: #2563EB;
             font-weight: 800;
         }
@@ -1255,15 +1258,16 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            font-weight: 650;
+            font-weight: 800;
         }
 
         .editor-combined-count {
             flex-shrink: 0;
-            padding: 3px 7px;
+            padding: 4px 8px;
             border-radius: 999px;
             background: #FFF7E8;
             color: #B54708;
+            font-size: 11.5px;
             font-weight: 750;
         }
 
@@ -1295,17 +1299,26 @@
         }
 
         .segmented-control {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            display: flex;
+            gap: 6px;
             width: 100%;
-            padding: 4px;
+            padding: 5px;
+            overflow-x: auto;
+            scroll-snap-type: x proximity;
+            scrollbar-width: none;
             background: #F4F6F9;
             border: 1px solid #E4E9F0;
             border-radius: 12px;
         }
 
+        .segmented-control::-webkit-scrollbar {
+            display: none;
+        }
+
         .segmented-btn {
-            padding: 11px 4px;
+            flex: 0 0 90px;
+            scroll-snap-align: start;
+            padding: 11px 10px;
             border: 0;
             border-radius: 9px;
             background: transparent;
@@ -1326,6 +1339,27 @@
             color: #FFFFFF;
             background: var(--accent);
             box-shadow: 0 3px 8px rgba(37, 99, 235, 0.20);
+        }
+
+        /* 정산 상태는 중립색을 기본으로 하고 선택 상태만 한 가지 색으로 강조한다. */
+        #winner-edit-modal .status-select,
+        #winner-edit-modal .status-select.status-waiting,
+        #winner-edit-modal .status-select.status-contacted,
+        #winner-edit-modal .status-select.status-paid {
+            opacity: 1 !important;
+            color: #667085 !important;
+            background: #F7F8FA !important;
+            border: 1px solid #E1E5EA !important;
+            box-shadow: none !important;
+        }
+
+        #winner-edit-modal .status-select.is-active,
+        #winner-edit-modal .status-select.status-waiting.is-active,
+        #winner-edit-modal .status-select.status-contacted.is-active,
+        #winner-edit-modal .status-select.status-paid.is-active {
+            color: #1D4ED8 !important;
+            background: #EFF6FF !important;
+            border-color: #93B4EE !important;
         }
 
         .modal-gecko-list {
@@ -1603,6 +1637,20 @@
                 display: block;
             }
 
+            /* 편집 중에는 저장 버튼 뒤에 목록이 이어지지 않게 해 끝 지점을 분명히 한다. */
+            .admin-workspace.is-editing .winner-column {
+                display: none;
+            }
+
+            body.admin-mode.editor-open #admin-view > .header,
+            body.admin-mode.editor-open #admin-view > .card {
+                display: none;
+            }
+
+            body.admin-mode.editor-open #winner-edit-modal .modal-content {
+                min-height: calc(100vh - 44px);
+            }
+
             .editor-empty-state {
                 display: none;
             }
@@ -1656,7 +1704,6 @@
                 padding: 18px;
             }
 
-            .segmented-control,
             .buyer-shipping-options {
                 grid-template-columns: repeat(2, 1fr);
             }
@@ -1666,9 +1713,12 @@
                 grid-column: auto;
             }
 
-            .segmented-btn:first-child,
             .buyer-option-btn:first-child {
                 grid-column: 1 / -1;
+            }
+
+            .segmented-btn {
+                flex-basis: 80px;
             }
 
             .winner-card-footer {
@@ -2434,6 +2484,9 @@
             modal.classList.add('active');
             if (panelSlot) panelSlot.classList.add('is-active');
             if (emptyState) emptyState.style.display = 'none';
+            const workspace = document.querySelector('.admin-workspace');
+            if (workspace) workspace.classList.add('is-editing');
+            document.body.classList.add('editor-open');
 
             document.querySelectorAll('.winner-card').forEach(card => {
                 card.classList.toggle('is-selected', card.dataset.winner === winnerName);
@@ -2453,6 +2506,9 @@
             modal.style.display = 'none';
             if (panelSlot) panelSlot.classList.remove('is-active');
             if (emptyState) emptyState.style.display = '';
+            const workspace = document.querySelector('.admin-workspace');
+            if (workspace) workspace.classList.remove('is-editing');
+            document.body.classList.remove('editor-open');
             document.querySelectorAll('.winner-card').forEach(card => card.classList.remove('is-selected'));
             activeEditorWinner = null;
         }
@@ -2538,25 +2594,30 @@
                 }
             }
 
+            const activeMethodButton = document.querySelector('.segmented-btn.active');
+            if (activeMethodButton && activeMethodButton.parentElement) {
+                const methodStrip = activeMethodButton.parentElement;
+                const targetLeft = activeMethodButton.offsetLeft - (methodStrip.clientWidth - activeMethodButton.clientWidth) / 2;
+                methodStrip.scrollTo({ left: Math.max(0, targetLeft), behavior: isInit ? 'auto' : 'smooth' });
+            }
+
             if (!isInit) {
                 updateEditorPricing();
             }
         }
 
         function setEditorStatus(status) {
-            editorShippingState.status = status;
+            const validStatuses = ['낙찰-대기', '낙찰-연락완료', '낙찰-입금완료'];
+            const normalizedStatus = validStatuses.includes(status) ? status : '낙찰-대기';
+            editorShippingState.status = normalizedStatus;
 
             const waitingBtn = document.getElementById('editor-status-waiting');
             const contactedBtn = document.getElementById('editor-status-contacted');
             const paidBtn = document.getElementById('editor-status-paid');
 
-            waitingBtn.style.opacity = status === '낙찰-대기' ? '1' : '0.4';
-            contactedBtn.style.opacity = status === '낙찰-연락완료' ? '1' : '0.4';
-            paidBtn.style.opacity = status === '낙찰-입금완료' ? '1' : '0.4';
-
-            waitingBtn.style.boxShadow = status === '낙찰-대기' ? '0 0 10px rgba(148, 163, 184, 0.3)' : 'none';
-            contactedBtn.style.boxShadow = status === '낙찰-연락완료' ? '0 0 10px rgba(99, 102, 241, 0.3)' : 'none';
-            paidBtn.style.boxShadow = status === '낙찰-입금완료' ? '0 0 10px rgba(16, 185, 129, 0.3)' : 'none';
+            waitingBtn.classList.toggle('is-active', normalizedStatus === '낙찰-대기');
+            contactedBtn.classList.toggle('is-active', normalizedStatus === '낙찰-연락완료');
+            paidBtn.classList.toggle('is-active', normalizedStatus === '낙찰-입금완료');
         }
 
         function updateEditorPricing() {
