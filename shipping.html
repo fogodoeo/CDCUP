@@ -988,7 +988,7 @@
             });
 
             if (!q) {
-                renderRowSearchItems(rowId, winnerName, allHubs);
+                renderRowSearchItems(rowId, winnerName, allHubs, []);
                 return;
             }
 
@@ -999,29 +999,76 @@
             }).filter(item => item.score > 0)
               .sort((a, b) => b.score - a.score);
 
-            renderRowSearchItems(rowId, winnerName, scored.map(item => item.hub));
+            const exact = scored.map(item => item.hub);
+
+            // Geographical matching (if exact matches are few)
+            let nearby = [];
+            let geoRoutes = [];
+            words.forEach(w => {
+                geoRoutes.push(...findRoutesByLocation(w));
+            });
+            geoRoutes = [...new Set(geoRoutes)];
+
+            if (exact.length <= 4) {
+                const compMap = GEO_TO_COMPANY_REGION[comp];
+                if (compMap) {
+                    let targetRegs = [];
+                    geoRoutes.forEach(gr => {
+                        if (compMap[gr]) targetRegs.push(...compMap[gr]);
+                    });
+                    targetRegs = [...new Set(targetRegs)];
+
+                    if (targetRegs.length > 0) {
+                        nearby = allHubs.filter(h => targetRegs.includes(h.region) && !exact.some(ex => ex.shop === h.shop));
+                    }
+                }
+            }
+
+            renderRowSearchItems(rowId, winnerName, exact, nearby);
         }
 
-        function renderRowSearchItems(rowId, winnerName, items) {
+        function renderRowSearchItems(rowId, winnerName, exact, nearby = []) {
             const resultsBox = document.getElementById(`hub-search-results-${rowId}`);
-            if (items.length === 0) {
+            if (exact.length === 0 && nearby.length === 0) {
                 resultsBox.innerHTML = '<div style="padding: 10px; font-size: 12px; color: var(--text-secondary); text-align: center;">결과 없음</div>';
                 resultsBox.style.display = 'block';
                 return;
             }
 
             let html = '';
-            items.forEach(h => {
-                html += `
-                    <div class="search-item" style="padding: 6px 10px; font-size: 12px;" onclick="selectRowHub(${rowId}, '${winnerName.replace(/'/g, "\\'")}', '${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}')">
-                        <div>
-                            <span class="search-item-region" style="font-size: 10px; padding: 1px 4px;">${h.region}</span>
-                            <span class="search-item-title">${h.shop}</span>
+            if (exact.length > 0) {
+                exact.forEach(h => {
+                    html += `
+                        <div class="search-item" style="padding: 6px 10px; font-size: 12px;" onclick="selectRowHub(${rowId}, '${winnerName.replace(/'/g, "\\'")}', '${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}')">
+                            <div>
+                                <span class="search-item-region" style="font-size: 10px; padding: 1px 4px;">${h.region}</span>
+                                <span class="search-item-title">${h.shop}</span>
+                            </div>
+                            <span class="search-item-price" style="font-size: 11px;">${h.cost.toLocaleString()}원</span>
                         </div>
-                        <span class="search-item-price" style="font-size: 11px;">${h.cost.toLocaleString()}원</span>
+                    `;
+                });
+            }
+
+            if (nearby.length > 0) {
+                html += `
+                    <div style="padding: 4px 8px; font-size: 10px; font-weight: 800; color: var(--accent); background: var(--accent-light); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 4px;">
+                        📍 인근 노선/권역 추천 거점샵
                     </div>
                 `;
-            });
+                nearby.forEach(h => {
+                    html += `
+                        <div class="search-item" style="padding: 6px 10px; font-size: 12px; opacity: 0.75;" onclick="selectRowHub(${rowId}, '${winnerName.replace(/'/g, "\\'")}', '${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}')">
+                            <div>
+                                <span class="search-item-region" style="font-size: 10px; padding: 1px 4px; background: #E2E8F0; color: #475569;">${h.region}</span>
+                                <span class="search-item-title" style="font-weight: 500;">${h.shop}</span>
+                            </div>
+                            <span class="search-item-price" style="font-size: 11px; color: #64748B;">${h.cost.toLocaleString()}원</span>
+                        </div>
+                    `;
+                });
+            }
+
             resultsBox.innerHTML = html;
             resultsBox.style.display = 'block';
         }
@@ -1563,7 +1610,7 @@ ${combinedInfo}
         }
 
         // ══════════════════════════════════════
-        //  거점 검색 및 초성 검색 기능 구현
+        //  거점 검색 및 초성 검색 기능 구현 (지리적 인접 매칭 포함)
         // ══════════════════════════════════════
         const CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 
@@ -1609,6 +1656,75 @@ ${combinedInfo}
             return allFound ? total : 0;
         }
 
+        // 한국 행정구역 -> 노선 매핑
+        const GEO_MAP = {
+            '서울A': ['강남', '서초', '송파', '강동', '잠실', '양재', '도곡', '대치', '삼성', '역삼', '논현', '신사', '압구정', '청담', '방배', '사당', '이수', '교대', '반포'],
+            '서울B': ['강북', '마포', '종로', '중구', '용산', '성동', '광진', '동대문', '중랑', '성북', '강서', '양천', '구로', '금천', '영등포', '동작', '관악', '노원', '도봉', '은평', '서대문', '홍대', '이태원', '건대', '왕십리', '혜화', '신촌', '합정', '상수', '망원', '연남'],
+            '인천': ['인천', '부평', '남동', '연수', '서구', '계양', '미추홀', '강화', '옹진', '검단', '청라', '송도', '주안', '간석', '구월', '작전'],
+            '경기A': ['수원', '화성', '동탄', '광교', '영통', '오산', '평택', '안성'],
+            '경기B': ['성남', '분당', '판교', '용인', '수지', '기흥', '처인', '이천', '여주', '광주', '하남', '양평'],
+            '경기C': ['안양', '과천', '군포', '의왕', '안산', '시흥', '부천', '광명'],
+            '경기D': ['고양', '일산', '파주', '김포', '양주', '의정부', '남양주', '구리', '동두천', '포천', '연천', '가평'],
+            '충청A': ['대전', '세종', '청주', '충주', '제천', '진천', '음성', '괴산', '단양', '증평', '보은', '옥천', '영동'],
+            '충청B': ['천안', '아산', '공주', '논산', '보령', '서산', '당진', '홍성', '예산', '태안', '서천', '부여', '금산', '계룡'],
+            '강원': ['춘천', '원주', '강릉', '속초', '동해', '삼척', '태백', '홍천', '횡성', '영월', '평창', '정선', '철원', '화천', '양구', '인제', '고성', '양양'],
+            '전라': ['광주', '전주', '익산', '군산', '정읍', '남원', '김제', '완주', '진안', '무주', '장수', '임실', '순창', '고창', '부안', '목포', '여수', '순천', '나주', '광양', '담양', '곡성', '구례', '고흥', '보성', '화순', '장흥', '강진', '해남', '영암', '무안', '함평', '영광', '장성', '완도', '진도', '신안'],
+            '경상A': ['포항', '경주', '김천', '안동', '구미', '영주', '영천', '상주', '문경', '경산', '의성', '청송', '영양', '영덕', '칠곡', '예천', '봉화', '울진', '울릉', '군위', '성주', '고령'],
+            '경상B': ['창원', '마산', '진해', '통영', '사천', '진주', '김해', '밀양', '거제', '양산', '의령', '함안', '창녕', '남해', '하동', '산청', '함양', '거창', '합천', '울산'],
+            '부산': ['부산', '해운대', '수영', '사하', '북구', '사상', '연제', '동래', '금정', '부산진', '남구', '서구', '동구', '중구', '영도', '기장', '강서', '사직', '광안리', '센텀', '덕천', '서면', '남포']
+        };
+
+        const GEO_TO_COMPANY_REGION = {
+            '도도시': {
+                '서울A': ['서울'], '서울B': ['서울'], '인천': ['인천'],
+                '경기A': ['경기', '수원', '화성', '오산', '평택'], 
+                '경기B': ['경기', '성남', '용인', '이천', '하남'], 
+                '경기C': ['경기', '안양', '군포', '안산', '시흥', '부천'], 
+                '경기D': ['경기', '고양', '일산', '파주', '김포', '의정부', '남양주', '구리'],
+                '충청A': ['충청', '대전', '청주', '세종'], 
+                '충청B': ['충청', '천안', '아산'], 
+                '강원': ['강원', '원주', '춘천', '강릉', '동해', '고성'], 
+                '전라': ['전라', '광주', '전주', '익산', '남원'],
+                '경상A': ['경상A', '포항', '경주', '김천', '구미', '경산'], 
+                '경상B': ['경상B', '창원', '진해', '진주', '밀양', '양산', '울산'], 
+                '부산': ['부산']
+            },
+            '파르게': {
+                '서울A': ['서울/경기/인천'], '서울B': ['서울/경기/인천'], '인천': ['서울/경기/인천'],
+                '경기A': ['서울/경기/인천'], '경기B': ['서울/경기/인천'], '경기C': ['서울/경기/인천'], '경기D': ['서울/경기/인천'],
+                '충청A': ['충청/대전'], '충청B': ['충청/대전'],
+                '전라': ['전라/광주'],
+                '강원': ['강원도'],
+                '경상A': ['대구/경북/부산/경남'], '경상B': ['대구/경북/부산/경남'], '부산': ['대구/경북/부산/경남']
+            },
+            '랩팡': {
+                '서울A': ['서울'], '서울B': ['서울'],
+                '인천': ['경기/인천'], '경기A': ['경기/인천'], '경기B': ['경기/인천'], '경기C': ['경기/인천'], '경기D': ['경기/인천'],
+                '충청A': ['충청/대전'], '충청B': ['충청/대전'],
+                '경상A': ['대구/경북'],
+                '경상B': ['부산/경남'], '부산': ['부산/경남'],
+                '전라': ['전라/광주']
+            }
+        };
+
+        function findRoutesByLocation(query) {
+            const scored = [];
+            for (const route in GEO_MAP) {
+                let best = 0;
+                for (const city of GEO_MAP[route]) {
+                    let s = 0;
+                    if (city === query) s = 100;
+                    else if (query.startsWith(city)) s = 80;
+                    else if (city.startsWith(query)) s = 60;
+                    else if (city.includes(query) && query.length >= 2) s = 40;
+                    if (s > best) best = s;
+                }
+                if (best > 0) scored.push({ route, score: best });
+            }
+            scored.sort((a, b) => b.score - a.score);
+            return scored.map(s => s.route);
+        }
+
         function filterBuyerHubs() {
             const q = (document.getElementById('buyer-hub-search').value || '').trim().toLowerCase();
             const resultsBox = document.getElementById('buyer-hub-search-results');
@@ -1639,7 +1755,7 @@ ${combinedInfo}
 
             if (!q) {
                 // Show all if focused but empty
-                renderSearchItems(allHubs);
+                renderSearchItems(allHubs, []);
                 return;
             }
 
@@ -1650,29 +1766,76 @@ ${combinedInfo}
             }).filter(item => item.score > 0)
               .sort((a, b) => b.score - a.score);
 
-            renderSearchItems(scored.map(item => item.hub));
+            const exact = scored.map(item => item.hub);
+
+            // Geographical matching (if exact matches are few)
+            let nearby = [];
+            let geoRoutes = [];
+            words.forEach(w => {
+                geoRoutes.push(...findRoutesByLocation(w));
+            });
+            geoRoutes = [...new Set(geoRoutes)];
+
+            if (exact.length <= 4) {
+                const compMap = GEO_TO_COMPANY_REGION[comp];
+                if (compMap) {
+                    let targetRegs = [];
+                    geoRoutes.forEach(gr => {
+                        if (compMap[gr]) targetRegs.push(...compMap[gr]);
+                    });
+                    targetRegs = [...new Set(targetRegs)];
+
+                    if (targetRegs.length > 0) {
+                        nearby = allHubs.filter(h => targetRegs.includes(h.region) && !exact.some(ex => ex.shop === h.shop));
+                    }
+                }
+            }
+
+            renderSearchItems(exact, nearby);
         }
 
-        function renderSearchItems(items) {
+        function renderSearchItems(exact, nearby = []) {
             const resultsBox = document.getElementById('buyer-hub-search-results');
-            if (items.length === 0) {
+            if (exact.length === 0 && nearby.length === 0) {
                 resultsBox.innerHTML = '<div style="padding: 12px; font-size: 13px; color: var(--text-secondary); text-align: center;">검색 결과가 없습니다.</div>';
                 resultsBox.style.display = 'block';
                 return;
             }
 
             let html = '';
-            items.forEach(h => {
-                html += `
-                    <div class="search-item" onclick="selectBuyerHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
-                        <div>
-                            <span class="search-item-region">${h.region}</span>
-                            <span class="search-item-title">${h.shop}</span>
+            if (exact.length > 0) {
+                exact.forEach(h => {
+                    html += `
+                        <div class="search-item" onclick="selectBuyerHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
+                            <div>
+                                <span class="search-item-region">${h.region}</span>
+                                <span class="search-item-title">${h.shop}</span>
+                            </div>
+                            <span class="search-item-price">${h.cost.toLocaleString()}원</span>
                         </div>
-                        <span class="search-item-price">${h.cost.toLocaleString()}원</span>
+                    `;
+                });
+            }
+
+            if (nearby.length > 0) {
+                html += `
+                    <div style="padding: 8px 12px; font-size: 11px; font-weight: 800; color: var(--accent); background: var(--accent-light); border-top: 1.5px solid var(--border); border-bottom: 1.5px solid var(--border); display: flex; align-items: center; gap: 4px;">
+                        📍 인근 노선/권역 추천 거점샵
                     </div>
                 `;
-            });
+                nearby.forEach(h => {
+                    html += `
+                        <div class="search-item" style="opacity: 0.75;" onclick="selectBuyerHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
+                            <div>
+                                <span class="search-item-region" style="background: #E2E8F0; color: #475569;">${h.region}</span>
+                                <span class="search-item-title" style="font-weight: 500;">${h.shop}</span>
+                            </div>
+                            <span class="search-item-price" style="color: #64748B;">${h.cost.toLocaleString()}원</span>
+                        </div>
+                    `;
+                });
+            }
+
             resultsBox.innerHTML = html;
             resultsBox.style.display = 'block';
         }
