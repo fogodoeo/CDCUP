@@ -1491,10 +1491,9 @@
         }
 
         function getSelfItemsOfWinner(winnerName) {
-            const selectedCo = document.getElementById('company-select').value;
             return allItems.filter(it => {
                 const clean = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
-                return clean === winnerName && (it.company || '').trim() === selectedCo;
+                return clean === winnerName;
             });
         }
 
@@ -2343,12 +2342,15 @@ ${combinedInfo}
                 : buyerShippingState.company;
 
             document.getElementById('hub-modal-title').textContent = `[${comp}] 거점 검색 및 선택`;
-            const searchInput = document.getElementById('hub-modal-search');
-            searchInput.value = '';
-            
             // Show modal
             document.getElementById('hub-modal').style.display = 'flex';
-            searchInput.focus();
+            setTimeout(() => {
+                const searchInput = document.getElementById('hub-modal-search');
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                }
+            }, 50);
 
             // Perform initial load (show all hubs)
             filterModalHubs();
@@ -2372,6 +2374,12 @@ ${combinedInfo}
                 return;
             }
 
+            // Get items and count for this winner
+            const selfItems = activeModalSource === 'admin'
+                ? getSelfItemsOfWinner(activeModalWinner)
+                : buyerFoundItems;
+            const itemCount = selfItems.length;
+
             // Flatten all hubs of this company
             let allHubs = [];
             Object.keys(compData.regions).forEach(regName => {
@@ -2379,7 +2387,8 @@ ${combinedInfo}
                     allHubs.push({
                         region: regName,
                         shop: h.shop,
-                        cost: h.cost
+                        cost: h.cost,
+                        day: h.day || ''
                     });
                 });
             });
@@ -2422,6 +2431,35 @@ ${combinedInfo}
                 }
             }
 
+            // Helper to calculate total cost for the winner
+            function getFinalCost(baseCost, regName) {
+                const isJeju = regName.includes('제주');
+                if (comp === '파르게') {
+                    if (itemCount <= 1) return baseCost;
+                    return baseCost + (itemCount - 1) * (isJeju ? 4000 : 7000);
+                } else if (comp === '랩팡') {
+                    if (itemCount <= 1) return baseCost;
+                    if (itemCount <= 4) return baseCost + (itemCount - 1) * 7000;
+                    if (itemCount <= 20) return baseCost + 28000;
+                    return baseCost + 35000;
+                }
+                // Dodosi or default
+                return baseCost;
+            }
+
+            // Helper to get dispatch and receipt schedule
+            function getSchedule(regName, dayField) {
+                if (comp === '도도시') {
+                    const days = dayField || '목.일';
+                    return `[배송: 화/목 발송 | 수령일: ${days}]`;
+                } else if (comp === '파르게') {
+                    return `[배송: 수/금 발송 | 수령일: 목/토]`;
+                } else if (comp === '랩팡') {
+                    return `[배송: 월/목 발송 | 수령일: 화/금]`;
+                }
+                return '';
+            }
+
             // Render
             if (exact.length === 0 && nearby.length === 0) {
                 resultsBox.innerHTML = '<div style="padding: 12px; text-align: center; color: var(--text-secondary);">검색 결과가 없습니다.</div>';
@@ -2431,13 +2469,23 @@ ${combinedInfo}
             let html = '';
             if (exact.length > 0) {
                 exact.forEach(h => {
+                    const finalCost = getFinalCost(h.cost, h.region);
+                    const schedule = getSchedule(h.region, h.day);
                     html += `
-                        <div class="search-item" style="padding: 12px 14px; font-weight: 500;" onclick="selectModalHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
+                        <div class="search-item" style="padding: 12px 14px; font-weight: 500; display: flex; justify-content: space-between; align-items: center;" onclick="selectModalHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
                             <div>
-                                <span class="search-item-region">${h.region}</span>
-                                <span class="search-item-title" style="font-size: 14px;">${h.shop}</span>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span class="search-item-region">${h.region}</span>
+                                    <span class="search-item-title" style="font-size: 14px; font-weight: 700;">${h.shop}</span>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-weight: 400;">
+                                    ${schedule}
+                                </div>
                             </div>
-                            <span class="search-item-price" style="font-size: 13px;">${h.cost.toLocaleString()}원</span>
+                            <div style="text-align: right;">
+                                <div class="search-item-price" style="font-size: 13px;">${h.cost.toLocaleString()}원</div>
+                                ${itemCount > 1 ? `<div style="font-size: 10px; color: #E11D48; font-weight: 700; margin-top: 2px;">총 ${itemCount}마리 합산: ${finalCost.toLocaleString()}원</div>` : ''}
+                            </div>
                         </div>
                     `;
                 });
@@ -2450,13 +2498,23 @@ ${combinedInfo}
                     </div>
                 `;
                 nearby.forEach(h => {
+                    const finalCost = getFinalCost(h.cost, h.region);
+                    const schedule = getSchedule(h.region, h.day);
                     html += `
-                        <div class="search-item" style="opacity: 0.75; padding: 12px 14px;" onclick="selectModalHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
+                        <div class="search-item" style="opacity: 0.75; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;" onclick="selectModalHub('${h.region.replace(/'/g, "\\'")}', '${h.shop.replace(/'/g, "\\'")}', ${h.cost})">
                             <div>
-                                <span class="search-item-region" style="background: #E2E8F0; color: #475569;">${h.region}</span>
-                                <span class="search-item-title" style="font-weight: 500; font-size: 14px;">${h.shop}</span>
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span class="search-item-region" style="background: #E2E8F0; color: #475569;">${h.region}</span>
+                                    <span class="search-item-title" style="font-weight: 500; font-size: 14px;">${h.shop}</span>
+                                </div>
+                                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px; font-weight: 400;">
+                                    ${schedule}
+                                </div>
                             </div>
-                            <span class="search-item-price" style="color: #64748B; font-size: 13px;">${h.cost.toLocaleString()}원</span>
+                            <div style="text-align: right;">
+                                <div class="search-item-price" style="font-size: 13px; color: #64748B;">${h.cost.toLocaleString()}원</div>
+                                ${itemCount > 1 ? `<div style="font-size: 10px; color: #E11D48; font-weight: 700; margin-top: 2px;">총 ${itemCount}마리 합산: ${finalCost.toLocaleString()}원</div>` : ''}
+                            </div>
                         </div>
                     `;
                 });
@@ -2488,6 +2546,11 @@ ${combinedInfo}
                         btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
                         btn.innerHTML = `<span>📍 [${winnerStateMap[winnerName].shipping_company}] ${region} (${shop})</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
                     }
+
+                    // PERSIST IN MEMORY FOR CROSS-COMPANY SYNC
+                    it.shipping_type = '배송';
+                    it.shipping_company = winnerStateMap[winnerName].shipping_company;
+                    it.shipping_region = `${region} (${shop})`;
                 });
 
                 // Update winner state
@@ -2574,6 +2637,11 @@ ${combinedInfo}
                         btn.style.cssText = "padding: 4px 8px; font-size: 12px; font-weight: 700; background: #FEF3C7; color: #D97706; border: 1px solid #FDE68A; text-align: left; width: 100%; display: flex; justify-content: space-between; align-items: center;";
                         btn.innerHTML = `<span>📦 [${compVal}] ${regVal}</span> <span style="font-size: 10px; opacity: 0.6;">변경</span>`;
                     }
+
+                    // PERSIST IN MEMORY FOR CROSS-COMPANY SYNC
+                    it.shipping_type = '배송';
+                    it.shipping_company = compVal;
+                    it.shipping_region = regVal;
                 });
 
                 // Update winner state
