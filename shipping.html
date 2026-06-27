@@ -1341,25 +1341,187 @@
             box-shadow: 0 3px 8px rgba(37, 99, 235, 0.20);
         }
 
-        /* 정산 상태는 중립색을 기본으로 하고 선택 상태만 한 가지 색으로 강조한다. */
-        #winner-edit-modal .status-select,
-        #winner-edit-modal .status-select.status-waiting,
-        #winner-edit-modal .status-select.status-contacted,
-        #winner-edit-modal .status-select.status-paid {
-            opacity: 1 !important;
-            color: #667085 !important;
-            background: #F7F8FA !important;
-            border: 1px solid #E1E5EA !important;
-            box-shadow: none !important;
+        .shipping-breakdown {
+            padding: 14px;
+            border: 1px solid #E3E8EF;
+            border-radius: 14px;
+            background: #F8FAFC;
         }
 
-        #winner-edit-modal .status-select.is-active,
-        #winner-edit-modal .status-select.status-waiting.is-active,
-        #winner-edit-modal .status-select.status-contacted.is-active,
-        #winner-edit-modal .status-select.status-paid.is-active {
-            color: #1D4ED8 !important;
-            background: #EFF6FF !important;
-            border-color: #93B4EE !important;
+        .breakdown-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .breakdown-heading strong {
+            color: var(--text-title);
+            font-size: 13px;
+        }
+
+        .breakdown-heading span {
+            color: #667085;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .breakdown-formula {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto 1fr;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 12px;
+            padding: 10px;
+            border-radius: 10px;
+            background: #FFFFFF;
+            border: 1px solid #E5EAF0;
+            color: #667085;
+            font-size: 11px;
+        }
+
+        .breakdown-formula.is-simple {
+            display: flex;
+        }
+
+        .formula-part {
+            min-width: 0;
+        }
+
+        .formula-part span,
+        .formula-part strong {
+            display: block;
+        }
+
+        .formula-part span {
+            margin-bottom: 2px;
+            color: #7C8798;
+            font-size: 9.5px;
+            white-space: nowrap;
+        }
+
+        .formula-part strong {
+            color: #1D4ED8;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .formula-operator {
+            color: #98A2B3;
+            font-weight: 800;
+        }
+
+        .breakdown-formula .formula-total {
+            color: var(--text-title);
+        }
+
+        .breakdown-formula .formula-total strong {
+            color: var(--text-title);
+        }
+
+        .breakdown-formula.is-simple .formula-total {
+            margin-left: auto;
+        }
+
+        .breakdown-empty {
+            padding: 18px 10px;
+            color: #7C8798;
+            text-align: center;
+            font-size: 12px;
+            line-height: 1.55;
+        }
+
+        .breakdown-company-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .breakdown-company {
+            padding: 11px;
+            border: 1px solid #E4E9F0;
+            border-radius: 11px;
+            background: #FFFFFF;
+        }
+
+        .breakdown-company.is-current {
+            border-color: #93B4EE;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.06);
+        }
+
+        .breakdown-company-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .breakdown-company-name {
+            color: var(--text-title);
+            font-size: 12.5px;
+            font-weight: 800;
+        }
+
+        .breakdown-company-badge {
+            padding: 3px 7px;
+            border-radius: 999px;
+            background: #EFF6FF;
+            color: #2563EB;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .breakdown-company-badge.is-other {
+            background: #F2F4F7;
+            color: #667085;
+        }
+
+        .breakdown-objects {
+            margin: 5px 0 9px;
+            color: #667085;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .breakdown-money-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr 1.15fr;
+            gap: 6px;
+        }
+
+        .breakdown-money-grid div {
+            min-width: 0;
+            padding: 7px;
+            border-radius: 8px;
+            background: #F7F9FC;
+        }
+
+        .breakdown-money-grid span,
+        .breakdown-money-grid strong {
+            display: block;
+        }
+
+        .breakdown-money-grid span {
+            margin-bottom: 2px;
+            color: #7C8798;
+            font-size: 9.5px;
+        }
+
+        .breakdown-money-grid strong {
+            overflow: hidden;
+            color: #344054;
+            font-size: 11px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .breakdown-money-grid .company-collect {
+            background: #FFF4F2;
+        }
+
+        .breakdown-money-grid .company-collect strong {
+            color: #D92D20;
         }
 
         .modal-gecko-list {
@@ -1782,7 +1944,7 @@
                     <div id="editor-empty-state" class="editor-empty-state">
                         <div class="editor-empty-icon">→</div>
                         <strong>낙찰자를 선택해 주세요</strong>
-                        <p>목록의 카드를 누르면 이 자리에서 배송 방식과 정산 상태를 설정할 수 있습니다.</p>
+                        <p>목록의 카드를 누르면 이 자리에서 배송 방식과 합배송 금액을 설정할 수 있습니다.</p>
                     </div>
                 </aside>
             </div>
@@ -1939,15 +2101,8 @@
                     </div>
                 </div>
 
-                <!-- 정산 상태 선택 (상태 캡슐 알약) -->
-                <div class="control-group">
-                    <label>정산 상태</label>
-                    <div style="display: flex; gap: 8px;">
-                        <button type="button" class="status-select status-waiting" id="editor-status-waiting" style="flex: 1; padding: 10px 0;" onclick="setEditorStatus('낙찰-대기')">대기</button>
-                        <button type="button" class="status-select status-contacted" id="editor-status-contacted" style="flex: 1; padding: 10px 0;" onclick="setEditorStatus('낙찰-연락완료')">연락 완료</button>
-                        <button type="button" class="status-select status-paid" id="editor-status-paid" style="flex: 1; padding: 10px 0;" onclick="setEditorStatus('낙찰-입금완료')">입금 완료</button>
-                    </div>
-                </div>
+                <!-- 합배송 구성과 업체별 수령 금액 -->
+                <section id="editor-shipping-breakdown" class="shipping-breakdown" aria-live="polite"></section>
 
                 <!-- 메모 입력 -->
                 <div class="form-group">
@@ -1960,15 +2115,15 @@
             <div class="editor-action-footer">
                 <div class="editor-total-strip">
                     <div class="editor-total-item">
-                        <span>낙찰금액</span>
+                        <span>이 업체 낙찰금액</span>
                         <strong id="editor-summary-bid">0원</strong>
                     </div>
                     <div class="editor-total-item">
-                        <span>배송비</span>
+                        <span>이 업체 배송비</span>
                         <strong id="editor-summary-ship">0원</strong>
                     </div>
                     <div class="editor-total-item is-grand-total">
-                        <span>최종 안내액</span>
+                        <span>이 업체 받을 금액</span>
                         <strong id="editor-summary-total">0원</strong>
                     </div>
                 </div>
@@ -2237,6 +2392,24 @@
             return 0; // 픽업 / 기타 (기본값)
         }
 
+        // 총 배송비를 업체별로 정확히 나눈다. 나머지 원 단위는 앞 업체부터 1원씩 배분한다.
+        function splitShippingCostByCompany(companies, totalShipping) {
+            const validCompanies = (companies || []).filter(Boolean);
+            const allocations = {};
+            if (validCompanies.length === 0 || totalShipping <= 0) {
+                validCompanies.forEach(co => { allocations[co] = 0; });
+                return allocations;
+            }
+
+            const baseShare = Math.floor(totalShipping / validCompanies.length);
+            let remainder = totalShipping - (baseShare * validCompanies.length);
+            validCompanies.forEach(co => {
+                allocations[co] = baseShare + (remainder > 0 ? 1 : 0);
+                if (remainder > 0) remainder -= 1;
+            });
+            return allocations;
+        }
+
         function renderGrid() {
             const selectedCo = document.getElementById('company-select').value;
             const container = document.getElementById('winner-list-container');
@@ -2321,10 +2494,11 @@
                     1
                 );
                 let totalShipping = baseCost;
-                if (state.shipping_type === '배송' && companyCount > 1 && state.shipping_company !== '기타') {
+                if (baseCost > 0 && state.shipping_type === '배송' && companyCount > 1 && state.shipping_company !== '기타') {
                     totalShipping = baseCost + (companyCount - 1) * 7000;
                 }
-                const shippingCost = state.shipping_type === '배송' ? Math.round(totalShipping / companyCount) : 0;
+                const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping);
+                const shippingCost = state.shipping_type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
                 
                 const grandTotal = (totalBid * 10000) + shippingCost;
                 
@@ -2423,7 +2597,6 @@
             company: '',
             region: '',
             hub: '',
-            status: '낙찰-대기',
             memo: ''
         };
 
@@ -2445,7 +2618,6 @@
                 company: state.shipping_company || '',
                 region: state.shipping_region || '',
                 hub: state.shipping_hub || '',
-                status: state.status || '낙찰-대기',
                 memo: state.memo || ''
             };
 
@@ -2466,9 +2638,6 @@
 
             // Set Segmented Control Active Button
             setEditorShippingType(editorShippingState.type === '직접수령' ? '픽업' : (editorShippingState.type === '배송' ? editorShippingState.company : '미설정'), true);
-
-            // Set Status Badge Active
-            setEditorStatus(editorShippingState.status);
 
             // Set Memo
             document.getElementById('editor-memo').value = editorShippingState.memo;
@@ -2606,18 +2775,78 @@
             }
         }
 
-        function setEditorStatus(status) {
-            const validStatuses = ['낙찰-대기', '낙찰-연락완료', '낙찰-입금완료'];
-            const normalizedStatus = validStatuses.includes(status) ? status : '낙찰-대기';
-            editorShippingState.status = normalizedStatus;
+        function renderEditorShippingBreakdown(state, selectedCo, baseCost, totalShipping, allocations, companyName) {
+            const container = document.getElementById('editor-shipping-breakdown');
+            if (!container || !state) return;
 
-            const waitingBtn = document.getElementById('editor-status-waiting');
-            const contactedBtn = document.getElementById('editor-status-contacted');
-            const paidBtn = document.getElementById('editor-status-paid');
+            const sellerCos = state.sellerCompanies.filter(Boolean);
+            const totalObjectCount = state.allItems.length;
+            let formulaHtml = '';
+            let canShowCompanies = true;
 
-            waitingBtn.classList.toggle('is-active', normalizedStatus === '낙찰-대기');
-            contactedBtn.classList.toggle('is-active', normalizedStatus === '낙찰-연락완료');
-            paidBtn.classList.toggle('is-active', normalizedStatus === '낙찰-입금완료');
+            if (editorShippingState.type === '미설정') {
+                formulaHtml = '<div class="breakdown-empty">배송방식을 선택하면 합배송 구성과 업체별 받을 금액이 표시됩니다.</div>';
+                canShowCompanies = false;
+            } else if (editorShippingState.type === '직접수령') {
+                formulaHtml = '<div class="breakdown-formula is-simple"><strong>픽업</strong><span>배송비 없음</span><span class="formula-total">총 0원</span></div>';
+            } else if (editorShippingState.company === '기타') {
+                formulaHtml = '<div class="breakdown-formula is-simple"><strong>기타 배송</strong><span>배송비 별도 협의</span><span class="formula-total">현재 0원</span></div>';
+            } else if (baseCost <= 0) {
+                formulaHtml = '<div class="breakdown-empty">거점을 선택하면 기본 배송비와 합배송 추가금이 계산됩니다.</div>';
+                canShowCompanies = false;
+            } else {
+                const extraCompanyCount = Math.max(0, sellerCos.length - 1);
+                const extraCost = Math.max(0, totalShipping - baseCost);
+                formulaHtml = `
+                    <div class="breakdown-formula">
+                        <div class="formula-part"><span>${companyName} 기본</span><strong>${baseCost.toLocaleString()}원</strong></div>
+                        <span class="formula-operator">+</span>
+                        <div class="formula-part"><span>추가 ${extraCompanyCount}개 업체</span><strong>${extraCost.toLocaleString()}원</strong></div>
+                        <span class="formula-operator">=</span>
+                        <div class="formula-part formula-total"><span>총 배송비</span><strong>${totalShipping.toLocaleString()}원</strong></div>
+                    </div>
+                `;
+            }
+
+            const orderedCompanies = [selectedCo, ...sellerCos.filter(co => co !== selectedCo)].filter(Boolean);
+            const companyRows = canShowCompanies ? orderedCompanies.map(co => {
+                const items = state.allItems.filter(it => (it.company || '').trim() === co);
+                const bidWon = items.reduce((sum, it) => {
+                    const bid = parseInt(String(it.sold_price).replace(/[^0-9]/g, '')) || 0;
+                    return sum + (bid * 10000);
+                }, 0);
+                const shippingShare = allocations[co] || 0;
+                const collectTotal = bidWon + shippingShare;
+                const objectNames = items.map(it => {
+                    const numberText = it.num ? `No.${it.num} ` : '';
+                    return `${numberText}${it.name || '이름 없음'}`;
+                }).join(' · ');
+                const isCurrent = co === selectedCo;
+
+                return `
+                    <div class="breakdown-company ${isCurrent ? 'is-current' : ''}">
+                        <div class="breakdown-company-header">
+                            <span class="breakdown-company-name">${co}</span>
+                            <span class="breakdown-company-badge ${isCurrent ? '' : 'is-other'}">${isCurrent ? '현재 업체' : '다른 업체'}</span>
+                        </div>
+                        <div class="breakdown-objects">개체 ${items.length}개 · ${objectNames}</div>
+                        <div class="breakdown-money-grid">
+                            <div><span>낙찰금액</span><strong>${bidWon.toLocaleString()}원</strong></div>
+                            <div><span>배분 배송비</span><strong>${shippingShare.toLocaleString()}원</strong></div>
+                            <div class="company-collect"><span>받을 금액</span><strong>${collectTotal.toLocaleString()}원</strong></div>
+                        </div>
+                    </div>
+                `;
+            }).join('') : '';
+
+            container.innerHTML = `
+                <div class="breakdown-heading">
+                    <strong>합배송 계산 상세</strong>
+                    <span>${sellerCos.length}개 업체 · ${totalObjectCount}개체</span>
+                </div>
+                ${formulaHtml}
+                ${companyRows ? `<div class="breakdown-company-list">${companyRows}</div>` : ''}
+            `;
         }
 
         function updateEditorPricing() {
@@ -2657,12 +2886,14 @@
             if (baseCost > 0 && companyCount > 1 && comp !== '기타') {
                 totalShipping = baseCost + (companyCount - 1) * 7000;
             }
-            const shipCost = editorShippingState.type === '배송' ? Math.round(totalShipping / companyCount) : 0;
+            const shippingAllocations = splitShippingCostByCompany(sellerCos, totalShipping);
+            const shipCost = editorShippingState.type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
             const grandTotal = (totalBid * 10000) + shipCost;
 
             document.getElementById('editor-summary-bid').textContent = (totalBid * 10000).toLocaleString() + '원';
             document.getElementById('editor-summary-ship').textContent = shipCost.toLocaleString() + '원';
             document.getElementById('editor-summary-total').textContent = grandTotal.toLocaleString() + '원';
+            renderEditorShippingBreakdown(state, selectedCo, baseCost, totalShipping, shippingAllocations, comp || '배송');
         }
 
         async function saveWinnerEditor() {
@@ -2727,11 +2958,12 @@
                     );
                 }
                 let totalShipping = baseCost;
-                if (type === '배송' && companyCount > 1 && company !== '기타') {
+                if (baseCost > 0 && type === '배송' && companyCount > 1 && editorShippingState.company !== '기타') {
                     totalShipping = baseCost + (companyCount - 1) * 7000;
                 }
-                const splitCostPerCompany = type === '배송' ? Math.round(totalShipping / companyCount) : 0;
-                const status = editorShippingState.status;
+                const shippingAllocations = type === '배송'
+                    ? splitShippingCostByCompany(sellerCos, totalShipping)
+                    : splitShippingCostByCompany(sellerCos, 0);
 
                 const promises = [];
                 for (const co of sellerCos) {
@@ -2742,8 +2974,7 @@
                                 shipping_type: type,
                                 shipping_company: company,
                                 shipping_region: region,
-                                shipping_cost: (idx === 0) ? splitCostPerCompany : 0,
-                                status: status
+                                shipping_cost: (idx === 0) ? (shippingAllocations[co] || 0) : 0
                             })
                         );
                     });
@@ -3407,7 +3638,7 @@
                     }
                 }
 
-                const splitCostPerCompany = Math.round(totalShipping / companyCount);
+                const shippingAllocations = splitShippingCostByCompany(sellerCos, totalShipping);
 
                 // 업체별 첫 개체에 쪼갠 금액 배부하고 업데이트
                 for (const co of sellerCos) {
@@ -3431,7 +3662,7 @@
 
                             // 첫 번째 개체에 배송비 배정
                             if (idx === 0) {
-                                shipping_cost = splitCostPerCompany;
+                                shipping_cost = shippingAllocations[co] || 0;
                             }
                         }
 
