@@ -1981,6 +1981,14 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
         }
+
+        /* 업체 선택 팝업 모달 아이템 선택 활성화 상태 */
+        .company-select-item.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
     </style>
 </head>
 <body>
@@ -2000,10 +2008,16 @@
 
             <!-- 업체 선택 전용 팝업 모달 (사이즈 확장 및 2열 그리드화) -->
             <div id="company-select-modal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 2000; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);">
-                <div class="modal-content" style="max-width: 680px; width: 90%; padding: 32px; border-radius: 24px; background: #FFFFFF; box-shadow: var(--shadow-md);">
-                    <h3 style="font-size: 22px; font-weight: 850; margin-bottom: 24px; color: var(--text-title); text-align: center;">배송관리</h3>
-                    <div id="modal-company-list" class="company-select-grid">
+                <div class="modal-content" style="max-width: 680px; width: 90%; padding: 32px; border-radius: 24px; background: #FFFFFF; box-shadow: var(--shadow-md); display: flex; flex-direction: column; max-height: 90vh;">
+                    <h3 style="font-size: 22px; font-weight: 850; margin-bottom: 20px; color: var(--text-title); text-align: center; margin-top: 0;">배송관리</h3>
+                    <div id="modal-company-list" class="company-select-grid" style="flex: 1; overflow-y: auto;">
                         <!-- 동적 로딩 -->
+                    </div>
+                    <!-- 하단 선택 완료 버튼 -->
+                    <div style="margin-top: 24px; border-top: 1.5px solid #F1F5F9; padding-top: 16px;">
+                        <button type="button" class="btn btn-full" id="btn-confirm-company-select" onclick="confirmCompanySelection()" style="width: 100%; font-weight: 850; font-size: 16px; padding: 14px 0;" disabled>
+                            선택 완료
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2401,11 +2415,19 @@
                     const companies = allItems.map(it => (it.company || '').trim()).filter(Boolean);
                     uniqueSellerCompanies = [...new Set(companies)].sort();
                     console.log('[INIT] Step 6: Companies:', uniqueSellerCompanies);
+                    
+                    const savedCompany = localStorage.getItem('cdc_active_seller_company');
                     populateCompanySelect();
-                    if (uniqueSellerCompanies.length > 0) {
+                    
+                    if (savedCompany && uniqueSellerCompanies.includes(savedCompany)) {
+                        activeSellerCompany = savedCompany;
+                        updateCurrentCompanyBar();
+                        renderGrid();
+                        console.log('[INIT] Step 7: Auto-selected saved company:', savedCompany);
+                    } else {
                         openCompanySelectModal();
+                        console.log('[INIT] Step 7: Ready for selection');
                     }
-                    console.log('[INIT] Step 7: Ready for selection');
                 }
             } catch (err) {
                 console.error('[INIT] CRASH:', err);
@@ -2417,6 +2439,7 @@
         });
 
         let activeSellerCompany = '';
+        let tempSelectedCompany = '';
 
         function populateCompanySelect() {
             const listContainer = document.getElementById('modal-company-list');
@@ -2427,24 +2450,59 @@
                 return;
             }
 
+            const savedCompany = localStorage.getItem('cdc_active_seller_company');
+            if (savedCompany && uniqueSellerCompanies.includes(savedCompany)) {
+                activeSellerCompany = savedCompany;
+            }
+            tempSelectedCompany = activeSellerCompany;
+
             listContainer.innerHTML = uniqueSellerCompanies.map(co => {
+                const isActive = co === tempSelectedCompany;
                 return `
-                    <button type="button" class="company-select-item" onclick="selectSellerCompany('${co}')" style="justify-content: center; text-align: center;">
+                    <button type="button" class="company-select-item ${isActive ? 'active' : ''}" data-co="${co}" onclick="clickModalCompanyItem('${co}')" style="justify-content: center; text-align: center;">
                         <span>${co}</span>
                     </button>
                 `;
             }).join('');
             
+            updateConfirmButtonState();
             updateCurrentCompanyBar();
         }
 
-        function selectSellerCompany(co) {
-            if (confirm(`'${co}' 업체를 선택하시겠습니까?`)) {
-                activeSellerCompany = co;
-                closeCompanySelectModal();
-                updateCurrentCompanyBar();
-                renderGrid();
+        function clickModalCompanyItem(co) {
+            tempSelectedCompany = co;
+            
+            const items = document.querySelectorAll('.company-select-item');
+            items.forEach(item => {
+                const itemCo = item.getAttribute('data-co');
+                item.classList.toggle('active', itemCo === co);
+            });
+
+            updateConfirmButtonState();
+        }
+
+        function updateConfirmButtonState() {
+            const btn = document.getElementById('btn-confirm-company-select');
+            if (btn) {
+                btn.disabled = !tempSelectedCompany;
             }
+        }
+
+        function confirmCompanySelection() {
+            if (!tempSelectedCompany) return;
+            activeSellerCompany = tempSelectedCompany;
+            localStorage.setItem('cdc_active_seller_company', activeSellerCompany);
+            closeCompanySelectModal();
+            updateCurrentCompanyBar();
+            renderGrid();
+        }
+
+        function selectSellerCompany(co) {
+            activeSellerCompany = co;
+            localStorage.setItem('cdc_active_seller_company', co);
+            closeCompanySelectModal();
+            updateCurrentCompanyBar();
+            renderGrid();
         }
 
         function updateCurrentCompanyBar() {
