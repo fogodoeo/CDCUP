@@ -2107,16 +2107,26 @@
     <div id="winner-edit-modal" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="max-width: 540px;">
             <div class="bottom-sheet-handle"></div>
-            <div class="modal-header">
-                <div class="editor-header-main">
-                    <h3 id="editor-modal-title">배송 정보 설정</h3>
-                    <div id="editor-object-summary" class="editor-object-summary" style="display:none;"></div>
+            <div class="modal-header" style="flex-direction: column; align-items: flex-start; gap: 4px; border-bottom: 1px solid var(--border); padding: 20px 24px 16px; position: relative;">
+                <div class="editor-header-main" style="width: 100%; min-width: 0;">
+                    <!-- 업체명 최상단 (크고 굵게) -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                        <span id="editor-info-company" style="font-size: 20px; font-weight: 850; color: var(--accent); letter-spacing: -0.5px;">출품업체</span>
+                        <button class="modal-close-btn" type="button" aria-label="편집 패널 닫기" onclick="closeWinnerEditor()" style="margin: 0; position: absolute; right: 20px; top: 16px;">&times;</button>
+                    </div>
+                    <!-- 그다음 낙찰자명, 전화번호 (뚜렷하게) -->
+                    <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span id="editor-info-winner" style="font-size: 16px; font-weight: 800; color: var(--text-title);">낙찰자명</span>
+                        <span id="editor-info-phone" style="font-size: 13.5px; color: var(--text-secondary); font-weight: 500;">전화번호</span>
+                        <span id="editor-info-combined-badge" style="margin-left: auto; margin-right: 28px;"></span>
+                    </div>
+                    <!-- 낙찰개체 정보 한줄로 (회색 텍스트, 말줄임 적용) -->
+                    <div id="editor-info-objects" style="margin-top: 6px; font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; font-weight: 500;">
+                        개체 정보
+                    </div>
                 </div>
-                <button class="modal-close-btn" type="button" aria-label="편집 패널 닫기" onclick="closeWinnerEditor()">&times;</button>
             </div>
-            <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
-                <!-- 낙찰자 정보 요약 카드 -->
-                <div id="editor-info-summary-card" class="editor-info-card"></div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px; padding: 20px 24px;">
 
                 <!-- 패널 진입 즉시 배송사부터 선택 -->
                 <div class="segmented-control" aria-label="배송 방식">
@@ -2751,37 +2761,30 @@
             document.getElementById('editor-modal-title').textContent = `${winnerName}님 배송 설정`;
             const currentCoItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
             const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
+            // 1. 업체명 최상단
+            document.getElementById('editor-info-company').textContent = selectedCo;
+            
+            // 2. 낙찰자명
+            document.getElementById('editor-info-winner').textContent = winnerName;
+            
+            // 3. 전화번호
+            document.getElementById('editor-info-phone').textContent = fmtPhone(state.phone) || '연락처 없음';
+            
+            // 4. 합배송 뱃지
             const isCombined = otherCoItems.length > 0;
-            const combinedStatusHtml = isCombined 
-                ? `<span class="editor-info-badge badge-combined">합배송 (${state.sellerCompanies.length}개 업체)</span>`
-                : `<span class="editor-info-badge badge-single">단독배송</span>`;
-
+            const badgeEl = document.getElementById('editor-info-combined-badge');
+            if (badgeEl) {
+                badgeEl.innerHTML = isCombined 
+                    ? `<span class="editor-info-badge badge-combined" style="font-size: 11px; padding: 2px 8px;">합배송</span>`
+                    : `<span class="editor-info-badge badge-single" style="font-size: 11px; padding: 2px 8px;">단독</span>`;
+            }
+            
+            // 5. 낙찰개체 정보 한줄로
             const objectNames = currentCoItems.map(it => {
                 const numberText = it.num ? `No.${it.num} ` : '';
                 return `${numberText}${it.name || '이름 없음'}`;
             }).join(', ');
-
-            const infoCard = document.getElementById('editor-info-summary-card');
-            if (infoCard) {
-                infoCard.innerHTML = `
-                    <div class="editor-info-row" style="margin-bottom: 4px;">
-                        <span class="editor-info-val" style="font-size: 19px; color: var(--text-title);">${winnerName}</span>
-                        ${combinedStatusHtml}
-                    </div>
-                    <div class="editor-info-row">
-                        <span class="editor-info-label">연락처</span>
-                        <span class="editor-info-val" style="font-size: 14px;">${fmtPhone(state.phone) || '연락처 없음'}</span>
-                    </div>
-                    <div class="editor-info-row">
-                        <span class="editor-info-label">출품 업체</span>
-                        <span class="editor-info-badge badge-company" style="font-size: 13px; font-weight:800;">${selectedCo}</span>
-                    </div>
-                    <div class="editor-info-row" style="flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 4px; border-top: 1px solid #F1F5F9; padding-top: 8px;">
-                        <span class="editor-info-label" style="margin-bottom: 2px;">낙찰 개체 (${currentCoItems.length}마리)</span>
-                        <span class="editor-info-val" style="font-size: 13.5px; font-weight: 500; line-height: 1.4; color: #475569; word-break: break-all;">${objectNames}</span>
-                    </div>
-                `;
-            }
+            document.getElementById('editor-info-objects').textContent = `낙찰개체: ${objectNames}`;
 
             // Set Segmented Control Active Button
             setEditorShippingType(editorShippingState.type === '직접수령' ? '픽업' : (editorShippingState.type === '배송' ? editorShippingState.company : '미설정'), true);
