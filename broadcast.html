@@ -850,10 +850,21 @@
             color: #64748b;
         }
         .bracket-page-slot.winner-slot::after {
-            content: '👑';
+            content: '승';
             position: absolute;
             right: 12px;
-            font-size: var(--bracket-fs);
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: rgba(16, 185, 129, 0.18);
+            font-size: calc(var(--bracket-fs) * 0.72);
+            font-weight: 900;
+        }
+        .bracket-page-slot.loser-slot::after {
+            content: '패';
+            position: absolute;
+            right: 12px;
+            font-size: calc(var(--bracket-fs) * 0.72);
+            font-weight: 800;
         }
         .bracket-page-team-text {
             max-width: 80%;
@@ -1009,7 +1020,7 @@
     <!-- 페이지2 용 우측 실시간 매치업 오버레이 카드 -->
     <div id="battle-matchup-card" style="display:none; position:absolute; top:110px; right:24px; z-index:99; background:rgba(10, 15, 28, 0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border: 1.5px solid rgba(59, 130, 246, 0.4); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6); border-radius:12px; padding:14px 20px; font-family:'Pretendard', sans-serif; min-width:280px; box-sizing:border-box;">
         <div style="font-size:11px; font-weight:800; color:#3b82f6; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:4px;">
-            <span>⚔️</span> CURRENT MATCH
+            CURRENT MATCH
         </div>
         <div id="matchup-teams" style="font-size:18px; font-weight:800; color:#fff; word-break:keep-all;">
             [A팀] 대기중 <span style="color:#ef4444; font-size:14px; margin:0 6px;">VS</span> [B팀] 대기중
@@ -2562,7 +2573,8 @@
             // Apply font-size via CSS variable on the container
             // + Control the visibility of the entire bracket container (On/Off master toggle)
             const containerEl = document.getElementById('bracket-page-container');
-            const masterShow = (bShow === '1') && (isBracketPage || active !== 'none');
+            // 대진 결과/실시간 대진은 3P 송출 화면에서만 노출한다.
+            const masterShow = (bShow === '1') && isBracketPage;
             if (containerEl) {
                 containerEl.style.setProperty('--bracket-fs', bFontSize + 'px');
                 if (masterShow) {
@@ -2612,10 +2624,10 @@
             let bracket = { matches: {} };
             try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
 
-            if (fullShow) {
+            if (masterShow && fullShow) {
                 renderBracketPageTree(parseInt(active), bracket, map);
             }
-            if (liveShow) {
+            if (masterShow && liveShow) {
                 renderBracketLiveView(parseInt(active), bracket, map);
             }
         }
@@ -2629,10 +2641,48 @@
             }
         }
 
-        function renderBracketPageTree(scale, bracket, map) {
+        let bracketFullRenderId = 0;
+        let battleItemsCache = [];
+        let battleItemsCacheAt = 0;
+        let battleItemsRequest = null;
+
+        async function getBattleItemsCached() {
+            if (battleItemsCache.length && Date.now() - battleItemsCacheAt < 1500) {
+                return battleItemsCache;
+            }
+            if (battleItemsRequest) return battleItemsRequest;
+            battleItemsRequest = getItems()
+                .then(items => {
+                    battleItemsCache = items || [];
+                    battleItemsCacheAt = Date.now();
+                    return battleItemsCache;
+                })
+                .finally(() => { battleItemsRequest = null; });
+            return battleItemsRequest;
+        }
+
+        async function renderBracketPageTree(scale, bracket, map) {
+            const renderId = ++bracketFullRenderId;
             const tree = document.getElementById('bracket-page-tree-full');
-            tree.innerHTML = '';
             const currentMatch = map.battle_current_match || '';
+
+            // 전체 결과는 수동 winner 값이 아니라 실제 낙찰 완료 데이터로 계산한다.
+            let items = [];
+            try { items = await getBattleItemsCached(); } catch (e) {
+                console.error('Failed to load auction results for bracket', e);
+            }
+            if (renderId !== bracketFullRenderId) return;
+            tree.innerHTML = '';
+
+            const isAuctionDone = item => item && ['완료', 'sold', '낙찰', '유찰'].includes(item.status);
+            const toPrice = item => Number.parseFloat(item?.sold_price || item?.soldPrice || 0) || 0;
+
+            let schedule = [];
+            try { if (map.battle_schedule) schedule = JSON.parse(map.battle_schedule); } catch (e) {}
+            const roundsByMatch = {};
+            schedule.forEach(step => {
+                if (step?.matchKey) roundsByMatch[step.matchKey] = Number(step.roundsPerMatch) || 4;
+            });
             
             // 1라운드 매칭으로 회사명 -> 알파벳 매핑 생성
             const teamToLetter = {};
@@ -2699,16 +2749,37 @@
                 const fullKey = scale + '_' + matchKey;
                 const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
                 
-                // 이 매치의 스코어 가져오기
-                const scoreKey = 'score_' + scale + '_' + matchKey;
-                let scores = { r1:'', r2:'', r3:'', r4:'' };
-                if (map[scoreKey]) try { scores = JSON.parse(map[scoreKey]); } catch(e){}
-                let ls = 0, rs = 0;
-                ['r1','r2','r3','r4'].forEach(k => {
-                    if (scores[k] === 'left') ls++;
-                    else if (scores[k] === 'right') rs++;
-                });
-                const hasScore = ls > 0 || rs > 0;
+                const leftL = teamToLetter[match.left?.trim()] || String.fromCharCode(65 + (i - 1) * 2);
+                const rightL = teamToLetter[match.right?.trim()] || String.fromCharCode(65 + (i - 1) * 2 + 1);
+                const roundsPerMatch = roundsByMatch[matchKey] || 4;
+                let ls = 0, rs = 0, draws = 0, completedRounds = 0;
+                let leftTotal = 0, rightTotal = 0;
+
+                for (let r = 1; r <= roundsPerMatch; r++) {
+                    const leftItem = findItemByCode(items, leftL + r);
+                    const rightItem = findItemByCode(items, rightL + r);
+                    if (!isAuctionDone(leftItem) || !isAuctionDone(rightItem)) continue;
+                    const leftPrice = toPrice(leftItem);
+                    const rightPrice = toPrice(rightItem);
+                    completedRounds++;
+                    leftTotal += leftPrice;
+                    rightTotal += rightPrice;
+                    if (leftPrice > rightPrice) ls++;
+                    else if (rightPrice > leftPrice) rs++;
+                    else draws++;
+                }
+
+                const isComplete = completedRounds === roundsPerMatch;
+                let calculatedWinner = '';
+                if (isComplete) {
+                    if (ls > rs) calculatedWinner = 'left';
+                    else if (rs > ls) calculatedWinner = 'right';
+                    else if (leftTotal > rightTotal) calculatedWinner = 'left';
+                    else if (rightTotal > leftTotal) calculatedWinner = 'right';
+                    else calculatedWinner = 'draw';
+                }
+                const displayWinner = calculatedWinner || match.winner || '';
+                const hasScore = completedRounds > 0;
                 
                 const node = document.createElement('div');
                 node.className = 'bracket-page-match';
@@ -2725,9 +2796,6 @@
                 
                 const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
                 
-                const leftL = String.fromCharCode(65 + (i-1)*2);
-                const rightL = String.fromCharCode(65 + (i-1)*2 + 1);
-                
                 const getSlotText = (teamName, defaultLetter, isFirstRound) => {
                     if (!teamName) return '대기중...';
                     const letter = teamToLetter[teamName.trim()] || defaultLetter;
@@ -2739,10 +2807,10 @@
                 const rightText = getSlotText(match.right, rightL, round === scale);
 
                 // 승패 상태 스타일
-                const leftWin = match.winner === 'left';
-                const rightWin = match.winner === 'right';
-                const leftLose = match.winner === 'right';
-                const rightLose = match.winner === 'left';
+                const leftWin = displayWinner === 'left';
+                const rightWin = displayWinner === 'right';
+                const leftLose = displayWinner === 'right';
+                const rightLose = displayWinner === 'left';
                 
                 const leftSlotClass = 'bracket-page-slot' + (leftWin ? ' winner-slot' : (leftLose ? ' loser-slot' : ''));
                 const rightSlotClass = 'bracket-page-slot' + (rightWin ? ' winner-slot' : (rightLose ? ' loser-slot' : ''));
@@ -2751,14 +2819,14 @@
                 const activeStyle = currentMatch === fullKey ? 'border-color:#3b82f6;background:rgba(59,130,246,0.08);' : '';
 
                 node.innerHTML = `
-                    <div class="bracket-page-match-title">${titleText}${currentMatch === fullKey ? ' ⚡' : ''}</div>
+                    <div class="bracket-page-match-title">${titleText}${currentMatch === fullKey ? ' · 진행 중' : ''}</div>
                     <div class="${leftSlotClass}" style="${activeStyle}">
                         <span class="bracket-page-team-text">${leftText}</span>
                     </div>
                     <div class="${rightSlotClass}" style="${activeStyle}">
                         <span class="bracket-page-team-text">${rightText}</span>
                     </div>
-                    ${hasScore ? `<div style="text-align:center;font-size:0.85em;font-weight:800;color:#64748b;margin-top:4px;letter-spacing:0.06em;">SCORE ${ls} : ${rs}</div>` : ''}
+                    ${hasScore ? `<div style="text-align:center;font-size:0.82em;font-weight:800;color:#94a3b8;margin-top:6px;letter-spacing:0.02em;">${isComplete ? '최종' : completedRounds + '/' + roundsPerMatch + ' 진행'} · ${ls} : ${rs}${draws ? ' (무 ' + draws + ')' : ''} · 합계 ${leftTotal.toLocaleString()} : ${rightTotal.toLocaleString()}</div>` : '<div style="text-align:center;font-size:0.8em;font-weight:700;color:#64748b;margin-top:6px;">결과 대기</div>'}
                 `;
                 col.appendChild(node);
             }
@@ -2789,7 +2857,7 @@
 
             // 매치의 모든 라운드 아이템 가격 조회
             let items = [];
-            try { items = await getItems() || []; } catch(e){}
+            try { items = await getBattleItemsCached(); } catch(e){}
 
             let leftTotal = 0, rightTotal = 0;
             let leftRoundWins = 0, rightRoundWins = 0;
@@ -3030,12 +3098,18 @@
             // 최종 매치 결과 배너 (가로바 하단에 깔끔하게 붙임)
             let finalBanner = '';
             if (isLastRoundDone) {
-                const winner = leftTotal > rightTotal ? step.leftName : (rightTotal > leftTotal ? step.rightName : '무승부');
-                const winLetter = leftTotal > rightTotal ? step.leftTeam : step.rightTeam;
+                let winnerSide = 'draw';
+                if (leftRoundWins > rightRoundWins) winnerSide = 'left';
+                else if (rightRoundWins > leftRoundWins) winnerSide = 'right';
+                else if (leftTotal > rightTotal) winnerSide = 'left';
+                else if (rightTotal > leftTotal) winnerSide = 'right';
+                const winner = winnerSide === 'left' ? step.leftName : (winnerSide === 'right' ? step.rightName : '무승부');
+                const winLetter = winnerSide === 'left' ? step.leftTeam : step.rightTeam;
+                const winnerText = winnerSide === 'draw' ? '무승부' : `${winLetter}팀 ${esc(winner)} 승리`;
                 finalBanner = `
                     <div style="margin-top:6px; display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(90deg,rgba(245,158,11,0.2),rgba(234,179,8,0.03)); border:1px solid rgba(245,158,11,0.5); border-radius:6px; padding:6px 14px; box-shadow:0 4px 15px rgba(245,158,11,0.15); box-sizing:border-box; color:#fff; font-size:12px; font-weight:800; width:fit-content; margin-left:auto; margin-right:auto; white-space:nowrap;">
-                        <span style="color:#f59e0b;font-weight:900;">🏆 MATCH WINNER</span>
-                        <span>${winLetter}팀 ${esc(winner)} 승리!</span>
+                        <span style="color:#f59e0b;font-weight:900;">MATCH WINNER</span>
+                        <span>${winnerText}</span>
                         <span style="color:#94a3b8;font-size:11px;font-weight:600;">(스코어 ${leftRoundWins}:${rightRoundWins} | 총액 ${fmtCompact(leftTotal)} vs ${fmtCompact(rightTotal)})</span>
                     </div>`;
             }
@@ -3176,7 +3250,7 @@
                 }
                 
                 // 3. 전체 개체 목록 가져오기
-                const items = await getItems();
+                const items = await getBattleItemsCached();
                 if (!items || items.length === 0) return;
                 
                 // 현재 진행 중인 개체(status가 '진행', '진행중' 또는 'active'인 개체) 찾기

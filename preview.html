@@ -117,7 +117,7 @@
             border-color: var(--red) !important;
         }
 
-        /* 🏷️ Draggable Nametag 1 (PAGE1 only) */
+        /* Draggable Nametag 1 (PAGE1 only) */
         .draggable-nametag1 {
             width: 16%;
             height: 8%;
@@ -131,7 +131,7 @@
             background: rgba(168, 85, 247, 0.25);
         }
 
-        /* 🏷️ Draggable Nametag 2 (PAGE1 only) */
+        /* Draggable Nametag 2 (PAGE1 only) */
         .draggable-nametag2 {
             width: 16%;
             height: 8%;
@@ -145,7 +145,7 @@
             background: rgba(236, 72, 153, 0.25);
         }
 
-        /* 🏆 Draggable Bracket */
+        /* Draggable Bracket */
         .draggable-bracket {
             width: 80%;
             height: 70%;
@@ -159,7 +159,7 @@
             background: rgba(59, 130, 246, 0.2);
         }
 
-        /* 👑 Draggable Bracket Title */
+        /* Draggable Bracket Title */
         .draggable-bracket-title {
             width: 50%;
             height: 10%;
@@ -173,7 +173,7 @@
             background: rgba(234, 179, 8, 0.25);
         }
 
-        /* ⚔️ Draggable Battle Announcement */
+        /* Draggable Battle Announcement */
         .draggable-battle-ann {
             width: 80%;
             height: 25%;
@@ -187,7 +187,7 @@
             background: rgba(244, 63, 94, 0.25);
         }
 
-        /* 🖼️ Draggable Banner */
+        /* Draggable Banner */
         .draggable-banner {
             width: auto;
             height: auto;
@@ -205,7 +205,7 @@
             background: rgba(37, 99, 235, 0.25);
         }
 
-        /* 📢 Draggable Ticker (Zamak Bar) */
+        /* Draggable Ticker (Zamak Bar) */
         .draggable-ticker {
             width: 100%;
             height: 12%; /* Simulates actual ticker ratio */
@@ -582,7 +582,7 @@
 <body>
     <nav class="cdcup-nav">
         <a href="index.html" class="cdcup-nav__brand">
-            <span class="cdcup-nav__brand-icon">🏆</span>
+            <span class="cdcup-nav__brand-icon">C</span>
             <span>CDCUP 관리자</span>
         </a>
         <div class="cdcup-nav__links">
@@ -593,7 +593,7 @@
             <!-- 방송 송출 드롭다운 메뉴 -->
             <div class="cdcup-nav__dropdown">
                 <button class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
-                    <span>📺 방송 송출 화면</span>
+                    <span>방송 송출 화면</span>
                     <span class="caret">▼</span>
                 </button>
                 <div class="cdcup-nav__dropdown-menu">
@@ -615,7 +615,7 @@
         </div>
         <!-- 대진용 배치기 배경 미리보기 선택 옵션 -->
         <div id="bracket-bg-selector-group" class="control-row" style="margin-bottom: 16px; display: none; align-items: center; gap: 16px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
-            <span style="font-weight: 600; color: var(--text-muted); font-size: 14px;">🛠️ 대진표 배치용 배경 화면 선택:</span>
+            <span style="font-weight: 600; color: var(--text-muted); font-size: 14px;">대진표 배치용 배경 화면 선택:</span>
             <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer; color:var(--text); font-size:14px; font-weight: 500;">
                 <input type="radio" name="bracket-bg" value="1" checked onchange="changeBracketBg(1)"> 1P 진행용 화면
             </label>
@@ -637,49 +637,49 @@
                 <div class="draggable-element draggable-banner" id="draggable-banner" data-type="banner">
                     <div id="draggable-banner-blur" style="position:absolute; top:0; left:0; width:100%; height:100%; background-size:cover; background-position:center; filter:blur(10px) brightness(0.65); transform:scale(1.1); pointer-events:none; display:none; z-index:0; border-radius:6px;"></div>
                     <img id="draggable-banner-preview" style="width:100%; height:100%; object-fit:contain; border-radius:6px; pointer-events:none; display:none; position:relative; z-index:1;" alt="">
-                    <div class="element-label" id="draggable-banner-label" style="z-index:2;">🖼️ 롤링 배너</div>
+                    <div class="element-label" id="draggable-banner-label" style="z-index:2;">롤링 배너</div>
                     <div class="resize-handle resize-handle-se" id="resize-banner" title="드래그로 크기 조절"></div>
                 </div>
 
                 <!-- 2. Draggable Ticker (Zamak Bar) -->
                 <div class="draggable-element draggable-ticker" id="draggable-ticker" data-type="ticker">
-                    <div class="element-label">📢 공지사항 자막 (티커)</div>
+                    <div class="element-label">공지사항 자막</div>
                     <div class="resize-handle resize-handle-n" id="resize-ticker" title="드래그로 높이 조절"></div>
                 </div>
 
                 <!-- 3. Draggable Nametag 1 (PAGE1 only) -->
                 <div class="draggable-element draggable-nametag1" id="draggable-nametag1" data-type="nametag1" style="display:none;">
-                    <div class="element-label">🏷️ 네임택 1</div>
+                    <div class="element-label">네임택 1</div>
                     <div class="resize-handle resize-handle-se" id="resize-nametag1" title="크기 조절" style="border-color: #A855F7;"></div>
                 </div>
 
                 <!-- 4. Draggable Nametag 2 (PAGE1 only) -->
                 <div class="draggable-element draggable-nametag2" id="draggable-nametag2" data-type="nametag2" style="display:none;">
-                    <div class="element-label">🏷️ 네임택 2</div>
+                    <div class="element-label">네임택 2</div>
                     <div class="resize-handle resize-handle-se" id="resize-nametag2" title="크기 조절" style="border-color: #EC4899;"></div>
                 </div>
 
                 <!-- 5. Draggable Full Bracket (PAGE3 only) -->
                 <div class="draggable-element draggable-bracket" id="draggable-bracket-full" data-type="bracket_full" style="display:none; z-index:10;">
-                    <div class="element-label">🏆 전체결과</div>
+                    <div class="element-label">전체 결과</div>
                     <div class="resize-handle resize-handle-se" id="resize-bracket-full" title="크기 조절" style="border-color: #3b82f6;"></div>
                 </div>
 
                 <!-- 5b. Draggable Live Bracket (PAGE3 only) -->
                 <div class="draggable-element draggable-bracket" id="draggable-bracket-live" data-type="bracket_live" style="display:none; z-index:10;">
-                    <div class="element-label">🔴 실시간대진</div>
+                    <div class="element-label">실시간 대진</div>
                     <div class="resize-handle resize-handle-se" id="resize-bracket-live" title="크기 조절" style="border-color: #ef4444;"></div>
                 </div>
 
                 <!-- 6. Draggable Bracket Title (PAGE3 only) -->
                 <div class="draggable-element draggable-bracket-title" id="draggable-bracket-title" data-type="bracket_title" style="display:none; z-index:11;">
-                    <div class="element-label">👑 대진표 타이틀</div>
+                    <div class="element-label">대진표 타이틀</div>
                     <div class="resize-handle resize-handle-se" id="resize-bracket-title" title="크기 조절" style="border-color: #eab308;"></div>
                 </div>
 
                 <!-- 7. Draggable Battle Announcement (PAGE3 only) -->
                 <div class="draggable-element draggable-battle-ann" id="draggable-battle-ann" data-type="battle_ann" style="display:none; z-index:12;">
-                    <div class="element-label">⚔️ 경기 안내 자막</div>
+                    <div class="element-label">경기 안내 자막</div>
                     <div class="resize-handle resize-handle-se" id="resize-battle-ann" title="크기 조절" style="border-color: #f43f5e;"></div>
                 </div>
             </div>
@@ -690,41 +690,41 @@
             <div class="control-row" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
                 <div class="toggle-switch-group">
                     <div class="switch-container">
-                        <span>📢 자막 노출</span>
+                        <span>자막 노출</span>
                         <input type="checkbox" id="toggle-ticker-show" class="switch-input" checked onchange="toggleShowState('ticker')">
                     </div>
                     <div class="switch-container">
-                        <span>🖼️ 배너 노출</span>
+                        <span>배너 노출</span>
                         <input type="checkbox" id="toggle-banner-show" class="switch-input" checked onchange="toggleShowState('banner')">
                     </div>
                     <div class="switch-container" id="toggle-nametag1-group" style="display:none;">
-                        <span>🏷️ 네임택1 노출</span>
+                        <span>네임택1 노출</span>
                         <input type="checkbox" id="toggle-nametag1-show" class="switch-input" checked onchange="toggleShowState('nametag1')">
                     </div>
                     <div class="switch-container" id="toggle-nametag2-group" style="display:none;">
-                        <span>🏷️ 네임택2 노출</span>
+                        <span>네임택2 노출</span>
                         <input type="checkbox" id="toggle-nametag2-show" class="switch-input" checked onchange="toggleShowState('nametag2')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-full-show-group" style="display:none;" onclick="focusBracketLayer('bracket_full')" title="클릭하면 전체대진 배치 박스가 선택됩니다">
-                        <span>🏆 전체결과 노출</span>
+                        <span>전체 결과 노출</span>
                         <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-bracket-full-show" class="switch-input" checked onchange="toggleShowState('bracket_full')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-live-show-group" style="display:none;" onclick="focusBracketLayer('bracket_live')" title="클릭하면 실시간대진 배치 박스가 선택됩니다">
-                        <span>🔴 실시간대진 노출</span>
+                        <span>실시간 대진 노출</span>
                         <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-bracket-live-show" class="switch-input" onchange="toggleShowState('bracket_live')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-title-show-group" style="display:none;">
-                        <span>👑 타이틀 노출</span>
+                        <span>타이틀 노출</span>
                         <input type="checkbox" id="toggle-bracket-title-show" class="switch-input" checked onchange="toggleShowState('bracket_title')">
                     </div>
                     <div class="switch-container" id="toggle-battle-ann-show-group" style="display:none;">
-                        <span>⚔️ 경기안내 노출</span>
+                        <span>경기 안내 노출</span>
                         <input type="checkbox" id="toggle-battle-ann-show" class="switch-input" checked onchange="toggleShowState('battle_ann')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-scale-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
-                        <span style="font-weight: 700;">🏆 대진표 크기:</span>
+                        <span style="font-weight: 700;">대진표 크기:</span>
                         <select id="bracket-scale-select" onchange="changeBracketScale(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
                             <option value="16">16강</option>
                             <option value="8">8강</option>
@@ -732,7 +732,7 @@
                         </select>
                     </div>
                     <div class="switch-container" id="toggle-bracket-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
-                        <span style="font-weight: 700;">📺 송출 모드:</span>
+                        <span style="font-weight: 700;">송출 모드:</span>
                         <select id="bracket-active-select" onchange="changeActiveTournament(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
                             <option value="none">대진표 비송출 (기본경매)</option>
                             <option value="16">16강 대진표 송출</option>
@@ -743,7 +743,7 @@
                 </div>
                 <div class="actions-row">
                     <button class="btn-action reset" onclick="resetPositions()">기본 좌표 복구</button>
-                    <button class="btn-action save" onclick="saveCoordinates(false)">💾 현재 상태 전체 저장</button>
+                    <button class="btn-action save" onclick="saveCoordinates(false)">현재 상태 전체 저장</button>
                 </div>
             </div>
 
@@ -786,12 +786,12 @@
                 <div class="t-controls">
                     <button class="t-btn danger" onclick="tReset()">초기화</button>
                     <button class="t-btn success" onclick="tRandomFill()">랜덤 배치</button>
-                    <button class="t-btn save" onclick="tSave()">💾 대진표 저장</button>
+                    <button class="t-btn save" onclick="tSave()">대진표 저장</button>
                 </div>
             </div>
 
             <!-- 참가 팀 풀 -->
-            <div class="t-pool-title">👥 참가 팀 목록 (드래그하여 대진표 슬롯에 넣으세요)</div>
+            <div class="t-pool-title">참가 팀 목록 (드래그하여 대진표 슬롯에 넣으세요)</div>
             <div class="t-pool" id="t-team-pool">
                 <span style="color:#64748b; font-size:12px;">로딩 중...</span>
             </div>
@@ -817,11 +817,11 @@
         const pageTitle = document.getElementById('page-title');
         if (pageNum === '1') {
             document.getElementById('btn-tab-p1')?.classList.add('active');
-            if (pageTitle) pageTitle.textContent = "📺 진행용 (1P) 실시간 레이아웃 배치기";
+            if (pageTitle) pageTitle.textContent = "진행용 (1P) 실시간 레이아웃 배치기";
             frame.src = "broadcast.html?page=1";
         } else if (pageNum === '3') {
             document.getElementById('btn-tab-p3')?.classList.add('active');
-            if (pageTitle) pageTitle.textContent = "🏆 대진용 (3P) 실시간 레이아웃 배치기";
+            if (pageTitle) pageTitle.textContent = "대진용 (3P) 실시간 레이아웃 배치기";
             frame.src = "broadcast.html?page=3";
             // 3P: 레이아웃 미리보기 + 대진표 관리 대시보드 함께 표시
             const bgSel = document.getElementById('bracket-bg-selector-group');
@@ -829,7 +829,7 @@
             document.getElementById('tournament-dashboard')?.classList.add('active');
         } else {
             document.getElementById('btn-tab-p2')?.classList.add('active');
-            if (pageTitle) pageTitle.textContent = "📺 개체용 (2P) 실시간 레이아웃 배치기";
+            if (pageTitle) pageTitle.textContent = "개체용 (2P) 실시간 레이아웃 배치기";
             frame.src = "broadcast.html?page=2"; // Default page2 layout
         }
 
@@ -1139,13 +1139,13 @@
                     bannerLabel.style.padding = '1px 4px';
                     bannerLabel.style.whiteSpace = 'nowrap';
                     bannerLabel.style.border = 'none';
-                    bannerLabel.textContent = '🖼️ 롤링 배너';
+                    bannerLabel.textContent = '롤링 배너';
                 } else {
                     bannerPreviewImg.style.display = 'none';
                     if (bannerBlurBg) bannerBlurBg.style.display = 'none';
                     bannerLabel.style.position = 'static';
                     bannerLabel.style.transform = 'none';
-                    bannerLabel.textContent = '🖼️ 롤링 배너 (이미지 없음)';
+                    bannerLabel.textContent = '롤링 배너 (이미지 없음)';
                 }
 
                 // 대진 제어 초기 설정값 바인딩 (PAGE3 전용)
@@ -1698,7 +1698,7 @@
                 indicator.style.display = 'inline';
                 setTimeout(() => { indicator.style.display = 'none'; }, 1200);
 
-                if (!isAuto) toast("💾 방송 배치 정보 및 가시성 설정이 성공적으로 저장되었습니다!");
+                if (!isAuto) toast("방송 배치 정보 및 노출 설정을 저장했습니다.");
 
                 // Reload iframe inside visual screen simulator to show real result
                 frame.contentWindow.location.reload();
@@ -1945,8 +1945,8 @@
                              ondrop="tDrop(event,'${mk}','left')"
                              onclick="tClickWinner('${mk}','left')">
                             <span class="t-slot-team">${lp}${tEsc(m.left||'대기중...')}</span>
-                            ${m.winner==='left'?'<span class="t-slot-crown">👑</span>':''}
-                            ${m.left?`<button class="t-slot-clear" onclick="event.stopPropagation();tClearSlot('${mk}','left')">✕</button>`:''}
+                            ${m.winner==='left'?'<span class="t-slot-crown">승</span>':''}
+                            ${m.left?`<button class="t-slot-clear" onclick="event.stopPropagation();tClearSlot('${mk}','left')">×</button>`:''}
                         </div>
                         <div class="t-slot ${m.winner==='right'?'winner-slot':''}"
                              ondragover="event.preventDefault();this.classList.add('dragover')"
@@ -1954,8 +1954,8 @@
                              ondrop="tDrop(event,'${mk}','right')"
                              onclick="tClickWinner('${mk}','right')">
                             <span class="t-slot-team">${rp}${tEsc(m.right||'대기중...')}</span>
-                            ${m.winner==='right'?'<span class="t-slot-crown">👑</span>':''}
-                            ${m.right?`<button class="t-slot-clear" onclick="event.stopPropagation();tClearSlot('${mk}','right')">✕</button>`:''}
+                            ${m.winner==='right'?'<span class="t-slot-crown">승</span>':''}
+                            ${m.right?`<button class="t-slot-clear" onclick="event.stopPropagation();tClearSlot('${mk}','right')">×</button>`:''}
                         </div>
                     `;
                     col.appendChild(node);
