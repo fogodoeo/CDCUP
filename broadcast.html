@@ -1219,6 +1219,141 @@
             letter-spacing: 0.02em;
             text-align: right;
         }
+
+        /* 실시간 대진: 현재 라운드 승패만 보여주는 단일 중계 보드 */
+        .live-round-board {
+            position: relative;
+            width: min(980px, 100%);
+            min-height: 116px;
+            overflow: hidden;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 9px;
+            background:
+                radial-gradient(circle at 100% 0%, rgba(37,99,235,0.2), transparent 38%),
+                linear-gradient(135deg, rgba(3,10,24,0.98), rgba(15,29,52,0.97));
+            box-shadow: 0 18px 45px rgba(2,6,23,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+            color: #fff;
+            font-family: 'Pretendard', sans-serif;
+            box-sizing: border-box;
+        }
+        .live-round-board::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto;
+            height: 4px;
+            background: linear-gradient(90deg, #d90429 0 22%, #f8fafc 22% 24%, #2563eb 24% 100%);
+        }
+        .live-round-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 32px;
+            padding: 5px 18px 2px;
+            border-bottom: 1px solid rgba(148,163,184,0.18);
+            color: #cbd5e1;
+            font-size: 11px;
+            font-weight: 850;
+            letter-spacing: 0.05em;
+        }
+        .live-round-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 7px;
+            border-radius: 3px;
+            background: #d90429;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 950;
+            letter-spacing: 0.1em;
+        }
+        .live-round-chip::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #fff;
+            animation: sports-live-pulse 1.3s ease-in-out infinite;
+        }
+        .live-round-number {
+            color: #93c5fd;
+            font-weight: 950;
+            letter-spacing: 0.12em;
+        }
+        .live-round-match {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto 44px auto minmax(0, 1fr);
+            align-items: center;
+            gap: 14px;
+            min-height: 80px;
+            padding: 8px 28px 10px;
+        }
+        .live-round-team { min-width: 0; }
+        .live-round-team--left { text-align: right; }
+        .live-round-team--right { text-align: left; }
+        .live-round-team-code {
+            display: block;
+            margin-bottom: 2px;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+        }
+        .live-round-team-name {
+            display: block;
+            overflow: hidden;
+            color: #f8fafc;
+            font-size: 23px;
+            font-weight: 900;
+            letter-spacing: -0.035em;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .live-round-result {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 58px;
+            height: 50px;
+            border: 1px solid rgba(148,163,184,0.28);
+            border-radius: 6px;
+            background: rgba(148,163,184,0.08);
+            color: #94a3b8;
+            font-size: 29px;
+            font-weight: 950;
+            line-height: 1;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+        }
+        .live-round-result.is-win {
+            border-color: rgba(96,165,250,0.85);
+            background: linear-gradient(145deg, #1d4ed8, #2563eb);
+            color: #fff;
+            box-shadow: 0 0 22px rgba(37,99,235,0.34), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
+        .live-round-result.is-loss {
+            border-color: rgba(100,116,139,0.25);
+            background: rgba(15,23,42,0.72);
+            color: #64748b;
+        }
+        .live-round-result.is-draw {
+            border-color: rgba(203,213,225,0.45);
+            background: rgba(203,213,225,0.12);
+            color: #e2e8f0;
+        }
+        .live-round-result.is-active {
+            border-color: rgba(239,35,60,0.72);
+            color: #fecdd3;
+            box-shadow: 0 0 18px rgba(239,35,60,0.24);
+            font-size: 16px;
+        }
+        .live-round-vs {
+            color: #475569;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-align: center;
+        }
         @keyframes sports-board-in {
             from { opacity: 0; transform: translateY(16px) scale(0.985); }
             to { opacity: 1; transform: translateY(0) scale(1); }
@@ -3269,8 +3404,6 @@
             let items = [];
             try { items = await getBattleItemsCached(); } catch(e){}
 
-            let leftTotal = 0, rightTotal = 0;
-            let leftRoundWins = 0, rightRoundWins = 0;
             const roundData = [];
 
             for (let r = 1; r <= rpm; r++) {
@@ -3288,17 +3421,11 @@
                 let roundWinner = '';
                 if (bothDone) {
                     roundWinner = lp > rp ? 'left' : (rp > lp ? 'right' : 'draw');
-                    leftTotal += lp;
-                    rightTotal += rp;
-                    if (roundWinner === 'left') leftRoundWins++;
-                    if (roundWinner === 'right') rightRoundWins++;
                 }
                 
                 const isCurrent = (r === step.round);
                 roundData.push({ round: r, lItem, rItem, lp, rp, lSold, rSold, bothDone, roundWinner, isCurrent, leftItemName, rightItemName });
             }
-
-            const isLastRoundDone = roundData[rpm-1]?.bothDone;
 
             // ═══ 대진 스텝 전환 감지 및 초기화 ═══
             if (window._lastStepIdx !== stepIdx) {
@@ -3455,10 +3582,6 @@
 
             // 현재 진행 중인 개체(status가 '진행', '진행중' 또는 'active'인 개체) 찾기
             const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
-            const nextIdx = stepIdx + 1;
-
-            // 대장전 특수 배경
-            const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,0.7) 40%);' : '';
 
             // 진행 중인 팀 판별
             let isLeftActive = false;
@@ -3468,16 +3591,6 @@
                 const activeLetter = activeName.charAt(0).toUpperCase();
                 isLeftActive = (activeLetter === step.leftTeam.toUpperCase());
                 isRightActive = (activeLetter === step.rightTeam.toUpperCase());
-            }
-
-            // 넥스트 매치 텍스트
-            let nextMatchText = '';
-            if (nextIdx < schedule.length && !isLastRoundDone) {
-                const ns = schedule[nextIdx];
-                const nsLabel = ns.isLastRound ? '대장전' : ns.round + '라운드';
-                nextMatchText = `${ns.group}조 ${nsLabel} (${ns.leftTeam}팀 vs ${ns.rightTeam}팀)`;
-            } else {
-                nextMatchText = '마지막 매치 진행 중';
             }
 
             // 쇼다운 카운트다운 오버레이 HTML
@@ -3505,24 +3618,22 @@
                 `;
             }
 
-            // 최종 매치 결과 배너 (가로바 하단에 깔끔하게 붙임)
-            let finalBanner = '';
-            if (isLastRoundDone) {
-                let winnerSide = 'draw';
-                if (leftRoundWins > rightRoundWins) winnerSide = 'left';
-                else if (rightRoundWins > leftRoundWins) winnerSide = 'right';
-                else if (leftTotal > rightTotal) winnerSide = 'left';
-                else if (rightTotal > leftTotal) winnerSide = 'right';
-                const winner = winnerSide === 'left' ? step.leftName : (winnerSide === 'right' ? step.rightName : '무승부');
-                const winLetter = winnerSide === 'left' ? step.leftTeam : step.rightTeam;
-                const winnerText = winnerSide === 'draw' ? '무승부' : `${winLetter}팀 ${esc(winner)} 승리`;
-                finalBanner = `
-                    <div style="margin-top:6px; display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(90deg,rgba(15,29,52,0.97),rgba(30,58,138,0.92)); border:1px solid rgba(96,165,250,0.65); border-radius:5px; padding:6px 14px; box-shadow:0 6px 18px rgba(2,6,23,0.32); box-sizing:border-box; color:#fff; font-size:12px; font-weight:800; width:fit-content; margin-left:auto; margin-right:auto; white-space:nowrap;">
-                        <span style="color:#93c5fd;font-weight:900;letter-spacing:0.08em;">FINAL</span>
-                        <span>${winnerText}</span>
-                        <span style="color:#94a3b8;font-size:11px;font-weight:600;">(스코어 ${leftRoundWins}:${rightRoundWins} | 총액 ${fmtCompact(leftTotal)} vs ${fmtCompact(rightTotal)})</span>
-                    </div>`;
-            }
+            const currentRoundData = roundData.find(data => data.round === step.round) || roundData[0] || null;
+            const currentRoundWinner = currentRoundData?.roundWinner || '';
+            const getRoundResult = side => {
+                if (currentRoundWinner === 'draw') return { text: '무', className: 'is-draw' };
+                if (currentRoundWinner) {
+                    return currentRoundWinner === side
+                        ? { text: '승', className: 'is-win' }
+                        : { text: '패', className: 'is-loss' };
+                }
+                const isActive = side === 'left' ? isLeftActive : isRightActive;
+                return isActive
+                    ? { text: '진행', className: 'is-active' }
+                    : { text: '대기', className: '' };
+            };
+            const leftRoundResult = getRoundResult('left');
+            const rightRoundResult = getRoundResult('right');
 
             // blink keyframe 주입용 style
             const animationStyle = `
@@ -3539,63 +3650,28 @@
 
             tree.innerHTML = `
                 ${animationStyle}
-                <div style="display:flex; flex-direction:column; width:100%; height:auto; box-sizing:border-box;">
-                    <div style="position:relative; display:flex; align-items:stretch; border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08); font-family:'Pretendard', sans-serif; color:#fff; overflow:hidden; height:74px; width:fit-content; max-width:100%; margin:0 auto; box-sizing:border-box;">
-                        
-                        <!-- 알림 토스트 배너 -->
-                        ${notificationOverlayHtml}
-                        
-                        <!-- 쇼다운 카운트다운 오버레이 -->
-                        ${showdownOverlayHtml}
-
-                        <!-- 1. 왼쪽 팀 영역 (팀명 + 스코어 아래로 적층) -->
-                        <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; padding:0 24px 0 20px; background:rgba(10,15,28,0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); min-width:165px; box-sizing:border-box;">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                ${isLeftActive ? '<span class="active-dot" style="width:7px; height:7px; background:#60a5fa; border-radius:50%; box-shadow:0 0 8px #60a5fa; display:inline-block;"></span>' : ''}
-                                <span style="font-size:22px; font-weight:900; color:${isLeftActive ? '#60a5fa' : '#cbd5e1'}; line-height:1.1;">${step.leftTeam}팀</span>
-                            </div>
-                            <div style="font-size:12px; color:#94a3b8; font-weight:700; margin-top:4px;">
-                                <span style="color:#60a5fa; font-weight:800;">${leftRoundWins}승</span> (${fmtCompact(leftTotal)})
-                            </div>
+                <section class="live-round-board">
+                    ${notificationOverlayHtml}
+                    ${showdownOverlayHtml}
+                    <header class="live-round-header">
+                        <span class="live-round-chip">LIVE</span>
+                        <strong>${(scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강')))} ${step.group}조</strong>
+                        <span class="live-round-number">${isChamp ? '대장전' : step.round + ' ROUND'}</span>
+                    </header>
+                    <div class="live-round-match">
+                        <div class="live-round-team live-round-team--left">
+                            <span class="live-round-team-code">${esc(step.leftTeam)} TEAM</span>
+                            <strong class="live-round-team-name">${esc(step.leftName || step.leftTeam + '팀')}</strong>
                         </div>
-
-                        <!-- 2. 중앙 매치 타이틀 & VS 영역 -->
-                        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding:0 18px; background:rgba(15,23,42,0.95); min-width:130px; box-sizing:border-box; border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06);">
-                            <span style="font-size:10px; font-weight:900; color:#fff; background:#d90429; padding:2px 6px; border-radius:3px; letter-spacing:0.04em; margin-bottom:4px; white-space:nowrap;">
-                                LIVE · ${(scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강')))} ${step.group}조 ${isChamp ? '대장전' : step.round + 'R'}
-                            </span>
-                            <span style="font-size:18px; font-weight:900; color:#475569; letter-spacing:0.05em; line-height:1;">VS</span>
+                        <span class="live-round-result ${leftRoundResult.className}">${leftRoundResult.text}</span>
+                        <span class="live-round-vs">VS</span>
+                        <span class="live-round-result ${rightRoundResult.className}">${rightRoundResult.text}</span>
+                        <div class="live-round-team live-round-team--right">
+                            <span class="live-round-team-code">${esc(step.rightTeam)} TEAM</span>
+                            <strong class="live-round-team-name">${esc(step.rightName || step.rightTeam + '팀')}</strong>
                         </div>
-
-                        <!-- 3. 오른쪽 팀 영역 (팀명 + 스코어 아래로 적층) -->
-                        <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-start; padding:0 20px 0 24px; background:rgba(10,15,28,0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); min-width:165px; box-sizing:border-box;">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <span style="font-size:22px; font-weight:900; color:${isRightActive ? '#f87171' : '#cbd5e1'}; line-height:1.1;">${step.rightTeam}팀</span>
-                                ${isRightActive ? '<span class="active-dot" style="width:7px; height:7px; background:#f87171; border-radius:50%; box-shadow:0 0 8px #f87171; display:inline-block;"></span>' : ''}
-                            </div>
-                            <div style="font-size:12px; color:#94a3b8; font-weight:700; margin-top:4px;">
-                                <span style="color:#f87171; font-weight:800;">${rightRoundWins}승</span> (${fmtCompact(rightTotal)})
-                            </div>
-                        </div>
-
-                        <!-- 4. 우측 밀착형 NEXT 매치 영역 -->
-                        <div style="display:flex; flex-direction:column; justify-content:center; padding:0 16px; background:rgba(20,28,46,0.96); border-left:1px solid rgba(255,255,255,0.06); max-width:145px; box-sizing:border-box;">
-                            <div style="display:flex; align-items:center; gap:4px; margin-bottom:3px;">
-                                <span style="background:#1d4ed8; color:#dbeafe; padding:1px 4px; border-radius:2px; font-size:9px; font-weight:900; letter-spacing:0.04em;">NEXT</span>
-                            </div>
-                            <div style="font-size:11px; font-weight:700; color:#64748b; line-height:1.2; word-break:keep-all;">
-                                ${nextMatchText}
-                            </div>
-                        </div>
-
-                        <!-- 우측 악센트 바 -->
-                        <div style="width:4px; flex-shrink:0; background:linear-gradient(180deg, #d90429, #2563eb);"></div>
-
                     </div>
-                    
-                    <!-- 최종 우승 배너 -->
-                    ${finalBanner}
-                </div>
+                </section>
             `;
         }
 
