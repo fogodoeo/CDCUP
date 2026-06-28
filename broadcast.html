@@ -2889,10 +2889,19 @@
             setInterval(refreshBattleOverlayState, 2000);
         }
 
-        function applyBracketPageMap(map, items = []) {
+        // 전역 개체 캐시 fallback 확보
+        window.latestItemsList = window.latestItemsList || [];
+
+        function applyBracketPageMap(map, items) {
             if (!map) return;
             window.latestConfigMap = map;
-            window.latestItemsList = items;
+            
+            // 유효한 items 배열이 들어올 때만 전역 캐시 갱신
+            if (Array.isArray(items) && items.length > 0) {
+                window.latestItemsList = items;
+            }
+            
+            const activeItems = window.latestItemsList || [];
             
             const fullShow = (map.bracket_full_show !== undefined ? String(map.bracket_full_show) : '1') === '1';
             const liveShow = (map.bracket_live_show !== undefined ? String(map.bracket_live_show) : '0') === '1';
@@ -3680,8 +3689,8 @@
                 const leftItems = {};
                 const rightItems = {};
                 for (let r = 1; r <= 4; r++) {
-                    leftItems[r] = findItemByCode(items, leftLetter + r);
-                    rightItems[r] = findItemByCode(items, rightLetter + r);
+                    leftItems[r] = findItemByCode(activeItems, leftLetter + r);
+                    rightItems[r] = findItemByCode(activeItems, rightLetter + r);
                 }
                 
                 // 5. 각 라운드별 점수 연산
