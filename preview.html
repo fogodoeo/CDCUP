@@ -14,7 +14,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>방송 화면 실시간 미리보기 및 배치기 - CDCUP</title>
-    <script src="supabase-bridge.js?v=20260629-tournament-items"></script>
+    <script src="supabase-bridge.js?v=20260629-quick-company-register"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     <link rel="stylesheet" href="common.css">
@@ -461,6 +461,42 @@
         .t-team-chip:active { cursor: grabbing; }
         .t-team-chip:hover { background: rgba(37, 99, 235, 0.2); border-color: #3b82f6; }
 
+        /* Quick company registration */
+        .t-pool-title { justify-content: space-between; flex-wrap: wrap; }
+        .t-pool-actions { display: flex; gap: 7px; margin-left: auto; }
+        .t-quick-register {
+            display: none; grid-template-columns: minmax(280px, 1fr) auto; gap: 14px;
+            padding: 16px; margin-bottom: 16px; border: 1px solid rgba(59,130,246,.32);
+            border-radius: 12px; background: linear-gradient(135deg, rgba(37,99,235,.09), rgba(15,23,42,.42));
+        }
+        .t-quick-register.open { display: grid; }
+        .t-quick-textarea {
+            width: 100%; min-height: 112px; resize: vertical; box-sizing: border-box;
+            border: 1px solid var(--border); border-radius: 9px; background: rgba(15,23,42,.7);
+            color: var(--text); padding: 11px 12px; font: inherit; font-size: 13px; line-height: 1.55;
+            outline: none;
+        }
+        .t-quick-textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,.12); }
+        .t-quick-textarea::placeholder { color: #64748b; }
+        .t-quick-side { min-width: 250px; display: flex; flex-direction: column; gap: 10px; }
+        .t-quick-field { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .t-quick-field label { font-size: 12px; font-weight: 800; color: var(--text2); }
+        .t-quick-count {
+            min-width: 94px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+            background: #0f172a; color: #fff; font-size: 12px; font-weight: 800;
+        }
+        .t-quick-check { justify-content: flex-start; cursor: pointer; color: var(--text2); font-size: 12px; font-weight: 700; }
+        .t-quick-check input { accent-color: #2563eb; }
+        .t-quick-summary {
+            padding: 9px 11px; border-radius: 8px; background: rgba(15,23,42,.55);
+            color: #93c5fd; font-size: 12px; font-weight: 850; line-height: 1.45;
+        }
+        .t-quick-submit { margin-top: auto; width: 100%; padding: 10px 14px; }
+        @media (max-width: 760px) {
+            .t-quick-register.open { grid-template-columns: 1fr; }
+            .t-quick-side { min-width: 0; }
+        }
+
         /* Tournament item assignment */
         .t-item-setup {
             background: var(--card-bg); border: 1px solid var(--border);
@@ -867,7 +903,31 @@
             </div>
 
             <!-- 참가 팀 풀 -->
-            <div class="t-pool-title">참가 팀 목록 (드래그하여 대진표 슬롯에 넣으세요)</div>
+            <div class="t-pool-title">
+                <span>참가 팀 목록 (드래그하여 대진표 슬롯에 넣으세요)</span>
+                <div class="t-pool-actions">
+                    <button class="t-btn" id="t-company-add-toggle" type="button" onclick="tToggleQuickRegister()">업체 추가</button>
+                    <button class="t-btn danger" id="t-delete-all-items" type="button" onclick="tDeleteAllTournamentItems()">개체 일괄삭제</button>
+                </div>
+            </div>
+            <section class="t-quick-register" id="t-quick-register">
+                <div>
+                    <textarea class="t-quick-textarea" id="t-quick-company-names" placeholder="업체명을 한 줄에 하나씩 입력하세요.&#10;미야게코&#10;아틀리에&#10;니코게코" oninput="tUpdateQuickRegisterSummary()"></textarea>
+                </div>
+                <div class="t-quick-side">
+                    <div class="t-quick-field">
+                        <label for="t-quick-item-count">업체당 개체 수</label>
+                        <select class="t-quick-count" id="t-quick-item-count" onchange="tUpdateQuickRegisterSummary()">
+                            <option value="1">1마리</option><option value="2">2마리</option><option value="3">3마리</option>
+                            <option value="4" selected>4마리</option><option value="5">5마리</option><option value="6">6마리</option>
+                            <option value="7">7마리</option><option value="8">8마리</option><option value="9">9마리</option><option value="10">10마리</option>
+                        </select>
+                    </div>
+                    <label class="t-quick-field t-quick-check"><input type="checkbox" id="t-quick-random" checked> 등록 후 자동 랜덤 배치</label>
+                    <div class="t-quick-summary" id="t-quick-summary">업체명을 입력해주세요.</div>
+                    <button class="t-btn save t-quick-submit" id="t-quick-submit" type="button" onclick="tQuickRegisterCompanies()" disabled>업체·개체 일괄 생성</button>
+                </div>
+            </section>
             <div class="t-pool" id="t-team-pool">
                 <span style="color:#64748b; font-size:12px;">로딩 중...</span>
             </div>
@@ -1992,6 +2052,7 @@
                 const pool = document.getElementById('t-team-pool');
                 if (teams.length === 0) {
                     pool.innerHTML = '<span style="color:#64748b; font-size:12px;">등록된 업체가 없습니다. 개체를 먼저 등록해주세요.</span>';
+                    tToggleQuickRegister(true);
                     tRenderItemSetup();
                     return;
                 }
@@ -2003,6 +2064,123 @@
                 tAllItems = [];
                 document.getElementById('t-team-pool').innerHTML = '<span style="color:#f87171; font-size:12px;">팀 목록 로딩 실패</span>';
                 tRenderItemSetup();
+            }
+        }
+
+        function tQuickCompanyNames() {
+            const raw = document.getElementById('t-quick-company-names')?.value || '';
+            const names = [];
+            const seen = new Set();
+            raw.split(/[\n,]+/).forEach(value => {
+                const name = value.trim();
+                const key = name.toLocaleLowerCase();
+                if (name && !seen.has(key)) { seen.add(key); names.push(name); }
+            });
+            return names;
+        }
+
+        function tToggleQuickRegister(forceOpen) {
+            const panel = document.getElementById('t-quick-register');
+            const btn = document.getElementById('t-company-add-toggle');
+            if (!panel || !btn) return;
+            const shouldOpen = forceOpen === true ? true : (forceOpen === false ? false : !panel.classList.contains('open'));
+            panel.classList.toggle('open', shouldOpen);
+            btn.textContent = shouldOpen ? '업체 추가 닫기' : '업체 추가';
+            btn.classList.toggle('active', shouldOpen);
+            btn.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            if (shouldOpen) document.getElementById('t-quick-company-names')?.focus();
+        }
+
+        function tUpdateQuickRegisterSummary() {
+            const names = tQuickCompanyNames();
+            const count = Math.max(1, Number(document.getElementById('t-quick-item-count')?.value) || 4);
+            const summary = document.getElementById('t-quick-summary');
+            const submit = document.getElementById('t-quick-submit');
+            if (!summary || !submit) return;
+            summary.textContent = names.length
+                ? `${names.length}개 업체 × ${count}마리 = 총 ${names.length * count}개체`
+                : '업체명을 입력해주세요.';
+            submit.disabled = names.length === 0;
+        }
+
+        async function tQuickRegisterCompanies() {
+            const names = tQuickCompanyNames();
+            const count = Math.max(1, Number(document.getElementById('t-quick-item-count')?.value) || 4);
+            if (!names.length) { toast('업체명을 입력해주세요.'); return; }
+
+            const existing = new Set(tAllItems.map(item => String(item.company || '').trim().toLocaleLowerCase()).filter(Boolean));
+            const duplicates = names.filter(name => existing.has(name.toLocaleLowerCase()));
+            if (duplicates.length) {
+                toast('이미 등록된 업체가 있습니다: ' + duplicates.join(', '));
+                return;
+            }
+            if (existing.size + names.length > 16) {
+                toast(`토너먼트 참가 업체는 최대 16곳입니다. 현재 ${existing.size}곳이 등록되어 있습니다.`);
+                return;
+            }
+            const total = names.length * count;
+            if (!confirm(`${names.length}개 업체에 업체당 ${count}마리, 총 ${total}개체를 생성합니다.\n\n업체: ${names.join(', ')}\n\n계속할까요?`)) return;
+
+            const button = document.getElementById('t-quick-submit');
+            button.disabled = true;
+            button.textContent = '일괄 생성 중...';
+            try {
+                const items = [];
+                names.forEach(company => {
+                    for (let i = 1; i <= count; i++) {
+                        items.push({
+                            company,
+                            name: `${company} ${i}`,
+                            startPrice: '', note: '', announce: '',
+                            photoItem: '', photoSire: '', photoDam: '', photoSibling: '',
+                            checklist: '', sireId: '', damId: ''
+                        });
+                    }
+                });
+                const result = await registerBatch(items);
+                if (!result || result.success === false) throw new Error(result?.error || '일괄 등록 실패');
+                document.getElementById('t-quick-company-names').value = '';
+                tUpdateQuickRegisterSummary();
+                await tLoadTeams();
+
+                if (document.getElementById('t-quick-random')?.checked) {
+                    const teamCount = new Set(tAllItems.map(item => String(item.company || '').trim()).filter(Boolean)).size;
+                    const bestScale = teamCount <= 4 ? 4 : (teamCount <= 8 ? 8 : 16);
+                    tChangeScale(bestScale);
+                    await tRandomFill();
+                }
+                tToggleQuickRegister(false);
+                toast(`${names.length}개 업체 · ${total}개체 등록 완료`);
+            } catch (err) {
+                toast('업체 일괄 등록 실패: ' + err.message);
+            } finally {
+                button.textContent = '업체·개체 일괄 생성';
+                tUpdateQuickRegisterSummary();
+            }
+        }
+
+        async function tDeleteAllTournamentItems() {
+            if (!tAllItems.length) { toast('삭제할 등록 개체가 없습니다.'); tToggleQuickRegister(true); return; }
+            if (!confirm(`등록된 개체 ${tAllItems.length}건을 모두 삭제합니다.\n\n대진표 배치는 유지되며 개체 데이터만 삭제됩니다. 이 작업은 되돌릴 수 없습니다.\n\n계속할까요?`)) return;
+            const pw = prompt('관리자 비밀번호를 입력하세요.');
+            if (pw === null) return;
+
+            const button = document.getElementById('t-delete-all-items');
+            button.disabled = true;
+            button.textContent = '삭제 중...';
+            try {
+                const result = await deleteAll(pw);
+                if (!result || result.success === false) throw new Error(result?.error || '일괄 삭제 실패');
+                tAllItems = [];
+                tItemSelections = {};
+                await tLoadTeams();
+                tToggleQuickRegister(true);
+                toast('등록 개체 전체 삭제 완료');
+            } catch (err) {
+                toast('개체 일괄삭제 실패: ' + err.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = '개체 일괄삭제';
             }
         }
 
