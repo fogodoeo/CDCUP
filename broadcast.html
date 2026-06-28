@@ -3778,9 +3778,6 @@
                 const map = await getConfigMap();
                 if (!map) return;
                 window.latestConfigMap = map;
-
-                // Sync bracket overlay visibility & positioning on all pages
-                applyBracketPageMap(map);
                 
                 const active = map.active_tournament || 'none';
                 if (active === 'none') {
@@ -3822,6 +3819,9 @@
                 // 3. 전체 개체 목록 가져오기
                 const items = await getBattleItemsCached();
                 if (!items || items.length === 0) return;
+
+                // Sync bracket overlay visibility & positioning on all pages (items 포함)
+                applyBracketPageMap(map, items);
                 
                 // 현재 진행 중인 개체(status가 '진행', '진행중' 또는 'active'인 개체) 찾기
                 const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
@@ -3895,8 +3895,8 @@
                 const leftItems = {};
                 const rightItems = {};
                 for (let r = 1; r <= 4; r++) {
-                    leftItems[r] = findItemByCode(activeItems, leftLetter + r);
-                    rightItems[r] = findItemByCode(activeItems, rightLetter + r);
+                    leftItems[r] = findItemByCode(items, leftLetter + r);
+                    rightItems[r] = findItemByCode(items, rightLetter + r);
                 }
                 
                 // 5. 각 라운드별 점수 연산
