@@ -2949,7 +2949,7 @@
             // 대진 결과/실시간 대진은 3P 송출 화면에서만 노출한다.
             const masterShow = (bShow === '1') && isBracketPage;
             if (containerEl) {
-                containerEl.style.setProperty('--bracket-fs', bFontSize + 'px');
+                containerEl.style.setProperty('--bracket-fs', fullFontSize + 'px');
                 if (masterShow) {
                     containerEl.classList.add('visible');
                 } else {
@@ -3138,12 +3138,11 @@
 
                 const isComplete = completedRounds === roundsPerMatch;
                 let calculatedWinner = '';
-                if (isComplete) {
-                    if (ls > rs) calculatedWinner = 'left';
-                    else if (rs > ls) calculatedWinner = 'right';
-                    else if (leftTotal > rightTotal) calculatedWinner = 'left';
+                if (completedRounds > 0) {
+                    // 합산 낙찰 금액이 최종 승패 기준
+                    if (leftTotal > rightTotal) calculatedWinner = 'left';
                     else if (rightTotal > leftTotal) calculatedWinner = 'right';
-                    else calculatedWinner = 'draw';
+                    else if (isComplete) calculatedWinner = 'draw';
                 }
                 const displayWinner = calculatedWinner || match.winner || '';
                 const hasScore = completedRounds > 0;
