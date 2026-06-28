@@ -597,9 +597,9 @@
                     <span class="caret">▼</span>
                 </button>
                 <div class="cdcup-nav__dropdown-menu">
-                    <a href="broadcast.html?page=1&amp;v=20260628-sports-board" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
-                    <a href="broadcast.html?page=2&amp;v=20260628-sports-board" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
-                    <a href="broadcast.html?page=3&amp;v=20260628-sports-board" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
+                    <a href="broadcast.html?page=1&amp;v=20260628-broadcast-skin" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
+                    <a href="broadcast.html?page=2&amp;v=20260628-broadcast-skin" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
+                    <a href="broadcast.html?page=3&amp;v=20260628-broadcast-skin" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
                 </div>
             </div>
         </div>
@@ -629,7 +629,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260628-sports-board"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260628-broadcast-skin"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -690,37 +690,37 @@
             <div class="control-row" style="border-bottom: 1px solid var(--border); padding-bottom: 12px;">
                 <div class="toggle-switch-group">
                     <div class="switch-container">
-                        <span>자막 노출</span>
+                        <span>자막</span>
                         <input type="checkbox" id="toggle-ticker-show" class="switch-input" checked onchange="toggleShowState('ticker')">
                     </div>
                     <div class="switch-container">
-                        <span>배너 노출</span>
+                        <span>배너</span>
                         <input type="checkbox" id="toggle-banner-show" class="switch-input" checked onchange="toggleShowState('banner')">
                     </div>
                     <div class="switch-container" id="toggle-nametag1-group" style="display:none;">
-                        <span>네임택1 노출</span>
+                        <span>네임택 1</span>
                         <input type="checkbox" id="toggle-nametag1-show" class="switch-input" checked onchange="toggleShowState('nametag1')">
                     </div>
                     <div class="switch-container" id="toggle-nametag2-group" style="display:none;">
-                        <span>네임택2 노출</span>
+                        <span>네임택 2</span>
                         <input type="checkbox" id="toggle-nametag2-show" class="switch-input" checked onchange="toggleShowState('nametag2')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-full-show-group" style="display:none;" onclick="focusBracketLayer('bracket_full')" title="클릭하면 전체대진 배치 박스가 선택됩니다">
-                        <span>전체 결과 노출</span>
+                        <span>전체 결과</span>
                         <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-bracket-full-show" class="switch-input" checked onchange="toggleShowState('bracket_full')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-live-show-group" style="display:none;" onclick="focusBracketLayer('bracket_live')" title="클릭하면 실시간대진 배치 박스가 선택됩니다">
-                        <span>실시간 대진 노출</span>
+                        <span>실시간 대진</span>
                         <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-bracket-live-show" class="switch-input" onchange="toggleShowState('bracket_live')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-title-show-group" style="display:none;">
-                        <span>타이틀 노출</span>
+                        <span>타이틀</span>
                         <input type="checkbox" id="toggle-bracket-title-show" class="switch-input" checked onchange="toggleShowState('bracket_title')">
                     </div>
                     <div class="switch-container" id="toggle-battle-ann-show-group" style="display:none;">
-                        <span>경기 안내 노출</span>
+                        <span>경기 안내</span>
                         <input type="checkbox" id="toggle-battle-ann-show" class="switch-input" checked onchange="toggleShowState('battle_ann')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-scale-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
@@ -811,7 +811,7 @@
         // URL Parameter Parsing (page=1, page=2 or page=3)
         const params = new URLSearchParams(window.location.search);
         const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260628-sports-board';
+        const broadcastAssetVersion = '20260628-broadcast-skin';
 
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
@@ -1588,7 +1588,15 @@
                 try {
                     await updateConfigs({ [configKey]: requestedShow });
                     if (elements[key].show === requestedShow) {
-                        frame.contentWindow.location.reload();
+                        if (pageNum === '3' && (key === 'bracket_full' || key === 'bracket_live')) {
+                            frame.contentWindow.postMessage({
+                                type: 'bracketVisibility',
+                                key,
+                                show: requestedShow
+                            }, '*');
+                        } else {
+                            frame.contentWindow.postMessage({ type: 'forceRefresh' }, '*');
+                        }
                     }
                     toast(`${key === 'bracket_full' ? '전체결과' : key === 'bracket_live' ? '실시간대진' : '노출 설정'} ${requestedShow === '1' ? 'ON' : 'OFF'} 저장 완료`);
                 } catch (err) {
