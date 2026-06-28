@@ -1359,33 +1359,71 @@
             grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
             align-items: center;
             gap: 28px;
-            min-height: 80px;
-            padding: 8px 48px 11px;
+            min-height: 112px;
+            padding: 10px 48px 13px;
         }
         .blind-live-team {
-            color: #cbd5e1;
-            font-size: 28px;
-            font-weight: 900;
+            position: relative;
+            overflow: hidden;
+            padding: 15px 18px 17px;
+            border: 1px solid transparent;
+            border-radius: 13px;
+            color: #f8fafc;
+            font-size: 44px;
+            font-weight: 950;
             letter-spacing: -0.025em;
-            transition: all 0.3s ease;
+            line-height: 1;
+            opacity: 0.84;
+            transition: color 0.28s ease, opacity 0.28s ease, background 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
         }
         .blind-live-team.is-active {
-            color: #fff;
-            text-shadow: 0 0 20px rgba(59,130,246,0.6), 0 0 40px rgba(59,130,246,0.3);
-            animation: team-pulse 1.5s ease-in-out infinite;
+            border-color: rgba(96,165,250,0.34);
+            background: linear-gradient(180deg, rgba(37,99,235,0.13), rgba(37,99,235,0.045));
+            color: #60a5fa;
+            opacity: 1;
+            box-shadow: inset 0 1px 0 rgba(147,197,253,0.12), 0 10px 24px rgba(3,10,24,0.18);
+            text-shadow: 0 0 22px rgba(59,130,246,0.34);
         }
-        @keyframes team-pulse {
-            0%, 100% { text-shadow: 0 0 20px rgba(59,130,246,0.6), 0 0 40px rgba(59,130,246,0.3); }
-            50% { text-shadow: 0 0 30px rgba(59,130,246,0.9), 0 0 60px rgba(59,130,246,0.5); }
+        .blind-live-team::after {
+            content: '';
+            position: absolute;
+            bottom: 7px;
+            width: 62%;
+            height: 3px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #2563eb, #60a5fa);
+            box-shadow: 0 0 15px rgba(59,130,246,0.72);
+            opacity: 0;
+            transform: scaleX(0.35);
+            transition: opacity 0.28s ease, transform 0.28s ease;
         }
         .blind-live-team:first-child { text-align: right; }
+        .blind-live-team:first-child::after { right: 18px; transform-origin: right; }
         .blind-live-team:last-child { text-align: left; }
-        .blind-live-team span {
+        .blind-live-team:last-child::after { left: 18px; transform-origin: left; }
+        .blind-live-team.is-active::after {
+            opacity: 1;
+            transform: scaleX(1);
+            animation: active-team-line 1.7s ease-in-out infinite;
+        }
+        @keyframes active-team-line {
+            0%, 100% { opacity: 0.72; filter: brightness(0.95); }
+            50% { opacity: 1; filter: brightness(1.28); }
+        }
+        .blind-live-team strong { display: block; font: inherit; }
+        .blind-live-status {
             display: block;
-            margin-bottom: 3px;
-            color: #64748b;
+            min-height: 14px;
+            margin-bottom: 7px;
+            color: #93c5fd;
             font-size: 11px;
-            letter-spacing: 0.15em;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            line-height: 1;
+            opacity: 0;
+        }
+        .blind-live-team.is-active .blind-live-status {
+            opacity: 1;
         }
         .blind-live-score {
             display: flex;
@@ -3731,7 +3769,9 @@
             // 렌더링 (A팀/B팀 + 진행중 팀 하이라이트)
             const leftActive = activeItem && activeSide === 'left' ? ' is-active' : '';
             const rightActive = activeItem && activeSide === 'right' ? ' is-active' : '';
-            tree.innerHTML = '<section class="live-round-board" style="position:relative;">' + motionHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><span>HOME</span>A팀</div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><span>AWAY</span>B팀</div></div></section>';
+            const leftStatus = activeItem && activeSide === 'left' ? '경매 진행' : '';
+            const rightStatus = activeItem && activeSide === 'right' ? '경매 진행' : '';
+            tree.innerHTML = '<section class="live-round-board" style="position:relative;">' + motionHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><span class="blind-live-status">' + leftStatus + '</span><strong>A팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><span class="blind-live-status">' + rightStatus + '</span><strong>B팀</strong></div></div></section>';
         }
 
         let lastActiveItemName = '';
