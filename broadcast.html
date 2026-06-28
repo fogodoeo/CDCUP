@@ -2889,9 +2889,10 @@
             setInterval(refreshBattleOverlayState, 2000);
         }
 
-        function applyBracketPageMap(map) {
+        function applyBracketPageMap(map, items = []) {
             if (!map) return;
             window.latestConfigMap = map;
+            window.latestItemsList = items;
             
             const fullShow = (map.bracket_full_show !== undefined ? String(map.bracket_full_show) : '1') === '1';
             const liveShow = (map.bracket_live_show !== undefined ? String(map.bracket_live_show) : '0') === '1';
@@ -2906,12 +2907,13 @@
             const fullLeft = map.bracket_full_left || map.bracket_left || '0px';
             const fullWidth = map.bracket_full_width || map.bracket_width || '100%';
             const fullHeight = map.bracket_full_height || map.bracket_height || 'calc(100% - 120px)';
-            const bFontSize = map.bracket_font_size || '14';
+            const fullFontSize = map.bracket_full_font_size || map.bracket_font_size || '14';
 
             const liveTop = map.bracket_live_top || '0px';
             const liveLeft = map.bracket_live_left || '0px';
             const liveWidth = map.bracket_live_width || '100%';
             const liveHeight = map.bracket_live_height || '100%';
+            const liveFontSize = map.bracket_live_font_size || '14';
 
             if (treeFull) {
                 treeFull.style.position = 'absolute';
@@ -2920,6 +2922,7 @@
                 treeFull.style.width = fullWidth;
                 treeFull.style.height = fullHeight;
                 treeFull.style.display = 'flex';
+                treeFull.style.setProperty('--bracket-fs', fullFontSize + 'px');
             }
             if (treeLive) {
                 treeLive.style.position = 'absolute';
@@ -2928,6 +2931,7 @@
                 treeLive.style.width = liveWidth;
                 treeLive.style.height = liveHeight;
                 treeLive.style.display = 'flex';
+                treeLive.style.setProperty('--bracket-fs', liveFontSize + 'px');
             }
 
             // Apply font-size via CSS variable on the container
@@ -2999,8 +3003,8 @@
 
         async function refreshBracketPage() {
             try {
-                const map = await getConfigMap();
-                applyBracketPageMap(map);
+                const [map, items] = await Promise.all([getConfigMap(), getItems()]);
+                applyBracketPageMap(map, items);
             } catch (err) {
                 console.error('refreshBracketPage error', err);
             }

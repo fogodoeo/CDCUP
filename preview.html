@@ -731,6 +731,16 @@
                             <option value="4">4강</option>
                         </select>
                     </div>
+                    <div class="switch-container" id="toggle-bracket-full-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">전체결과 폰트:</span>
+                        <input type="number" id="bracket-full-font-input" onchange="updateBracketFontSize('bracket_full', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="8" max="60" value="14">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
+                    </div>
+                    <div class="switch-container" id="toggle-bracket-live-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">실시간 폰트:</span>
+                        <input type="number" id="bracket-live-font-input" onchange="updateBracketFontSize('bracket_live', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="8" max="60" value="14">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
+                    </div>
                     <div class="switch-container" id="toggle-bracket-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">송출 모드:</span>
                         <select id="bracket-active-select" onchange="changeActiveTournament(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
@@ -857,6 +867,8 @@
             document.getElementById('toggle-battle-ann-show-group').style.display = 'none';
             document.getElementById('toggle-bracket-scale-group').style.display = '';
             document.getElementById('toggle-bracket-mode-group').style.display = '';
+            document.getElementById('toggle-bracket-full-font-group').style.display = '';
+            document.getElementById('toggle-bracket-live-font-group').style.display = '';
             document.getElementById('bracket-coords').style.display = '';
             document.getElementById('bracket-live-coords').style.display = '';
             document.getElementById('bracket-title-coords').style.display = 'none'; // Hidden per user request
@@ -913,7 +925,7 @@
             elements.bracket_live = {
                 el: document.getElementById('draggable-bracket-live'),
                 top: "0px", left: "0px", right: "auto", bottom: "auto",
-                show: "0", width: "100%", height: "100%"
+                show: "0", width: "100%", height: "100%", fontSize: "14"
             };
             elements.bracket_title = {
                 el: document.getElementById('draggable-bracket-title'),
@@ -949,6 +961,15 @@
             t.textContent = msg;
             t.classList.add('show');
             setTimeout(() => { t.classList.remove('show'); }, 2000);
+        }
+
+        function updateBracketFontSize(key, val) {
+            const size = parseInt(val, 10) || 14;
+            if (elements[key]) {
+                elements[key].fontSize = String(size);
+                applyVisualState(key);
+                saveCoordinates(false);
+            }
         }
 
         function convertToPercent(val) {
@@ -1028,7 +1049,10 @@
                     elements.bracket_full.show = cfg.bracket_full_show !== undefined ? String(cfg.bracket_full_show) : '1';
                     elements.bracket_full.width = cfg.bracket_full_width || cfg.bracket_width || '100%';
                     elements.bracket_full.height = cfg.bracket_full_height || cfg.bracket_height || 'calc(100% - 120px)';
-                    elements.bracket_full.fontSize = cfg.bracket_font_size || '14';
+                    elements.bracket_full.fontSize = cfg.bracket_full_font_size || cfg.bracket_font_size || '14';
+                    
+                    const fullFontInput = document.getElementById('bracket-full-font-input');
+                    if (fullFontInput) fullFontInput.value = elements.bracket_full.fontSize;
                 }
                 if (elements.bracket_live) {
                     elements.bracket_live.top = cfg.bracket_live_top || '0px';
@@ -1038,6 +1062,10 @@
                     elements.bracket_live.show = cfg.bracket_live_show !== undefined ? String(cfg.bracket_live_show) : '0';
                     elements.bracket_live.width = cfg.bracket_live_width || '100%';
                     elements.bracket_live.height = cfg.bracket_live_height || '100%';
+                    elements.bracket_live.fontSize = cfg.bracket_live_font_size || '14';
+                    
+                    const liveFontInput = document.getElementById('bracket-live-font-input');
+                    if (liveFontInput) liveFontInput.value = elements.bracket_live.fontSize;
                 }
                 if (elements.bracket_title) {
                     elements.bracket_title.top = cfg.bracket_title_top || '40px';
@@ -1638,6 +1666,7 @@
                     configMap['bracket_full_width'] = elements.bracket_full.width;
                     configMap['bracket_full_height'] = elements.bracket_full.height;
                     configMap['bracket_full_show'] = elements.bracket_full.show;
+                    configMap['bracket_full_font_size'] = elements.bracket_full.fontSize || '14';
                     configMap['bracket_font_size'] = elements.bracket_full.fontSize || '14';
                 }
                 if (elements.bracket_live) {
@@ -1648,6 +1677,7 @@
                     configMap['bracket_live_width'] = elements.bracket_live.width;
                     configMap['bracket_live_height'] = elements.bracket_live.height;
                     configMap['bracket_live_show'] = elements.bracket_live.show;
+                    configMap['bracket_live_font_size'] = elements.bracket_live.fontSize || '14';
                 }
                 if (elements.bracket_title) {
                     configMap['bracket_title_top'] = elements.bracket_title.top;
