@@ -3390,92 +3390,13 @@
                 const lItem = findItemByCode(items, leftItemName);
                 const rItem = findItemByCode(items, rightItemName);
                 const lSold = (lItem?.status === '완료' || lItem?.status === 'sold' || lItem?.status === '낙찰' || lItem?.status === '유찰');
-                const rSold = (rItem?.status === '완료' || rItem?.status === 'sold' || rItem?.status === '낙찰' || rItem?.status === '유찰');
-                const bothDone = lSold && rSold;
-
-                if (bothDone) {
-                    const showdownKey = `${scale}_${step.leftTeam}_${step.rightTeam}_${r}`;
-                    if (!window._playedShowdowns.has(showdownKey)) {
-                        window._playedShowdowns.add(showdownKey);
-                        
-                        window._activeShowdown = {
-                            key: showdownKey,
-                            round: r,
-                            countdown: 4
-                        };
-                        
-                        if (!window._showdownTimer) {
-                            window._showdownTimer = setInterval(() => {
-                                if (window._activeShowdown) {
-                                    window._activeShowdown.countdown--;
-                                    if (window._activeShowdown.countdown <= 0) {
-                                        window._activeShowdown = null;
-                                        clearInterval(window._showdownTimer);
-                                        window._showdownTimer = null;
-                                    }
-                                    applyBracketPageMap(window.latestConfigMap);
-                                }
-                            }, 1000);
-                        }
-                    }
-                }
-            }
-
-            // ═══ 자동 진행: 순서 상관없이 첫 번째 미완료 스텝으로 점프 ═══
-            if (!window._autoAdvancing && stepIdx < schedule.length - 1) {
-                let targetStep = stepIdx;
-                for (let s = stepIdx; s < schedule.length; s++) {
-                    const st = schedule[s];
-                    const lName = st.leftTeam + st.round;
-                    const rName = st.rightTeam + st.round;
-                    const li = findItemByCode(items, lName);
-                    const ri = findItemByCode(items, rName);
-                    const ld = (li?.status === '완료' || li?.status === 'sold' || li?.status === '낙찰' || li?.status === '유찰');
-                    const rd2 = (ri?.status === '완료' || ri?.status === 'sold' || ri?.status === '낙찰' || ri?.status === '유찰');
-                    if (ld && rd2) {
-                        targetStep = s + 1;
-                    } else {
-                        break;
-                    }
-                }
-                if (targetStep !== stepIdx && targetStep <= schedule.length - 1) {
-                    window._autoAdvancing = true;
-                    try {
-                        await updateConfigs({ battle_step: String(targetStep) });
-                        console.log('Auto-jumped to step', targetStep, 'from', stepIdx);
-                    } catch(e) { console.error('Auto-advance failed:', e); }
-                    setTimeout(() => { window._autoAdvancing = false; }, 3000);
-                }
-            }
-            const matchTitle = step.group + '조 ' + (isChamp ? '대장전' : step.round + '라운드');
-            
-            if (titleEl) {
-                titleEl.textContent = (scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강'))) + ' ' + matchTitle;
-            }
-
-            // 현재 진행 중인 개체(status가 '진행', '진행중' 또는 'active'인 개체) 찾기
-            const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
-            const nextIdx = stepIdx + 1;
-
-            // 대장전 특수 배경
-            const champGlow = isChamp ? 'background:linear-gradient(180deg,rgba(245,158,11,0.06) 0%,rgba(10,15,29,0.7) 40%);' : '';
-
-            // 진행 중인 팀 판별
-            let isLeftActive = false;
-            let isRightActive = false;
-            if (activeItem) {
-                const activeName = getCleanCode(activeItem) || (activeItem.name || '').trim().toUpperCase();
-                const activeLetter = activeName.charAt(0).toUpperCase();
-                isLeftActive = (activeLetter === step.leftTeam.toUpperCase());
-                isRightActive = (activeLetter === step.rightTeam.toUpperCase());
-            }
-
-            // 넥스트 매치 텍스트
+                
+                // 넥스트 매치 텍스트
             let nextMatchText = '';
             if (nextIdx < schedule.length && !isLastRoundDone) {
                 const ns = schedule[nextIdx];
                 const nsLabel = ns.isLastRound ? '대장전' : ns.round + '라운드';
-                nextMatchText = `${ns.group}조 ${nsLabel} (${ns.leftTeam}팀 vs ${ns.rightTeam}팀)`;
+                nextMatchText = `${ns.group}조 ${nsLabel} (${ns.leftTeam} vs ${ns.rightTeam})`;
             } else {
                 nextMatchText = '마지막 매치 진행 중';
             }
@@ -3485,7 +3406,7 @@
             if (window._activeShowdown) {
                 const countText = window._activeShowdown.countdown > 0 ? window._activeShowdown.countdown : 'OPEN!';
                 showdownOverlayHtml = `
-                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(9,15,29,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:6px;display:flex;align-items:center;justify-content:center;z-index:10;gap:8px;">
+                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(9,15,29,0.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:10px;display:flex;align-items:center;justify-content:center;z-index:10;gap:8px;">
                         <span style="font-size:11px;font-weight:900;color:#3b82f6;letter-spacing:0.1em;text-transform:uppercase;">ROUND ${window._activeShowdown.round} FINISHED</span>
                         <span style="font-size:18px;font-weight:950;color:#fff;text-shadow:0 0 10px rgba(59,130,246,0.8);">${countText}</span>
                     </div>
@@ -3497,7 +3418,7 @@
             if (window._activeNotification) {
                 const isSold = window._activeNotification.status === '낙찰';
                 notificationOverlayHtml = `
-                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(9,15,29,0.95);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:6px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:20;box-sizing:border-box;">
+                    <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(9,15,29,0.95);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:10px;padding:0 14px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:20;box-sizing:border-box;">
                         <span style="font-size:12px;font-weight:900;color:${isSold ? '#10b981' : '#f59e0b'};">${isSold ? '낙찰 완료' : '유찰'}</span>
                         <span style="font-size:13px;font-weight:800;color:#fff;margin:0 10px;flex:1;text-align:center;">[${window._activeNotification.name}] ${isSold ? fmtCompact(window._activeNotification.price) : '유찰'}</span>
                         <span style="font-size:11px;font-weight:700;color:#cbd5e1;">${isSold ? (window._activeNotification.winner || '무명') : '경매 종료'}</span>
@@ -3524,10 +3445,6 @@
                     </div>`;
             }
 
-            // 선공 정보
-            const headerLeft = step.firstTeam === 'left' ? '<span style="color:#93c5fd;font-weight:900;font-size:11px;background:rgba(37,99,235,0.18);padding:1px 5px;border-radius:3px;white-space:nowrap;">선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;white-space:nowrap;">후공</span>';
-            const headerRight = step.firstTeam === 'right' ? '<span style="color:#93c5fd;font-weight:900;font-size:11px;background:rgba(37,99,235,0.18);padding:1px 5px;border-radius:3px;white-space:nowrap;">선공</span>' : '<span style="color:#94a3b8;font-size:11px;opacity:0.6;white-space:nowrap;">후공</span>';
-
             // blink keyframe 주입용 style
             const animationStyle = `
                 <style>
@@ -3544,17 +3461,28 @@
             tree.innerHTML = `
                 ${animationStyle}
                 <div style="display:flex; flex-direction:column; width:100%; height:auto; box-sizing:border-box;">
-                    <div style="position:relative; display:flex; align-items:stretch; border-radius:6px; box-shadow:0 4px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06); font-family:'Pretendard', sans-serif; color:#fff; overflow:hidden; font-size:15px; font-weight:700; height:50px; width:fit-content; max-width:100%; margin:0 auto; box-sizing:border-box;">
+                    <div style="position:relative; display:flex; align-items:stretch; border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08); font-family:'Pretendard', sans-serif; color:#fff; overflow:hidden; height:74px; width:fit-content; max-width:100%; margin:0 auto; box-sizing:border-box;">
                         
                         <!-- 알림 토스트 배너 -->
                         ${notificationOverlayHtml}
                         
                         <!-- 쇼다운 카운트다운 오버레이 -->
                         ${showdownOverlayHtml}
-
-                        <!-- 1. 왼쪽 영역: 매치 타이틀 & 팀 정보 -->
-                        <div style="display:flex; align-items:center; padding:0 18px 0 14px; background:rgba(10,15,28,0.88); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); white-space:nowrap; gap:12px;">
-                            <span style="font-size:11px; font-weight:900; color:#fff; background:#d90429; padding:3px 7px; border-radius:3px; letter-spacing:0.05em; white-space:nowrap;">
+ 
+                        <!-- 1. 왼쪽 팀 영역 (팀명 + 스코어 아래로 적층) -->
+                        <div style="display:flex; flex-direction:column; justify-content:center; align-items:flex-end; padding:0 24px 0 20px; background:rgba(10,15,28,0.92); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); min-width:165px; box-sizing:border-box;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                ${isLeftActive ? '<span class="active-dot" style="width:7px; height:7px; background:#60a5fa; border-radius:50%; box-shadow:0 0 8px #60a5fa; display:inline-block;"></span>' : ''}
+                                <span style="font-size:22px; font-weight:900; color:${isLeftActive ? '#60a5fa' : '#cbd5e1'}; line-height:1.1;">${step.leftTeam}팀</span>
+                            </div>
+                            <div style="font-size:12px; color:#94a3b8; font-weight:700; margin-top:4px;">
+                                <span style="color:#60a5fa; font-weight:800;">${leftRoundWins}승</span> (${fmtCompact(leftTotal)})
+                            </div>
+                        </div>
+ 
+                        <!-- 2. 중앙 매치 타이틀 & VS 영역 -->
+                        <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding:0 18px; background:rgba(15,23,42,0.95); min-width:130px; box-sizing:border-box; border-left:1px solid rgba(255,255,255,0.06); border-right:1px solid rgba(255,255,255,0.06);">
+                            <span style="font-size:10px; font-weight:900; color:#fff; background:#d90429; padding:2px 6px; border-radius:3px; letter-spacing:0.04em; margin-bottom:4px; white-space:nowrap;">
                                 LIVE · ${(scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강')))} ${step.group}조 ${isChamp ? '대장전' : step.round + 'R'}
                             </span>
                             
