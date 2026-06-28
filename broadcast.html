@@ -845,6 +845,10 @@
             color: #10b981;
             box-shadow: 0 0 8px rgba(16, 185, 129, 0.2);
         }
+        .bracket-page-slot.loser-slot {
+            opacity: 0.45;
+            color: #64748b;
+        }
         .bracket-page-slot.winner-slot::after {
             content: '👑';
             position: absolute;
@@ -2568,7 +2572,7 @@
                 }
             }
 
-            // 전체대진/실시간대진 노출 설정을 page=3 송출 화면에서도 그대로 적용한다.
+            // 전체결과/실시간대진 노출 설정을 page=3 송출 화면에서도 그대로 적용한다.
             if (treeFull) {
                 if (masterShow && fullShow) {
                     treeFull.classList.add('visible');
@@ -2740,21 +2744,19 @@
                 const leftLose = match.winner === 'right';
                 const rightLose = match.winner === 'left';
                 
-                const winStyle = 'background:linear-gradient(90deg,rgba(16,185,129,0.18),rgba(16,185,129,0.04));border-color:#10b981;color:#10b981;';
-                const loseStyle = 'opacity:0.45;';
+                const leftSlotClass = 'bracket-page-slot' + (leftWin ? ' winner-slot' : (leftLose ? ' loser-slot' : ''));
+                const rightSlotClass = 'bracket-page-slot' + (rightWin ? ' winner-slot' : (rightLose ? ' loser-slot' : ''));
+                
+                // 활성 매칭 테두리 강조 스타일
                 const activeStyle = currentMatch === fullKey ? 'border-color:#3b82f6;background:rgba(59,130,246,0.08);' : '';
 
                 node.innerHTML = `
                     <div class="bracket-page-match-title">${titleText}${currentMatch === fullKey ? ' ⚡' : ''}</div>
-                    <div class="bracket-page-slot" style="${leftWin ? winStyle : ''}${leftLose ? loseStyle : ''}${activeStyle}">
+                    <div class="${leftSlotClass}" style="${activeStyle}">
                         <span class="bracket-page-team-text">${leftText}</span>
-                        ${leftWin ? '<span style="position:absolute;right:8px;font-size:1em;">✅</span>' : ''}
-                        ${leftLose ? '<span style="position:absolute;right:8px;font-size:0.85em;color:#ef4444;">패</span>' : ''}
                     </div>
-                    <div class="bracket-page-slot" style="${rightWin ? winStyle : ''}${rightLose ? loseStyle : ''}${activeStyle}">
+                    <div class="${rightSlotClass}" style="${activeStyle}">
                         <span class="bracket-page-team-text">${rightText}</span>
-                        ${rightWin ? '<span style="position:absolute;right:8px;font-size:1em;">✅</span>' : ''}
-                        ${rightLose ? '<span style="position:absolute;right:8px;font-size:0.85em;color:#ef4444;">패</span>' : ''}
                     </div>
                     ${hasScore ? `<div style="text-align:center;font-size:0.85em;font-weight:800;color:#64748b;margin-top:4px;letter-spacing:0.06em;">SCORE ${ls} : ${rs}</div>` : ''}
                 `;

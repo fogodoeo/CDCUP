@@ -661,7 +661,7 @@
 
                 <!-- 5. Draggable Full Bracket (PAGE3 only) -->
                 <div class="draggable-element draggable-bracket" id="draggable-bracket-full" data-type="bracket_full" style="display:none; z-index:10;">
-                    <div class="element-label">🏆 전체대진</div>
+                    <div class="element-label">🏆 전체결과</div>
                     <div class="resize-handle resize-handle-se" id="resize-bracket-full" title="크기 조절" style="border-color: #3b82f6;"></div>
                 </div>
 
@@ -706,7 +706,7 @@
                         <input type="checkbox" id="toggle-nametag2-show" class="switch-input" checked onchange="toggleShowState('nametag2')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-full-show-group" style="display:none;" onclick="focusBracketLayer('bracket_full')" title="클릭하면 전체대진 배치 박스가 선택됩니다">
-                        <span>🏆 전체대진 노출</span>
+                        <span>🏆 전체결과 노출</span>
                         <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-bracket-full-show" class="switch-input" checked onchange="toggleShowState('bracket_full')">
                     </div>
@@ -753,7 +753,7 @@
                     <span id="ticker-coords-group">자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong></span>
                     <span id="nametag1-coords" style="display:none;"> | 네임택1: <strong id="nametag1-val-top">0%</strong>, <strong id="nametag1-val-left">0%</strong></span>
                     <span id="nametag2-coords" style="display:none;"> | 네임택2: <strong id="nametag2-val-top">0%</strong>, <strong id="nametag2-val-left">0%</strong></span>
-                    <span id="bracket-coords" style="display:none;">전체대진: Top <strong id="bracket-val-top">0%</strong>, Left <strong id="bracket-val-left">0%</strong></span>
+                    <span id="bracket-coords" style="display:none;">전체결과: Top <strong id="bracket-val-top">0%</strong>, Left <strong id="bracket-val-left">0%</strong></span>
                     <span id="bracket-live-coords" style="display:none;"> | 실시간대진: Top <strong id="bracket-live-val-top">0%</strong>, Left <strong id="bracket-live-val-left">0%</strong></span>
                     <span id="bracket-title-coords" style="display:none;"> | 타이틀: <strong id="bracket-title-val-top">0%</strong>, <strong id="bracket-title-val-left">0%</strong></span>
                     <span id="battle-ann-coords" style="display:none;"> | 경기자막: <strong id="battle-ann-val-top">0%</strong>, <strong id="battle-ann-val-left">0%</strong></span>
@@ -1589,7 +1589,7 @@
                     if (elements[key].show === requestedShow) {
                         frame.contentWindow.location.reload();
                     }
-                    toast(`${key === 'bracket_full' ? '전체대진' : key === 'bracket_live' ? '실시간대진' : '노출 설정'} ${requestedShow === '1' ? 'ON' : 'OFF'} 저장 완료`);
+                    toast(`${key === 'bracket_full' ? '전체결과' : key === 'bracket_live' ? '실시간대진' : '노출 설정'} ${requestedShow === '1' ? 'ON' : 'OFF'} 저장 완료`);
                 } catch (err) {
                     if (elements[key].show === requestedShow) {
                         elements[key].show = previousShow;
@@ -2035,9 +2035,11 @@
         async function tSave() {
             try {
                 const payload = {};
-                payload['tournament_bracket_' + tScale] = JSON.stringify(tBrackets[tScale]);
+                [16, 8, 4].forEach(s => {
+                    payload['tournament_bracket_' + s] = JSON.stringify(tBrackets[s]);
+                });
                 await updateConfigs(payload);
-                toast(tScale + '강 대진표 저장 완료!');
+                toast('대진표 전체 데이터 저장 완료!');
             } catch (err) { toast('대진표 저장 실패: ' + err.message); }
         }
 
