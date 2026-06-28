@@ -1134,22 +1134,22 @@
         .sports-match-card.is-current .sports-match-state { color: #dc2626; }
         .sports-scoreline {
             display: grid;
-            grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+            grid-template-columns: auto minmax(calc(var(--bracket-fs) * 3.5), 1fr) auto minmax(calc(var(--bracket-fs) * 3.5), 1fr) auto;
             align-items: center;
-            gap: calc(var(--bracket-fs) * 0.57);
-            min-height: calc(var(--bracket-fs) * 10.0);
-            padding: calc(var(--bracket-fs) * 0.57) calc(var(--bracket-fs) * 0.85);
+            gap: calc(var(--bracket-fs) * 0.32);
+            min-height: calc(var(--bracket-fs) * 5.6);
+            padding: calc(var(--bracket-fs) * 0.42) calc(var(--bracket-fs) * 0.65);
         }
         .sports-team-logo {
-            width: calc(var(--bracket-fs) * 8.2);
-            height: calc(var(--bracket-fs) * 8.2);
-            border-radius: calc(var(--bracket-fs) * 0.85);
+            width: calc(var(--bracket-fs) * 3.6);
+            height: calc(var(--bracket-fs) * 3.6);
+            border-radius: calc(var(--bracket-fs) * 0.55);
             object-fit: cover;
             background: rgba(0,0,0,0.04);
         }
         .sports-logo-placeholder {
-            width: calc(var(--bracket-fs) * 8.2);
-            height: calc(var(--bracket-fs) * 8.2);
+            width: calc(var(--bracket-fs) * 3.6);
+            height: calc(var(--bracket-fs) * 3.6);
         }
         .sports-team {
             min-width: 0;
@@ -1169,7 +1169,7 @@
             display: block;
             overflow: hidden;
             color: #334155;
-            font-size: calc(var(--bracket-fs) * 1.2);
+            font-size: calc(var(--bracket-fs) * 1.05);
             font-weight: 800;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1180,10 +1180,10 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: calc(var(--bracket-fs) * 0.5);
-            min-width: calc(var(--bracket-fs) * 6.3);
+            gap: calc(var(--bracket-fs) * 0.3);
+            min-width: calc(var(--bracket-fs) * 4.4);
             color: #0f172a;
-            font-size: calc(var(--bracket-fs) * 2.58);
+            font-size: calc(var(--bracket-fs) * 2.15);
             font-weight: 950;
             font-variant-numeric: tabular-nums;
             letter-spacing: -0.06em;
@@ -3240,8 +3240,8 @@
             if (!map) return;
             window.latestConfigMap = map;
             
-            // 유효한 items 배열이 들어올 때만 전역 캐시 갱신
-            if (Array.isArray(items) && items.length > 0) {
+            // 빈 목록도 반영해야 전체삭제 직후 이전 경기 결과가 남지 않는다.
+            if (Array.isArray(items)) {
                 window.latestItemsList = items;
             }
             
@@ -3386,7 +3386,6 @@
         async function renderBracketPageTree(scale, bracket, map) {
             const renderId = ++bracketFullRenderId;
             const tree = document.getElementById('bracket-page-tree-full');
-            const currentMatch = map.battle_current_match || '';
 
             // 전체 결과는 수동 winner 값이 아니라 실제 낙찰 완료 데이터로 계산한다.
             let items = [];
@@ -3395,6 +3394,8 @@
             }
             if (renderId !== bracketFullRenderId) return;
             tree.innerHTML = '';
+            const activeAuctionItem = items.find(item => ['진행', '진행중', 'active'].includes(item?.status));
+            const activeAuctionCode = getCleanCode(activeAuctionItem) || '';
 
             // 업체 로고 맵 구성 (업체명 -> 로고URL)
             const teamLogoMap = {};
@@ -3481,7 +3482,6 @@
 
             for (let i = 1; i <= rMatchCount; i++) {
                 const matchKey = round + '_' + i;
-                const fullKey = scale + '_' + matchKey;
                 const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
                 
                 const leftL = teamToLetter[match.left?.trim()] || String.fromCharCode(65 + (i - 1) * 2);
@@ -3512,20 +3512,23 @@
                 const hasScore = completedRounds > 0;
                 
                 const node = document.createElement('article');
-                const isCurrent = currentMatch === fullKey && !isComplete;
+                const isCurrent = !isComplete && Boolean(activeAuctionCode) && (
+                    activeAuctionCode.startsWith(leftL) || activeAuctionCode.startsWith(rightL)
+                );
                 node.className = 'sports-match-card' + (isCurrent ? ' is-current' : '');
                 node.style.setProperty('--match-index', i - 1);
                 const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
                 const leftWin = displayWinner === 'left';
                 const rightWin = displayWinner === 'right';
                 const stateText = isComplete ? 'FINAL' : (isCurrent ? 'LIVE' : `${completedRounds}/${roundsPerMatch} ROUND`);
-                const leftName = match.left ? `${leftL}팀` : '대기 중';
-                const rightName = match.right ? `${rightL}팀` : '대기 중';
-                const leftScore = hasScore ? ls : '-';
-                const rightScore = hasScore ? rs : '-';
+                // 전체결과는 실제 참가 업체를 공개한다. 실시간 대진만 A/B 블라인드를 유지한다.
+                const leftName = match.left || '대기 중';
+                const rightName = match.right || '대기 중';
+                const leftScore = hasScore ? ls : 0;
+                const rightScore = hasScore ? rs : 0;
 
-                const leftLogo = '';
-                const rightLogo = '';
+                const leftLogo = getTeamLogo(match.left);
+                const rightLogo = getTeamLogo(match.right);
 
                 node.innerHTML = `
                     <div class="sports-match-meta">

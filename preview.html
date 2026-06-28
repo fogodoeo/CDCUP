@@ -699,9 +699,9 @@
                     <span class="caret">▼</span>
                 </button>
                 <div class="cdcup-nav__dropdown-menu">
-                    <a href="broadcast.html?page=1&amp;v=20260628-blind-auction" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
-                    <a href="broadcast.html?page=2&amp;v=20260628-blind-auction" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
-                    <a href="broadcast.html?page=3&amp;v=20260628-blind-auction" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
+                    <a href="broadcast.html?page=1&amp;v=20260629-full-results-sync" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
+                    <a href="broadcast.html?page=2&amp;v=20260629-full-results-sync" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
+                    <a href="broadcast.html?page=3&amp;v=20260629-full-results-sync" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
                 </div>
             </div>
         </div>
@@ -731,7 +731,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260628-blind-auction"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260629-full-results-sync"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -963,7 +963,7 @@
         // URL Parameter Parsing (page=1, page=2 or page=3)
         const params = new URLSearchParams(window.location.search);
         const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260628-blind-auction';
+        const broadcastAssetVersion = '20260629-full-results-sync';
 
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
@@ -2148,6 +2148,8 @@
                     const bestScale = teamCount <= 4 ? 4 : (teamCount <= 8 ? 8 : 16);
                     tChangeScale(bestScale);
                     await tRandomFill();
+                    const saved = await tSave(true);
+                    if (!saved) throw new Error('랜덤 대진표 자동 저장 실패');
                 }
                 tToggleQuickRegister(false);
                 toast(`${names.length}개 업체 · ${total}개체 등록 완료`);
@@ -2492,15 +2494,19 @@
             } catch (err) { alert('팀 목록 조회 실패: ' + err.message); }
         }
 
-        async function tSave() {
+        async function tSave(silent = false) {
             try {
                 const payload = {};
                 [16, 8, 4].forEach(s => {
                     payload['tournament_bracket_' + s] = JSON.stringify(tBrackets[s]);
                 });
                 await updateConfigs(payload);
-                toast('대진표 전체 데이터 저장 완료!');
-            } catch (err) { toast('대진표 저장 실패: ' + err.message); }
+                if (!silent) toast('대진표 전체 데이터 저장 완료!');
+                return true;
+            } catch (err) {
+                toast('대진표 저장 실패: ' + err.message);
+                return false;
+            }
         }
 
 
