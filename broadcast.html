@@ -3160,6 +3160,12 @@
                 const leftScore = hasScore ? ls : '-';
                 const rightScore = hasScore ? rs : '-';
 
+                const fmtPrice = n => {
+                    if (!n) return '0';
+                    if (n >= 10000) return (n / 10000).toFixed(n % 10000 === 0 ? 0 : 1) + '만';
+                    return n.toLocaleString();
+                };
+
                 node.innerHTML = `
                     <div class="sports-match-meta">
                         <span>${titleText}</span>
@@ -3170,10 +3176,10 @@
                             <span class="sports-team-code">${esc(leftL)} TEAM</span>
                             <strong class="sports-team-name">${esc(leftName)}</strong>
                         </div>
-                        <div class="sports-score" aria-label="${leftScore} 대 ${rightScore}">
-                            <span class="${leftWin ? 'is-leading' : ''}">${leftScore}</span>
+                        <div class="sports-score" aria-label="합산 ${leftTotal} 대 ${rightTotal}">
+                            <span class="${leftWin ? 'is-leading' : ''}">${fmtPrice(leftTotal)}</span>
                             <i class="sports-score-separator">:</i>
-                            <span class="${rightWin ? 'is-leading' : ''}">${rightScore}</span>
+                            <span class="${rightWin ? 'is-leading' : ''}">${fmtPrice(rightTotal)}</span>
                         </div>
                         <div class="sports-team sports-team--right${rightWin ? ' is-leading' : ''}">
                             <span class="sports-team-code">${esc(rightL)} TEAM</span>
@@ -3181,9 +3187,9 @@
                         </div>
                     </div>
                     <div class="sports-match-footer">
-                        <span>낙찰 합계 ${leftTotal.toLocaleString()}</span>
-                        <span class="sports-match-draws">${draws ? `무승부 ${draws}R` : `${completedRounds}/${roundsPerMatch} 완료`}</span>
-                        <span>낙찰 합계 ${rightTotal.toLocaleString()}</span>
+                        <span>${leftScore}승</span>
+                        <span class="sports-match-draws">${draws ? `무 ${draws}` : `${completedRounds}/${roundsPerMatch}`}</span>
+                        <span>${rightScore}승</span>
                     </div>
                 `;
                 col.appendChild(node);
@@ -3191,7 +3197,7 @@
             board.appendChild(col);
             const note = document.createElement('div');
             note.className = 'sports-results-note';
-            note.textContent = '실시간 낙찰가 비교 · 라운드 승수 기준 · 동률 시 낙찰 합계 우선';
+            note.textContent = '낙찰 합산 금액 기준 승패 판정';
             board.appendChild(note);
             tree.appendChild(board);
         }
