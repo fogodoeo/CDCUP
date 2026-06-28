@@ -3849,7 +3849,7 @@
                 
                 const teamLetter = itemName.charAt(0); // 'A', 'B' 등
                 const roundNum = parseInt(itemName.substring(1), 10); // 1, 2, 3, 4
-                if (isNaN(roundNum) || roundNum < 1 || roundNum > 4) return;
+                if (isNaN(roundNum) || roundNum < 1 || roundNum > 5) return;
                 
                 // 현재 팀 알파벳에 매핑된 실제 업체명 찾기
                 const realCompany = letterToTeam[teamLetter];
