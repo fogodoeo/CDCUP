@@ -3519,13 +3519,13 @@
                 const leftWin = displayWinner === 'left';
                 const rightWin = displayWinner === 'right';
                 const stateText = isComplete ? 'FINAL' : (isCurrent ? 'LIVE' : `${completedRounds}/${roundsPerMatch} ROUND`);
-                const leftName = match.left || '대기 중';
-                const rightName = match.right || '대기 중';
+                const leftName = match.left ? `${leftL}팀` : '대기 중';
+                const rightName = match.right ? `${rightL}팀` : '대기 중';
                 const leftScore = hasScore ? ls : '-';
                 const rightScore = hasScore ? rs : '-';
 
-                const leftLogo = getTeamLogo(match.left);
-                const rightLogo = getTeamLogo(match.right);
+                const leftLogo = '';
+                const rightLogo = '';
 
                 node.innerHTML = `
                     <div class="sports-match-meta">
@@ -3961,12 +3961,27 @@
                 else if (scores[r] === 'right') rightScore++;
             });
             
-            const finalWinner = leftScore > rightScore ? match.left : (rightScore > leftScore ? match.right : '무승부');
-            
+            const teamToLetter = {};
+            const matchCount = scale / 2;
+            for (let i = 1; i <= matchCount; i++) {
+                const matchKey = scale + '_' + i;
+                const m = bracket.matches[matchKey] || { left: '', right: '' };
+                const leftLetter = String.fromCharCode(65 + (i - 1) * 2);
+                const rightLetter = String.fromCharCode(65 + (i - 1) * 2 + 1);
+                if (m.left) teamToLetter[m.left.trim()] = leftLetter;
+                if (m.right) teamToLetter[m.right.trim()] = rightLetter;
+            }
+
+            const leftL = teamToLetter[match.left?.trim()] || 'A';
+            const rightL = teamToLetter[match.right?.trim()] || 'B';
+
+            const winnerLetter = teamToLetter[finalWinner?.trim()] || '';
+            const winnerText = winnerLetter ? `${winnerLetter}팀` : finalWinner;
+
             document.getElementById('battle-ann-title').textContent = titleText + ' 최종 결과';
-            document.getElementById('battle-ann-content').innerHTML = `최종 승리: <span style="color:#f59e0b;">${finalWinner}</span> (${leftScore} : ${rightScore})`;
+            document.getElementById('battle-ann-content').innerHTML = `최종 승리: <span style="color:#f59e0b;">${winnerText}</span> (${leftScore} : ${rightScore})`;
             const subEl = document.getElementById('battle-ann-sub');
-            subEl.textContent = `대단히 축하드립니다! (원래 팀명: A팀=${match.left}, B팀=${match.right})`;
+            subEl.textContent = `대단히 축하드립니다! (${leftL}팀 vs ${rightL}팀)`;
             subEl.style.display = 'block';
             if (ann) {
                 ann.style.setProperty('display', 'none', 'important');
