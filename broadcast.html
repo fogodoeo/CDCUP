@@ -3052,6 +3052,17 @@
             if (renderId !== bracketFullRenderId) return;
             tree.innerHTML = '';
 
+            // 업체 로고 맵 구성 (업체명 -> 로고URL)
+            const teamLogoMap = {};
+            for (let i = 1; i <= 20; i++) {
+                const raw = map['team_logo' + i];
+                if (!raw) continue;
+                try {
+                    const obj = JSON.parse(raw);
+                    if (obj.name && obj.url) teamLogoMap[obj.name.trim()] = obj.url;
+                } catch(e) {}
+            }
+
             const isAuctionDone = item => item && ['완료', 'sold', '낙찰', '유찰'].includes(item.status);
             const toPrice = item => Number.parseFloat(item?.sold_price || item?.soldPrice || 0) || 0;
 
@@ -3166,6 +3177,10 @@
                     return n.toLocaleString();
                 };
 
+                const leftLogo = match.left ? (teamLogoMap[match.left.trim()] || '') : '';
+                const rightLogo = match.right ? (teamLogoMap[match.right.trim()] || '') : '';
+                const logoStyle = 'width:32px;height:32px;border-radius:6px;object-fit:cover;margin-bottom:3px;';
+
                 node.innerHTML = `
                     <div class="sports-match-meta">
                         <span>${titleText}</span>
@@ -3173,6 +3188,7 @@
                     </div>
                     <div class="sports-scoreline">
                         <div class="sports-team sports-team--left${leftWin ? ' is-leading' : ''}">
+                            ${leftLogo ? `<img src="${leftLogo}" style="${logoStyle}" alt="" onerror="this.style.display='none'">` : ''}
                             <span class="sports-team-code">${esc(leftL)} TEAM</span>
                             <strong class="sports-team-name">${esc(leftName)}</strong>
                         </div>
@@ -3182,6 +3198,7 @@
                             <span class="${rightWin ? 'is-leading' : ''}">${fmtPrice(rightTotal)}</span>
                         </div>
                         <div class="sports-team sports-team--right${rightWin ? ' is-leading' : ''}">
+                            ${rightLogo ? `<img src="${rightLogo}" style="${logoStyle}" alt="" onerror="this.style.display='none'">` : ''}
                             <span class="sports-team-code">${esc(rightL)} TEAM</span>
                             <strong class="sports-team-name">${esc(rightName)}</strong>
                         </div>
