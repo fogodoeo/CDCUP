@@ -3688,7 +3688,7 @@
             const rpm = parseInt(map.battle_rounds_per_match || '4', 10) || 4;
             const isChamp = (detectedRound === rpm);
 
-            // 진행중인 팀 판별 (블라인드: A팀/B팀으로 표시)
+            // 진행중인 팀 판별 (업체명은 숨기고 실제 대진 코드만 표시)
             const activeSide = detectedLetter === leftTeamLetter ? 'left' : (detectedLetter === rightTeamLetter ? 'right' : '');
 
             // 라운드별 데이터
@@ -3729,7 +3729,7 @@
                         if (!side) return;
                         const iR = parseInt(cc.slice(1), 10);
                         const ri = roundData.find(d => d.round === iR);
-                        startAuctionMotion({ side, teamLabel: side === 'left' ? 'A팀' : 'B팀', turnLabel: '', round: iR, winner: maskAuctionWinner(i.winner || ''), price: formatAuctionMotionPrice(i.sold_price || i.soldPrice || 0), roundComplete: Boolean(ri?.bothDone), roundWinner: ri?.roundWinner || '', leftScore: leftRoundWins, rightScore: rightRoundWins });
+                        startAuctionMotion({ side, teamLabel: iL + '팀', leftTeamLabel: leftTeamLetter + '팀', rightTeamLabel: rightTeamLetter + '팀', turnLabel: '', round: iR, winner: maskAuctionWinner(i.winner || ''), price: formatAuctionMotionPrice(i.sold_price || i.soldPrice || 0), roundComplete: Boolean(ri?.bothDone), roundWinner: ri?.roundWinner || '', leftScore: leftRoundWins, rightScore: rightRoundWins });
                     }
                 });
             }
@@ -3742,18 +3742,20 @@
             // 오버레이 HTML
             let motionHtml = '';
             const mot = window._auctionMotion;
+            const leftDisplayLabel = mot?.leftTeamLabel || (leftTeamLetter + '팀');
+            const rightDisplayLabel = mot?.rightTeamLabel || (rightTeamLetter + '팀');
             if (auctionMotionEnabled && mot?.phase === 'sold') {
-                motionHtml = '<div class="auction-motion-overlay ' + (mot.side === 'left' ? 'to-left' : 'to-right') + '"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">A TEAM</div><div class="auction-sold-copy"><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND 낙찰</span><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">B TEAM</div></div><span class="auction-price-token">' + esc(mot.price) + '</span></div>';
+                motionHtml = '<div class="auction-motion-overlay ' + (mot.side === 'left' ? 'to-left' : 'to-right') + '"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND 낙찰</span><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div><span class="auction-price-token">' + esc(mot.price) + '</span></div>';
             } else if (auctionMotionEnabled && mot?.phase === 'result') {
                 const lR = mot.roundWinner === 'left' ? '승' : (mot.roundWinner === 'right' ? '패' : '무');
                 const rR = mot.roundWinner === 'right' ? '승' : (mot.roundWinner === 'left' ? '패' : '무');
-                motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">A팀 ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore) + ' : ' + esc(mot.rightScore) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">B팀 ' + rR + '</div></div></div>';
+                motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftDisplayLabel) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore) + ' : ' + esc(mot.rightScore) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightDisplayLabel) + ' ' + rR + '</div></div></div>';
             }
 
-            // 렌더링 (A팀/B팀 + 진행중 팀 하이라이트)
+            // 렌더링 (실제 대진 코드 + 진행중 팀 하이라이트)
             const leftActive = activeItem && activeSide === 'left' ? ' is-active' : '';
             const rightActive = activeItem && activeSide === 'right' ? ' is-active' : '';
-            tree.innerHTML = '<section class="live-round-board" style="position:relative;">' + motionHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>A팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>B팀</strong></div></div></section>';
+            tree.innerHTML = '<section class="live-round-board" style="position:relative;">' + motionHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></section>';
         }
 
         let lastActiveItemName = '';
