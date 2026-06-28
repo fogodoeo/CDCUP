@@ -1364,9 +1364,19 @@
         }
         .blind-live-team {
             color: #cbd5e1;
-            font-size: 23px;
+            font-size: 28px;
             font-weight: 900;
             letter-spacing: -0.025em;
+            transition: all 0.3s ease;
+        }
+        .blind-live-team.is-active {
+            color: #fff;
+            text-shadow: 0 0 20px rgba(59,130,246,0.6), 0 0 40px rgba(59,130,246,0.3);
+            animation: team-pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes team-pulse {
+            0%, 100% { text-shadow: 0 0 20px rgba(59,130,246,0.6), 0 0 40px rgba(59,130,246,0.3); }
+            50% { text-shadow: 0 0 30px rgba(59,130,246,0.9), 0 0 60px rgba(59,130,246,0.5); }
         }
         .blind-live-team:first-child { text-align: right; }
         .blind-live-team:last-child { text-align: left; }
@@ -1374,7 +1384,7 @@
             display: block;
             margin-bottom: 3px;
             color: #64748b;
-            font-size: 9px;
+            font-size: 11px;
             letter-spacing: 0.15em;
         }
         .blind-live-score {
@@ -1384,7 +1394,7 @@
             gap: 13px;
             min-width: 180px;
             color: #fff;
-            font-size: 48px;
+            font-size: 58px;
             font-weight: 950;
             font-variant-numeric: tabular-nums;
             letter-spacing: -0.06em;
@@ -1397,17 +1407,25 @@
             font-weight: 700;
         }
         .auction-motion-overlay {
-            position: absolute;
+            position: fixed;
             inset: 0;
-            z-index: 30;
+            z-index: 9999;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
             background:
-                radial-gradient(circle at 50% 100%, rgba(37,99,235,0.28), transparent 48%),
-                linear-gradient(135deg, rgba(3,10,24,0.99), rgba(15,29,52,0.99));
+                radial-gradient(circle at 50% 50%, rgba(37,99,235,0.35), transparent 60%),
+                linear-gradient(135deg, rgba(3,10,24,0.97), rgba(15,29,52,0.97));
+            animation: sold-overlay-in 0.4s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .auction-motion-overlay.to-left,
+        .auction-motion-overlay.to-right {
+            animation: sold-overlay-in 0.4s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        @keyframes sold-overlay-in {
+            from { opacity: 0; transform: scale(1.1); }
+            to { opacity: 1; transform: scale(1); }
         }
         .auction-motion-overlay::before {
             content: '';
@@ -1423,34 +1441,35 @@
             grid-template-columns: 1fr auto 1fr;
             align-items: center;
             width: 100%;
-            padding: 16px 38px;
+            max-width: 900px;
+            padding: 40px 60px;
         }
         .auction-sold-copy { text-align: center; }
         .auction-sold-turn {
             color: #93c5fd;
-            font-size: 10px;
+            font-size: 16px;
             font-weight: 900;
             letter-spacing: 0.14em;
         }
         .auction-sold-winner {
             display: block;
-            margin-top: 4px;
+            margin-top: 8px;
             color: #fff;
-            font-size: 20px;
+            font-size: 32px;
             font-weight: 900;
         }
         .auction-sold-price {
             display: block;
-            margin-top: 2px;
+            margin-top: 6px;
             color: #f8fafc;
-            font-size: 31px;
+            font-size: 52px;
             font-weight: 950;
             font-variant-numeric: tabular-nums;
             letter-spacing: -0.04em;
         }
         .auction-target-team {
             color: #64748b;
-            font-size: 12px;
+            font-size: 24px;
             font-weight: 900;
             letter-spacing: 0.12em;
         }
@@ -1462,18 +1481,18 @@
             left: 50%;
             top: 50%;
             z-index: 1;
-            min-width: 96px;
-            padding: 8px 12px;
-            border: 1px solid rgba(96,165,250,0.7);
-            border-radius: 5px;
+            min-width: 160px;
+            padding: 14px 24px;
+            border: 2px solid rgba(96,165,250,0.7);
+            border-radius: 8px;
             background: #1d4ed8;
             color: #fff;
-            font-size: 15px;
+            font-size: 28px;
             font-weight: 950;
             text-align: center;
             opacity: 0;
             transform: translate(-50%, -50%);
-            box-shadow: 0 0 24px rgba(37,99,235,0.45);
+            box-shadow: 0 0 40px rgba(37,99,235,0.6);
         }
         .auction-motion-overlay.to-left .auction-price-token {
             animation: price-flow-left 1.45s 0.45s cubic-bezier(0.16,1,0.3,1) both;
@@ -1485,14 +1504,15 @@
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            gap: 24px;
+            gap: 40px;
             width: 100%;
-            padding: 12px 50px;
+            max-width: 900px;
+            padding: 40px 60px;
             animation: round-result-in 0.45s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-result-team {
             color: #64748b;
-            font-size: 28px;
+            font-size: 42px;
             font-weight: 950;
         }
         .auction-result-team:first-child { text-align: right; }
@@ -1505,7 +1525,7 @@
         .auction-result-score span {
             display: block;
             color: #94a3b8;
-            font-size: 9px;
+            font-size: 14px;
             font-weight: 900;
             letter-spacing: 0.14em;
         }
@@ -1513,7 +1533,7 @@
             display: block;
             margin-top: 3px;
             color: #fff;
-            font-size: 38px;
+            font-size: 56px;
             font-weight: 950;
             letter-spacing: -0.06em;
         }
@@ -3589,11 +3609,10 @@
             const tree = document.getElementById('bracket-page-tree-live');
             const titleEl = document.getElementById('bracket-page-title');
 
-            // 1. 아이템 로드
             let items = [];
             try { items = await getBattleItemsCached(); } catch(e){}
 
-            // 2. bracket 매치에서 팀 letter 매핑 자동 구성
+            // bracket 매치에서 팀 letter 매핑 자동 구성
             const matchCount = scale / 2;
             const letterToTeam = {};
             const letterToGroup = {};
@@ -3606,27 +3625,26 @@
                 if (m.right) { letterToTeam[rL] = m.right.trim(); letterToGroup[rL] = i; }
             }
 
-            // 3. 진행 중인 개체에서 현재 매치 자동 감지
+            // 진행 중인 개체에서 현재 매치 자동 감지
             const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
-            let detectedRound = 0, detectedGroup = 0;
+            let detectedRound = 0, detectedGroup = 0, detectedLetter = '';
             let leftTeamLetter = '', rightTeamLetter = '';
 
             if (activeItem) {
                 const code = (getCleanCode(activeItem) || (activeItem.name || '').trim().toUpperCase());
                 if (code && code.length >= 2) {
-                    const letter = code.charAt(0);
+                    detectedLetter = code.charAt(0);
                     detectedRound = parseInt(code.substring(1), 10) || 0;
-                    detectedGroup = letterToGroup[letter] || 0;
+                    detectedGroup = letterToGroup[detectedLetter] || 0;
                 }
             }
-            // fallback: 가장 최근 완료된 개체에서 매치 추적
             if (!detectedGroup) {
                 const doneItems = items.filter(i => ['완료','sold','낙찰','유찰'].includes(i.status));
                 for (let di = doneItems.length - 1; di >= 0; di--) {
                     const code = (getCleanCode(doneItems[di]) || (doneItems[di].name || '').trim().toUpperCase());
                     if (code && code.length >= 2) {
                         const grp = letterToGroup[code.charAt(0)];
-                        if (grp) { detectedRound = parseInt(code.substring(1), 10) || 0; detectedGroup = grp; break; }
+                        if (grp) { detectedLetter = code.charAt(0); detectedRound = parseInt(code.substring(1), 10) || 0; detectedGroup = grp; break; }
                     }
                 }
             }
@@ -3636,20 +3654,19 @@
                 rightTeamLetter = String.fromCharCode(65 + (detectedGroup - 1) * 2 + 1);
             }
 
-            // 감지 실패 시 대기 화면
             if (!detectedGroup) {
                 tree.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:95%;max-width:780px;margin:0 auto;padding:30px;background:rgba(15,23,42,0.65);backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.5);gap:16px;"><div style="font-size:24px;font-weight:900;color:#fff;">경기 대기 중</div><div style="font-size:14px;color:#94a3b8;font-weight:600;">대진표에 등록된 개체의 경매를 시작하면 자동으로 표시됩니다.</div></div>';
                 if (titleEl) titleEl.textContent = '대기 중';
                 return;
             }
 
-            // 4. 매치 정보
             const rpm = parseInt(map.battle_rounds_per_match || '4', 10) || 4;
-            const leftTeamName = letterToTeam[leftTeamLetter] || leftTeamLetter + '팀';
-            const rightTeamName = letterToTeam[rightTeamLetter] || rightTeamLetter + '팀';
             const isChamp = (detectedRound === rpm);
 
-            // 5. 라운드별 데이터
+            // 진행중인 팀 판별 (블라인드: A팀/B팀으로 표시)
+            const activeSide = detectedLetter === leftTeamLetter ? 'left' : (detectedLetter === rightTeamLetter ? 'right' : '');
+
+            // 라운드별 데이터
             const roundData = [];
             let leftRoundWins = 0, rightRoundWins = 0;
             for (let r = 1; r <= rpm; r++) {
@@ -3669,19 +3686,7 @@
                 roundData.push({ round: r, lItem, rItem, lp, rp, lSold, rSold, bothDone, roundWinner, isCurrent: r === detectedRound, leftItemName: leftTeamLetter + r, rightItemName: rightTeamLetter + r });
             }
 
-            // 6. NEXT 개체 계산
-            let nextItemInfo = '';
-            if (activeItem) {
-                const activeNum = parseInt(activeItem.num || '0', 10);
-                const nextItem = items.find(i => parseInt(i.num || '0', 10) > activeNum && i.status === '대기');
-                if (nextItem) {
-                    const nextCode = (getCleanCode(nextItem) || (nextItem.name || '').trim().toUpperCase());
-                    const nextCompany = nextItem.company || '';
-                    nextItemInfo = nextCompany ? nextCode + ' (' + nextCompany + ')' : nextCode;
-                }
-            }
-
-            // 7. 낙찰 애니메이션
+            // 낙찰 애니메이션
             const auctionMotionEnabled = String(map.auction_animation_enabled ?? '1') !== '0';
             if (!auctionMotionEnabled && window._auctionMotion) { if (window._auctionMotionTimer) clearTimeout(window._auctionMotionTimer); window._auctionMotion = null; window._auctionMotionTimer = null; }
             window._lastSeenSold = window._lastSeenSold || {};
@@ -3694,36 +3699,36 @@
                     if (k && (i.status === '낙찰' || i.status === '유찰') && window._lastSeenSold[k] !== i.status) {
                         window._lastSeenSold[k] = i.status;
                         if (!auctionMotionEnabled || i.status !== '낙찰' || !cc) return;
-                        const iL = cc.charAt(0).toUpperCase(); const iR = parseInt(cc.slice(1), 10);
+                        const iL = cc.charAt(0).toUpperCase();
                         const side = iL === leftTeamLetter ? 'left' : (iL === rightTeamLetter ? 'right' : '');
                         if (!side) return;
+                        const iR = parseInt(cc.slice(1), 10);
                         const ri = roundData.find(d => d.round === iR);
-                        startAuctionMotion({ side, teamLabel: side === 'left' ? leftTeamName : rightTeamName, turnLabel: '', round: iR, winner: maskAuctionWinner(i.winner || ''), price: formatAuctionMotionPrice(i.sold_price || i.soldPrice || 0), roundComplete: Boolean(ri?.bothDone), roundWinner: ri?.roundWinner || '', leftScore: leftRoundWins, rightScore: rightRoundWins });
+                        startAuctionMotion({ side, teamLabel: side === 'left' ? 'A팀' : 'B팀', turnLabel: '', round: iR, winner: maskAuctionWinner(i.winner || ''), price: formatAuctionMotionPrice(i.sold_price || i.soldPrice || 0), roundComplete: Boolean(ri?.bothDone), roundWinner: ri?.roundWinner || '', leftScore: leftRoundWins, rightScore: rightRoundWins });
                     }
                 });
             }
 
-            // 8. 타이틀
+            // 타이틀
             const scaleLabel = scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강'));
             const matchTitle = detectedGroup + '조 ' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + '라운드' : ''));
             if (titleEl) titleEl.textContent = scaleLabel + ' ' + matchTitle;
 
-            // 9. 오버레이 HTML
+            // 오버레이 HTML
             let motionHtml = '';
             const mot = window._auctionMotion;
             if (auctionMotionEnabled && mot?.phase === 'sold') {
-                motionHtml = '<div class="auction-motion-overlay ' + (mot.side === 'left' ? 'to-left' : 'to-right') + '"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftTeamName) + '</div><div class="auction-sold-copy"><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND 낙찰</span><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightTeamName) + '</div></div><span class="auction-price-token">' + esc(mot.price) + '</span></div>';
+                motionHtml = '<div class="auction-motion-overlay ' + (mot.side === 'left' ? 'to-left' : 'to-right') + '"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">A TEAM</div><div class="auction-sold-copy"><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND 낙찰</span><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">B TEAM</div></div><span class="auction-price-token">' + esc(mot.price) + '</span></div>';
             } else if (auctionMotionEnabled && mot?.phase === 'result') {
                 const lR = mot.roundWinner === 'left' ? '승' : (mot.roundWinner === 'right' ? '패' : '무');
                 const rR = mot.roundWinner === 'right' ? '승' : (mot.roundWinner === 'left' ? '패' : '무');
-                motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftTeamName) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore) + ' : ' + esc(mot.rightScore) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightTeamName) + ' ' + rR + '</div></div></div>';
+                motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">A팀 ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore) + ' : ' + esc(mot.rightScore) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">B팀 ' + rR + '</div></div></div>';
             }
 
-            // 10. NEXT 패널
-            const nextHtml = nextItemInfo ? '<div style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:10px;padding:6px 12px;text-align:center;min-width:80px;"><div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:0.1em;margin-bottom:2px;">NEXT</div><div style="font-size:13px;font-weight:800;color:#fff;">' + esc(nextItemInfo) + '</div></div>' : '';
-
-            // 11. 렌더링
-            tree.innerHTML = '<section class="live-round-board" style="position:relative;">' + motionHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="blind-live-match"><div class="blind-live-team"><span>HOME</span>' + esc(leftTeamName) + '</div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team"><span>AWAY</span>' + esc(rightTeamName) + '</div></div>' + nextHtml + '</section>';
+            // 렌더링 (A팀/B팀 + 진행중 팀 하이라이트)
+            const leftActive = activeItem && activeSide === 'left' ? ' is-active' : '';
+            const rightActive = activeItem && activeSide === 'right' ? ' is-active' : '';
+            tree.innerHTML = '<section class="live-round-board" style="position:relative;">' + motionHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><span>HOME</span>A팀</div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><span>AWAY</span>B팀</div></div></section>';
         }
 
         let lastActiveItemName = '';
