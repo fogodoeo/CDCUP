@@ -2727,10 +2727,8 @@
                 const getSlotText = (teamName, defaultLetter, isFirstRound) => {
                     if (!teamName) return '대기중...';
                     const letter = teamToLetter[teamName.trim()] || defaultLetter;
-                    if (match.winner) {
-                        return isFirstRound ? `[${letter}팀] ${teamName}` : teamName;
-                    }
-                    return `${letter}팀`;
+                    // 승패 여부와 관계없이 진출한 팀이 있다면 무조건 노출
+                    return isFirstRound ? `[${letter}팀] ${teamName}` : teamName;
                 };
                 
                 const leftText = getSlotText(match.left, leftL, round === scale);
