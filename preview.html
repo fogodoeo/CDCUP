@@ -14,7 +14,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>방송 화면 실시간 미리보기 및 배치기 - CDCUP</title>
-    <script src="supabase-bridge.js"></script>
+    <script src="supabase-bridge.js?v=20260629-tournament-items"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     <link rel="stylesheet" href="common.css">
@@ -461,6 +461,72 @@
         .t-team-chip:active { cursor: grabbing; }
         .t-team-chip:hover { background: rgba(37, 99, 235, 0.2); border-color: #3b82f6; }
 
+        /* Tournament item assignment */
+        .t-item-setup {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 14px; margin: 16px 0; overflow: hidden;
+        }
+        .t-item-setup-head {
+            display: flex; justify-content: space-between; align-items: center; gap: 16px;
+            padding: 18px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+        }
+        .t-item-setup-title { font-size: 15px; font-weight: 900; color: var(--text); }
+        .t-item-setup-desc { margin-top: 5px; font-size: 12px; line-height: 1.55; color: var(--text2); }
+        .t-item-setup-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .t-item-progress {
+            padding: 9px 12px; border-radius: 8px; background: rgba(59,130,246,.1);
+            border: 1px solid rgba(59,130,246,.22); color: #93c5fd;
+            font-size: 12px; font-weight: 850;
+        }
+        .t-item-setup-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+            gap: 12px; padding: 16px;
+        }
+        .t-item-team {
+            border: 1px solid rgba(148,163,184,.18); border-radius: 11px;
+            background: rgba(15,23,42,.45); padding: 13px;
+        }
+        .t-item-team.ready { border-color: rgba(16,185,129,.48); box-shadow: inset 0 0 0 1px rgba(16,185,129,.08); }
+        .t-item-team-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .t-item-team-letter {
+            width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center;
+            background: #2563eb; color: #fff; font-size: 15px; font-weight: 950;
+            box-shadow: 0 5px 14px rgba(37,99,235,.28);
+        }
+        .t-item-team-name { min-width: 0; flex: 1; }
+        .t-item-team-name strong { display: block; color: var(--text); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .t-item-team-name span { display: block; margin-top: 3px; color: var(--text2); font-size: 11px; }
+        .t-item-auto { border: 0; background: transparent; color: #93c5fd; font-size: 11px; font-weight: 800; cursor: pointer; }
+        .t-item-list { display: grid; gap: 6px; }
+        .t-item-choice {
+            width: 100%; border: 1px solid rgba(148,163,184,.15); border-radius: 8px;
+            background: rgba(255,255,255,.025); color: var(--text2); padding: 7px 8px;
+            display: grid; grid-template-columns: 30px minmax(0,1fr) auto; align-items: center; gap: 8px;
+            text-align: left; cursor: pointer; transition: .15s ease;
+        }
+        .t-item-choice:hover { border-color: rgba(96,165,250,.55); background: rgba(59,130,246,.07); }
+        .t-item-choice.selected { border-color: #3b82f6; background: rgba(37,99,235,.13); color: #fff; }
+        .t-item-thumb {
+            width: 30px; height: 30px; border-radius: 6px; object-fit: cover;
+            background: rgba(148,163,184,.1); display: grid; place-items: center;
+            color: #64748b; font-size: 10px; font-weight: 900; overflow: hidden;
+        }
+        .t-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+        .t-item-copy { min-width: 0; }
+        .t-item-copy strong { display: block; color: inherit; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .t-item-copy span { display: block; color: #64748b; font-size: 10px; margin-top: 2px; }
+        .t-item-code {
+            min-width: 30px; padding: 4px 6px; border-radius: 6px; text-align: center;
+            background: rgba(148,163,184,.1); color: #64748b; font-size: 11px; font-weight: 950;
+        }
+        .t-item-choice.selected .t-item-code { background: #2563eb; color: #fff; }
+        .t-item-empty { padding: 28px 18px; text-align: center; color: #64748b; font-size: 12px; line-height: 1.65; }
+        .t-item-warning {
+            padding: 11px 18px; border-top: 1px solid var(--border); color: #94a3b8;
+            background: rgba(245,158,11,.045); font-size: 11px; line-height: 1.55;
+        }
+        .t-btn:disabled { opacity: .42; cursor: not-allowed; }
+
         /* Bracket Tree */
         .t-bracket-wrap {
             background: var(--card-bg); border: 1px solid var(--border);
@@ -810,6 +876,22 @@
             <div class="t-bracket-wrap">
                 <div class="t-bracket-tree" id="t-bracket-tree"></div>
             </div>
+
+            <section class="t-item-setup" id="t-item-setup">
+                <div class="t-item-setup-head">
+                    <div>
+                        <div class="t-item-setup-title">대진 개체 일괄 편성</div>
+                        <div class="t-item-setup-desc">배치된 업체별로 4개체를 선택하면 클릭 순서대로 A1~A4, B1~B4 코드가 붙습니다.</div>
+                    </div>
+                    <div class="t-item-setup-actions">
+                        <span class="t-item-progress" id="t-item-progress">배치를 먼저 완료해주세요</span>
+                        <button class="t-btn" type="button" onclick="tAutoSelectAllItems()">업체별 앞 4개</button>
+                        <button class="t-btn save" id="t-item-apply" type="button" onclick="tApplyTournamentItems()" disabled>선택 개체로 목록 재구성</button>
+                    </div>
+                </div>
+                <div class="t-item-setup-grid" id="t-item-setup-grid"></div>
+                <div class="t-item-warning">적용 시 대진표가 함께 저장되며, 선택하지 않은 등록 개체는 목록에서 제거됩니다. 선택 개체의 사진·상세 정보는 유지되고 낙찰·배송 정보는 대기 상태로 초기화됩니다.</div>
+            </section>
 
 
         </div>
@@ -1855,6 +1937,8 @@
         let tBrackets = { 16: { matches: {} }, 8: { matches: {} }, 4: { matches: {} } };
         let tActiveTournament = 'none';
         let tEditingMatch = null;
+        let tAllItems = [];
+        let tItemSelections = {};
 
 
         function tEsc(s) {
@@ -1903,17 +1987,22 @@
         async function tLoadTeams() {
             try {
                 const items = await getItems();
+                tAllItems = items || [];
                 const teams = [...new Set((items || []).map(i => i.company).filter(Boolean))];
                 const pool = document.getElementById('t-team-pool');
                 if (teams.length === 0) {
                     pool.innerHTML = '<span style="color:#64748b; font-size:12px;">등록된 업체가 없습니다. 개체를 먼저 등록해주세요.</span>';
+                    tRenderItemSetup();
                     return;
                 }
                 pool.innerHTML = teams.map(t =>
                     `<div class="t-team-chip" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${tEsc(t)}')">${tEsc(t)}</div>`
                 ).join('');
+                tRenderItemSetup();
             } catch (err) {
+                tAllItems = [];
                 document.getElementById('t-team-pool').innerHTML = '<span style="color:#f87171; font-size:12px;">팀 목록 로딩 실패</span>';
+                tRenderItemSetup();
             }
         }
 
@@ -2001,6 +2090,160 @@
                 }
                 tree.appendChild(col);
             });
+            tRenderItemSetup();
+        }
+
+        function tGetSeedTeams() {
+            const seeds = [];
+            const matchCount = tScale / 2;
+            for (let i = 1; i <= matchCount; i++) {
+                const match = tGetMatch(tScale, tScale + '_' + i);
+                const leftLetter = String.fromCharCode(65 + (i - 1) * 2);
+                const rightLetter = String.fromCharCode(65 + (i - 1) * 2 + 1);
+                if (match.left) seeds.push({ letter: leftLetter, company: String(match.left).trim() });
+                if (match.right) seeds.push({ letter: rightLetter, company: String(match.right).trim() });
+            }
+            return seeds;
+        }
+
+        function tGetSelection(seed) {
+            const current = tItemSelections[seed.letter];
+            if (!current || current.company !== seed.company) {
+                tItemSelections[seed.letter] = { company: seed.company, rows: [] };
+            }
+            return tItemSelections[seed.letter];
+        }
+
+        function tCompanyItems(company) {
+            return tAllItems
+                .filter(item => String(item.company || '').trim() === company)
+                .sort((a, b) => (Number(a.num) || 0) - (Number(b.num) || 0));
+        }
+
+        function tRenderItemSetup() {
+            const grid = document.getElementById('t-item-setup-grid');
+            const progress = document.getElementById('t-item-progress');
+            const applyBtn = document.getElementById('t-item-apply');
+            if (!grid || !progress || !applyBtn) return;
+
+            const seeds = tGetSeedTeams();
+            if (!seeds.length) {
+                grid.innerHTML = '<div class="t-item-empty" style="grid-column:1/-1;">참가 팀을 랜덤 배치하거나 슬롯에 넣으면<br>업체별 개체 선택 카드가 여기에 생성됩니다.</div>';
+                progress.textContent = '배치를 먼저 완료해주세요';
+                applyBtn.disabled = true;
+                return;
+            }
+
+            let readyCount = 0;
+            grid.innerHTML = seeds.map(seed => {
+                const selection = tGetSelection(seed);
+                const items = tCompanyItems(seed.company);
+                selection.rows = selection.rows.filter(row => items.some(item => String(item.row) === String(row))).slice(0, 4);
+                if (selection.rows.length === 4) readyCount++;
+                const codeByRow = {};
+                selection.rows.forEach((row, idx) => { codeByRow[String(row)] = seed.letter + (idx + 1); });
+                const itemRows = items.length ? items.map(item => {
+                    const rowKey = String(item.row);
+                    const code = codeByRow[rowKey] || '';
+                    const photo = item.photoItem || '';
+                    const price = item.startPrice || item.price || '';
+                    return `<button type="button" class="t-item-choice ${code ? 'selected' : ''}" data-letter="${tEsc(seed.letter)}" data-row="${tEsc(rowKey)}" onclick="tToggleItemSelection(this.dataset.letter,this.dataset.row)">
+                        <span class="t-item-thumb">${photo ? `<img src="${tEsc(photo)}" alt="">` : 'NO'}</span>
+                        <span class="t-item-copy"><strong>${tEsc(item.name || '이름 없음')}</strong><span>#${tEsc(item.num || '-')} · 시작가 ${tEsc(price || '-')}</span></span>
+                        <span class="t-item-code">${code || '선택'}</span>
+                    </button>`;
+                }).join('') : '<div class="t-item-empty">이 업체에 등록된 개체가 없습니다.</div>';
+                return `<article class="t-item-team ${selection.rows.length === 4 ? 'ready' : ''}">
+                    <div class="t-item-team-head">
+                        <span class="t-item-team-letter">${tEsc(seed.letter)}</span>
+                        <div class="t-item-team-name"><strong>${tEsc(seed.company)}</strong><span>${selection.rows.length}/4 선택 · 총 ${items.length}개체</span></div>
+                        ${items.length >= 4 ? `<button type="button" class="t-item-auto" data-letter="${tEsc(seed.letter)}" onclick="tAutoSelectTeamItems(this.dataset.letter)">앞 4개</button>` : ''}
+                    </div>
+                    <div class="t-item-list">${itemRows}</div>
+                </article>`;
+            }).join('');
+
+            const duplicateCompanies = new Set(seeds.map(seed => seed.company)).size !== seeds.length;
+            progress.textContent = duplicateCompanies ? '같은 업체가 중복 배치됨' : `${readyCount}/${seeds.length} 업체 준비`;
+            applyBtn.disabled = duplicateCompanies || readyCount !== seeds.length;
+        }
+
+        function tToggleItemSelection(letter, row) {
+            const seed = tGetSeedTeams().find(item => item.letter === letter);
+            if (!seed) return;
+            const selection = tGetSelection(seed);
+            const rowKey = String(row);
+            const selectedIndex = selection.rows.indexOf(rowKey);
+            if (selectedIndex >= 0) selection.rows.splice(selectedIndex, 1);
+            else if (selection.rows.length < 4) selection.rows.push(rowKey);
+            else { toast(seed.letter + '팀은 4개체까지 선택할 수 있습니다.'); return; }
+            tRenderItemSetup();
+        }
+
+        function tAutoSelectTeamItems(letter) {
+            const seed = tGetSeedTeams().find(item => item.letter === letter);
+            if (!seed) return;
+            tGetSelection(seed).rows = tCompanyItems(seed.company).slice(0, 4).map(item => String(item.row));
+            tRenderItemSetup();
+        }
+
+        function tAutoSelectAllItems() {
+            const seeds = tGetSeedTeams();
+            if (!seeds.length) { toast('참가 팀 배치를 먼저 완료해주세요.'); return; }
+            seeds.forEach(seed => {
+                tGetSelection(seed).rows = tCompanyItems(seed.company).slice(0, 4).map(item => String(item.row));
+            });
+            tRenderItemSetup();
+        }
+
+        async function tApplyTournamentItems() {
+            const seeds = tGetSeedTeams();
+            const assignments = [];
+            const usedRows = new Set();
+            const companies = new Set();
+            for (const seed of seeds) {
+                if (companies.has(seed.company)) { toast('같은 업체가 두 슬롯에 배치되어 있습니다.'); return; }
+                companies.add(seed.company);
+                const selection = tGetSelection(seed);
+                if (selection.rows.length !== 4) { toast(seed.letter + '팀에서 4개체를 선택해주세요.'); return; }
+                for (let idx = 0; idx < selection.rows.length; idx++) {
+                    const row = String(selection.rows[idx]);
+                    const item = tAllItems.find(candidate => String(candidate.row) === row);
+                    if (!item || String(item.company || '').trim() !== seed.company || usedRows.has(row)) {
+                        toast('선택 목록이 변경되었습니다. 개체를 다시 선택해주세요.'); return;
+                    }
+                    usedRows.add(row);
+                    assignments.push({ row: item.row, company: seed.company, code: seed.letter + (idx + 1) });
+                }
+            }
+            if (!assignments.length) { toast('편성할 개체가 없습니다.'); return; }
+
+            const removeCount = Math.max(0, tAllItems.length - assignments.length);
+            const confirmed = confirm(`선택한 ${assignments.length}개체로 경매 등록 목록을 다시 구성합니다.\n\n· 대진표 자동 저장\n· 코드 ${assignments[0].code} ~ ${assignments[assignments.length - 1].code} 적용\n· 미선택 ${removeCount}개체 삭제\n· 낙찰/배송 상태 초기화\n\n계속할까요?`);
+            if (!confirmed) return;
+            const pw = prompt('관리자 비밀번호를 입력하세요.');
+            if (pw === null) return;
+
+            const applyBtn = document.getElementById('t-item-apply');
+            applyBtn.disabled = true;
+            applyBtn.textContent = '목록 구성 중...';
+            try {
+                const bracketPayload = {};
+                [16, 8, 4].forEach(scale => {
+                    bracketPayload['tournament_bracket_' + scale] = JSON.stringify(tBrackets[scale]);
+                });
+                await updateConfigs(bracketPayload);
+                const result = await rebuildTournamentItems(assignments, pw);
+                if (!result || result.success === false) throw new Error(result?.error || '목록 재구성 실패');
+                tItemSelections = {};
+                await tLoadTeams();
+                toast(result.count + '개체 대진 코드 등록 완료');
+            } catch (err) {
+                toast('개체 편성 실패: ' + err.message);
+            } finally {
+                applyBtn.textContent = '선택 개체로 목록 재구성';
+                tRenderItemSetup();
+            }
         }
 
         function tDrop(e, mk, slot) {

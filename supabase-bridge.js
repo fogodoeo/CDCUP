@@ -425,6 +425,75 @@ async function shuffleRoundRobin(pw) {
 }
 
 /**
+ * 대진 슬롯 기준으로 경매 개체 목록을 다시 구성한다.
+ * 선택된 개체의 상세/사진은 보존하고 코드·순서·경매/배송 상태만 초기화한다.
+ */
+async function rebuildTournamentItems(assignments, pw) {
+    const verified = await verifyAdmin(pw);
+    if (!verified) return { success: false, error: "비밀번호 불일치" };
+    if (!Array.isArray(assignments) || assignments.length === 0) {
+        return { success: false, error: "편성할 개체가 없습니다." };
+    }
+
+    const active = await _sbFetch("items?status=eq.진행중&select=id&limit=1");
+    if (active && active.length > 0) {
+        return { success: false, error: "경매 진행중에는 목록을 재구성할 수 없습니다. 먼저 경매를 종료해주세요." };
+    }
+
+    const ids = [];
+    const seenIds = new Set();
+    const seenCodes = new Set();
+    const payloads = [];
+    for (let idx = 0; idx < assignments.length; idx++) {
+        const assignment = assignments[idx] || {};
+        const id = Number(assignment.row);
+        const code = String(assignment.code || "").trim().toUpperCase();
+        if (!Number.isInteger(id) || id <= 0 || !/^[A-Z][1-4]$/.test(code)) {
+            return { success: false, error: "개체 편성 데이터가 올바르지 않습니다." };
+        }
+        if (seenIds.has(id) || seenCodes.has(code)) {
+            return { success: false, error: "같은 개체 또는 코드가 중복 선택되었습니다." };
+        }
+        seenIds.add(id);
+        seenCodes.add(code);
+        ids.push(id);
+        payloads.push({
+            id: id,
+            company: String(assignment.company || "").trim(),
+            num: idx + 1,
+            name: code,
+            status: "대기",
+            sold_price: null,
+            winner: "",
+            winner_phone: "",
+            start_time: null,
+            bid_log: "",
+            shipping_type: "",
+            shipping_company: "",
+            shipping_region: "",
+            shipping_cost: 0
+        });
+    }
+
+    const existing = await _sbFetch(`items?id=in.(${ids.join(',')})&select=id`);
+    if (!existing || existing.length !== ids.length) {
+        return { success: false, error: "선택한 개체 중 현재 목록에서 찾을 수 없는 항목이 있습니다. 새로고침 후 다시 시도해주세요." };
+    }
+
+    // 선택된 행을 한 번에 갱신한 뒤, 성공한 경우에만 나머지 행을 제거한다.
+    await _sbFetch('items?on_conflict=id', {
+        method: 'POST',
+        headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
+        body: JSON.stringify(payloads)
+    });
+    await _sbFetch(`items?id=not.in.(${ids.join(',')})`, {
+        method: 'DELETE',
+        headers: { ..._sbHeaders, 'Prefer': 'return=minimal' }
+    });
+    return { success: true, count: payloads.length };
+}
+
+/**
  * 부모 개체 등록 (= GAS registerParent)
  */
 async function registerParent(parentObj) {
@@ -644,4 +713,3 @@ async function getWrapangData() {
 // 모든 HTML 파일이 이제 Supabase 함수를 직접 호출합니다.
 
 console.log('[Supabase Bridge] Loaded — all functions available globally');
-
