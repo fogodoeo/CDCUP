@@ -1133,11 +1133,22 @@
         .sports-match-card.is-current .sports-match-state { color: #dc2626; }
         .sports-scoreline {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             min-height: 68px;
-            padding: 8px 16px 6px 18px;
+            padding: 8px 12px 6px 12px;
+        }
+        .sports-team-logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: rgba(0,0,0,0.04);
+        }
+        .sports-logo-placeholder {
+            width: 52px;
+            height: 52px;
         }
         .sports-team {
             min-width: 0;
@@ -3192,7 +3203,6 @@
 
                 const leftLogo = getTeamLogo(match.left);
                 const rightLogo = getTeamLogo(match.right);
-                const logoStyle = 'width:32px;height:32px;border-radius:6px;object-fit:cover;margin-bottom:3px;';
 
                 node.innerHTML = `
                     <div class="sports-match-meta">
@@ -3200,8 +3210,8 @@
                         <span class="sports-match-state">${stateText}</span>
                     </div>
                     <div class="sports-scoreline">
+                        ${leftLogo ? `<img src="${leftLogo}" class="sports-team-logo" alt="" onerror="this.style.display='none'">` : '<div class="sports-logo-placeholder"></div>'}
                         <div class="sports-team sports-team--left${leftWin ? ' is-leading' : ''}">
-                            ${leftLogo ? `<img src="${leftLogo}" style="${logoStyle}" alt="" onerror="this.style.display='none'">` : ''}
                             <span class="sports-team-code">${esc(leftL)} TEAM</span>
                             <strong class="sports-team-name">${esc(leftName)}</strong>
                         </div>
@@ -3211,10 +3221,10 @@
                             <span class="${rightWin ? 'is-leading' : ''}">${fmtPrice(rightTotal)}</span>
                         </div>
                         <div class="sports-team sports-team--right${rightWin ? ' is-leading' : ''}">
-                            ${rightLogo ? `<img src="${rightLogo}" style="${logoStyle}" alt="" onerror="this.style.display='none'">` : ''}
                             <span class="sports-team-code">${esc(rightL)} TEAM</span>
                             <strong class="sports-team-name">${esc(rightName)}</strong>
                         </div>
+                        ${rightLogo ? `<img src="${rightLogo}" class="sports-team-logo" alt="" onerror="this.style.display='none'">` : '<div class="sports-logo-placeholder"></div>'}
                     </div>
                     <div class="sports-match-footer">
                         <span>${leftScore}승</span>
