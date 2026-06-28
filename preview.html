@@ -699,9 +699,9 @@
                     <span class="caret">▼</span>
                 </button>
                 <div class="cdcup-nav__dropdown-menu">
-                    <a href="broadcast.html?page=1&amp;v=20260629-dynamic-team-codes" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
-                    <a href="broadcast.html?page=2&amp;v=20260629-dynamic-team-codes" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
-                    <a href="broadcast.html?page=3&amp;v=20260629-dynamic-team-codes" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
+                    <a href="broadcast.html?page=1&amp;v=20260629-live-flow" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
+                    <a href="broadcast.html?page=2&amp;v=20260629-live-flow" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
+                    <a href="broadcast.html?page=3&amp;v=20260629-live-flow" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
                 </div>
             </div>
         </div>
@@ -731,7 +731,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260629-dynamic-team-codes"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260629-live-flow"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -842,6 +842,11 @@
                         <span style="font-weight: 700;">실시간 폰트:</span>
                         <input type="number" id="bracket-live-font-input" onchange="updateBracketFontSize('bracket_live', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="8" max="60" value="14">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
+                    </div>
+                    <div class="switch-container" id="toggle-bracket-live-opacity-group" style="display:none; gap: 7px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">실시간 투명도:</span>
+                        <input type="range" id="bracket-live-opacity-input" min="35" max="100" step="1" value="94" oninput="previewBracketOpacity(this.value)" onchange="updateBracketOpacity(this.value)" style="width:86px; accent-color:#2563eb;">
+                        <strong id="bracket-live-opacity-value" style="min-width:32px; font-size:11px; color:var(--text-muted);">94%</strong>
                     </div>
                     <div class="switch-container" id="toggle-bracket-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">송출 모드:</span>
@@ -963,7 +968,7 @@
         // URL Parameter Parsing (page=1, page=2 or page=3)
         const params = new URLSearchParams(window.location.search);
         const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260629-dynamic-team-codes';
+        const broadcastAssetVersion = '20260629-live-flow';
 
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
@@ -1011,6 +1016,7 @@
             document.getElementById('toggle-bracket-mode-group').style.display = '';
             document.getElementById('toggle-bracket-full-font-group').style.display = '';
             document.getElementById('toggle-bracket-live-font-group').style.display = '';
+            document.getElementById('toggle-bracket-live-opacity-group').style.display = '';
             document.getElementById('bracket-coords').style.display = '';
             document.getElementById('bracket-live-coords').style.display = '';
             document.getElementById('bracket-title-coords').style.display = 'none'; // Hidden per user request
@@ -1067,7 +1073,7 @@
             elements.bracket_live = {
                 el: document.getElementById('draggable-bracket-live'),
                 top: "0px", left: "0px", right: "auto", bottom: "auto",
-                show: "0", width: "100%", height: "100%", fontSize: "14"
+                show: "0", width: "100%", height: "100%", fontSize: "14", opacity: "94"
             };
             elements.bracket_title = {
                 el: document.getElementById('draggable-bracket-title'),
@@ -1112,6 +1118,19 @@
                 applyVisualState(key);
                 saveCoordinates(false);
             }
+        }
+
+        function previewBracketOpacity(val) {
+            const opacity = String(Math.max(35, Math.min(100, parseInt(val, 10) || 94)));
+            if (elements.bracket_live) elements.bracket_live.opacity = opacity;
+            const valueEl = document.getElementById('bracket-live-opacity-value');
+            if (valueEl) valueEl.textContent = opacity + '%';
+            frame.contentWindow.postMessage({ type: 'bracketLiveOpacity', value: opacity }, '*');
+        }
+
+        function updateBracketOpacity(val) {
+            previewBracketOpacity(val);
+            saveCoordinates(false);
         }
 
         function convertToPercent(val) {
@@ -1205,9 +1224,14 @@
                     elements.bracket_live.width = cfg.bracket_live_width || '100%';
                     elements.bracket_live.height = cfg.bracket_live_height || '100%';
                     elements.bracket_live.fontSize = cfg.bracket_live_font_size || '14';
+                    elements.bracket_live.opacity = cfg.bracket_live_opacity || '94';
                     
                     const liveFontInput = document.getElementById('bracket-live-font-input');
                     if (liveFontInput) liveFontInput.value = elements.bracket_live.fontSize;
+                    const liveOpacityInput = document.getElementById('bracket-live-opacity-input');
+                    if (liveOpacityInput) liveOpacityInput.value = elements.bracket_live.opacity;
+                    const liveOpacityValue = document.getElementById('bracket-live-opacity-value');
+                    if (liveOpacityValue) liveOpacityValue.textContent = elements.bracket_live.opacity + '%';
                 }
                 if (elements.bracket_title) {
                     elements.bracket_title.top = cfg.bracket_title_top || '40px';
@@ -1820,6 +1844,7 @@
                     configMap['bracket_live_height'] = elements.bracket_live.height;
                     configMap['bracket_live_show'] = elements.bracket_live.show;
                     configMap['bracket_live_font_size'] = elements.bracket_live.fontSize || '14';
+                    configMap['bracket_live_opacity'] = elements.bracket_live.opacity || '94';
                 }
                 if (elements.bracket_title) {
                     configMap['bracket_title_top'] = elements.bracket_title.top;
@@ -1951,8 +1976,13 @@
                     elements.bracket_live.show = "0";
                     elements.bracket_live.width = "100%";
                     elements.bracket_live.height = "100%";
+                    elements.bracket_live.opacity = "94";
                     elements.bracket_live.el.style.width = '100%';
                     elements.bracket_live.el.style.height = '100%';
+                    const liveOpacityInput = document.getElementById('bracket-live-opacity-input');
+                    if (liveOpacityInput) liveOpacityInput.value = '94';
+                    const liveOpacityValue = document.getElementById('bracket-live-opacity-value');
+                    if (liveOpacityValue) liveOpacityValue.textContent = '94%';
                     document.getElementById('toggle-bracket-live-show').checked = false;
                     applyVisualState('bracket_live');
                 }

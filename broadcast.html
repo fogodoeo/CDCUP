@@ -1230,11 +1230,14 @@
             border-radius: 6px;
             background:
                 radial-gradient(circle at 100% 0%, rgba(37,99,235,0.2), transparent 38%),
-                linear-gradient(135deg, rgba(3,10,24,0.98), rgba(15,29,52,0.97));
+                linear-gradient(135deg, rgba(3,10,24,var(--live-panel-opacity,0.94)), rgba(15,29,52,var(--live-panel-opacity,0.94)));
             box-shadow: 0 14px 34px rgba(2,6,23,0.48), inset 0 1px 0 rgba(255,255,255,0.07);
             color: #fff;
             font-family: 'Pretendard', sans-serif;
             box-sizing: border-box;
+        }
+        .live-round-board.is-exiting {
+            animation: live-board-exit 0.38s cubic-bezier(0.7,0,0.84,0) both;
         }
         .live-round-board::before {
             content: '';
@@ -1423,31 +1426,65 @@
             font-style: normal;
             font-weight: 700;
         }
+        .live-board-body.has-next {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 158px;
+            align-items: stretch;
+        }
+        .live-board-body.has-next .blind-live-match {
+            padding-inline: 30px;
+        }
+        .live-next-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-left: 1px solid rgba(148,163,184,0.24);
+            background: rgba(37,99,235,0.12);
+            text-align: center;
+            animation: live-next-in 0.32s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .live-next-label {
+            color: #60a5fa;
+            font-size: 10px;
+            font-weight: 950;
+            letter-spacing: 0.18em;
+        }
+        .live-next-code {
+            margin-top: 2px;
+            color: #fff;
+            font-size: 29px;
+            font-weight: 950;
+            letter-spacing: -0.04em;
+            line-height: 1;
+        }
+        .live-next-note {
+            margin-top: 4px;
+            color: #94a3b8;
+            font-size: 9px;
+            font-weight: 800;
+        }
         @media (max-width: 720px) {
             .blind-live-match { gap: 12px; padding-inline: 18px; }
             .blind-live-team { font-size: 44px; }
             .blind-live-score { min-width: 132px; font-size: 54px; }
+            .live-board-body.has-next { grid-template-columns: minmax(0, 1fr) 122px; }
+            .live-board-body.has-next .blind-live-match { gap: 8px; padding-inline: 12px; }
+            .live-board-body.has-next .blind-live-team { font-size: 37px; }
+            .live-board-body.has-next .blind-live-score { min-width: 108px; font-size: 47px; }
+            .live-next-code { font-size: 25px; }
         }
         .auction-motion-overlay {
-            position: fixed;
+            position: absolute;
             inset: 0;
-            z-index: 9999;
+            z-index: 5;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             background:
-                radial-gradient(circle at 50% 50%, rgba(37,99,235,0.35), transparent 60%),
-                linear-gradient(135deg, rgba(3,10,24,0.97), rgba(15,29,52,0.97));
-            animation: sold-overlay-in 0.4s cubic-bezier(0.16,1,0.3,1) both;
-        }
-        .auction-motion-overlay.to-left,
-        .auction-motion-overlay.to-right {
-            animation: sold-overlay-in 0.4s cubic-bezier(0.16,1,0.3,1) both;
-        }
-        @keyframes sold-overlay-in {
-            from { opacity: 0; transform: scale(1.1); }
-            to { opacity: 1; transform: scale(1); }
+                linear-gradient(90deg, rgba(2,6,23,0.98), rgba(10,24,48,0.98));
+            animation: scorebug-wipe-in 0.32s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-motion-overlay::before {
             content: '';
@@ -1460,81 +1497,57 @@
             position: relative;
             z-index: 2;
             display: grid;
-            grid-template-columns: 1fr auto 1fr;
+            grid-template-columns: minmax(90px,1fr) minmax(260px,auto) minmax(90px,1fr);
             align-items: center;
             width: 100%;
-            max-width: 900px;
-            padding: 40px 60px;
+            padding: 15px 44px 12px;
         }
         .auction-sold-copy { text-align: center; }
         .auction-sold-turn {
             color: #93c5fd;
-            font-size: 16px;
+            font-size: 10px;
             font-weight: 900;
             letter-spacing: 0.14em;
         }
         .auction-sold-winner {
-            display: block;
-            margin-top: 8px;
+            display: inline-block;
+            margin-top: 3px;
             color: #fff;
-            font-size: 32px;
-            font-weight: 900;
+            font-size: 23px;
+            font-weight: 950;
+            animation: scorebug-copy-in 0.34s 0.08s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-sold-price {
-            display: block;
-            margin-top: 6px;
-            color: #f8fafc;
-            font-size: 52px;
+            display: inline-block;
+            margin-left: 15px;
+            color: #fbbf24;
+            font-size: 27px;
             font-weight: 950;
             font-variant-numeric: tabular-nums;
             letter-spacing: -0.04em;
+            animation: scorebug-copy-in 0.34s 0.14s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-target-team {
             color: #64748b;
-            font-size: 24px;
-            font-weight: 900;
-            letter-spacing: 0.12em;
+            font-size: 34px;
+            font-weight: 950;
+            letter-spacing: -0.04em;
         }
         .auction-target-team:first-child { text-align: left; }
         .auction-target-team:last-child { text-align: right; }
-        .auction-target-team.is-target { color: #bfdbfe; }
-        .auction-price-token {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            z-index: 1;
-            min-width: 160px;
-            padding: 14px 24px;
-            border: 2px solid rgba(96,165,250,0.7);
-            border-radius: 8px;
-            background: #1d4ed8;
-            color: #fff;
-            font-size: 28px;
-            font-weight: 950;
-            text-align: center;
-            opacity: 0;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 40px rgba(37,99,235,0.6);
-        }
-        .auction-motion-overlay.to-left .auction-price-token {
-            animation: price-flow-left 1.45s 0.45s cubic-bezier(0.16,1,0.3,1) both;
-        }
-        .auction-motion-overlay.to-right .auction-price-token {
-            animation: price-flow-right 1.45s 0.45s cubic-bezier(0.16,1,0.3,1) both;
-        }
+        .auction-target-team.is-target { color: #60a5fa; }
         .auction-result-content {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            gap: 40px;
+            gap: 24px;
             width: 100%;
-            max-width: 900px;
-            padding: 40px 60px;
+            padding: 13px 44px 10px;
             animation: round-result-in 0.45s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-result-team {
             color: #64748b;
-            font-size: 42px;
+            font-size: 32px;
             font-weight: 950;
         }
         .auction-result-team:first-child { text-align: right; }
@@ -1547,7 +1560,7 @@
         .auction-result-score span {
             display: block;
             color: #94a3b8;
-            font-size: 14px;
+            font-size: 10px;
             font-weight: 900;
             letter-spacing: 0.14em;
         }
@@ -1555,23 +1568,29 @@
             display: block;
             margin-top: 3px;
             color: #fff;
-            font-size: 56px;
+            font-size: 42px;
             font-weight: 950;
             letter-spacing: -0.06em;
         }
-        @keyframes price-flow-left {
-            0% { opacity: 0; transform: translate(-50%,-50%) scale(0.82); }
-            26% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-            100% { opacity: 0; transform: translate(-360%,-50%) scale(0.72); }
+        @keyframes scorebug-wipe-in {
+            from { opacity: 0; clip-path: inset(0 50% 0 50%); }
+            to { opacity: 1; clip-path: inset(0 0 0 0); }
         }
-        @keyframes price-flow-right {
-            0% { opacity: 0; transform: translate(-50%,-50%) scale(0.82); }
-            26% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
-            100% { opacity: 0; transform: translate(260%,-50%) scale(0.72); }
+        @keyframes scorebug-copy-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         @keyframes round-result-in {
             from { opacity: 0; transform: scale(0.94); }
             to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes live-board-exit {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(70px); }
+        }
+        @keyframes live-next-in {
+            from { opacity: 0; transform: translateX(12px); }
+            to { opacity: 1; transform: translateX(0); }
         }
         @keyframes sports-board-in {
             from { opacity: 0; transform: translateY(16px) scale(0.985); }
@@ -3228,6 +3247,12 @@
                 window.latestConfigMap = map;
                 applyBracketPageMap(map);
             }
+
+            if (e.data.type === 'bracketLiveOpacity') {
+                const treeLive = document.getElementById('bracket-page-tree-live');
+                const value = Math.max(35, Math.min(100, Number(e.data.value) || 94)) / 100;
+                if (treeLive) treeLive.style.setProperty('--live-panel-opacity', String(value));
+            }
         });
 
         // ══════════════════════════════════════
@@ -3289,6 +3314,7 @@
             const liveWidth = map.bracket_live_width || '100%';
             const liveHeight = map.bracket_live_height || '100%';
             const liveFontSize = map.bracket_live_font_size || '14';
+            const liveOpacity = Math.max(35, Math.min(100, parseInt(map.bracket_live_opacity || '94', 10) || 94)) / 100;
 
             if (treeFull) {
                 treeFull.style.position = 'absolute';
@@ -3307,6 +3333,7 @@
                 treeLive.style.height = liveHeight;
                 treeLive.style.display = 'flex';
                 treeLive.style.setProperty('--bracket-fs', liveFontSize + 'px');
+                treeLive.style.setProperty('--live-panel-opacity', String(liveOpacity));
             }
 
             // Apply font-size via CSS variable on the container
@@ -3609,33 +3636,79 @@
             if (window.latestConfigMap) applyBracketPageMap(window.latestConfigMap);
         }
 
-        function startAuctionMotion(payload) {
-            if (window._auctionMotionTimer) clearTimeout(window._auctionMotionTimer);
-            window._auctionMotion = Object.assign({ phase: 'sold' }, payload);
+        function getLiveAuctionState() {
+            if (!window._liveAuctionState) {
+                window._liveAuctionState = {
+                    initialized: false,
+                    itemStatus: new Map(),
+                    playedEvents: new Set(),
+                    queue: [],
+                    motion: null,
+                    timer: null
+                };
+            }
+            return window._liveAuctionState;
+        }
+
+        function finishAuctionMotion() {
+            const state = getLiveAuctionState();
+            if (state.timer) clearTimeout(state.timer);
+            state.timer = null;
+            state.motion = null;
+            window._auctionMotion = null;
             repaintBracketFromLatestMap();
-            window._auctionMotionTimer = setTimeout(() => {
+            const next = state.queue.shift();
+            if (next) startAuctionMotion(next);
+        }
+
+        function startAuctionMotion(payload) {
+            const state = getLiveAuctionState();
+            if (!payload || !payload.eventKey || state.playedEvents.has(payload.eventKey)) return;
+            if (state.motion) {
+                if (!state.queue.some(item => item.eventKey === payload.eventKey)) state.queue.push(payload);
+                return;
+            }
+
+            state.playedEvents.add(payload.eventKey);
+            state.motion = Object.assign({ phase: 'sold', kind: 'auction' }, payload);
+            window._auctionMotion = state.motion;
+            repaintBracketFromLatestMap();
+            state.timer = setTimeout(() => {
                 if (payload.roundComplete) {
-                    window._auctionMotion = Object.assign({}, payload, { phase: 'result' });
+                    state.motion = Object.assign({}, payload, { phase: 'result', kind: 'auction' });
+                    window._auctionMotion = state.motion;
                     repaintBracketFromLatestMap();
-                    window._auctionMotionTimer = setTimeout(() => {
-                        window._auctionMotion = null;
-                        window._auctionMotionTimer = null;
+                    state.timer = setTimeout(() => {
+                        state.motion = Object.assign({}, payload, { phase: 'exit', kind: 'auction' });
+                        window._auctionMotion = state.motion;
                         repaintBracketFromLatestMap();
-                    }, 2200);
+                        state.timer = setTimeout(finishAuctionMotion, 380);
+                    }, 1500);
                 } else {
-                    window._auctionMotion = null;
-                    window._auctionMotionTimer = null;
-                    repaintBracketFromLatestMap();
+                    finishAuctionMotion();
                 }
-            }, 2600);
+            }, 1750);
+        }
+
+        function startLiveBoardExit(payload) {
+            const state = getLiveAuctionState();
+            if (!payload || !payload.eventKey || state.motion || state.playedEvents.has(payload.eventKey)) return;
+            state.playedEvents.add(payload.eventKey);
+            state.motion = Object.assign({}, payload, { phase: 'exit', kind: 'board-exit' });
+            window._auctionMotion = state.motion;
+            repaintBracketFromLatestMap();
+            state.timer = setTimeout(finishAuctionMotion, 380);
         }
 
         async function renderBracketLiveView(scale, bracket, map) {
+            const renderId = (window._bracketLiveRenderId || 0) + 1;
+            window._bracketLiveRenderId = renderId;
             const tree = document.getElementById('bracket-page-tree-live');
             const titleEl = document.getElementById('bracket-page-title');
 
             let items = [];
             try { items = await getBattleItemsCached(); } catch(e){}
+            if (renderId !== window._bracketLiveRenderId) return;
 
             // bracket 매치에서 팀 letter 매핑 자동 구성
             const matchCount = scale / 2;
@@ -3650,26 +3723,76 @@
                 if (m.right) { letterToTeam[rL] = m.right.trim(); letterToGroup[rL] = i; }
             }
 
-            // 진행 중인 개체에서 현재 매치 자동 감지
+            const doneStatuses = new Set(['완료', 'sold', '낙찰', '유찰']);
+            const isDone = item => Boolean(item && doneStatuses.has(item.status));
+            const getItemKey = item => String(item?.row || getCleanCode(item) || item?.name || '').trim();
+
+            // 상태 전이를 한 곳에서 소비한다. 같은 낙찰 이벤트는 렌더 횟수와 무관하게 정확히 한 번만 재생된다.
+            const auctionState = getLiveAuctionState();
+            const newSoldItems = [];
+            if (!auctionState.initialized) {
+                items.forEach(item => {
+                    const key = getItemKey(item);
+                    if (key) auctionState.itemStatus.set(key, item.status || '');
+                });
+                auctionState.initialized = true;
+            } else {
+                items.forEach(item => {
+                    const key = getItemKey(item);
+                    if (!key) return;
+                    const previousStatus = auctionState.itemStatus.get(key) || '';
+                    const currentStatus = item.status || '';
+                    if (currentStatus === '낙찰' && previousStatus !== '낙찰') newSoldItems.push(item);
+                    if (currentStatus !== '낙찰') auctionState.playedEvents.delete(key + '|낙찰');
+                    auctionState.itemStatus.set(key, currentStatus);
+                });
+            }
+
+            // 진행 중인 개체를 최우선으로 보고, 그 사이에는 방금 낙찰된 개체 또는 한쪽만 끝난 라운드를 본다.
             const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
+            const newestSoldItem = newSoldItems.length ? newSoldItems[newSoldItems.length - 1] : null;
             let detectedRound = 0, detectedGroup = 0, detectedLetter = '';
             let leftTeamLetter = '', rightTeamLetter = '';
 
-            if (activeItem) {
-                const code = (getCleanCode(activeItem) || (activeItem.name || '').trim().toUpperCase());
+            const contextItem = activeItem || newestSoldItem;
+            if (contextItem) {
+                const code = (getCleanCode(contextItem) || (contextItem.name || '').trim().toUpperCase());
                 if (code && code.length >= 2) {
                     detectedLetter = code.charAt(0);
                     detectedRound = parseInt(code.substring(1), 10) || 0;
                     detectedGroup = letterToGroup[detectedLetter] || 0;
                 }
             }
+
+            const motion = auctionState.motion || window._auctionMotion;
+            if (!detectedGroup && motion?.group) {
+                detectedGroup = motion.group;
+                detectedRound = motion.round;
+                detectedLetter = motion.side === 'left' ? motion.leftTeamLetter : motion.rightTeamLetter;
+            }
+
+            // 새로고침 중에도 선공만 끝난 상태라면 마지막 시작 시각을 기준으로 후공 NEXT를 복원한다.
+            let waitingNextCode = '';
             if (!detectedGroup) {
-                const doneItems = items.filter(i => ['완료','sold','낙찰','유찰'].includes(i.status));
-                for (let di = doneItems.length - 1; di >= 0; di--) {
-                    const code = (getCleanCode(doneItems[di]) || (doneItems[di].name || '').trim().toUpperCase());
-                    if (code && code.length >= 2) {
-                        const grp = letterToGroup[code.charAt(0)];
-                        if (grp) { detectedLetter = code.charAt(0); detectedRound = parseInt(code.substring(1), 10) || 0; detectedGroup = grp; break; }
+                const completed = items
+                    .map((item, index) => ({ item, index, time: Date.parse(item.start_time || '') || 0 }))
+                    .filter(entry => isDone(entry.item))
+                    .sort((a, b) => (a.time - b.time) || (a.index - b.index));
+                const latest = completed.length ? completed[completed.length - 1].item : null;
+                const latestCode = getCleanCode(latest) || '';
+                const latestLetter = latestCode.charAt(0);
+                const latestRound = parseInt(latestCode.slice(1), 10) || 0;
+                const latestGroup = letterToGroup[latestLetter] || 0;
+                if (latestGroup && latestRound) {
+                    const pairLeft = String.fromCharCode(65 + (latestGroup - 1) * 2);
+                    const pairRight = String.fromCharCode(65 + (latestGroup - 1) * 2 + 1);
+                    const leftItem = findItemByCode(items, pairLeft + latestRound);
+                    const rightItem = findItemByCode(items, pairRight + latestRound);
+                    if (isDone(leftItem) !== isDone(rightItem)) {
+                        detectedGroup = latestGroup;
+                        detectedRound = latestRound;
+                        detectedLetter = latestLetter;
+                        waitingNextCode = (isDone(leftItem) ? pairRight : pairLeft) + latestRound;
                     }
                 }
             }
@@ -3680,8 +3803,9 @@
             }
 
             if (!detectedGroup) {
-                tree.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:95%;max-width:780px;margin:0 auto;padding:30px;background:rgba(15,23,42,0.65);backdrop-filter:blur(12px);border:2px solid rgba(255,255,255,0.08);border-radius:20px;box-shadow:0 8px 32px rgba(0,0,0,0.5);gap:16px;"><div style="font-size:24px;font-weight:900;color:#fff;">경기 대기 중</div><div style="font-size:14px;color:#94a3b8;font-weight:600;">대진표에 등록된 개체의 경매를 시작하면 자동으로 표시됩니다.</div></div>';
-                if (titleEl) titleEl.textContent = '대기 중';
+                tree.innerHTML = '';
+                delete tree.dataset.liveRenderKey;
+                if (titleEl) titleEl.textContent = '';
                 return;
             }
 
@@ -3699,8 +3823,8 @@
                 const rItem = findItemByCode(items, rightTeamLetter + r);
                 const lp = parseFloat(lItem?.sold_price || lItem?.soldPrice || 0);
                 const rp = parseFloat(rItem?.sold_price || rItem?.soldPrice || 0);
-                const lSold = ['완료','sold','낙찰','유찰'].includes(lItem?.status);
-                const rSold = ['완료','sold','낙찰','유찰'].includes(rItem?.status);
+                const lSold = isDone(lItem);
+                const rSold = isDone(rItem);
                 const bothDone = lSold && rSold;
                 let roundWinner = '';
                 if (bothDone) {
@@ -3711,27 +3835,49 @@
                 roundData.push({ round: r, lItem, rItem, lp, rp, lSold, rSold, bothDone, roundWinner, isCurrent: r === detectedRound, leftItemName: leftTeamLetter + r, rightItemName: rightTeamLetter + r });
             }
 
+            if (!activeItem && !waitingNextCode) {
+                const currentRound = roundData.find(data => data.round === detectedRound);
+                if (currentRound && currentRound.lSold !== currentRound.rSold) {
+                    waitingNextCode = (currentRound.lSold ? rightTeamLetter : leftTeamLetter) + detectedRound;
+                }
+            }
+
             // 낙찰 애니메이션
             const auctionMotionEnabled = String(map.auction_animation_enabled ?? '1') !== '0';
-            if (!auctionMotionEnabled && window._auctionMotion) { if (window._auctionMotionTimer) clearTimeout(window._auctionMotionTimer); window._auctionMotion = null; window._auctionMotionTimer = null; }
-            window._lastSeenSold = window._lastSeenSold || {};
-            if (!window._lastSeenSoldInitialized) {
-                items.forEach(i => { if (i.status === '낙찰' || i.status === '유찰') { const k = i.row || getCleanCode(i) || i.name; if (k) window._lastSeenSold[k] = i.status; } });
-                window._lastSeenSoldInitialized = true;
-            } else {
-                items.forEach(i => {
-                    const cc = getCleanCode(i); const k = i.row || cc || i.name;
-                    if (k && (i.status === '낙찰' || i.status === '유찰') && window._lastSeenSold[k] !== i.status) {
-                        window._lastSeenSold[k] = i.status;
-                        if (!auctionMotionEnabled || i.status !== '낙찰' || !cc) return;
-                        const iL = cc.charAt(0).toUpperCase();
-                        const side = iL === leftTeamLetter ? 'left' : (iL === rightTeamLetter ? 'right' : '');
-                        if (!side) return;
-                        const iR = parseInt(cc.slice(1), 10);
-                        const ri = roundData.find(d => d.round === iR);
-                        startAuctionMotion({ side, teamLabel: iL + '팀', leftTeamLabel: leftTeamLetter + '팀', rightTeamLabel: rightTeamLetter + '팀', turnLabel: '', round: iR, winner: maskAuctionWinner(i.winner || ''), price: formatAuctionMotionPrice(i.sold_price || i.soldPrice || 0), roundComplete: Boolean(ri?.bothDone), roundWinner: ri?.roundWinner || '', leftScore: leftRoundWins, rightScore: rightRoundWins });
-                    }
-                });
+            if (!auctionMotionEnabled && auctionState.motion && auctionState.motion.kind !== 'board-exit') {
+                if (auctionState.timer) clearTimeout(auctionState.timer);
+                auctionState.timer = null;
+                auctionState.motion = null;
+                auctionState.queue = [];
+                window._auctionMotion = null;
+            }
+            if (newestSoldItem) {
+                const cc = getCleanCode(newestSoldItem);
+                const eventKey = getItemKey(newestSoldItem) + '|낙찰';
+                const iL = cc.charAt(0).toUpperCase();
+                const side = iL === leftTeamLetter ? 'left' : (iL === rightTeamLetter ? 'right' : '');
+                const iR = parseInt(cc.slice(1), 10);
+                const ri = roundData.find(data => data.round === iR);
+                if (cc && side && iR) {
+                    const motionPayload = {
+                        eventKey,
+                        group: detectedGroup,
+                        side,
+                        leftTeamLetter,
+                        rightTeamLetter,
+                        leftTeamLabel: leftTeamLetter + '팀',
+                        rightTeamLabel: rightTeamLetter + '팀',
+                        round: iR,
+                        winner: maskAuctionWinner(newestSoldItem.winner || ''),
+                        price: formatAuctionMotionPrice(newestSoldItem.sold_price || newestSoldItem.soldPrice || 0),
+                        roundComplete: Boolean(ri?.bothDone),
+                        roundWinner: ri?.roundWinner || '',
+                        leftScore: leftRoundWins,
+                        rightScore: rightRoundWins
+                    };
+                    if (auctionMotionEnabled) startAuctionMotion(motionPayload);
+                    else if (motionPayload.roundComplete) startLiveBoardExit(motionPayload);
+                }
             }
 
             // 타이틀
@@ -3741,12 +3887,12 @@
 
             // 오버레이 HTML
             let motionHtml = '';
-            const mot = window._auctionMotion;
+            const mot = auctionState.motion || window._auctionMotion;
             const leftDisplayLabel = mot?.leftTeamLabel || (leftTeamLetter + '팀');
             const rightDisplayLabel = mot?.rightTeamLabel || (rightTeamLetter + '팀');
             if (auctionMotionEnabled && mot?.phase === 'sold') {
-                motionHtml = '<div class="auction-motion-overlay ' + (mot.side === 'left' ? 'to-left' : 'to-right') + '"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND 낙찰</span><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div><span class="auction-price-token">' + esc(mot.price) + '</span></div>';
-            } else if (auctionMotionEnabled && mot?.phase === 'result') {
+                motionHtml = '<div class="auction-motion-overlay"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND · SOLD</span><div><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span></div></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div></div>';
+            } else if (auctionMotionEnabled && (mot?.phase === 'result' || mot?.phase === 'exit')) {
                 const lR = mot.roundWinner === 'left' ? '승' : (mot.roundWinner === 'right' ? '패' : '무');
                 const rR = mot.roundWinner === 'right' ? '승' : (mot.roundWinner === 'left' ? '패' : '무');
                 motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftDisplayLabel) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore) + ' : ' + esc(mot.rightScore) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightDisplayLabel) + ' ' + rR + '</div></div></div>';
@@ -3755,7 +3901,16 @@
             // 렌더링 (실제 대진 코드 + 진행중 팀 하이라이트)
             const leftActive = activeItem && activeSide === 'left' ? ' is-active' : '';
             const rightActive = activeItem && activeSide === 'right' ? ' is-active' : '';
-            tree.innerHTML = '<section class="live-round-board" style="position:relative;">' + motionHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></section>';
+            const nextHtml = !activeItem && waitingNextCode
+                ? '<aside class="live-next-panel"><span class="live-next-label">NEXT</span><strong class="live-next-code">' + esc(waitingNextCode) + '</strong><span class="live-next-note">다음 경매 개체</span></aside>'
+                : '';
+            const bodyClass = nextHtml ? 'live-board-body has-next' : 'live-board-body';
+            const exitClass = mot?.phase === 'exit' ? ' is-exiting' : '';
+            const renderKey = [detectedGroup, detectedRound, leftRoundWins, rightRoundWins, activeSide, waitingNextCode, mot?.eventKey || '', mot?.phase || ''].join('|');
+            if (tree.dataset.liveRenderKey !== renderKey) {
+                tree.dataset.liveRenderKey = renderKey;
+                tree.innerHTML = '<section class="live-round-board' + exitClass + '">' + motionHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="' + bodyClass + '"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div>' + nextHtml + '</div></section>';
+            }
         }
 
         let lastActiveItemName = '';
