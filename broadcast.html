@@ -2568,16 +2568,16 @@
                 }
             }
 
-            // Toggles active display mode transitions (배치기 모드일 때는 OFF 설정이어도 레이아웃 가이드를 보여주기 위해 항상 visible)
+            // 전체대진/실시간대진 노출 설정을 page=3 송출 화면에서도 그대로 적용한다.
             if (treeFull) {
-                if ((masterShow && fullShow) || isBracketPage) {
+                if (masterShow && fullShow) {
                     treeFull.classList.add('visible');
                 } else {
                     treeFull.classList.remove('visible');
                 }
             }
             if (treeLive) {
-                if ((masterShow && liveShow) || isBracketPage) {
+                if (masterShow && liveShow) {
                     treeLive.classList.add('visible');
                 } else {
                     treeLive.classList.remove('visible');
@@ -2594,10 +2594,10 @@
                             <div style="font-size:12px;color:#475569;margin-top:8px;">preview.html?page=3 → 방송 송출 → 16강/8강/4강 선택</div>
                         </div>
                     `;
-                    treeFull.classList.add('visible');
+                    treeFull.classList.toggle('visible', masterShow && fullShow);
                 }
                 if (treeLive) {
-                    treeLive.classList.remove('visible');
+                    treeLive.classList.toggle('visible', masterShow && liveShow);
                 }
                 return;
             }
@@ -2608,10 +2608,10 @@
             let bracket = { matches: {} };
             try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
 
-            if (fullShow || isBracketPage) {
+            if (fullShow) {
                 renderBracketPageTree(parseInt(active), bracket, map);
             }
-            if (liveShow || isBracketPage) {
+            if (liveShow) {
                 renderBracketLiveView(parseInt(active), bracket, map);
             }
         }

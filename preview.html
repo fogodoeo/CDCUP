@@ -331,6 +331,34 @@
             transform: translateX(18px);
         }
 
+        .switch-container.layout-target {
+            padding: 6px 8px;
+            border-radius: 8px;
+            background: rgba(59, 130, 246, 0.12);
+            box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.55);
+        }
+
+        .layout-target-badge {
+            display: none;
+            padding: 2px 5px;
+            border-radius: 999px;
+            background: #2563eb;
+            color: #fff;
+            font-size: 9px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .switch-container.layout-target .layout-target-badge {
+            display: inline-flex;
+        }
+
+        .draggable-bracket.layout-active {
+            z-index: 40 !important;
+            border-style: solid;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.75), 0 0 20px rgba(59,130,246,0.7);
+        }
+
         .actions-row {
             display: flex;
             gap: 8px;
@@ -677,12 +705,14 @@
                         <span>🏷️ 네임택2 노출</span>
                         <input type="checkbox" id="toggle-nametag2-show" class="switch-input" checked onchange="toggleShowState('nametag2')">
                     </div>
-                    <div class="switch-container" id="toggle-bracket-full-show-group" style="display:none;">
+                    <div class="switch-container" id="toggle-bracket-full-show-group" style="display:none;" onclick="focusBracketLayer('bracket_full')" title="클릭하면 전체대진 배치 박스가 선택됩니다">
                         <span>🏆 전체대진 노출</span>
+                        <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-bracket-full-show" class="switch-input" checked onchange="toggleShowState('bracket_full')">
                     </div>
-                    <div class="switch-container" id="toggle-bracket-live-show-group" style="display:none;">
+                    <div class="switch-container" id="toggle-bracket-live-show-group" style="display:none;" onclick="focusBracketLayer('bracket_live')" title="클릭하면 실시간대진 배치 박스가 선택됩니다">
                         <span>🔴 실시간대진 노출</span>
+                        <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-bracket-live-show" class="switch-input" onchange="toggleShowState('bracket_live')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-title-show-group" style="display:none;">
@@ -899,6 +929,19 @@
         let startY = 0;
         let resizeStartW = 0;
         let resizeStartH = 0;
+        let visibilitySaveQueue = Promise.resolve();
+
+        function focusBracketLayer(key) {
+            if (pageNum !== '3' || !elements[key]) return;
+            ['bracket_full', 'bracket_live'].forEach(layerKey => {
+                if (!elements[layerKey]) return;
+                const isTarget = layerKey === key;
+                elements[layerKey].el.classList.toggle('layout-active', isTarget);
+                elements[layerKey].el.style.zIndex = isTarget ? '40' : '10';
+                const group = document.getElementById(`toggle-${layerKey.replace('_', '-')}-show-group`);
+                if (group) group.classList.toggle('layout-target', isTarget);
+            });
+        }
 
         function toast(msg) {
             const t = document.getElementById('toast');
@@ -1033,6 +1076,12 @@
                 if (elements.bracket_live) document.getElementById('toggle-bracket-live-show').checked = elements.bracket_live.show === "1";
                 if (elements.bracket_title) document.getElementById('toggle-bracket-title-show').checked = elements.bracket_title.show === "1";
                 if (elements.battle_ann) document.getElementById('toggle-battle-ann-show').checked = elements.battle_ann.show === "1";
+                if (pageNum === '3') {
+                    const initialLayer = elements.bracket_live.show === '1' && elements.bracket_full.show !== '1'
+                        ? 'bracket_live'
+                        : 'bracket_full';
+                    focusBracketLayer(initialLayer);
+                }
 
                 updateLabelReadouts();
 
@@ -1306,6 +1355,9 @@
         function startDrag(e, key) {
             isDragging = true;
             activeDragKey = key;
+            if (key === 'bracket_full' || key === 'bracket_live') {
+                focusBracketLayer(key);
+            }
 
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
             const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -1398,10 +1450,11 @@
             const maxX = containerRect.width - el.offsetWidth;
             let maxY = containerRect.height - el.offsetHeight;
 
-            if (activeDragKey === 'bracket') {
-                // Allow the bracket to be dragged beyond all boundaries
-                x = Math.max(-el.offsetWidth * 0.8, Math.min(x, containerRect.width - el.offsetWidth * 0.2));
-                y = Math.max(-el.offsetHeight * 0.8, Math.min(y, containerRect.height));
+            if (activeDragKey === 'bracket_full' || activeDragKey === 'bracket_live') {
+                // 대진표는 화면 전체 크기여도 자유롭게 움직일 수 있게 최소 32px만 화면에 남긴다.
+                const minVisible = 32;
+                x = Math.max(-el.offsetWidth + minVisible, Math.min(x, containerRect.width - minVisible));
+                y = Math.max(-el.offsetHeight + minVisible, Math.min(y, containerRect.height - minVisible));
             } else {
                 x = Math.max(0, Math.min(x, maxX));
                 y = Math.max(0, Math.min(y, maxY));
@@ -1513,12 +1566,41 @@
             activeDragKey = null;
         }
 
-        // Toggle visibility state for banner or ticker
+        // 노출 토글은 해당 키만 순차 저장하여 빠른 조작 시 이전 요청이 최신 상태를 덮지 않게 한다.
         function toggleShowState(key) {
-            const checkbox = document.getElementById(`toggle-${key}-show`);
-            elements[key].show = checkbox.checked ? "1" : "0";
+            const checkbox = document.getElementById(`toggle-${key.replace(/_/g, '-')}-show`);
+            if (!checkbox || !elements[key]) return;
+            if (key === 'bracket_full' || key === 'bracket_live') focusBracketLayer(key);
+
+            const previousShow = elements[key].show;
+            const requestedShow = checkbox.checked ? "1" : "0";
+            elements[key].show = requestedShow;
             applyVisualState(key);
-            saveCoordinates(false);
+
+            const page3StandaloneKeys = ['bracket_full', 'bracket_live', 'bracket_title', 'battle_ann'];
+            const configKey = pageNum === '3' && page3StandaloneKeys.includes(key)
+                ? `${key}_show`
+                : `${cfgPrefix}${key}_show`;
+            checkbox.disabled = true;
+
+            visibilitySaveQueue = visibilitySaveQueue.then(async () => {
+                try {
+                    await updateConfigs({ [configKey]: requestedShow });
+                    if (elements[key].show === requestedShow) {
+                        frame.contentWindow.location.reload();
+                    }
+                    toast(`${key === 'bracket_full' ? '전체대진' : key === 'bracket_live' ? '실시간대진' : '노출 설정'} ${requestedShow === '1' ? 'ON' : 'OFF'} 저장 완료`);
+                } catch (err) {
+                    if (elements[key].show === requestedShow) {
+                        elements[key].show = previousShow;
+                        checkbox.checked = previousShow === '1';
+                        applyVisualState(key);
+                    }
+                    toast('노출 설정 저장 실패: ' + err.message);
+                } finally {
+                    checkbox.disabled = false;
+                }
+            });
         }
 
         async function saveCoordinates(isAuto = false) {
