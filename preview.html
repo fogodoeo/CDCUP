@@ -597,9 +597,9 @@
                     <span class="caret">▼</span>
                 </button>
                 <div class="cdcup-nav__dropdown-menu">
-                    <a href="broadcast.html?page=1" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
-                    <a href="broadcast.html?page=2" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
-                    <a href="broadcast.html?page=3" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
+                    <a href="broadcast.html?page=1&amp;v=20260628-auction-results" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
+                    <a href="broadcast.html?page=2&amp;v=20260628-auction-results" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
+                    <a href="broadcast.html?page=3&amp;v=20260628-auction-results" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
                 </div>
             </div>
         </div>
@@ -629,7 +629,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260628-auction-results"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -811,6 +811,7 @@
         // URL Parameter Parsing (page=1, page=2 or page=3)
         const params = new URLSearchParams(window.location.search);
         const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
+        const broadcastAssetVersion = '20260628-auction-results';
 
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
@@ -818,11 +819,11 @@
         if (pageNum === '1') {
             document.getElementById('btn-tab-p1')?.classList.add('active');
             if (pageTitle) pageTitle.textContent = "진행용 (1P) 실시간 레이아웃 배치기";
-            frame.src = "broadcast.html?page=1";
+            frame.src = `broadcast.html?page=1&v=${broadcastAssetVersion}`;
         } else if (pageNum === '3') {
             document.getElementById('btn-tab-p3')?.classList.add('active');
             if (pageTitle) pageTitle.textContent = "대진용 (3P) 실시간 레이아웃 배치기";
-            frame.src = "broadcast.html?page=3";
+            frame.src = `broadcast.html?page=3&v=${broadcastAssetVersion}`;
             // 3P: 레이아웃 미리보기 + 대진표 관리 대시보드 함께 표시
             const bgSel = document.getElementById('bracket-bg-selector-group');
             if (bgSel) bgSel.style.display = 'none';
@@ -830,7 +831,7 @@
         } else {
             document.getElementById('btn-tab-p2')?.classList.add('active');
             if (pageTitle) pageTitle.textContent = "개체용 (2P) 실시간 레이아웃 배치기";
-            frame.src = "broadcast.html?page=2"; // Default page2 layout
+            frame.src = `broadcast.html?page=2&v=${broadcastAssetVersion}`; // Default page2 layout
         }
 
         // PAGE1 전용 요소 표시
@@ -1166,11 +1167,11 @@
             const frame = document.getElementById('broadcast-frame');
             if (!frame) return;
             if (bgType === 1) {
-                frame.src = "broadcast.html?page=1";
+                frame.src = `broadcast.html?page=1&v=${broadcastAssetVersion}`;
             } else if (bgType === 2) {
-                frame.src = "broadcast.html?page=2";
+                frame.src = `broadcast.html?page=2&v=${broadcastAssetVersion}`;
             } else if (bgType === 'bracket') {
-                frame.src = "broadcast.html?page=3";
+                frame.src = `broadcast.html?page=3&v=${broadcastAssetVersion}`;
             }
         }
 
