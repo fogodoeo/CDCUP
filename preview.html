@@ -919,8 +919,8 @@
         if (pageNum === '3') {
             elements.bracket_full = {
                 el: document.getElementById('draggable-bracket-full'),
-                top: "120px", left: "0px", right: "auto", bottom: "auto",
-                show: "1", width: "100%", height: "calc(100% - 120px)"
+                top: "5%", left: "20%", right: "auto", bottom: "auto",
+                show: "1", width: "60%", height: "65%"
             };
             elements.bracket_live = {
                 el: document.getElementById('draggable-bracket-live'),
@@ -1042,13 +1042,13 @@
 
                 // Load Bracket values (PAGE3 only)
                 if (elements.bracket_full) {
-                    elements.bracket_full.top = cfg.bracket_full_top || cfg.bracket_top || '120px';
-                    elements.bracket_full.left = cfg.bracket_full_left || cfg.bracket_left || '0px';
+                    elements.bracket_full.top = cfg.bracket_full_top || cfg.bracket_top || '5%';
+                    elements.bracket_full.left = cfg.bracket_full_left || cfg.bracket_left || '20%';
                     elements.bracket_full.right = cfg.bracket_full_right || 'auto';
                     elements.bracket_full.bottom = cfg.bracket_full_bottom || 'auto';
                     elements.bracket_full.show = cfg.bracket_full_show !== undefined ? String(cfg.bracket_full_show) : '1';
-                    elements.bracket_full.width = cfg.bracket_full_width || cfg.bracket_width || '100%';
-                    elements.bracket_full.height = cfg.bracket_full_height || cfg.bracket_height || 'calc(100% - 120px)';
+                    elements.bracket_full.width = cfg.bracket_full_width || cfg.bracket_width || '60%';
+                    elements.bracket_full.height = cfg.bracket_full_height || cfg.bracket_height || '65%';
                     elements.bracket_full.fontSize = cfg.bracket_full_font_size || cfg.bracket_font_size || '14';
                     
                     const fullFontInput = document.getElementById('bracket-full-font-input');
