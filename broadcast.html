@@ -3062,6 +3062,19 @@
                     if (obj.name && obj.url) teamLogoMap[obj.name.trim()] = obj.url;
                 } catch(e) {}
             }
+            console.log('[bracket] teamLogoMap:', JSON.stringify(teamLogoMap));
+
+            // 이름 매칭 헬퍼: 정확매칭 우선, 없으면 포함 매칭
+            function getTeamLogo(teamName) {
+                if (!teamName) return '';
+                const t = teamName.trim();
+                if (teamLogoMap[t]) return teamLogoMap[t];
+                // 부분 매칭 (로고 등록명이 팀명에 포함되거나 반대)
+                for (const [name, url] of Object.entries(teamLogoMap)) {
+                    if (t.includes(name) || name.includes(t)) return url;
+                }
+                return '';
+            }
 
             const isAuctionDone = item => item && ['완료', 'sold', '낙찰', '유찰'].includes(item.status);
             const toPrice = item => Number.parseFloat(item?.sold_price || item?.soldPrice || 0) || 0;
@@ -3177,8 +3190,8 @@
                     return n.toLocaleString();
                 };
 
-                const leftLogo = match.left ? (teamLogoMap[match.left.trim()] || '') : '';
-                const rightLogo = match.right ? (teamLogoMap[match.right.trim()] || '') : '';
+                const leftLogo = getTeamLogo(match.left);
+                const rightLogo = getTeamLogo(match.right);
                 const logoStyle = 'width:32px;height:32px;border-radius:6px;object-fit:cover;margin-bottom:3px;';
 
                 node.innerHTML = `
