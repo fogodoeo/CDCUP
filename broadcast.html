@@ -1140,6 +1140,11 @@
             min-height: calc(var(--bracket-fs) * 5.6);
             padding: calc(var(--bracket-fs) * 0.42) calc(var(--bracket-fs) * 0.65);
         }
+        .sports-match-card.is-blind .sports-scoreline {
+            grid-template-columns: minmax(calc(var(--bracket-fs) * 4.5), 1fr) auto minmax(calc(var(--bracket-fs) * 4.5), 1fr);
+            gap: calc(var(--bracket-fs) * 0.72);
+            padding-inline: calc(var(--bracket-fs) * 1.15);
+        }
         .sports-team-logo {
             width: calc(var(--bracket-fs) * 3.6);
             height: calc(var(--bracket-fs) * 3.6);
@@ -1275,6 +1280,13 @@
             border-radius: 50%;
             background: #fff;
             animation: sports-live-pulse 1.3s ease-in-out infinite;
+        }
+        .live-round-chip.is-standby {
+            background: #1d4ed8;
+        }
+        .live-round-chip.is-standby::before {
+            animation: none;
+            opacity: 0.75;
         }
         .live-round-number {
             color: #93c5fd;
@@ -1425,39 +1437,38 @@
         }
         .live-next-panel {
             display: flex;
-            min-height: 31px;
+            min-height: 76px;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            border-bottom: 1px solid rgba(96,165,250,0.28);
-            background: linear-gradient(90deg, rgba(29,78,216,0.16), rgba(37,99,235,0.28), rgba(29,78,216,0.16));
+            gap: 12px;
+            background: linear-gradient(90deg, rgba(15,23,42,0.18), rgba(37,99,235,0.2), rgba(15,23,42,0.18));
             text-align: center;
             animation: live-next-in 0.32s cubic-bezier(0.16,1,0.3,1) both;
         }
         .live-next-label {
             color: #60a5fa;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 950;
             letter-spacing: 0.18em;
         }
         .live-next-code {
             color: #fff;
-            font-size: 19px;
+            font-size: 36px;
             font-weight: 950;
             letter-spacing: -0.02em;
             line-height: 1;
         }
         .live-next-note {
             color: #94a3b8;
-            font-size: 9px;
+            font-size: 11px;
             font-weight: 800;
         }
         @media (max-width: 720px) {
             .blind-live-match { gap: 12px; padding-inline: 18px; }
             .blind-live-team { font-size: 44px; }
             .blind-live-score { min-width: 132px; font-size: 54px; }
-            .live-next-panel { min-height: 29px; gap: 8px; }
-            .live-next-code { font-size: 18px; }
+            .live-next-panel { min-height: 72px; gap: 10px; }
+            .live-next-code { font-size: 32px; }
         }
         .auction-motion-overlay {
             position: absolute;
@@ -3453,6 +3464,7 @@
 
             const isAuctionDone = item => item && ['완료', 'sold', '낙찰', '유찰'].includes(item.status);
             const toPrice = item => Number.parseFloat(item?.sold_price || item?.soldPrice || 0) || 0;
+            const fullBracketBlind = String(map.bracket_full_blind ?? '1') !== '0';
 
             let schedule = [];
             try { if (map.battle_schedule) schedule = JSON.parse(map.battle_schedule); } catch (e) {}
@@ -3545,20 +3557,19 @@
                 const isCurrent = !isComplete && Boolean(activeAuctionCode) && (
                     activeAuctionCode.startsWith(leftL) || activeAuctionCode.startsWith(rightL)
                 );
-                node.className = 'sports-match-card' + (isCurrent ? ' is-current' : '');
+                node.className = 'sports-match-card' + (isCurrent ? ' is-current' : '') + (fullBracketBlind ? ' is-blind' : '');
                 node.style.setProperty('--match-index', i - 1);
                 const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
                 const leftWin = displayWinner === 'left';
                 const rightWin = displayWinner === 'right';
                 const stateText = isComplete ? 'FINAL' : (isCurrent ? 'LIVE' : `${completedRounds}/${roundsPerMatch} ROUND`);
-                // 전체결과는 실제 참가 업체를 공개한다. 실시간 대진만 A/B 블라인드를 유지한다.
-                const leftName = match.left || '대기 중';
-                const rightName = match.right || '대기 중';
+                const leftName = fullBracketBlind ? leftL + '팀' : (match.left || '대기 중');
+                const rightName = fullBracketBlind ? rightL + '팀' : (match.right || '대기 중');
                 const leftScore = hasScore ? ls : 0;
                 const rightScore = hasScore ? rs : 0;
 
-                const leftLogo = getTeamLogo(match.left);
-                const rightLogo = getTeamLogo(match.right);
+                const leftLogo = fullBracketBlind ? '' : getTeamLogo(match.left);
+                const rightLogo = fullBracketBlind ? '' : getTeamLogo(match.right);
 
                 node.innerHTML = `
                     <div class="sports-match-meta">
@@ -3566,9 +3577,9 @@
                         <span class="sports-match-state">${stateText}</span>
                     </div>
                     <div class="sports-scoreline">
-                        ${leftLogo ? `<img src="${leftLogo}" class="sports-team-logo" alt="" onerror="this.style.display='none'">` : '<div class="sports-logo-placeholder"></div>'}
+                        ${fullBracketBlind ? '' : (leftLogo ? `<img src="${leftLogo}" class="sports-team-logo" alt="" onerror="this.style.display='none'">` : '<div class="sports-logo-placeholder"></div>')}
                         <div class="sports-team sports-team--left${leftWin ? ' is-leading' : ''}">
-                            <span class="sports-team-code">${esc(leftL)} TEAM</span>
+                            <span class="sports-team-code">${fullBracketBlind ? 'BLIND ' + esc(leftL) : esc(leftL) + ' TEAM'}</span>
                             <strong class="sports-team-name">${esc(leftName)}</strong>
                         </div>
                         <div class="sports-score" aria-label="${leftScore} 대 ${rightScore}">
@@ -3577,10 +3588,10 @@
                             <span class="${rightWin ? 'is-leading' : ''}">${rightScore}</span>
                         </div>
                         <div class="sports-team sports-team--right${rightWin ? ' is-leading' : ''}">
-                            <span class="sports-team-code">${esc(rightL)} TEAM</span>
+                            <span class="sports-team-code">${fullBracketBlind ? 'BLIND ' + esc(rightL) : esc(rightL) + ' TEAM'}</span>
                             <strong class="sports-team-name">${esc(rightName)}</strong>
                         </div>
-                        ${rightLogo ? `<img src="${rightLogo}" class="sports-team-logo" alt="" onerror="this.style.display='none'">` : '<div class="sports-logo-placeholder"></div>'}
+                        ${fullBracketBlind ? '' : (rightLogo ? `<img src="${rightLogo}" class="sports-team-logo" alt="" onerror="this.style.display='none'">` : '<div class="sports-logo-placeholder"></div>')}
                     </div>
                     <div class="sports-match-footer">
                         <span>${leftScore}승</span>
@@ -3892,13 +3903,21 @@
             // 렌더링 (실제 대진 코드 + 진행중 팀 하이라이트)
             const leftActive = activeItem && activeSide === 'left' ? ' is-active' : '';
             const rightActive = activeItem && activeSide === 'right' ? ' is-active' : '';
-            const nextHtml = !activeItem && waitingNextCode
-                ? '<aside class="live-next-panel"><span class="live-next-label">NEXT</span><strong class="live-next-code">' + esc(waitingNextCode) + '</strong><span class="live-next-note">다음 경매 개체</span></aside>'
+            const isWaiting = !activeItem && Boolean(waitingNextCode);
+            const nextNote = waitingNextCode === '경기 종료' ? '모든 경매 완료' : '다음 경매 개체';
+            const nextHtml = isWaiting
+                ? '<div class="live-next-panel"><span class="live-next-label">NEXT</span><strong class="live-next-code">' + esc(waitingNextCode) + '</strong><span class="live-next-note">' + nextNote + '</span></div>'
                 : '';
+            const liveBodyHtml = isWaiting
+                ? nextHtml
+                : '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>';
+            const chipClass = isWaiting ? 'live-round-chip is-standby' : 'live-round-chip';
+            const chipText = isWaiting ? 'STANDBY' : 'LIVE';
+            const roundText = isWaiting ? 'NEXT AUCTION' : (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY'));
             const renderKey = [detectedGroup, detectedRound, leftRoundWins, rightRoundWins, activeSide, waitingNextCode, mot?.eventKey || '', mot?.phase || ''].join('|');
             if (tree.dataset.liveRenderKey !== renderKey) {
                 tree.dataset.liveRenderKey = renderKey;
-                tree.innerHTML = '<section class="live-round-board">' + motionHtml + nextHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div></section>';
+                tree.innerHTML = '<section class="live-round-board">' + motionHtml + '<header class="live-round-header"><span class="' + chipClass + '">' + chipText + '</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + roundText + '</span></header>' + liveBodyHtml + '</section>';
             }
         }
 
