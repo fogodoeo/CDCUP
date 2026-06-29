@@ -1471,61 +1471,83 @@
             .live-next-code { font-size: 32px; }
         }
         .auction-motion-overlay {
-            position: absolute;
+            position: fixed;
             inset: 0;
-            z-index: 5;
+            z-index: 30000;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             background:
-                linear-gradient(90deg, rgba(2,6,23,0.98), rgba(10,24,48,0.98));
-            animation: scorebug-wipe-in 0.32s cubic-bezier(0.16,1,0.3,1) both;
+                radial-gradient(circle at 50% 48%, rgba(37,99,235,0.28), transparent 38%),
+                rgba(2,6,23,0.82);
+            backdrop-filter: blur(8px);
+            animation: auction-fullscreen-in 0.38s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-motion-overlay::before {
             content: '';
             position: absolute;
-            inset: 0 0 auto;
-            height: 4px;
-            background: linear-gradient(90deg, #d90429 0 22%, #f8fafc 22% 24%, #2563eb 24% 100%);
+            width: min(74vw, 960px);
+            height: min(74vw, 960px);
+            border: 1px solid rgba(96,165,250,0.18);
+            border-radius: 50%;
+            box-shadow: 0 0 120px rgba(37,99,235,0.2), inset 0 0 100px rgba(37,99,235,0.08);
+            animation: auction-ring-in 0.8s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-sold-content {
             position: relative;
             z-index: 2;
             display: grid;
-            grid-template-columns: minmax(90px,1fr) minmax(260px,auto) minmax(90px,1fr);
+            grid-template-columns: minmax(120px,1fr) minmax(360px,auto) minmax(120px,1fr);
             align-items: center;
-            width: 100%;
-            padding: 15px 44px 12px;
+            width: min(920px, calc(100vw - 64px));
+            min-height: 360px;
+            padding: 48px 60px;
+            border: 1px solid rgba(148,163,184,0.34);
+            border-radius: 18px;
+            background: linear-gradient(145deg, rgba(4,13,31,0.97), rgba(15,34,65,0.96));
+            box-shadow: 0 32px 100px rgba(0,0,0,0.54), inset 0 1px 0 rgba(255,255,255,0.08);
+            box-sizing: border-box;
+            animation: auction-card-in 0.48s 0.05s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .auction-sold-content::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto;
+            height: 5px;
+            border-radius: 18px 18px 0 0;
+            background: linear-gradient(90deg, #d90429 0 24%, #fff 24% 26%, #2563eb 26% 100%);
         }
         .auction-sold-copy { text-align: center; }
         .auction-sold-turn {
             color: #93c5fd;
-            font-size: 10px;
+            font-size: 16px;
             font-weight: 900;
-            letter-spacing: 0.14em;
+            letter-spacing: 0.2em;
         }
         .auction-sold-winner {
-            display: inline-block;
-            margin-top: 3px;
+            display: block;
+            margin-top: 16px;
             color: #fff;
-            font-size: 23px;
+            font-size: 46px;
             font-weight: 950;
-            animation: scorebug-copy-in 0.34s 0.08s cubic-bezier(0.16,1,0.3,1) both;
+            letter-spacing: -0.04em;
+            animation: scorebug-copy-in 0.42s 0.18s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-sold-price {
-            display: inline-block;
-            margin-left: 15px;
+            display: block;
+            margin-top: 8px;
             color: #fbbf24;
-            font-size: 27px;
+            font-size: 72px;
             font-weight: 950;
             font-variant-numeric: tabular-nums;
-            letter-spacing: -0.04em;
-            animation: scorebug-copy-in 0.34s 0.14s cubic-bezier(0.16,1,0.3,1) both;
+            letter-spacing: -0.06em;
+            text-shadow: 0 0 36px rgba(251,191,36,0.25);
+            animation: scorebug-copy-in 0.42s 0.25s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-target-team {
             color: #64748b;
-            font-size: 34px;
+            font-size: 50px;
             font-weight: 950;
             letter-spacing: -0.04em;
         }
@@ -1536,14 +1558,20 @@
             display: grid;
             grid-template-columns: 1fr auto 1fr;
             align-items: center;
-            gap: 24px;
-            width: 100%;
-            padding: 13px 44px 10px;
+            gap: 38px;
+            width: min(900px, calc(100vw - 64px));
+            min-height: 300px;
+            padding: 44px 58px;
+            border: 1px solid rgba(148,163,184,0.34);
+            border-radius: 18px;
+            background: linear-gradient(145deg, rgba(4,13,31,0.97), rgba(15,34,65,0.96));
+            box-shadow: 0 32px 100px rgba(0,0,0,0.54), inset 0 1px 0 rgba(255,255,255,0.08);
+            box-sizing: border-box;
             animation: round-result-in 0.45s cubic-bezier(0.16,1,0.3,1) both;
         }
         .auction-result-team {
             color: #64748b;
-            font-size: 32px;
+            font-size: 48px;
             font-weight: 950;
         }
         .auction-result-team:first-child { text-align: right; }
@@ -1556,7 +1584,7 @@
         .auction-result-score span {
             display: block;
             color: #94a3b8;
-            font-size: 10px;
+            font-size: 15px;
             font-weight: 900;
             letter-spacing: 0.14em;
         }
@@ -1564,13 +1592,21 @@
             display: block;
             margin-top: 3px;
             color: #fff;
-            font-size: 42px;
+            font-size: 76px;
             font-weight: 950;
             letter-spacing: -0.06em;
         }
-        @keyframes scorebug-wipe-in {
-            from { opacity: 0; clip-path: inset(0 50% 0 50%); }
-            to { opacity: 1; clip-path: inset(0 0 0 0); }
+        @keyframes auction-fullscreen-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes auction-ring-in {
+            from { opacity: 0; transform: scale(0.7); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes auction-card-in {
+            from { opacity: 0; transform: translateY(32px) scale(0.94); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
         @keyframes scorebug-copy-in {
             from { opacity: 0; transform: translateY(8px); }
@@ -1579,6 +1615,21 @@
         @keyframes round-result-in {
             from { opacity: 0; transform: scale(0.94); }
             to { opacity: 1; transform: scale(1); }
+        }
+        @media (max-width: 760px) {
+            .auction-sold-content {
+                grid-template-columns: minmax(72px,1fr) minmax(230px,auto) minmax(72px,1fr);
+                width: calc(100vw - 30px);
+                min-height: 270px;
+                padding: 34px 24px;
+            }
+            .auction-sold-turn { font-size: 12px; }
+            .auction-sold-winner { margin-top: 11px; font-size: 31px; }
+            .auction-sold-price { font-size: 48px; }
+            .auction-target-team { font-size: 34px; }
+            .auction-result-content { width: calc(100vw - 30px); min-height: 230px; gap: 18px; padding: 32px 24px; }
+            .auction-result-team { font-size: 32px; }
+            .auction-result-score strong { font-size: 54px; }
         }
         @keyframes live-next-in {
             from { opacity: 0; transform: translateY(-6px); }
@@ -1737,6 +1788,7 @@
         <!-- 실시간 경기 스코어보드 (Live Match) -->
         <div id="bracket-page-tree-live" class="bracket-tree-view" style="display:flex; justify-content:center; align-items:center; gap:60px; padding:20px; box-sizing:border-box;"></div>
     </div>
+    <div id="auction-motion-portal" aria-live="polite"></div>
 
     <!-- 배틀 안내 자막 레이어 (z-index를 10000으로 높여 대진표 컨테이너 위에 오버레이되도록 처리) -->
     <div id="battle-announcement-overlay" style="display:none; position:absolute; top:35%; left:10%; right:10%; z-index:10000; background:rgba(9, 15, 29, 0.97); border:3px solid #3b82f6; box-shadow:0 0 40px rgba(59,130,246,0.7); padding:40px 20px; border-radius:20px; text-align:center; font-family:'Pretendard', sans-serif; box-sizing:border-box;">
@@ -3360,6 +3412,7 @@
                     treeLive.classList.add('visible');
                 } else {
                     treeLive.classList.remove('visible');
+                    clearAuctionMotionPortal();
                 }
             }
 
@@ -3628,6 +3681,25 @@
             if (window.latestConfigMap) applyBracketPageMap(window.latestConfigMap);
         }
 
+        function clearAuctionMotionPortal() {
+            const portal = document.getElementById('auction-motion-portal');
+            if (!portal) return;
+            portal.innerHTML = '';
+            delete portal.dataset.motionKey;
+        }
+
+        function syncAuctionMotionPortal(html, key) {
+            const portal = document.getElementById('auction-motion-portal');
+            if (!portal) return;
+            if (!html) {
+                clearAuctionMotionPortal();
+                return;
+            }
+            if (portal.dataset.motionKey === key) return;
+            portal.dataset.motionKey = key;
+            portal.innerHTML = html;
+        }
+
         function getLiveAuctionState() {
             if (!window._liveAuctionState) {
                 window._liveAuctionState = {
@@ -3648,6 +3720,7 @@
             state.timer = null;
             state.motion = null;
             window._auctionMotion = null;
+            clearAuctionMotionPortal();
             repaintBracketFromLatestMap();
             const next = state.queue.shift();
             if (next) startAuctionMotion(next);
@@ -3754,8 +3827,17 @@
             // 새로고침 중에도 선공만 끝난 상태라면 마지막 시작 시각을 기준으로 후공 NEXT를 복원한다.
             let waitingNextCode = '';
             if (!detectedGroup) {
+                const parseAuctionTime = value => {
+                    const raw = String(value || '').trim();
+                    const timeMatch = raw.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z)?$/);
+                    if (timeMatch) {
+                        return (Number(timeMatch[1]) * 3600) + (Number(timeMatch[2]) * 60) + Number(timeMatch[3] || 0);
+                    }
+                    const parsed = Date.parse(raw);
+                    return Number.isFinite(parsed) ? parsed : -1;
+                };
                 const completed = items
-                    .map((item, index) => ({ item, index, time: Date.parse(item.start_time || '') || 0 }))
+                    .map((item, index) => ({ item, index, time: parseAuctionTime(item.start_time) }))
                     .filter(entry => isDone(entry.item))
                     .sort((a, b) => (a.time - b.time) || (a.index - b.index));
                 const latest = completed.length ? completed[completed.length - 1].item : null;
@@ -3900,6 +3982,7 @@
                 const rR = mot.roundWinner === 'right' ? '승' : (mot.roundWinner === 'left' ? '패' : '무');
                 motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftDisplayLabel) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore) + ' : ' + esc(mot.rightScore) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightDisplayLabel) + ' ' + rR + '</div></div></div>';
             }
+            syncAuctionMotionPortal(motionHtml, mot ? [mot.eventKey, mot.phase].join('|') : '');
 
             // 렌더링 (실제 대진 코드 + 진행중 팀 하이라이트)
             const leftActive = activeItem && activeSide === 'left' ? ' is-active' : '';
@@ -3918,7 +4001,7 @@
             const renderKey = [detectedGroup, detectedRound, leftRoundWins, rightRoundWins, activeSide, waitingNextCode, mot?.eventKey || '', mot?.phase || ''].join('|');
             if (tree.dataset.liveRenderKey !== renderKey) {
                 tree.dataset.liveRenderKey = renderKey;
-                tree.innerHTML = '<section class="live-round-board">' + motionHtml + '<header class="live-round-header"><span class="' + chipClass + '">' + chipText + '</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + roundText + '</span></header>' + liveBodyHtml + '</section>';
+                tree.innerHTML = '<section class="live-round-board"><header class="live-round-header"><span class="' + chipClass + '">' + chipText + '</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + roundText + '</span></header>' + liveBodyHtml + '</section>';
             }
         }
 
