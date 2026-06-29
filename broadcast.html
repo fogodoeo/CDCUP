@@ -13,7 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260629-adaptive-poll"></script>
+    <script src="supabase-bridge.js?v=20260629-motion-sync"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
@@ -1226,6 +1226,20 @@
             font-weight: 700;
         }
         .sports-score .is-leading { color: #0b4db8; }
+        .sports-score.is-total {
+            min-width: calc(var(--bracket-fs) * 7.2);
+            gap: calc(var(--bracket-fs) * 0.22);
+            font-size: calc(var(--bracket-fs) * 1.75);
+        }
+        .sports-score-unit {
+            align-self: flex-end;
+            margin: 0 0 0.12em 0.08em;
+            color: #64748b;
+            font-size: 0.38em;
+            font-style: normal;
+            font-weight: 850;
+            letter-spacing: 0;
+        }
         .sports-match-footer {
             display: grid;
             grid-template-columns: 1fr auto 1fr;
@@ -1463,9 +1477,22 @@
             font-weight: 950;
             line-height: 1;
         }
+        .blind-live-score.is-total {
+            min-width: 220px;
+            font-size: 54px;
+        }
+        .blind-live-score-unit {
+            align-self: flex-end;
+            margin: 0 0 0.12em -0.2em;
+            color: #94a3b8;
+            font-size: 0.25em;
+            font-style: normal;
+            font-weight: 850;
+            letter-spacing: 0;
+        }
         .live-next-panel {
             display: flex;
-            min-height: 76px;
+            min-height: 90px;
             align-items: center;
             justify-content: center;
             gap: 12px;
@@ -1475,20 +1502,20 @@
         }
         .live-next-label {
             color: #60a5fa;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: 950;
             letter-spacing: 0.18em;
         }
         .live-next-code {
             color: #fff;
-            font-size: 36px;
+            font-size: 50px;
             font-weight: 950;
             letter-spacing: -0.02em;
             line-height: 1;
         }
         .live-next-note {
             color: #94a3b8;
-            font-size: 11px;
+            font-size: 14px;
             font-weight: 800;
         }
         @media (max-width: 720px) {
@@ -1496,8 +1523,11 @@
             .blind-live-match { gap: 12px; padding-inline: 18px; }
             .blind-live-team { font-size: 44px; }
             .blind-live-score { min-width: 132px; font-size: 54px; }
-            .live-next-panel { min-height: 72px; gap: 10px; }
-            .live-next-code { font-size: 32px; }
+            .blind-live-score.is-total { min-width: 188px; font-size: 46px; }
+            .live-next-panel { min-height: 82px; gap: 11px; }
+            .live-next-label { font-size: 14px; }
+            .live-next-code { font-size: 44px; }
+            .live-next-note { font-size: 13px; }
         }
         .auction-motion-overlay {
             position: fixed;
@@ -1548,6 +1578,14 @@
             background: linear-gradient(90deg, #d90429 0 24%, #fff 24% 26%, #2563eb 26% 100%);
         }
         .auction-sold-copy { text-align: center; }
+        .auction-sold-item {
+            display: block;
+            margin-bottom: 9px;
+            color: #e2e8f0;
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+        }
         .auction-sold-turn {
             color: #93c5fd;
             font-size: 16px;
@@ -1562,6 +1600,19 @@
             font-weight: 950;
             letter-spacing: -0.04em;
             animation: scorebug-copy-in 0.42s 0.18s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .auction-sold-team {
+            display: inline-flex;
+            align-items: center;
+            margin-top: 13px;
+            padding: 5px 11px;
+            border: 1px solid rgba(96,165,250,0.35);
+            border-radius: 4px;
+            background: rgba(37,99,235,0.16);
+            color: #bfdbfe;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
         }
         .auction-sold-price {
             display: block;
@@ -1652,8 +1703,10 @@
                 min-height: 270px;
                 padding: 34px 24px;
             }
+            .auction-sold-item { margin-bottom: 6px; font-size: 17px; }
             .auction-sold-turn { font-size: 12px; }
             .auction-sold-winner { margin-top: 11px; font-size: 31px; }
+            .auction-sold-team { margin-top: 9px; font-size: 12px; }
             .auction-sold-price { font-size: 48px; }
             .auction-target-team { font-size: 34px; }
             .auction-result-content { width: calc(100vw - 30px); min-height: 230px; gap: 18px; padding: 32px 24px; }
@@ -3514,6 +3567,7 @@
 
             if (treeFull) {
                 treeFull.style.position = 'absolute';
+                treeFull.style.zIndex = '20';
                 treeFull.style.top = fullTop;
                 treeFull.style.left = fullLeft;
                 treeFull.style.width = fullWidth;
@@ -3523,6 +3577,7 @@
             }
             if (treeLive) {
                 treeLive.style.position = 'absolute';
+                treeLive.style.zIndex = '10';
                 treeLive.style.top = liveTop;
                 treeLive.style.left = liveLeft;
                 treeLive.style.width = liveWidth;
@@ -3649,6 +3704,22 @@
             return battleItemsRequest;
         }
 
+        function getBracketViewRound(scale, map) {
+            let round = parseInt(map?.bracket_view_round, 10);
+            const currentParts = String(map?.battle_current_match || '').split('_');
+            if (!round && currentParts.length >= 2) round = parseInt(currentParts[1], 10);
+            if (!round || round > scale) round = scale;
+            return round;
+        }
+
+        function getCurrentMatchContext(map) {
+            const parts = String(map?.battle_current_match || '').split('_');
+            return {
+                round: parts.length >= 2 ? (parseInt(parts[1], 10) || 0) : 0,
+                group: parts.length >= 3 ? (parseInt(parts[2], 10) || 0) : 0
+            };
+        }
+
         async function renderBracketPageTree(scale, bracket, map) {
             const renderId = ++bracketFullRenderId;
             const tree = document.getElementById('bracket-page-tree-full');
@@ -3673,8 +3744,6 @@
                     if (obj.name && obj.url) teamLogoMap[obj.name.trim()] = obj.url;
                 } catch(e) {}
             }
-            console.log('[bracket] teamLogoMap:', JSON.stringify(teamLogoMap));
-
             // 이름 매칭 헬퍼: 정확매칭 우선, 없으면 포함 매칭
             function getTeamLogo(teamName) {
                 if (!teamName) return '';
@@ -3710,24 +3779,8 @@
                 if (match.right) teamToLetter[match.right.trim()] = rightLetter;
             }
             
-            // 타겟 라운드 결정 (bracket_view_round가 있으면 그것을 사용, 없으면 battle_current_match에서 파싱, 그것도 없으면 scale 기본값)
-            let targetRound = parseInt(map.bracket_view_round, 10);
-            if (!targetRound && map.battle_current_match) {
-                const parts = map.battle_current_match.split('_');
-                if (parts.length >= 2) {
-                    targetRound = parseInt(parts[1], 10);
-                }
-            }
-            if (!targetRound) {
-                targetRound = scale;
-            }
-
-            // 만약 scale이 8강인데 targetRound가 16강이 되어 있다면 scale 이하로 제한
-            if (targetRound > scale) {
-                targetRound = scale;
-            }
-
-            const round = targetRound;
+            // 실시간 대진과 동일한 기준으로 현재 표시 라운드를 결정한다.
+            const round = getBracketViewRound(scale, map);
             const rMatchCount = round / 2;
             const roundTitle = round === 2 ? '결승' : `${round}강`;
             const board = document.createElement('section');
@@ -3755,10 +3808,13 @@
                 const rightL = teamToLetter[match.right?.trim()] || String.fromCharCode(65 + (i - 1) * 2 + 1);
                 const roundsPerMatch = roundsByMatch[matchKey] || 4;
                 let ls = 0, rs = 0, draws = 0, completedRounds = 0;
+                let leftTotal = 0, rightTotal = 0;
 
                 for (let r = 1; r <= roundsPerMatch; r++) {
                     const leftItem = findItemByCode(items, leftL + r);
                     const rightItem = findItemByCode(items, rightL + r);
+                    if (isAuctionDone(leftItem)) leftTotal += toPrice(leftItem);
+                    if (isAuctionDone(rightItem)) rightTotal += toPrice(rightItem);
                     if (!isAuctionDone(leftItem) || !isAuctionDone(rightItem)) continue;
                     const leftPrice = toPrice(leftItem);
                     const rightPrice = toPrice(rightItem);
@@ -3790,8 +3846,9 @@
                 const stateText = isComplete ? 'FINAL' : (isCurrent ? 'LIVE' : `${completedRounds}/${roundsPerMatch} ROUND`);
                 const leftName = fullBracketBlind ? leftL + '팀' : (match.left || '대기 중');
                 const rightName = fullBracketBlind ? rightL + '팀' : (match.right || '대기 중');
-                const leftScore = hasScore ? ls : 0;
-                const rightScore = hasScore ? rs : 0;
+                const leftScore = isComplete ? leftTotal : (hasScore ? ls : 0);
+                const rightScore = isComplete ? rightTotal : (hasScore ? rs : 0);
+                const scoreLabel = isComplete ? '합산 낙찰금액' : '라운드 스코어';
 
                 const leftLogo = fullBracketBlind ? '' : getTeamLogo(match.left);
                 const rightLogo = fullBracketBlind ? '' : getTeamLogo(match.right);
@@ -3807,10 +3864,11 @@
                             <span class="sports-team-code">${fullBracketBlind ? 'BLIND ' + esc(leftL) : esc(leftL) + ' TEAM'}</span>
                             <strong class="sports-team-name">${esc(leftName)}</strong>
                         </div>
-                        <div class="sports-score" aria-label="${leftScore} 대 ${rightScore}">
+                        <div class="sports-score${isComplete ? ' is-total' : ''}" aria-label="${scoreLabel} ${leftScore} 대 ${rightScore}">
                             <span class="${leftWin ? 'is-leading' : ''}">${leftScore}</span>
                             <i class="sports-score-separator">:</i>
                             <span class="${rightWin ? 'is-leading' : ''}">${rightScore}</span>
+                            ${isComplete ? '<em class="sports-score-unit">만원</em>' : ''}
                         </div>
                         <div class="sports-team sports-team--right${rightWin ? ' is-leading' : ''}">
                             <span class="sports-team-code">${fullBracketBlind ? 'BLIND ' + esc(rightL) : esc(rightL) + ' TEAM'}</span>
@@ -3819,9 +3877,9 @@
                         ${fullBracketBlind ? '' : (rightLogo ? `<img src="${rightLogo}" class="sports-team-logo" alt="" onerror="this.style.display='none'">` : '<div class="sports-logo-placeholder"></div>')}
                     </div>
                     <div class="sports-match-footer">
-                        <span>${leftScore}승</span>
-                        <span class="sports-match-draws">${draws ? `무 ${draws}` : `${completedRounds}/${roundsPerMatch}`}</span>
-                        <span>${rightScore}승</span>
+                        <span>${isComplete ? `총 ${leftTotal}만원` : `${ls}승`}</span>
+                        <span class="sports-match-draws">${isComplete ? `FINAL · ${ls}:${rs}` : (draws ? `무 ${draws}` : `${completedRounds}/${roundsPerMatch}`)}</span>
+                        <span>${isComplete ? `총 ${rightTotal}만원` : `${rs}승`}</span>
                     </div>
                 `;
                 col.appendChild(node);
@@ -3829,7 +3887,7 @@
             board.appendChild(col);
             const note = document.createElement('div');
             note.className = 'sports-results-note';
-            note.textContent = '라운드별 경기 결과';
+            note.textContent = '진행 중에는 라운드 스코어 · 경기 종료 후에는 합산 낙찰금액';
             board.appendChild(note);
             tree.appendChild(board);
         }
@@ -3917,11 +3975,11 @@
                     repaintBracketFromLatestMap();
                     state.timer = setTimeout(() => {
                         finishAuctionMotion();
-                    }, 1500);
+                    }, 2000);
                 } else {
                     finishAuctionMotion();
                 }
-            }, 1750);
+            }, 2600);
         }
 
         async function renderBracketLiveView(scale, bracket, map) {
@@ -3973,11 +4031,61 @@
                 });
             }
 
-            // 진행 중인 개체를 최우선으로 보고, 그 사이에는 방금 낙찰된 개체 또는 한쪽만 끝난 라운드를 본다.
+            // 저장된 경매 순서와 실제 완료 상태를 함께 보고 아직 끝나지 않은 첫 단계를 찾는다.
             const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
             const newestSoldItem = newSoldItems.length ? newSoldItems[newSoldItems.length - 1] : null;
             let detectedRound = 0, detectedGroup = 0, detectedLetter = '';
             let leftTeamLetter = '', rightTeamLetter = '';
+
+            let scheduleSteps = [];
+            try {
+                const savedSchedule = JSON.parse(map.battle_schedule || '[]');
+                const seenSteps = new Set();
+                savedSchedule.forEach(step => {
+                    const group = Number(step?.group) || 0;
+                    const round = Number(step?.round) || 0;
+                    const key = group + '_' + round;
+                    if (!group || group > matchCount || !round || round > rpm || seenSteps.has(key)) return;
+                    seenSteps.add(key);
+                    scheduleSteps.push({ group, round });
+                });
+            } catch (e) {}
+            if (scheduleSteps.length !== matchCount * rpm) {
+                scheduleSteps = [];
+                for (let round = 1; round <= rpm; round++) {
+                    const startGroup = ((round - 1) % matchCount) + 1;
+                    for (let index = 0; index < matchCount; index++) {
+                        scheduleSteps.push({
+                            group: ((startGroup - 1 + index) % matchCount) + 1,
+                            round
+                        });
+                    }
+                }
+            }
+
+            function getPendingAuctionStep() {
+                for (const step of scheduleSteps) {
+                    const left = String.fromCharCode(65 + (step.group - 1) * 2);
+                    const right = String.fromCharCode(65 + (step.group - 1) * 2 + 1);
+                    const leftItem = findItemByCode(items, left + step.round);
+                    const rightItem = findItemByCode(items, right + step.round);
+                    const leftDone = isDone(leftItem);
+                    const rightDone = isDone(rightItem);
+                    if (leftDone && rightDone) continue;
+                    if (leftDone !== rightDone) {
+                        return { ...step, code: (leftDone ? right : left) + step.round };
+                    }
+                    if (step.round === 1) return { ...step, code: left + step.round };
+                    const previousLeft = findItemByCode(items, left + (step.round - 1));
+                    const previousRight = findItemByCode(items, right + (step.round - 1));
+                    const previousLeftPrice = parseFloat(previousLeft?.sold_price || previousLeft?.soldPrice || 0) || 0;
+                    const previousRightPrice = parseFloat(previousRight?.sold_price || previousRight?.soldPrice || 0) || 0;
+                    return { ...step, code: (previousLeftPrice >= previousRightPrice ? left : right) + step.round };
+                }
+                return null;
+            }
+
+            const pendingStep = getPendingAuctionStep();
 
             const contextItem = activeItem || newestSoldItem;
             if (contextItem) {
@@ -3996,9 +4104,23 @@
                 detectedLetter = motion.side === 'left' ? motion.leftTeamLetter : motion.rightTeamLetter;
             }
 
-            // 새로고침 중에도 선공만 끝난 상태라면 마지막 시작 시각을 기준으로 후공 NEXT를 복원한다.
-            let waitingNextCode = '';
-            if (!detectedGroup) {
+            // 활성 경매가 없으면 완료 여부를 건너뛰어 실제 다음 순번을 바로 가리킨다.
+            let waitingNextCode = !activeItem ? (pendingStep?.code || '경기 종료') : '';
+            if (!detectedGroup && pendingStep) {
+                detectedGroup = pendingStep.group;
+                detectedRound = pendingStep.round;
+                detectedLetter = pendingStep.code.charAt(0);
+            }
+
+            // 모든 경매가 끝난 뒤에는 현재 전체결과가 보고 있는 조를 유지한다.
+            if (!detectedGroup && !pendingStep) {
+                const currentMatch = getCurrentMatchContext(map);
+                if (currentMatch.group > 0 && currentMatch.group <= matchCount) {
+                    detectedGroup = currentMatch.group;
+                    detectedRound = rpm;
+                }
+            }
+            if (!detectedGroup && !pendingStep) {
                 const parseAuctionTime = value => {
                     const raw = String(value || '').trim();
                     const timeMatch = raw.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(?:Z)?$/);
@@ -4025,9 +4147,6 @@
                     detectedGroup = latestGroup;
                     detectedRound = latestRound;
                     detectedLetter = latestLetter;
-                    if (isDone(leftItem) !== isDone(rightItem)) {
-                        waitingNextCode = (isDone(leftItem) ? pairRight : pairLeft) + latestRound;
-                    }
                 }
             }
 
@@ -4051,14 +4170,17 @@
             // 라운드별 데이터
             const roundData = [];
             let leftRoundWins = 0, rightRoundWins = 0;
+            let leftAuctionTotal = 0, rightAuctionTotal = 0;
             for (let r = 1; r <= rpm; r++) {
                 const lItem = findItemByCode(items, leftTeamLetter + r);
                 const rItem = findItemByCode(items, rightTeamLetter + r);
-                const lp = parseFloat(lItem?.sold_price || lItem?.soldPrice || 0);
-                const rp = parseFloat(rItem?.sold_price || rItem?.soldPrice || 0);
+                const lp = parseFloat(lItem?.sold_price || lItem?.soldPrice || 0) || 0;
+                const rp = parseFloat(rItem?.sold_price || rItem?.soldPrice || 0) || 0;
                 const lSold = isDone(lItem);
                 const rSold = isDone(rItem);
                 const bothDone = lSold && rSold;
+                if (lSold) leftAuctionTotal += lp;
+                if (rSold) rightAuctionTotal += rp;
                 let roundWinner = '';
                 if (bothDone) {
                     roundWinner = lp > rp ? 'left' : (rp > lp ? 'right' : 'draw');
@@ -4067,38 +4189,7 @@
                 }
                 roundData.push({ round: r, lItem, rItem, lp, rp, lSold, rSold, bothDone, roundWinner, isCurrent: r === detectedRound, leftItemName: leftTeamLetter + r, rightItemName: rightTeamLetter + r });
             }
-
-            const getNextScheduledCode = () => {
-                const steps = [];
-                for (let round = 1; round <= rpm; round++) {
-                    // 매 라운드 시작 조를 하나씩 민다: 1R 1-2-3-4, 2R 2-3-4-1, 3R 3-4-1-2
-                    const startGroup = ((round - 1) % matchCount) + 1;
-                    const groups = Array.from({ length: matchCount }, (_, index) => ((startGroup - 1 + index) % matchCount) + 1);
-                    groups.forEach(group => steps.push({ group, round }));
-                }
-                const currentIndex = steps.findIndex(step => step.group === detectedGroup && step.round === detectedRound);
-                const nextStep = currentIndex >= 0 ? steps[currentIndex + 1] : null;
-                if (!nextStep) return '경기 종료';
-
-                const nextLeft = String.fromCharCode(65 + (nextStep.group - 1) * 2);
-                const nextRight = String.fromCharCode(65 + (nextStep.group - 1) * 2 + 1);
-                if (nextStep.round === 1) return nextLeft + '1';
-
-                const previousLeft = findItemByCode(items, nextLeft + (nextStep.round - 1));
-                const previousRight = findItemByCode(items, nextRight + (nextStep.round - 1));
-                const previousLeftPrice = parseFloat(previousLeft?.sold_price || previousLeft?.soldPrice || 0);
-                const previousRightPrice = parseFloat(previousRight?.sold_price || previousRight?.soldPrice || 0);
-                return (previousLeftPrice >= previousRightPrice ? nextLeft : nextRight) + nextStep.round;
-            };
-
-            if (!activeItem && !waitingNextCode) {
-                const currentRound = roundData.find(data => data.round === detectedRound);
-                if (currentRound && currentRound.lSold !== currentRound.rSold) {
-                    waitingNextCode = (currentRound.lSold ? rightTeamLetter : leftTeamLetter) + detectedRound;
-                } else if (currentRound?.bothDone) {
-                    waitingNextCode = getNextScheduledCode();
-                }
-            }
+            const matchComplete = roundData.length === rpm && roundData.every(data => data.bothDone);
 
             // 낙찰 애니메이션
             const auctionMotionEnabled = String(map.auction_animation_enabled ?? '1') !== '0';
@@ -4125,6 +4216,8 @@
                         rightTeamLetter,
                         leftTeamLabel: leftTeamLetter + '팀',
                         rightTeamLabel: rightTeamLetter + '팀',
+                        teamLabel: (side === 'left' ? leftTeamLetter : rightTeamLetter) + '팀',
+                        itemName: String(newestSoldItem.displayName || newestSoldItem.name || cc).trim(),
                         round: iR,
                         winner: maskAuctionWinner(newestSoldItem.winner || ''),
                         price: formatAuctionMotionPrice(newestSoldItem.sold_price || newestSoldItem.soldPrice || 0),
@@ -4137,43 +4230,57 @@
                 }
             }
 
-            // 타이틀
-            const scaleLabel = scale === 4 ? '4강' : (scale === 8 ? '8강' : (scale === 16 ? '16강' : scale + '강'));
-            const matchTitle = detectedGroup + '조 ' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + '라운드' : ''));
-            if (titleEl) titleEl.textContent = scaleLabel + ' ' + matchTitle;
-
             // 오버레이 HTML
             let motionHtml = '';
             const mot = auctionState.motion || window._auctionMotion;
             const leftDisplayLabel = mot?.leftTeamLabel || (leftTeamLetter + '팀');
             const rightDisplayLabel = mot?.rightTeamLabel || (rightTeamLetter + '팀');
             if (auctionMotionEnabled && mot?.phase === 'sold') {
-                motionHtml = '<div class="auction-motion-overlay"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND · SOLD</span><div><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span></div></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div></div>';
+                motionHtml = '<div class="auction-motion-overlay"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><strong class="auction-sold-item">' + esc(mot.itemName) + '</strong><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND · SOLD</span><div><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span><span class="auction-sold-team">' + esc(mot.teamLabel) + ' 낙찰</span></div></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div></div>';
             } else if (auctionMotionEnabled && mot?.phase === 'result') {
                 const lR = mot.roundWinner === 'left' ? '승' : (mot.roundWinner === 'right' ? '패' : '무');
                 const rR = mot.roundWinner === 'right' ? '승' : (mot.roundWinner === 'left' ? '패' : '무');
-                motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftDisplayLabel) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore) + ' : ' + esc(mot.rightScore) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightDisplayLabel) + ' ' + rR + '</div></div></div>';
+                motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftDisplayLabel) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore ?? 0) + ' : ' + esc(mot.rightScore ?? 0) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightDisplayLabel) + ' ' + rR + '</div></div></div>';
             }
             syncAuctionMotionPortal(motionHtml, mot ? [mot.eventKey, mot.phase].join('|') : '');
 
             // 렌더링 (실제 대진 코드 + 진행중 팀 하이라이트)
             const leftActive = activeItem && activeSide === 'left' ? ' is-active' : '';
             const rightActive = activeItem && activeSide === 'right' ? ' is-active' : '';
-            const isWaiting = !activeItem && Boolean(waitingNextCode);
-            const nextNote = waitingNextCode === '경기 종료' ? '모든 경매 완료' : '다음 경매 개체';
+            const isWaiting = !activeItem && Boolean(pendingStep);
+            const isFinalTotals = !activeItem && !pendingStep && matchComplete;
+            const displayRound = getBracketViewRound(scale, map);
+            const displayGroup = isWaiting ? pendingStep.group : detectedGroup;
+            const displayAuctionRound = isWaiting ? pendingStep.round : detectedRound;
+            const scaleLabel = displayRound === 2 ? '결승' : displayRound + '강';
+            const matchTitle = displayGroup + '조 ' + (isFinalTotals ? '최종 합계' : (displayAuctionRound === rpm ? '대장전' : (displayAuctionRound > 0 ? displayAuctionRound + '라운드' : '')));
+            if (titleEl) titleEl.textContent = scaleLabel + ' ' + matchTitle;
+            if (isWaiting) {
+                const desiredMatchKey = scale + '_' + displayRound + '_' + displayGroup;
+                if (map.battle_current_match !== desiredMatchKey && window._lastWaitingMatchSyncKey !== desiredMatchKey) {
+                    window._lastWaitingMatchSyncKey = desiredMatchKey;
+                    updateConfigs({ battle_current_match: desiredMatchKey }).catch(err => {
+                        window._lastWaitingMatchSyncKey = '';
+                        console.error('waiting match sync failed', err);
+                    });
+                }
+            }
+
+            const nextNote = '다음 경매 개체';
             const nextHtml = isWaiting
                 ? '<div class="live-next-panel"><span class="live-next-label">NEXT</span><strong class="live-next-code">' + esc(waitingNextCode) + '</strong><span class="live-next-note">' + nextNote + '</span></div>'
                 : '';
-            const liveBodyHtml = isWaiting
-                ? nextHtml
+            const scoreHtml = isFinalTotals
+                ? '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score is-total" aria-label="합산 낙찰금액 ' + leftAuctionTotal + ' 대 ' + rightAuctionTotal + '"><strong>' + leftAuctionTotal + '</strong><i>:</i><strong>' + rightAuctionTotal + '</strong><em class="blind-live-score-unit">만원</em></div><div class="blind-live-team"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>'
                 : '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>';
+            const liveBodyHtml = isWaiting ? nextHtml : scoreHtml;
             const chipClass = isWaiting ? 'live-round-chip is-standby' : 'live-round-chip';
-            const chipText = isWaiting ? 'STANDBY' : 'LIVE';
-            const roundText = isWaiting ? 'NEXT AUCTION' : (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY'));
-            const renderKey = [detectedGroup, detectedRound, leftRoundWins, rightRoundWins, activeSide, waitingNextCode, mot?.eventKey || '', mot?.phase || ''].join('|');
+            const chipText = isFinalTotals ? 'FINAL' : (isWaiting ? 'STANDBY' : 'LIVE');
+            const roundText = isFinalTotals ? 'TOTAL AUCTION' : (isWaiting ? 'NEXT AUCTION' : (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')));
+            const renderKey = [displayRound, displayGroup, displayAuctionRound, leftRoundWins, rightRoundWins, leftAuctionTotal, rightAuctionTotal, activeSide, waitingNextCode, isFinalTotals, mot?.eventKey || '', mot?.phase || ''].join('|');
             if (tree.dataset.liveRenderKey !== renderKey) {
                 tree.dataset.liveRenderKey = renderKey;
-                tree.innerHTML = '<section class="live-round-board"><header class="live-round-header"><span class="' + chipClass + '">' + chipText + '</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + roundText + '</span></header>' + liveBodyHtml + '</section>';
+                tree.innerHTML = '<section class="live-round-board"><header class="live-round-header"><span class="' + chipClass + '">' + chipText + '</span><strong>' + scaleLabel + ' ' + displayGroup + '조</strong><span class="live-round-number">' + roundText + '</span></header>' + liveBodyHtml + '</section>';
             }
         }
 
@@ -4438,7 +4545,7 @@
         }
 
         function esc(s) {
-            if (!s) return '';
+            if (s === null || s === undefined) return '';
             return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
     </script>
