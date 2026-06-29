@@ -4496,7 +4496,19 @@
         }
 
         // ── 컨럼 리사이즈 시스템 (localStorage 저장/복원) ──
-        var COLW_KEY = 'print_col_widths_v2';
+        var COLW_KEY = 'print_col_widths_v3';
+
+        function getPTableCols(tbl) {
+            var ths = Array.from(tbl.querySelectorAll('thead th'));
+            var group = tbl.querySelector('colgroup');
+            if (!group) {
+                group = document.createElement('colgroup');
+                ths.forEach(function () { group.appendChild(document.createElement('col')); });
+                tbl.insertBefore(group, tbl.firstChild);
+            }
+            return Array.from(group.querySelectorAll('col'));
+        }
+
         function saveColWidths() {
             var data = {};
             ['plist', 'presult', 'pcompany'].forEach(function (id) {
@@ -4504,9 +4516,7 @@
                 if (!sec) return;
                 var tbl = sec.querySelector('.ptable');
                 if (!tbl) return;
-                var ws = [];
-                tbl.querySelectorAll('thead th').forEach(function (th) { ws.push(th.style.width || ''); });
-                data[id] = ws;
+                data[id] = getPTableCols(tbl).map(function (col) { return col.style.width || ''; });
             });
             try { localStorage.setItem(COLW_KEY, JSON.stringify(data)); } catch (e) { }
         }
@@ -4522,10 +4532,10 @@
                     if (!sec) return;
                     var tables = sec.querySelectorAll('.ptable');
                     tables.forEach(function (tbl) {
-                        var ths = tbl.querySelectorAll('thead th');
-                        if (ths.length !== data[id].length) return;
+                        var cols = getPTableCols(tbl);
+                        if (cols.length !== data[id].length) return;
                         lockPTable(tbl);
-                        data[id].forEach(function (w, i) { if (w) ths[i].style.width = w; });
+                        data[id].forEach(function (w, i) { if (w) cols[i].style.width = w; });
                         applied = true;
                     });
                 });
@@ -4535,20 +4545,26 @@
         function initPrintResize() {
             document.querySelectorAll('#tab-print .ptable th').forEach(function (th) {
                 if (th.querySelector('.rh')) return;
+                var tbl = th.closest('table');
+                var colIdx = Array.from(th.parentNode.children).indexOf(th);
+                if (colIdx >= th.parentNode.children.length - 1) return;
                 var h = document.createElement('div');
                 h.className = 'rh';
+                h.title = '드래그하여 열 너비 조절';
                 th.appendChild(h);
                 // 드래그: 컨럼 폭 조절
                 h.addEventListener('mousedown', function (e) {
                     e.preventDefault(); e.stopPropagation();
-                    var tbl = th.closest('table');
-                    var colIdx = Array.from(th.parentNode.children).indexOf(th);
                     lockPTable(tbl);
-                    var startX = e.pageX, startW = th.offsetWidth;
+                    var ths = tbl.querySelectorAll('thead th');
+                    var startX = e.pageX;
+                    var startW = ths[colIdx].offsetWidth;
+                    var startNextW = ths[colIdx + 1].offsetWidth;
                     function onMove(ev) {
-                        var w = Math.max(10, startW + ev.pageX - startX);
-                        th.style.width = w + 'px';
-                        syncPCompany(th, colIdx, w + 'px');
+                        var minW = 28;
+                        var delta = Math.max(minW - startW, Math.min(ev.pageX - startX, startNextW - minW));
+                        setPColumnPair(tbl, colIdx, startW + delta, startNextW - delta);
+                        syncPCompanyPair(th, colIdx);
                     }
                     function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); saveColWidths(); }
                     document.addEventListener('mousemove', onMove);
@@ -4557,8 +4573,6 @@
                 // 더블클릭: 내용에 맞게 auto-fit (업체별은 전체 테이블 중 최대값)
                 h.addEventListener('dblclick', function (e) {
                     e.preventDefault();
-                    var tbl = th.closest('table');
-                    var colIdx = Array.from(th.parentNode.children).indexOf(th);
                     var sec = th.closest('#print-sub-pcompany');
                     var w;
                     if (sec) {
@@ -4570,8 +4584,11 @@
                         w = measurePCol(tbl, colIdx);
                     }
                     lockPTable(tbl);
-                    th.style.width = w + 'px';
-                    syncPCompany(th, colIdx, w + 'px');
+                    var ths = tbl.querySelectorAll('thead th');
+                    var pairWidth = ths[colIdx].offsetWidth + ths[colIdx + 1].offsetWidth;
+                    var fittedW = Math.max(28, Math.min(w, pairWidth - 28));
+                    setPColumnPair(tbl, colIdx, fittedW, pairWidth - fittedW);
+                    syncPCompanyPair(th, colIdx);
                     saveColWidths();
                 });
             });
@@ -4580,33 +4597,28 @@
             // 글씨/행높이 복원
             restorePrintSettings();
         }
-        function autoFitAllColumns() {
-            ['plist', 'presult', 'pcompany'].forEach(function (id) {
-                var sec = document.getElementById('print-sub-' + id);
-                if (!sec) return;
-                var tables = sec.querySelectorAll('.ptable');
-                if (!tables.length) return;
-                var colCount = tables[0].querySelectorAll('thead th').length;
-                for (var ci = 0; ci < colCount; ci++) {
-                    var maxW = 0;
-                    tables.forEach(function (t) { maxW = Math.max(maxW, measurePCol(t, ci)); });
-                    tables.forEach(function (t) {
-                        lockPTable(t);
-                        var th = t.querySelectorAll('thead th')[ci];
-                        if (th) th.style.width = maxW + 'px';
-                    });
-                }
-            });
-            saveColWidths();
-        }
         function lockPTable(tbl) {
             if (tbl.dataset.locked) return;
             var ths = Array.from(tbl.querySelectorAll('thead th'));
             var widths = ths.map(function (h) { return h.offsetWidth; });
-            tbl.style.width = tbl.offsetWidth + 'px';
+            var tableWidth = tbl.getBoundingClientRect().width || widths.reduce(function (sum, width) { return sum + width; }, 0);
+            var cols = getPTableCols(tbl);
+            widths.forEach(function (width, i) {
+                if (cols[i]) cols[i].style.width = ((width / tableWidth) * 100).toFixed(4) + '%';
+            });
+            tbl.style.width = '100%';
             tbl.style.tableLayout = 'fixed';
-            ths.forEach(function (h, i) { h.style.width = widths[i] + 'px'; });
+            ths.forEach(function (h) { h.style.width = ''; });
             tbl.dataset.locked = '1';
+        }
+
+        function setPColumnPair(tbl, colIdx, leftWidth, rightWidth) {
+            var tableWidth = tbl.getBoundingClientRect().width;
+            if (!tableWidth) return;
+            var cols = getPTableCols(tbl);
+            if (!cols[colIdx] || !cols[colIdx + 1]) return;
+            cols[colIdx].style.width = ((leftWidth / tableWidth) * 100).toFixed(4) + '%';
+            cols[colIdx + 1].style.width = ((rightWidth / tableWidth) * 100).toFixed(4) + '%';
         }
         function measurePCol(tbl, colIdx) {
             var span = document.createElement('span');
@@ -4622,13 +4634,17 @@
             document.body.removeChild(span);
             return Math.max(max + 4, 20);
         }
-        function syncPCompany(th, colIdx, widthStr) {
+        function syncPCompanyPair(th, colIdx) {
             var sec = th.closest('#print-sub-pcompany');
             if (!sec) return;
+            var sourceTable = th.closest('table');
+            var sourceCols = getPTableCols(sourceTable);
             sec.querySelectorAll('.ptable').forEach(function (t) {
+                if (t === sourceTable) return;
                 lockPTable(t);
-                var target = t.querySelectorAll('thead th')[colIdx];
-                if (target && target !== th) target.style.width = widthStr;
+                var targetCols = getPTableCols(t);
+                if (targetCols[colIdx]) targetCols[colIdx].style.width = sourceCols[colIdx].style.width;
+                if (targetCols[colIdx + 1]) targetCols[colIdx + 1].style.width = sourceCols[colIdx + 1].style.width;
             });
         }
 
