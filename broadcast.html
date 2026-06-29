@@ -1236,9 +1236,6 @@
             font-family: 'Pretendard', sans-serif;
             box-sizing: border-box;
         }
-        .live-round-board.is-exiting {
-            animation: live-board-exit 0.38s cubic-bezier(0.7,0,0.84,0) both;
-        }
         .live-round-board::before {
             content: '';
             position: absolute;
@@ -1426,21 +1423,14 @@
             font-style: normal;
             font-weight: 700;
         }
-        .live-board-body.has-next {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 158px;
-            align-items: stretch;
-        }
-        .live-board-body.has-next .blind-live-match {
-            padding-inline: 30px;
-        }
         .live-next-panel {
             display: flex;
-            flex-direction: column;
+            min-height: 31px;
             align-items: center;
             justify-content: center;
-            border-left: 1px solid rgba(148,163,184,0.24);
-            background: rgba(37,99,235,0.12);
+            gap: 10px;
+            border-bottom: 1px solid rgba(96,165,250,0.28);
+            background: linear-gradient(90deg, rgba(29,78,216,0.16), rgba(37,99,235,0.28), rgba(29,78,216,0.16));
             text-align: center;
             animation: live-next-in 0.32s cubic-bezier(0.16,1,0.3,1) both;
         }
@@ -1451,15 +1441,13 @@
             letter-spacing: 0.18em;
         }
         .live-next-code {
-            margin-top: 2px;
             color: #fff;
-            font-size: 29px;
+            font-size: 19px;
             font-weight: 950;
-            letter-spacing: -0.04em;
+            letter-spacing: -0.02em;
             line-height: 1;
         }
         .live-next-note {
-            margin-top: 4px;
             color: #94a3b8;
             font-size: 9px;
             font-weight: 800;
@@ -1468,11 +1456,8 @@
             .blind-live-match { gap: 12px; padding-inline: 18px; }
             .blind-live-team { font-size: 44px; }
             .blind-live-score { min-width: 132px; font-size: 54px; }
-            .live-board-body.has-next { grid-template-columns: minmax(0, 1fr) 122px; }
-            .live-board-body.has-next .blind-live-match { gap: 8px; padding-inline: 12px; }
-            .live-board-body.has-next .blind-live-team { font-size: 37px; }
-            .live-board-body.has-next .blind-live-score { min-width: 108px; font-size: 47px; }
-            .live-next-code { font-size: 25px; }
+            .live-next-panel { min-height: 29px; gap: 8px; }
+            .live-next-code { font-size: 18px; }
         }
         .auction-motion-overlay {
             position: absolute;
@@ -1584,13 +1569,9 @@
             from { opacity: 0; transform: scale(0.94); }
             to { opacity: 1; transform: scale(1); }
         }
-        @keyframes live-board-exit {
-            from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(70px); }
-        }
         @keyframes live-next-in {
-            from { opacity: 0; transform: translateX(12px); }
-            to { opacity: 1; transform: translateX(0); }
+            from { opacity: 0; transform: translateY(-6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         @keyframes sports-board-in {
             from { opacity: 0; transform: translateY(16px) scale(0.985); }
@@ -3679,25 +3660,12 @@
                     window._auctionMotion = state.motion;
                     repaintBracketFromLatestMap();
                     state.timer = setTimeout(() => {
-                        state.motion = Object.assign({}, payload, { phase: 'exit', kind: 'auction' });
-                        window._auctionMotion = state.motion;
-                        repaintBracketFromLatestMap();
-                        state.timer = setTimeout(finishAuctionMotion, 380);
+                        finishAuctionMotion();
                     }, 1500);
                 } else {
                     finishAuctionMotion();
                 }
             }, 1750);
-        }
-
-        function startLiveBoardExit(payload) {
-            const state = getLiveAuctionState();
-            if (!payload || !payload.eventKey || state.motion || state.playedEvents.has(payload.eventKey)) return;
-            state.playedEvents.add(payload.eventKey);
-            state.motion = Object.assign({}, payload, { phase: 'exit', kind: 'board-exit' });
-            window._auctionMotion = state.motion;
-            repaintBracketFromLatestMap();
-            state.timer = setTimeout(finishAuctionMotion, 380);
         }
 
         async function renderBracketLiveView(scale, bracket, map) {
@@ -3722,6 +3690,7 @@
                 if (m.left) { letterToTeam[lL] = m.left.trim(); letterToGroup[lL] = i; }
                 if (m.right) { letterToTeam[rL] = m.right.trim(); letterToGroup[rL] = i; }
             }
+            const rpm = parseInt(map.battle_rounds_per_match || '4', 10) || 4;
 
             const doneStatuses = new Set(['완료', 'sold', '낙찰', '유찰']);
             const isDone = item => Boolean(item && doneStatuses.has(item.status));
@@ -3788,10 +3757,10 @@
                     const pairRight = String.fromCharCode(65 + (latestGroup - 1) * 2 + 1);
                     const leftItem = findItemByCode(items, pairLeft + latestRound);
                     const rightItem = findItemByCode(items, pairRight + latestRound);
+                    detectedGroup = latestGroup;
+                    detectedRound = latestRound;
+                    detectedLetter = latestLetter;
                     if (isDone(leftItem) !== isDone(rightItem)) {
-                        detectedGroup = latestGroup;
-                        detectedRound = latestRound;
-                        detectedLetter = latestLetter;
                         waitingNextCode = (isDone(leftItem) ? pairRight : pairLeft) + latestRound;
                     }
                 }
@@ -3809,7 +3778,6 @@
                 return;
             }
 
-            const rpm = parseInt(map.battle_rounds_per_match || '4', 10) || 4;
             const isChamp = (detectedRound === rpm);
 
             // 진행중인 팀 판별 (업체명은 숨기고 실제 대진 코드만 표시)
@@ -3835,16 +3803,40 @@
                 roundData.push({ round: r, lItem, rItem, lp, rp, lSold, rSold, bothDone, roundWinner, isCurrent: r === detectedRound, leftItemName: leftTeamLetter + r, rightItemName: rightTeamLetter + r });
             }
 
+            const getNextScheduledCode = () => {
+                const steps = [];
+                for (let round = 1; round <= rpm; round++) {
+                    const groups = Array.from({ length: matchCount }, (_, index) => index + 1);
+                    if (round % 2 === 0) groups.reverse();
+                    groups.forEach(group => steps.push({ group, round }));
+                }
+                const currentIndex = steps.findIndex(step => step.group === detectedGroup && step.round === detectedRound);
+                const nextStep = currentIndex >= 0 ? steps[currentIndex + 1] : null;
+                if (!nextStep) return '경기 종료';
+
+                const nextLeft = String.fromCharCode(65 + (nextStep.group - 1) * 2);
+                const nextRight = String.fromCharCode(65 + (nextStep.group - 1) * 2 + 1);
+                if (nextStep.round === 1) return nextLeft + '1';
+
+                const previousLeft = findItemByCode(items, nextLeft + (nextStep.round - 1));
+                const previousRight = findItemByCode(items, nextRight + (nextStep.round - 1));
+                const previousLeftPrice = parseFloat(previousLeft?.sold_price || previousLeft?.soldPrice || 0);
+                const previousRightPrice = parseFloat(previousRight?.sold_price || previousRight?.soldPrice || 0);
+                return (previousLeftPrice >= previousRightPrice ? nextLeft : nextRight) + nextStep.round;
+            };
+
             if (!activeItem && !waitingNextCode) {
                 const currentRound = roundData.find(data => data.round === detectedRound);
                 if (currentRound && currentRound.lSold !== currentRound.rSold) {
                     waitingNextCode = (currentRound.lSold ? rightTeamLetter : leftTeamLetter) + detectedRound;
+                } else if (currentRound?.bothDone) {
+                    waitingNextCode = getNextScheduledCode();
                 }
             }
 
             // 낙찰 애니메이션
             const auctionMotionEnabled = String(map.auction_animation_enabled ?? '1') !== '0';
-            if (!auctionMotionEnabled && auctionState.motion && auctionState.motion.kind !== 'board-exit') {
+            if (!auctionMotionEnabled && auctionState.motion) {
                 if (auctionState.timer) clearTimeout(auctionState.timer);
                 auctionState.timer = null;
                 auctionState.motion = null;
@@ -3876,7 +3868,6 @@
                         rightScore: rightRoundWins
                     };
                     if (auctionMotionEnabled) startAuctionMotion(motionPayload);
-                    else if (motionPayload.roundComplete) startLiveBoardExit(motionPayload);
                 }
             }
 
@@ -3892,7 +3883,7 @@
             const rightDisplayLabel = mot?.rightTeamLabel || (rightTeamLetter + '팀');
             if (auctionMotionEnabled && mot?.phase === 'sold') {
                 motionHtml = '<div class="auction-motion-overlay"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND · SOLD</span><div><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span></div></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div></div>';
-            } else if (auctionMotionEnabled && (mot?.phase === 'result' || mot?.phase === 'exit')) {
+            } else if (auctionMotionEnabled && mot?.phase === 'result') {
                 const lR = mot.roundWinner === 'left' ? '승' : (mot.roundWinner === 'right' ? '패' : '무');
                 const rR = mot.roundWinner === 'right' ? '승' : (mot.roundWinner === 'left' ? '패' : '무');
                 motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftDisplayLabel) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore) + ' : ' + esc(mot.rightScore) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightDisplayLabel) + ' ' + rR + '</div></div></div>';
@@ -3904,12 +3895,10 @@
             const nextHtml = !activeItem && waitingNextCode
                 ? '<aside class="live-next-panel"><span class="live-next-label">NEXT</span><strong class="live-next-code">' + esc(waitingNextCode) + '</strong><span class="live-next-note">다음 경매 개체</span></aside>'
                 : '';
-            const bodyClass = nextHtml ? 'live-board-body has-next' : 'live-board-body';
-            const exitClass = mot?.phase === 'exit' ? ' is-exiting' : '';
             const renderKey = [detectedGroup, detectedRound, leftRoundWins, rightRoundWins, activeSide, waitingNextCode, mot?.eventKey || '', mot?.phase || ''].join('|');
             if (tree.dataset.liveRenderKey !== renderKey) {
                 tree.dataset.liveRenderKey = renderKey;
-                tree.innerHTML = '<section class="live-round-board' + exitClass + '">' + motionHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="' + bodyClass + '"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div>' + nextHtml + '</div></section>';
+                tree.innerHTML = '<section class="live-round-board">' + motionHtml + nextHtml + '<header class="live-round-header"><span class="live-round-chip">LIVE</span><strong>' + scaleLabel + ' ' + detectedGroup + '조</strong><span class="live-round-number">' + (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')) + '</span></header><div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div></section>';
             }
         }
 
