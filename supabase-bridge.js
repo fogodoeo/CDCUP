@@ -152,6 +152,107 @@ async function getActiveItem() {
     };
 }
 
+// ── 방송 송출 전용 경량 조회 ──
+// 대기 중에는 updated_at 한 행만 확인하고, 경매 활동이 감지된 동안에만 전체 상태를 읽는다.
+let _broadcastParentsCache = [];
+let _broadcastParentsCacheAt = 0;
+let _broadcastHiddenPhotosCache = [];
+let _broadcastHiddenPhotosCacheAt = 0;
+
+async function getAuctionPulse() {
+    const rows = await _sbFetch('items?select=id,status,updated_at&order=updated_at.desc&limit=1');
+    const row = rows && rows[0];
+    return row ? {
+        id: row.id,
+        status: row.status || '',
+        updatedAt: row.updated_at || ''
+    } : { id: null, status: '', updatedAt: '' };
+}
+
+function _mapBroadcastItem(r) {
+    return {
+        row: r.id,
+        company: r.company || '',
+        num: r.num || 0,
+        name: r.name || '',
+        displayName: r.name || '',
+        price: r.start_price || '',
+        startPrice: r.start_price || '',
+        note: r.note || '',
+        announce: r.announce || '',
+        photoItem: r.photo_item || '',
+        photoSire: r.photo_sire || '',
+        photoDam: r.photo_dam || '',
+        photoSibling: r.photo_sibling || '',
+        status: r.status || '대기',
+        sold_price: r.sold_price || '',
+        soldPrice: r.sold_price || '',
+        winner: r.winner || '',
+        winner_phone: r.winner_phone || '',
+        start_time: r.start_time || '',
+        startTime: r.start_time || '',
+        bid_log: r.bid_log || '',
+        bidLog: r.bid_log || '',
+        checklist: r.checklist || '',
+        checklist_parsed: r.checklist_parsed || '',
+        sireId: r.sire_id || '',
+        sire_id: r.sire_id || '',
+        damId: r.dam_id || '',
+        dam_id: r.dam_id || '',
+        shipping_type: r.shipping_type || '',
+        shipping_company: r.shipping_company || '',
+        shipping_region: r.shipping_region || '',
+        shipping_cost: r.shipping_cost || 0,
+        updated_at: r.updated_at || '',
+        updatedAt: r.updated_at || ''
+    };
+}
+
+async function getBroadcastItems() {
+    const rows = await _sbFetch('items?order=num.asc');
+    return (rows || []).map(_mapBroadcastItem);
+}
+
+async function _getBroadcastParentsCached() {
+    const now = Date.now();
+    if (_broadcastParentsCacheAt && now - _broadcastParentsCacheAt < 60000) {
+        return _broadcastParentsCache;
+    }
+    _broadcastParentsCache = await getParents();
+    _broadcastParentsCacheAt = now;
+    return _broadcastParentsCache;
+}
+
+async function _getBroadcastHiddenPhotosCached() {
+    const now = Date.now();
+    if (_broadcastHiddenPhotosCacheAt && now - _broadcastHiddenPhotosCacheAt < 5000) {
+        return _broadcastHiddenPhotosCache;
+    }
+    _broadcastHiddenPhotosCache = await getHiddenPhotos();
+    _broadcastHiddenPhotosCacheAt = now;
+    return _broadcastHiddenPhotosCache;
+}
+
+async function enrichBroadcastItem(item) {
+    if (!item) return null;
+    const [parents, hiddenPhotos] = await Promise.all([
+        _getBroadcastParentsCached(),
+        _getBroadcastHiddenPhotosCached()
+    ]);
+    const parentMap = {};
+    (parents || []).forEach(parent => { parentMap[parent.id] = parent; });
+    const sire = item.sire_id ? parentMap[item.sire_id] : null;
+    const dam = item.dam_id ? parentMap[item.dam_id] : null;
+    return {
+        ...item,
+        photoSire: item.photoSire || (sire ? sire.photoUrl : '') || '',
+        photoDam: item.photoDam || (dam ? dam.photoUrl : '') || '',
+        sireName: sire ? sire.name : '',
+        damName: dam ? dam.name : '',
+        hiddenPhotos: hiddenPhotos || []
+    };
+}
+
 /**
  * 비밀번호 상태 확인 (= GAS getAdminPwStatus)
  */

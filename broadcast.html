@@ -13,7 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js"></script>
+    <script src="supabase-bridge.js?v=20260629-adaptive-poll"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
@@ -1880,20 +1880,6 @@
             updateProgressText();
         }
 
-        async function refreshTotalCount() {
-            const now = Date.now();
-            if (now - window._lastCountFetchTime < 15000 && window._totalItemsCount > 0) return;
-            
-            try {
-                const items = await getItems();
-                if (Array.isArray(items)) {
-                    processItemsList(items);
-                }
-            } catch(e) {
-                console.error("Failed to fetch items count", e);
-            }
-        }
-
         function getCleanCode(item) {
             if (!item) return '';
             const numStr = String(item.num || '').trim().toUpperCase();
@@ -3084,33 +3070,157 @@
         }
 
         let hasActive = false;
-        async function smartRefresh() {
+        async function smartRefresh(prefetchedItems) {
             if (document.hidden) return;
             maybeRefreshHostConfig(false);
-            refreshTotalCount();
             try {
-                const item = await getActiveItem();
+                const items = Array.isArray(prefetchedItems)
+                    ? prefetchedItems
+                    : await getBroadcastItems();
+                processItemsList(items);
+                const active = items.find(candidate => ['진행', '진행중', 'active'].includes(String(candidate?.status || '').trim()));
+                const item = active ? await enrichBroadcastItem(active) : null;
                 hasActive = !!item;
                 render(item);
             } catch (err) {
                 console.error("smartRefresh error", err);
+                throw err;
             }
         }
-        smartRefresh();
-        let _pollTimer = null;
-        function startAdaptivePoll() {
-            if (_pollTimer) clearInterval(_pollTimer);
-            _pollTimer = setInterval(smartRefresh, hasActive ? 2500 : 6000);
-        }
-        startAdaptivePoll();
         const _origRender = render;
         render = function (item) {
-            const wasActive = hasActive;
             hasActive = !!item;
             lastRenderedItem = item ? JSON.parse(JSON.stringify(item)) : null;
             _origRender(item);
-            if (wasActive !== hasActive) startAdaptivePoll();
         };
+
+        // 경매 활동 기반 적응형 폴링
+        // - 대기: 1초마다 updated_at 한 행만 확인, 전체 데이터는 6초마다 확인
+        // - 활동: 마지막 개체 변경 후 10분 동안 전체 데이터를 1초마다 확인
+        // - 숨김 탭: 네트워크 조회를 멈추고 다시 보일 때 즉시 동기화
+        const AUCTION_HOT_WINDOW_MS = 10 * 60 * 1000;
+        const AUCTION_HOT_POLL_MS = 1000;
+        const AUCTION_IDLE_DATA_MS = 6000;
+        const AUCTION_MAX_BACKOFF_MS = 8000;
+        let _auctionPollTimer = null;
+        let _auctionPollRunning = false;
+        let _auctionPollStarted = false;
+        let _auctionHotUntil = 0;
+        let _auctionLastDataAt = 0;
+        let _auctionLastActivityAt = 0;
+        let _auctionPollErrors = 0;
+
+        function _publishAuctionPollState() {
+            const now = Date.now();
+            window.__auctionPollState = {
+                mode: now < _auctionHotUntil ? 'hot' : 'idle',
+                hotUntil: _auctionHotUntil,
+                lastDataAt: _auctionLastDataAt,
+                lastActivityAt: _auctionLastActivityAt,
+                errors: _auctionPollErrors,
+                intervalMs: Math.min(
+                    AUCTION_MAX_BACKOFF_MS,
+                    AUCTION_HOT_POLL_MS * Math.pow(2, _auctionPollErrors)
+                )
+            };
+            document.body.dataset.auctionPollMode = window.__auctionPollState.mode;
+            document.body.dataset.auctionPollInterval = String(window.__auctionPollState.intervalMs);
+            document.body.dataset.auctionLastDataAt = String(_auctionLastDataAt || 0);
+        }
+
+        function _latestItemActivityAt(items) {
+            let latest = 0;
+            (items || []).forEach(item => {
+                const parsed = Date.parse(item?.updated_at || item?.updatedAt || '');
+                if (Number.isFinite(parsed) && parsed > latest) latest = parsed;
+            });
+            return latest;
+        }
+
+        function _applyAuctionActivity(activityAt, items) {
+            const now = Date.now();
+            const safeActivityAt = Math.min(Number(activityAt) || 0, now);
+            const hasLiveItem = Array.isArray(items) && items.some(item =>
+                ['진행', '진행중', 'active'].includes(String(item?.status || '').trim())
+            );
+            if (safeActivityAt > _auctionLastActivityAt) {
+                _auctionLastActivityAt = safeActivityAt;
+            }
+            if (safeActivityAt && now - safeActivityAt < AUCTION_HOT_WINDOW_MS) {
+                _auctionHotUntil = Math.max(_auctionHotUntil, safeActivityAt + AUCTION_HOT_WINDOW_MS);
+            }
+            if (hasLiveItem) {
+                _auctionHotUntil = Math.max(_auctionHotUntil, now + AUCTION_HOT_WINDOW_MS);
+            }
+        }
+
+        async function _refreshBroadcastFromItems(items) {
+            if (isBracketPageTemp) {
+                await refreshBracketPage(items);
+            } else {
+                await smartRefresh(items);
+                await refreshBattleOverlayState(window.latestConfigMap || null, items);
+            }
+        }
+
+        function _scheduleAuctionPoll(delay) {
+            if (_auctionPollTimer) clearTimeout(_auctionPollTimer);
+            _auctionPollTimer = setTimeout(_adaptiveAuctionPollTick, delay);
+        }
+
+        async function _adaptiveAuctionPollTick(forceData = false) {
+            if (_auctionPollRunning) return;
+            if (document.hidden) {
+                _scheduleAuctionPoll(1500);
+                return;
+            }
+            _auctionPollRunning = true;
+            try {
+                const now = Date.now();
+                const isHot = now < _auctionHotUntil;
+                const needsData = forceData || isHot || now - _auctionLastDataAt >= AUCTION_IDLE_DATA_MS;
+
+                if (needsData) {
+                    const items = await getBroadcastItems();
+                    _applyAuctionActivity(_latestItemActivityAt(items), items);
+                    _auctionLastDataAt = Date.now();
+                    await _refreshBroadcastFromItems(items);
+                } else {
+                    const pulse = await getAuctionPulse();
+                    const activityAt = Date.parse(pulse?.updatedAt || '');
+                    const previousActivityAt = _auctionLastActivityAt;
+                    _applyAuctionActivity(activityAt, null);
+                    if (_auctionLastActivityAt > previousActivityAt || Date.now() < _auctionHotUntil) {
+                        const items = await getBroadcastItems();
+                        _applyAuctionActivity(_latestItemActivityAt(items), items);
+                        _auctionLastDataAt = Date.now();
+                        await _refreshBroadcastFromItems(items);
+                    }
+                }
+                _auctionPollErrors = 0;
+            } catch (err) {
+                _auctionPollErrors = Math.min(_auctionPollErrors + 1, 4);
+                console.error('adaptive auction poll error', err);
+            } finally {
+                _auctionPollRunning = false;
+                _publishAuctionPollState();
+                const backoff = Math.min(
+                    AUCTION_MAX_BACKOFF_MS,
+                    AUCTION_HOT_POLL_MS * Math.pow(2, _auctionPollErrors)
+                );
+                _scheduleAuctionPoll(backoff);
+            }
+        }
+
+        function startAuctionAdaptivePolling() {
+            if (_auctionPollStarted) return;
+            _auctionPollStarted = true;
+            _publishAuctionPollState();
+            _adaptiveAuctionPollTick(true);
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) _adaptiveAuctionPollTick(true);
+            });
+        }
 
         // 브라우저 내 즉시 동기 (웹 → 방송)
         try {
@@ -3363,18 +3473,8 @@
             document.getElementById('empty').style.display = 'none';
             document.getElementById('broadcast').style.display = 'none';
             // document.getElementById('bracket-page-container').style.display = 'block';
-            
-            // 대진표 자동 리프레시 루프 가동
-            setInterval(refreshBracketPage, 3000);
-            refreshBracketPage();
-
-            // 대진표 화면에서도 실시간 경기상황(배틀 상태)을 감지하고 하이라이트를 즉각 업데이트하도록 루프 가동
-            setInterval(refreshBattleOverlayState, 2000);
-            refreshBattleOverlayState();
-        } else {
-            // 일반 경매 오버레이에서 배틀 모드 상태를 구독하여 화면에 자막 및 금액 감춤 적용
-            setInterval(refreshBattleOverlayState, 2000);
         }
+        startAuctionAdaptivePolling();
 
         // 전역 개체 캐시 fallback 확보
         window.latestItemsList = window.latestItemsList || [];
@@ -3500,12 +3600,32 @@
             }
         }
 
-        async function refreshBracketPage() {
+        let broadcastConfigCache = null;
+        let broadcastConfigCacheAt = 0;
+
+        async function getBroadcastConfigCached(force = false) {
+            const now = Date.now();
+            if (!force && broadcastConfigCache && now - broadcastConfigCacheAt < 3000) {
+                return broadcastConfigCache;
+            }
+            broadcastConfigCache = await getConfigMap();
+            broadcastConfigCacheAt = now;
+            return broadcastConfigCache;
+        }
+
+        async function refreshBracketPage(prefetchedItems) {
             try {
-                const [map, items] = await Promise.all([getConfigMap(), getItems()]);
+                const [map, items] = await Promise.all([
+                    getBroadcastConfigCached(false),
+                    Array.isArray(prefetchedItems) ? Promise.resolve(prefetchedItems) : getBroadcastItems()
+                ]);
+                battleItemsCache = items || [];
+                battleItemsCacheAt = Date.now();
                 applyBracketPageMap(map, items);
+                await refreshBattleOverlayState(map, items);
             } catch (err) {
                 console.error('refreshBracketPage error', err);
+                throw err;
             }
         }
 
@@ -3519,7 +3639,7 @@
                 return battleItemsCache;
             }
             if (battleItemsRequest) return battleItemsRequest;
-            battleItemsRequest = getItems()
+            battleItemsRequest = getBroadcastItems()
                 .then(items => {
                     battleItemsCache = items || [];
                     battleItemsCacheAt = Date.now();
@@ -4060,10 +4180,10 @@
         let lastActiveItemName = '';
         let lastActiveItemStatus = '';
         
-        async function refreshBattleOverlayState() {
+        async function refreshBattleOverlayState(prefetchedMap, prefetchedItems) {
             try {
                 // 1. 설정 및 개체 목록 가져오기
-                const map = await getConfigMap();
+                const map = prefetchedMap || await getBroadcastConfigCached(false);
                 if (!map) return;
                 window.latestConfigMap = map;
                 
@@ -4105,7 +4225,9 @@
                 }
                 
                 // 3. 전체 개체 목록 가져오기
-                const items = await getBattleItemsCached();
+                const items = Array.isArray(prefetchedItems)
+                    ? prefetchedItems
+                    : await getBattleItemsCached();
                 if (!items || items.length === 0) return;
 
                 // Sync bracket overlay visibility & positioning on all pages (items 포함)
