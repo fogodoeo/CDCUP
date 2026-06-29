@@ -13,7 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260629-round-price"></script>
+    <script src="supabase-bridge.js?v=20260629-logic-fix"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
@@ -3966,6 +3966,20 @@
             return window._liveAuctionState;
         }
 
+        function buildRotatingAuctionSchedule(matchCount, roundsPerMatch) {
+            const steps = [];
+            for (let round = 1; round <= roundsPerMatch; round++) {
+                const startGroup = ((round - 1) % matchCount) + 1;
+                for (let index = 0; index < matchCount; index++) {
+                    steps.push({
+                        group: ((startGroup - 1 + index) % matchCount) + 1,
+                        round
+                    });
+                }
+            }
+            return steps;
+        }
+
         function finishAuctionMotion() {
             const state = getLiveAuctionState();
             if (state.timer) clearTimeout(state.timer);
@@ -4059,31 +4073,9 @@
             let detectedRound = 0, detectedGroup = 0, detectedLetter = '';
             let leftTeamLetter = '', rightTeamLetter = '';
 
-            let scheduleSteps = [];
-            try {
-                const savedSchedule = JSON.parse(map.battle_schedule || '[]');
-                const seenSteps = new Set();
-                savedSchedule.forEach(step => {
-                    const group = Number(step?.group) || 0;
-                    const round = Number(step?.round) || 0;
-                    const key = group + '_' + round;
-                    if (!group || group > matchCount || !round || round > rpm || seenSteps.has(key)) return;
-                    seenSteps.add(key);
-                    scheduleSteps.push({ group, round });
-                });
-            } catch (e) {}
-            if (scheduleSteps.length !== matchCount * rpm) {
-                scheduleSteps = [];
-                for (let round = 1; round <= rpm; round++) {
-                    const startGroup = ((round - 1) % matchCount) + 1;
-                    for (let index = 0; index < matchCount; index++) {
-                        scheduleSteps.push({
-                            group: ((startGroup - 1 + index) % matchCount) + 1,
-                            round
-                        });
-                    }
-                }
-            }
+            // 라운드가 바뀔 때 시작 조를 한 칸씩 민다.
+            // 저장된 과거 스케줄 순서와 무관하게 1R=1조, 2R=2조, 3R=3조...를 보장한다.
+            const scheduleSteps = buildRotatingAuctionSchedule(matchCount, rpm);
 
             function getPendingAuctionStep() {
                 for (const step of scheduleSteps) {

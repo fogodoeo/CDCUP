@@ -3,8 +3,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>CDCUP - 배송/수령 정보 등록</title>
-    <script src="supabase-bridge.js?v=20260629-shipping-cost"></script>
+    <script src="supabase-bridge.js?v=20260629-logic-fix"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <style>
         /* ══════════════════════════════════════
@@ -2642,6 +2645,19 @@
             }, 0);
         }
 
+        function getWinnerIdentity(item) {
+            const clean = String(item?.winner || '').replace(/[\[\]]/g, '').trim();
+            const parts = clean.split('/').map(part => part.trim()).filter(Boolean);
+            const name = parts[0] || '이름 없음';
+            const embeddedPhone = parts.find((part, index) => index > 0 && part.replace(/[^0-9]/g, '').length >= 7) || '';
+            const phone = String(item?.winner_phone || embeddedPhone).replace(/[^0-9]/g, '');
+            return {
+                key: phone ? `phone:${phone}` : `name:${name.toLowerCase()}`,
+                name,
+                phone
+            };
+        }
+
         // 총 배송비를 업체별 **개체 수 비례**로 나눈다.
         // 2마리 낸 업체는 1마리 낸 업체보다 배송비를 2배 부담한다.
         // 나머지 원 단위는 개체 수가 많은 업체부터 1원씩 배분한다.
@@ -2704,18 +2720,18 @@
                 // 낙찰자별 그룹핑
                 const winnerGroups = {};
                 selfItems.forEach(it => {
-                    const winnerName = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
-                    if (!winnerGroups[winnerName]) {
-                        winnerGroups[winnerName] = [];
+                    const identity = getWinnerIdentity(it);
+                    if (!winnerGroups[identity.key]) {
+                        winnerGroups[identity.key] = { identity, items: [] };
                     }
-                    winnerGroups[winnerName].push(it);
+                    winnerGroups[identity.key].items.push(it);
                 });
 
-                Object.keys(winnerGroups).forEach(winnerName => {
-                    const groupItems = winnerGroups[winnerName];
+                Object.keys(winnerGroups).forEach(winnerKey => {
+                    const group = winnerGroups[winnerKey];
+                    const groupItems = group.items;
                     const winnerAllItems = allItems.filter(it => {
-                        const clean = (it.winner || '').replace(/[\[\]]/g, '').trim().split('/')[0].trim();
-                        return clean === winnerName;
+                        return getWinnerIdentity(it).key === winnerKey;
                     });
 
                     const sellerCos = [...new Set(winnerAllItems.map(it => (it.company || '').trim()))];
@@ -2727,21 +2743,23 @@
                     const parsedHub = parsedShipping.hub;
                     const parsedMemo = parsedShipping.memo;
 
-                    winnerStateMap[winnerName] = {
+                    winnerStateMap[winnerKey] = {
+                        winnerName: group.identity.name,
                         allItems: winnerAllItems,
                         sellerCompanies: sellerCos,
                         shipping_type: firstSelfItem.shipping_type || '미설정',
                         shipping_company: firstSelfItem.shipping_company || '',
                         shipping_region: parsedRegion,
                         shipping_hub: parsedHub,
-                        phone: firstSelfItem.winner_phone || '',
+                        phone: group.identity.phone,
                         status: firstSelfItem.status || '낙찰-대기',
                         memo: parsedMemo
                     };
                 });
 
-                Object.keys(winnerGroups).forEach(winnerName => {
-                    const state = winnerStateMap[winnerName];
+                Object.keys(winnerGroups).forEach(winnerKey => {
+                    const state = winnerStateMap[winnerKey];
+                    const winnerName = state.winnerName;
                     const otherCos = state.sellerCompanies.filter(c => c !== selectedCo);
                     const isCombined = otherCos.length > 0;
                     const combinedBadge = isCombined 
@@ -2757,23 +2775,14 @@
                     });
                     
                     // Get shipping cost split for this company
-                    const companyCount = state.sellerCompanies.length;
-                    let baseCost = calculateShippingCost(
-                        state.shipping_company,
-                        state.shipping_type,
-                        state.shipping_region,
-                        state.shipping_hub,
-                        1
-                    );
-                    let totalShipping = baseCost;
-                    if (baseCost > 0 && state.shipping_type === '배송' && companyCount > 1 && state.shipping_company !== '기타') {
-                        totalShipping = baseCost + (companyCount - 1) * 7000;
-                    }
+                    const totalShipping = state.shipping_type === '배송' && state.shipping_company !== '기타'
+                        ? calculateShippingCost(state.shipping_company, state.shipping_type, state.shipping_region, state.shipping_hub, state.allItems.length)
+                        : 0;
                     const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping, state.allItems);
                     const calculatedShippingCost = shippingAllocations[selectedCo] || 0;
                     const savedShippingCost = getSavedShippingCost(groupItems);
                     const shippingCost = state.shipping_type === '배송'
-                        ? (savedShippingCost > 0 ? savedShippingCost : calculatedShippingCost)
+                        ? (totalShipping > 0 ? calculatedShippingCost : savedShippingCost)
                         : 0;
                     
                     const grandTotal = (totalBid * 10000) + shippingCost;
@@ -2822,8 +2831,8 @@
 
                     const card = document.createElement('div');
                     card.className = 'winner-card';
-                    card.dataset.winner = winnerName;
-                    card.onclick = () => openWinnerEditor(winnerName);
+                    card.dataset.winner = winnerKey;
+                    card.onclick = () => openWinnerEditor(winnerKey);
                     card.innerHTML = `
                         <div class="winner-card-header">
                             <div>
@@ -2915,16 +2924,17 @@
             window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
         }
 
-        function openWinnerEditor(winnerName) {
+        function openWinnerEditor(winnerKey) {
             try {
                 const selectedCo = activeSellerCompany;
-                const state = winnerStateMap[winnerName];
+                const state = winnerStateMap[winnerKey];
                 if (!state) {
-                    alert('[openWinnerEditor] state가 없습니다: ' + winnerName);
+                    alert('[openWinnerEditor] state가 없습니다: ' + winnerKey);
                     return;
                 }
+                const winnerName = state.winnerName;
 
-                activeEditorWinner = winnerName;
+                activeEditorWinner = winnerKey;
                 editorShippingState = {
                     type: state.shipping_type || '미설정',
                     company: state.shipping_company || '',
@@ -2991,7 +3001,7 @@
                 document.body.classList.add('editor-open');
 
                 document.querySelectorAll('.winner-card').forEach(card => {
-                    card.classList.toggle('is-selected', card.dataset.winner === winnerName);
+                    card.classList.toggle('is-selected', card.dataset.winner === winnerKey);
                 });
 
                 // 편집을 시작하면 작업 영역을 화면 상단에 맞춰 하단 금액/저장 영역도 함께 보이게 한다.
@@ -3160,13 +3170,13 @@
                 formulaHtml = '<div class="breakdown-empty">거점을 선택하면 기본 배송비와 합배송 추가금이 계산됩니다.</div>';
                 canShowCompanies = false;
             } else {
-                const extraCompanyCount = Math.max(0, sellerCos.length - 1);
+                const extraItemCount = Math.max(0, totalObjectCount - 1);
                 const extraCost = Math.max(0, totalShipping - baseCost);
                 formulaHtml = `
                     <div class="breakdown-formula">
                         <div class="formula-part"><span>${companyName} 기본</span><strong>${baseCost.toLocaleString()}원</strong></div>
                         <span class="formula-operator">+</span>
-                        <div class="formula-part"><span>추가 ${extraCompanyCount}개 업체</span><strong>${extraCost.toLocaleString()}원</strong></div>
+                        <div class="formula-part"><span>추가 ${extraItemCount}개체</span><strong>${extraCost.toLocaleString()}원</strong></div>
                         <span class="formula-operator">=</span>
                         <div class="formula-part formula-total"><span>총 배송비</span><strong>${totalShipping.toLocaleString()}원</strong></div>
                     </div>
@@ -3217,9 +3227,10 @@
 
         function updateEditorPricing() {
             try {
-                const winnerName = activeEditorWinner;
-                const state = winnerStateMap[winnerName];
+                const winnerKey = activeEditorWinner;
+                const state = winnerStateMap[winnerKey];
                 if (!state) return;
+                const winnerName = state.winnerName;
 
             const selectedCo = activeSellerCompany;
             const groupItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
@@ -3243,16 +3254,13 @@
 
             // Calculate split shipping cost
             const sellerCos = state.sellerCompanies;
-            const companyCount = sellerCos.length;
-            
             let baseCost = 0;
             if (editorShippingState.type === '배송' && comp !== '기타' && reg && hub) {
                 baseCost = calculateShippingCost(comp, editorShippingState.type, reg, hub, 1);
             }
-            let totalShipping = baseCost;
-            if (baseCost > 0 && companyCount > 1 && comp !== '기타') {
-                totalShipping = baseCost + (companyCount - 1) * 7000;
-            }
+            const totalShipping = editorShippingState.type === '배송' && comp !== '기타' && reg && hub
+                ? calculateShippingCost(comp, editorShippingState.type, reg, hub, state.allItems.length)
+                : 0;
             const shippingAllocations = splitShippingCostByCompany(sellerCos, totalShipping, state.allItems);
             const shipCost = editorShippingState.type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
             const grandTotal = (totalBid * 10000) + shipCost;
@@ -3341,9 +3349,10 @@ ${winnerName}님 낙찰 정산 안내입니다.
         }
 
         async function saveWinnerEditor() {
-            const winnerName = activeEditorWinner;
-            const state = winnerStateMap[winnerName];
+            const winnerKey = activeEditorWinner;
+            const state = winnerStateMap[winnerKey];
             if (!state) return;
+            const winnerName = state.winnerName;
 
             if (editorShippingState.type === '미설정') {
                 showToast('배송 방식을 먼저 선택해 주세요.', true);
@@ -3389,22 +3398,9 @@ ${winnerName}님 낙찰 정산 안내입니다.
 
                 // Calculate split shipping cost
                 const sellerCos = state.sellerCompanies;
-                const companyCount = sellerCos.length;
-                
-                let baseCost = 0;
-                if (type === '배송') {
-                    baseCost = calculateShippingCost(
-                        company,
-                        type,
-                        editorShippingState.region,
-                        editorShippingState.hub,
-                        1
-                    );
-                }
-                let totalShipping = baseCost;
-                if (baseCost > 0 && type === '배송' && companyCount > 1 && editorShippingState.company !== '기타') {
-                    totalShipping = baseCost + (companyCount - 1) * 7000;
-                }
+                const totalShipping = type === '배송' && editorShippingState.company !== '기타'
+                    ? calculateShippingCost(company, type, editorShippingState.region, editorShippingState.hub, state.allItems.length)
+                    : 0;
                 const shippingAllocations = type === '배송'
                     ? splitShippingCostByCompany(sellerCos, totalShipping, state.allItems)
                     : splitShippingCostByCompany(sellerCos, 0, state.allItems);
@@ -3514,6 +3510,7 @@ ${winnerName}님 낙찰 정산 안내입니다.
             if (initType === '배송' && (initCompany === '도도시' || initCompany === '파르게' || initCompany === '랩팡')) {
                 buyerShippingState.region = initRegion;
                 buyerShippingState.hub = initHub;
+                buyerShippingState.cost = calculateShippingCost(initCompany, initType, initRegion, initHub, 1);
                 
                 if (initRegion && initHub) {
                     const searchInput = document.getElementById('buyer-hub-search');
@@ -3806,11 +3803,7 @@ ${winnerName}님 낙찰 정산 안내입니다.
                 comp = editorShippingState.company;
                 const winnerName = activeEditorWinner;
                 const state = winnerStateMap[winnerName];
-                if (state) {
-                    const selectedCo = activeSellerCompany;
-                    const groupItems = state.allItems.filter(it => (it.company || '').trim() === selectedCo);
-                    itemCount = groupItems.length;
-                }
+                if (state) itemCount = state.allItems.length;
             } else {
                 comp = buyerShippingState.company;
                 itemCount = buyerFoundItems.length;
@@ -4062,20 +4055,18 @@ ${winnerName}님 낙찰 정산 안내입니다.
                 totalBid += (parseFloat(it.soldPrice || it.sold_price) || 0);
             });
 
-            // 합배송사 분석 및 +7,000 연산 동일 적용
-            const sellerCos = [...new Set(buyerFoundItems.map(it => (it.company || '').trim()))];
-            const companyCount = sellerCos.length;
-
             let totalShipping = 0;
             if (buyerShippingState.type === '배송') {
-                if (buyerShippingState.company === '기타 (직접입력)') {
+                if (buyerShippingState.company === '기타') {
                     totalShipping = 0;
                 } else {
-                    const baseCost = buyerShippingState.cost;
-                    totalShipping = baseCost;
-                    if (baseCost > 0 && companyCount > 1) {
-                        totalShipping = baseCost + (companyCount - 1) * 7000;
-                    }
+                    totalShipping = calculateShippingCost(
+                        buyerShippingState.company,
+                        buyerShippingState.type,
+                        buyerShippingState.region,
+                        buyerShippingState.hub,
+                        buyerFoundItems.length
+                    );
                 }
             }
 
@@ -4112,18 +4103,19 @@ ${winnerName}님 낙찰 정산 안내입니다.
             try {
                 const type = buyerShippingState.type;
                 const sellerCos = [...new Set(buyerFoundItems.map(it => (it.company || '').trim()))];
-                const companyCount = sellerCos.length;
-
                 // 전체 배송비 구한 뒤, 업체별로 쪼개기
                 let totalShipping = 0;
                 if (type === '배송') {
                     if (buyerShippingState.company === '기타') {
                         totalShipping = 0;
                     } else {
-                        totalShipping = buyerShippingState.cost;
-                        if (companyCount > 1) {
-                            totalShipping = buyerShippingState.cost + (companyCount - 1) * 7000;
-                        }
+                        totalShipping = calculateShippingCost(
+                            buyerShippingState.company,
+                            type,
+                            buyerShippingState.region,
+                            buyerShippingState.hub,
+                            buyerFoundItems.length
+                        );
                     }
                 }
 
