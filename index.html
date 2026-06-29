@@ -1522,26 +1522,6 @@
             appearance: none;
         }
 
-        /* 도도시 필터 칩 */
-        .dodosi-chip {
-            padding: 6px 14px;
-            border: 1px solid var(--input-border);
-            border-radius: 20px;
-            background: var(--card);
-            color: var(--text2);
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .15s;
-            white-space: nowrap;
-        }
-
-        .dodosi-chip.active {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
-
         /* 인쇄 탭 */
         .print-sub-btn {
             padding: 6px 14px;
@@ -1646,6 +1626,7 @@
 
         .print-sub.active {
             display: block;
+            width: min(100%, 200mm);
             max-width: 200mm;
             margin: 0 auto;
         }
@@ -1661,8 +1642,33 @@
         .ptable {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
             font-size: 12pt;
         }
+
+        .ptable-result col:nth-child(1) { width: 13%; }
+        .ptable-result col:nth-child(2) { width: 16%; }
+        .ptable-result col:nth-child(3) { width: 10%; }
+        .ptable-result col:nth-child(4) { width: 13%; }
+        .ptable-result col:nth-child(5) { width: 18%; }
+        .ptable-result col:nth-child(6) { width: 22%; }
+        .ptable-result col:nth-child(7) { width: 8%; }
+
+        .ptable-buyer col:nth-child(1) { width: 13%; }
+        .ptable-buyer col:nth-child(2) { width: 18%; }
+        .ptable-buyer col:nth-child(3) { width: 12%; }
+        .ptable-buyer col:nth-child(4) { width: 16%; }
+        .ptable-buyer col:nth-child(5) { width: 10%; }
+        .ptable-buyer col:nth-child(6) { width: 24%; }
+        .ptable-buyer col:nth-child(7) { width: 7%; }
+
+        .ptable-company-selected col:nth-child(1) { width: 13%; }
+        .ptable-company-selected col:nth-child(2) { width: 18%; }
+        .ptable-company-selected col:nth-child(3) { width: 11%; }
+        .ptable-company-selected col:nth-child(4) { width: 14%; }
+        .ptable-company-selected col:nth-child(5) { width: 19%; }
+        .ptable-company-selected col:nth-child(6) { width: 18%; }
+        .ptable-company-selected col:nth-child(7) { width: 7%; }
 
         .ptable th {
             background: #f0f0f0;
@@ -1693,6 +1699,8 @@
             padding: 1px 4px;
             border: 1px solid #ddd;
             vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .ptable .pnum {
@@ -1729,17 +1737,16 @@
             font-weight: 700;
             color: #093687;
             white-space: nowrap;
-            min-width: 100px;
         }
 
         .ptable .pphone {
             text-align: center;
             white-space: nowrap;
-            min-width: 120px;
         }
 
         .ptable .pship {
             text-align: center;
+            white-space: nowrap;
         }
 
         .ptable .pstatus {
@@ -1838,10 +1845,41 @@
         }
 
         @media print {
+            html,
+            body {
+                width: 100% !important;
+                min-width: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+            }
 
-            body>.header,
-            body>.container>.section:not(.print-active) {
+            body > * {
                 display: none !important;
+            }
+
+            body > .container {
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            body > .container > * {
+                display: none !important;
+            }
+
+            body > .container > #tab-print.print-active {
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: 0 !important;
+                border-radius: 0 !important;
+                overflow: visible !important;
+                background: #ffffff !important;
             }
 
             .print-sub:not(.active) {
@@ -1859,26 +1897,36 @@
                 display: none !important;
             }
 
-            .section.print-active {
-                display: block !important;
-            }
-
             .print-sub.active {
-                max-width: none;
-                margin: 0;
+                display: block !important;
+                width: 100% !important;
+                max-width: none !important;
+                margin: 0 !important;
             }
 
             .ptable {
                 width: 100% !important;
+                max-width: 100% !important;
+                table-layout: fixed !important;
                 font-size: 10pt;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
             }
 
             .ptable th {
+                width: auto !important;
+                min-width: 0 !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
                 background: #f0f0f0 !important;
+            }
+
+            .ptable td {
+                min-width: 0 !important;
+            }
+
+            .ptable th .rh {
+                display: none !important;
             }
 
             @page {
@@ -2369,7 +2417,6 @@
         <div class="cdcup-tabs" style="margin-bottom: 24px; align-items: center; display: flex;">
             <button class="cdcup-tab tab-btn" onclick="showTab('register',this)">등록</button>
             <button class="cdcup-tab tab-btn active" onclick="showTab('list',this)">목록</button>
-            <button class="cdcup-tab tab-btn" onclick="showTab('dodosi',this)">도도시</button>
             <button class="cdcup-tab tab-btn" onclick="showTab('print',this)">인쇄</button>
             <span style="margin-left: auto;"></span>
             <a href="summary.html" class="cdcup-tab" style="text-decoration: none; font-size: 13px;">📊 경매결과 조회</a>
@@ -2415,18 +2462,6 @@
         <!-- 하단 고정 삭제 바 -->
         <div class="floating-del-bar" id="floating-del-bar">
             <button class="floating-del-btn" id="floating-del-btn" onclick="deleteSelected()">삭제</button>
-        </div>
-
-        <div id="tab-dodosi" class="section">
-            <div style="padding:4px 0 12px;">
-                <input type="text" id="dodosi-search" placeholder="지역·지점명 검색 (초성 가능: ㅋㄹ → 크레리즘)"
-                    style="width:100%;padding:12px 14px;border:1px solid var(--input-border);border-radius:10px;font-size:14px;background:var(--input-bg);color:var(--text);box-sizing:border-box;"
-                    oninput="filterDodosi()">
-                <div id="dodosi-filter-bar" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;"></div>
-            </div>
-            <div id="dodosi-list" style="margin-top:4px;"></div>
-            <div id="dodosi-empty"
-                style="display:none;text-align:center;padding:40px 0;color:var(--text3);font-size:13px;">로딩중...</div>
         </div>
 
         <!-- ═══ 인쇄 탭 ═══ -->
@@ -2731,14 +2766,13 @@
             btn.classList.add('active');
             document.getElementById('tab-' + tab).classList.add('active');
             // 헤더 타이틀 갱신
-            const titles = { register: '개체 등록', list: '개체 목록', dodosi: '배송지 조회', print: '인쇄' };
+            const titles = { register: '개체 등록', list: '개체 목록', print: '인쇄' };
             const h1 = document.getElementById('header-title');
             if (h1) {
                 h1.style.opacity = '0';
                 setTimeout(() => { h1.textContent = titles[tab] || tab; h1.style.opacity = '1'; }, 120);
             }
             if (tab === 'list') loadList();
-            if (tab === 'dodosi') { loadDodosiData(); setTimeout(function () { document.getElementById('dodosi-search').focus(); }, 200); }
             if (tab === 'print') loadPrint();
         }
 
@@ -4033,11 +4067,6 @@
             if (it.shipping_type !== '배송') return '-';
             
             var rawRegion = it.shipping_region || '';
-            var memoPart = '';
-            var memoMatch = rawRegion.match(/\[(?:메모|요청):[^\]]+\]/);
-            if (memoMatch) {
-                memoPart = ' ' + memoMatch[0];
-            }
             var location = rawRegion.replace(/\s*\[(?:메모|요청):[^\]]+\]\s*$/, '').trim();
             var openIdx = location.indexOf('(');
             var closeIdx = location.lastIndexOf(')');
@@ -4048,9 +4077,9 @@
             var comp = it.shipping_company || '';
             var result = '';
             if (comp === '기타') {
-                result = cleanRegion + memoPart;
+                result = cleanRegion;
             } else {
-                result = comp && cleanRegion ? comp + ' (' + cleanRegion + ')' + memoPart : (comp || cleanRegion || '-');
+                result = comp && cleanRegion ? comp + ' · ' + cleanRegion : (comp || cleanRegion || '-');
             }
             
             return escapeHtml ? esc(result) : result;
@@ -4098,10 +4127,10 @@
             if (showCo) r += '<td class="pcomp">' + (it.company || '') + '</td>';
             r += '<td class="pname">' + shortName + '</td>';
             r += '<td class="psold">' + (it.soldPrice ? fmtPriceP(it.soldPrice) : '') + '</td>';
-            r += '<td class="pwinner" style="min-width:100px">' + w.name + '</td>';
-            r += '<td class="pphone" style="min-width:120px">' + fmtPhoneP(w.phone) + '</td>';
+            r += '<td class="pwinner">' + w.name + '</td>';
+            r += '<td class="pphone">' + fmtPhoneP(w.phone) + '</td>';
             
-            var shipText = fmtShipTextForPrint(it, false);
+            var shipText = fmtShipTextForPrint(it, true);
             r += '<td class="pship">' + shipText + '</td>';
             r += '<td class="pstatus" style="' + sc + '">' + sx + '</td>';
             r += '</tr>';
@@ -4140,7 +4169,7 @@
 
             // 낙찰 결과
             document.getElementById('pr-meta').textContent = dateStr + ' · 낙찰 ' + sold.length + '건 / 유찰 ' + unsold.length + '건 / 전체 ' + items.length + '건 · 총매출 ' + fmtPriceP(total);
-            var rh = '<table class="ptable"><thead><tr><th>업체</th><th>이름</th><th>낙찰가</th><th style="min-width:100px">낙찰자</th><th style="min-width:120px">연락처</th><th>배송</th><th>상태</th></tr></thead><tbody>';
+            var rh = '<table class="ptable ptable-result"><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr><th>업체</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th></tr></thead><tbody>';
             items.forEach(function (it) { rh += buildRow(it, true); });
             rh += '</tbody></table>';
             document.getElementById('pr-body').innerHTML = rh;
@@ -4291,7 +4320,7 @@
                 });
 
                 var ch = '<div class="pc-wrapper" id="pc-wrapper">';
-                ch += '<table class="ptable" id="pc-table"><thead><tr>';
+                ch += '<table class="ptable ptable-company-selected" id="pc-table"><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr>';
                 ch += '<th>업체</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
                 ch += '</tr></thead><tbody>';
                 sold.forEach(function (it) {
@@ -4373,7 +4402,7 @@
 
             // 테이블 생성
             var ch = '<div class="pc-wrapper" id="pc-wrapper">';
-            ch += '<table class="ptable" id="pc-table"><thead><tr>';
+            ch += '<table class="ptable ptable-buyer" id="pc-table"><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr>';
             ch += '<th>낙찰자</th><th>연락처</th><th>업체</th><th>이름</th><th>낙찰가</th><th>배송</th><th>상태</th>';
             ch += '</tr></thead><tbody>';
 
@@ -4412,17 +4441,7 @@
                     ch += '<td class="pname">' + shortName + '</td>';
                     ch += '<td class="psold">' + (it.soldPrice ? fmtPriceP(it.soldPrice) : '') + '</td>';
                     
-                    var shipText = '';
-                    if (it.shipping_type === '직접수령') {
-                        shipText = '직접수령';
-                    } else if (it.shipping_type === '배송') {
-                        shipText = (it.shipping_company || '') + ' / ' + (it.shipping_region || '');
-                        if (it.shipping_cost) {
-                            shipText += ' / ' + (it.shipping_cost >= 1000 ? Number(it.shipping_cost).toLocaleString() + '원' : it.shipping_cost + '원');
-                        }
-                    } else {
-                        shipText = '-';
-                    }
+                    var shipText = fmtShipTextForPrint(it, true);
                     ch += '<td class="pship">' + shipText + '</td>';
                     ch += '<td class="pstatus" style="' + sc + '">' + sx + '</td>';
                     ch += '</tr>';
@@ -4477,7 +4496,7 @@
         }
 
         // ── 컨럼 리사이즈 시스템 (localStorage 저장/복원) ──
-        var COLW_KEY = 'print_col_widths';
+        var COLW_KEY = 'print_col_widths_v2';
         function saveColWidths() {
             var data = {};
             ['plist', 'presult', 'pcompany'].forEach(function (id) {
@@ -4556,8 +4575,8 @@
                     saveColWidths();
                 });
             });
-            // 저장된 폭이 있으면 복원, 없으면 오토핏
-            if (!restoreColWidths()) autoFitAllColumns();
+            // 최초 화면은 A4 비율 컬럼을 유지하고, 사용자가 직접 조절한 폭만 복원합니다.
+            restoreColWidths();
             // 글씨/행높이 복원
             restorePrintSettings();
         }
@@ -4866,12 +4885,6 @@
             loadParents();
             addEntry();
             loadList();
-            // 도도시 데이터 백그라운드 프리로드 (탭 클릭 전에 미리 가져오기)
-            getDodosiData().then(function (r) {
-                if (r && r.success) {
-                    dodosiCache = r.data || [];
-                }
-            }).catch(function () { /* 프리로드 실패는 무시 — 탭 클릭 시 재시도 */ });
         } catch (initErr) {
             document.getElementById('item-list').innerHTML = '<div style="color:red;padding:20px;">초기화 오류: ' + initErr.message + '</div>';
         }
