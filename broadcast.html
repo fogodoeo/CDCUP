@@ -13,7 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260629-motion-sync"></script>
+    <script src="supabase-bridge.js?v=20260629-forced-blind"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
@@ -3758,7 +3758,8 @@
 
             const isAuctionDone = item => item && ['완료', 'sold', '낙찰', '유찰'].includes(item.status);
             const toPrice = item => Number.parseFloat(item?.sold_price || item?.soldPrice || 0) || 0;
-            const fullBracketBlind = String(map.bracket_full_blind ?? '1') !== '0';
+            const matchCount = scale / 2;
+            const configuredFullBracketBlind = String(map.bracket_full_blind ?? '1') !== '0';
 
             let schedule = [];
             try { if (map.battle_schedule) schedule = JSON.parse(map.battle_schedule); } catch (e) {}
@@ -3766,10 +3767,36 @@
             schedule.forEach(step => {
                 if (step?.matchKey) roundsByMatch[step.matchKey] = Number(step.roundsPerMatch) || 4;
             });
+
+            // 공개 설정이어도 현재 경매가 하나라도 미확정이면 전체 대진은 강제로 블라인드한다.
+            const expectedSteps = [];
+            const seenExpectedSteps = new Set();
+            schedule.forEach(step => {
+                const group = Number(step?.group) || 0;
+                const auctionRound = Number(step?.round) || 0;
+                const key = group + '_' + auctionRound;
+                if (!group || group > matchCount || !auctionRound || seenExpectedSteps.has(key)) return;
+                seenExpectedSteps.add(key);
+                expectedSteps.push({ group, round: auctionRound });
+            });
+            if (!expectedSteps.length) {
+                const defaultRounds = parseInt(map.battle_rounds_per_match || '4', 10) || 4;
+                for (let group = 1; group <= matchCount; group++) {
+                    for (let auctionRound = 1; auctionRound <= defaultRounds; auctionRound++) {
+                        expectedSteps.push({ group, round: auctionRound });
+                    }
+                }
+            }
+            const tournamentAuctionComplete = expectedSteps.length > 0 && expectedSteps.every(step => {
+                const left = String.fromCharCode(65 + (step.group - 1) * 2);
+                const right = String.fromCharCode(65 + (step.group - 1) * 2 + 1);
+                return isAuctionDone(findItemByCode(items, left + step.round))
+                    && isAuctionDone(findItemByCode(items, right + step.round));
+            });
+            const fullBracketBlind = configuredFullBracketBlind || !tournamentAuctionComplete;
             
             // 1라운드 매칭으로 회사명 -> 알파벳 매핑 생성
             const teamToLetter = {};
-            const matchCount = scale / 2;
             for (let i = 1; i <= matchCount; i++) {
                 const matchKey = scale + '_' + i;
                 const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
