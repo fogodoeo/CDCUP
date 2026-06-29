@@ -145,6 +145,19 @@
             background: rgba(236, 72, 153, 0.25);
         }
 
+        .draggable-info {
+            width: 42%;
+            height: 16%;
+            background: rgba(14, 165, 233, 0.14);
+            border: 2px dashed #38bdf8;
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+        }
+        .draggable-info:hover {
+            border-color: #7dd3fc;
+            background: rgba(14, 165, 233, 0.23);
+        }
+
         /* Draggable Bracket */
         .draggable-bracket {
             width: 80%;
@@ -699,9 +712,9 @@
                     <span class="caret">▼</span>
                 </button>
                 <div class="cdcup-nav__dropdown-menu">
-                    <a href="broadcast.html?page=1&amp;v=20260629-fullscreen-sold" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
-                    <a href="broadcast.html?page=2&amp;v=20260629-fullscreen-sold" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
-                    <a href="broadcast.html?page=3&amp;v=20260629-fullscreen-sold" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
+                    <a href="broadcast.html?page=1&amp;v=20260629-page2-layout" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
+                    <a href="broadcast.html?page=2&amp;v=20260629-page2-layout" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
+                    <a href="broadcast.html?page=3&amp;v=20260629-page2-layout" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
                 </div>
             </div>
         </div>
@@ -731,7 +744,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260629-fullscreen-sold"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260629-page2-layout"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -759,6 +772,11 @@
                 <div class="draggable-element draggable-nametag2" id="draggable-nametag2" data-type="nametag2" style="display:none;">
                     <div class="element-label">네임택 2</div>
                     <div class="resize-handle resize-handle-se" id="resize-nametag2" title="크기 조절" style="border-color: #EC4899;"></div>
+                </div>
+
+                <!-- PAGE2 개체정보 위치 -->
+                <div class="draggable-element draggable-info" id="draggable-info" data-type="info" style="display:none;">
+                    <div class="element-label">개체정보</div>
                 </div>
 
                 <!-- 5. Draggable Full Bracket (PAGE3 only) -->
@@ -874,6 +892,7 @@
                     <span id="ticker-coords-group">자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong></span>
                     <span id="nametag1-coords" style="display:none;"> | 네임택1: <strong id="nametag1-val-top">0%</strong>, <strong id="nametag1-val-left">0%</strong></span>
                     <span id="nametag2-coords" style="display:none;"> | 네임택2: <strong id="nametag2-val-top">0%</strong>, <strong id="nametag2-val-left">0%</strong></span>
+                    <span id="info-coords" style="display:none;"> | 개체정보: <strong id="info-val-top">0%</strong>, <strong id="info-val-left">0%</strong></span>
                     <span id="bracket-coords" style="display:none;">전체결과: Top <strong id="bracket-val-top">0%</strong>, Left <strong id="bracket-val-left">0%</strong></span>
                     <span id="bracket-live-coords" style="display:none;"> | 실시간대진: Top <strong id="bracket-live-val-top">0%</strong>, Left <strong id="bracket-live-val-left">0%</strong></span>
                     <span id="bracket-title-coords" style="display:none;"> | 타이틀: <strong id="bracket-title-val-top">0%</strong>, <strong id="bracket-title-val-left">0%</strong></span>
@@ -972,7 +991,7 @@
         // URL Parameter Parsing (page=1, page=2 or page=3)
         const params = new URLSearchParams(window.location.search);
         const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260629-fullscreen-sold';
+        const broadcastAssetVersion = '20260629-page2-layout';
 
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
@@ -1003,6 +1022,11 @@
             document.getElementById('toggle-nametag2-group').style.display = '';
             document.getElementById('nametag1-coords').style.display = '';
             document.getElementById('nametag2-coords').style.display = '';
+        }
+
+        if (pageNum === '2') {
+            document.getElementById('draggable-info').style.display = '';
+            document.getElementById('info-coords').style.display = '';
         }
 
         // PAGE3 전용 요소 표시 + 배너/자막 숨김 (3P는 오버레이 전용)
@@ -1053,6 +1077,14 @@
                 show: "1", width: "100%", height: "12%"
             }
         };
+
+        if (pageNum === '2') {
+            elements.info = {
+                el: document.getElementById('draggable-info'),
+                top: '3%', left: 'auto', right: '2%', bottom: 'auto',
+                show: '1', width: '42%', height: '16%'
+            };
+        }
 
         // PAGE1 전용: 네임택 2개 개별 드래그
         if (pageNum === '1') {
@@ -1192,6 +1224,13 @@
                 elements.ticker.show = cfg[cfgPrefix+'ticker_show'] !== undefined ? String(cfg[cfgPrefix+'ticker_show']) : '1';
                 elements.ticker.height = cfg[cfgPrefix+'ticker_height'] || '12vh';
 
+                if (elements.info) {
+                    elements.info.top = cfg.p2_info_top || '3%';
+                    elements.info.left = cfg.p2_info_left || 'auto';
+                    elements.info.right = cfg.p2_info_right || '2%';
+                    elements.info.bottom = cfg.p2_info_bottom || 'auto';
+                }
+
                 // Load Nametag 1 & 2 values (PAGE1 only)
                 if (elements.nametag1) {
                     const sharedW = cfg.nametag_width || cfg.nametag1_width || '16vw';
@@ -1278,6 +1317,7 @@
                 applyVisualState('ticker');
                 if (elements.nametag1) applyVisualState('nametag1');
                 if (elements.nametag2) applyVisualState('nametag2');
+                if (elements.info) applyVisualState('info');
                 if (elements.bracket_full) applyVisualState('bracket_full');
                 if (elements.bracket_live) applyVisualState('bracket_live');
                 if (elements.bracket_title) applyVisualState('bracket_title');
@@ -1464,6 +1504,11 @@
                 const n = elements.nametag2;
                 document.getElementById('nametag2-val-top').textContent = n.bottom !== 'auto' ? `B ${n.bottom}` : `T ${n.top}`;
                 document.getElementById('nametag2-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}` + ` (${n.width})`;
+            }
+            if (elements.info) {
+                const info = elements.info;
+                document.getElementById('info-val-top').textContent = info.bottom !== 'auto' ? `B ${info.bottom}` : `T ${info.top}`;
+                document.getElementById('info-val-left').textContent = info.right !== 'auto' ? `R ${info.right}` : `L ${info.left}`;
             }
             if (pageNum === '3') {
                 if (elements.bracket_full) {
@@ -1846,6 +1891,13 @@
             configMap[cfgPrefix+'ticker_show'] = elements.ticker.show;
             configMap[cfgPrefix+'ticker_height'] = elements.ticker.height;
 
+            if (elements.info) {
+                configMap.p2_info_top = elements.info.top;
+                configMap.p2_info_left = elements.info.left;
+                configMap.p2_info_right = elements.info.right;
+                configMap.p2_info_bottom = elements.info.bottom;
+            }
+
             if (pageNum === '3') {
                 if (elements.bracket_full) {
                     configMap['bracket_full_top'] = elements.bracket_full.top;
@@ -1957,6 +2009,14 @@
 
             document.getElementById('toggle-banner-show').checked = true;
             document.getElementById('toggle-ticker-show').checked = true;
+
+            if (elements.info) {
+                elements.info.top = '3%';
+                elements.info.left = 'auto';
+                elements.info.right = '2%';
+                elements.info.bottom = 'auto';
+                applyVisualState('info');
+            }
 
             if (elements.nametag1) {
                 elements.nametag1.top = "auto"; elements.nametag1.left = "3%";

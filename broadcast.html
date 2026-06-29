@@ -78,8 +78,26 @@
             display: flex;
             flex-direction: column;
             align-items: flex-end;
+            width: max-content;
+            max-width: calc(100% - 48px);
             animation: scoreboardSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
+
+        .auction-progress {
+            position: absolute;
+            top: 18px;
+            left: 24px;
+            z-index: 21;
+            color: #60a5fa;
+            font-size: var(--sb-label-size, 24px);
+            font-weight: 950;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.06em;
+            line-height: 1;
+            text-shadow: 0 4px 18px rgba(0,0,0,0.55);
+        }
+        body.host-mode .auction-progress,
+        body.bracket-page .auction-progress { display: none !important; }
 
         /* 대회명 라벨 (바 위에 표시) */
         .scoreboard-wrap .top-bar-label {
@@ -95,6 +113,8 @@
             display: flex;
             align-items: stretch;
             gap: 0;
+            width: max-content;
+            max-width: 100%;
             overflow: hidden;
             border-radius: 6px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
@@ -112,7 +132,8 @@
         .top-bar .name-section {
             display: flex;
             align-items: center;
-            padding: 10px 22px 10px 16px;
+            padding: 10px 14px;
+            flex: 0 0 auto;
             background: rgba(10, 15, 28, 0.88);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
@@ -124,6 +145,9 @@
             color: #FFFFFF;
             letter-spacing: -0.01em;
             white-space: nowrap;
+            max-width: 58vw;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* 구분선 */
@@ -137,12 +161,13 @@
         .top-bar .traits {
             display: flex;
             align-items: center;
-            padding: 10px 18px;
-            gap: 6px;
+            padding: 10px 12px;
+            gap: 4px;
             background: rgba(20, 28, 46, 0.85);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             flex-wrap: nowrap;
+            flex: 0 0 auto;
         }
 
         .top-bar .traits-track {
@@ -1228,7 +1253,9 @@
         /* 실시간 대진: 현재 라운드 승패만 보여주는 단일 중계 보드 */
         .live-round-board {
             position: relative;
-            width: min(980px, 100%);
+            width: max-content;
+            min-width: 520px;
+            max-width: 100%;
             min-height: 102px;
             overflow: hidden;
             border: 1px solid rgba(148, 163, 184, 0.35);
@@ -1368,7 +1395,7 @@
         }
         .blind-live-match {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+            grid-template-columns: auto auto auto;
             align-items: center;
             gap: 22px;
             min-height: 76px;
@@ -1430,10 +1457,11 @@
             line-height: 1;
         }
         .blind-live-score i {
-            color: #475569;
-            font-size: 0.65em;
+            color: #cbd5e1;
+            font-size: 0.72em;
             font-style: normal;
-            font-weight: 700;
+            font-weight: 950;
+            line-height: 1;
         }
         .live-next-panel {
             display: flex;
@@ -1464,6 +1492,7 @@
             font-weight: 800;
         }
         @media (max-width: 720px) {
+            .live-round-board { min-width: min(480px, 100%); }
             .blind-live-match { gap: 12px; padding-inline: 18px; }
             .blind-live-team { font-size: 44px; }
             .blind-live-score { min-width: 132px; font-size: 54px; }
@@ -1702,8 +1731,8 @@
     <div class="empty" id="empty">경매 대기중...</div>
 
     <div class="broadcast" id="broadcast">
+        <span class="top-bar-label auction-progress" id="auction-progress"></span>
         <div class="scoreboard-wrap" id="scoreboard-wrap">
-            <span class="top-bar-label">CDCUP AUCTION INFO</span>
             <div class="top-bar" id="top-bar">
                 <div class="name-section">
                     <span class="name" id="info-name"></span>
@@ -1825,15 +1854,13 @@
         window.activeItem = null;
 
         function updateProgressText() {
-            const labelEl = document.querySelector(".top-bar-label");
+            const labelEl = document.getElementById("auction-progress");
             if (!labelEl) return;
-            
-            let baseText = window._baseScoreboardLabel || "CRE WORLD CUP";
             if (window.activeItem && window._totalItemsCount > 0) {
                 const currentOrder = window._completedItemsCount + 1;
-                labelEl.textContent = baseText + ` ${currentOrder}/${window._totalItemsCount}`;
+                labelEl.textContent = `${currentOrder}/${window._totalItemsCount}`;
             } else {
-                labelEl.textContent = baseText;
+                labelEl.textContent = '';
             }
         }
 
@@ -2551,6 +2578,28 @@
             }
         }
 
+        function applyPage2InfoPlacement(cfg) {
+            if (isHostMode || isBracketPageTemp) return;
+            const info = document.getElementById('scoreboard-wrap');
+            if (!info) return;
+            const isValue = value => value && value !== 'auto' && value !== 'initial' && value !== 'unset';
+            const left = normalizeCssLength(cfg.p2_info_left);
+            const right = normalizeCssLength(cfg.p2_info_right);
+            const top = normalizeCssLength(cfg.p2_info_top);
+            const bottom = normalizeCssLength(cfg.p2_info_bottom);
+
+            info.style.left = 'auto';
+            info.style.right = 'auto';
+            info.style.top = 'auto';
+            info.style.bottom = 'auto';
+            if (isValue(right)) info.style.right = right;
+            else if (isValue(left)) info.style.left = left;
+            else info.style.right = '2%';
+            if (isValue(bottom)) info.style.bottom = bottom;
+            else if (isValue(top)) info.style.top = top;
+            else info.style.top = '3%';
+        }
+
         function applyLoadedHostConfig(cfg) {
             if (!cfg) return;
             window.latestConfigMap = cfg;
@@ -2570,7 +2619,7 @@
                 if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
                 if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
                 // 대회명 라벨 폰트 크기 (직접 스타일)
-                const labelEl = sbWrap.querySelector('.top-bar-label');
+                const labelEl = document.getElementById('auction-progress');
                 if (labelEl) {
                     if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
                     if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
@@ -2591,6 +2640,8 @@
             }
             
             // 페이지별 독립 배너/티커 위치 키 접두사
+            applyPage2InfoPlacement(cfg);
+
             const lp = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket' ? 'p3_' : (document.body.classList.contains('host-mode') ? '' : 'p2_');
 
             // 티커(자막 바) 위치 적용
@@ -3145,7 +3196,7 @@
                 if (sbWrap) {
                     if (cfg.scoreboard_name_fontsize) sbWrap.style.setProperty('--sb-name-size', cfg.scoreboard_name_fontsize + 'px');
                     if (cfg.scoreboard_pill_fontsize) sbWrap.style.setProperty('--sb-pill-size', cfg.scoreboard_pill_fontsize + 'px');
-                    const labelEl = sbWrap.querySelector('.top-bar-label');
+                    const labelEl = document.getElementById('auction-progress');
                     if (labelEl) {
                         if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
                         if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
@@ -3165,6 +3216,7 @@
                 }
 
                 // 티커 카드 및 배너 렌더링
+                applyPage2InfoPlacement(cfg);
                 renderTickerCards(cfg);
 
                 // 호스트 모드 전용: 네임택 개별 위치 적용
