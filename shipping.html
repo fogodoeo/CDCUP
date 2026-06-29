@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CDCUP - 배송/수령 정보 등록</title>
-    <script src="supabase-bridge.js"></script>
+    <script src="supabase-bridge.js?v=20260629-shipping-cost"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <style>
         /* ══════════════════════════════════════
@@ -2614,6 +2614,34 @@
             return 0; // 픽업 / 기타 (기본값)
         }
 
+        // 저장 형식: "지역 (거점명) [메모: ...]"
+        // 거점명 자체에 괄호가 들어갈 수 있으므로 첫 '('와 마지막 ')'를 바깥 괄호로 사용한다.
+        function parseSavedShippingRegion(value) {
+            const raw = String(value || '').trim();
+            const memoMatch = raw.match(/\[(?:메모|요청):\s*([^\]]*)\]/);
+            const memo = memoMatch ? memoMatch[1].trim() : '';
+            const location = raw.replace(/\s*\[(?:메모|요청):[^\]]*\]\s*$/, '').trim();
+            const openIdx = location.indexOf('(');
+            const closeIdx = location.lastIndexOf(')');
+
+            if (openIdx >= 0) {
+                return {
+                    region: location.slice(0, openIdx).trim(),
+                    hub: location.slice(openIdx + 1, closeIdx > openIdx ? closeIdx : location.length).trim(),
+                    memo
+                };
+            }
+
+            return { region: location, hub: '', memo };
+        }
+
+        function getSavedShippingCost(items) {
+            return (items || []).reduce((sum, item) => {
+                const cost = Number.parseInt(String(item.shipping_cost ?? 0).replace(/[^0-9-]/g, ''), 10);
+                return sum + (Number.isFinite(cost) && cost > 0 ? cost : 0);
+            }, 0);
+        }
+
         // 총 배송비를 업체별 **개체 수 비례**로 나눈다.
         // 2마리 낸 업체는 1마리 낸 업체보다 배송비를 2배 부담한다.
         // 나머지 원 단위는 개체 수가 많은 업체부터 1원씩 배분한다.
@@ -2694,44 +2722,10 @@
                     const firstSelfItem = groupItems[0];
                     
                     // Set initial state
-                    const rawRegion = String(firstSelfItem.shipping_region || '');
-                    let parsedRegion = '';
-                    let parsedHub = '';
-                    let parsedMemo = '';
-
-                    if (rawRegion) {
-                        // Extract region (first word or before '(')
-                        const spaceIdx = rawRegion.indexOf(' ');
-                        const parenIdx = rawRegion.indexOf('(');
-                        let endIdx = rawRegion.length;
-                        if (spaceIdx >= 0 && (parenIdx < 0 || spaceIdx < parenIdx)) {
-                            endIdx = spaceIdx;
-                        } else if (parenIdx >= 0) {
-                            endIdx = parenIdx;
-                        }
-                        parsedRegion = rawRegion.slice(0, endIdx).trim();
-
-                        // Extract hub inside parens (e.g. "서울 (도도시 강남 거점샵)")
-                        if (parenIdx >= 0) {
-                            const closeParenIdx = rawRegion.indexOf(')', parenIdx);
-                            if (closeParenIdx >= 0) {
-                                parsedHub = rawRegion.slice(parenIdx + 1, closeParenIdx).trim();
-                            } else {
-                                parsedHub = rawRegion.slice(parenIdx + 1).trim();
-                            }
-                        }
-
-                        // Extract memo inside [메모: ...]
-                        const memoIdx = rawRegion.indexOf('[메모:');
-                        if (memoIdx >= 0) {
-                            const closeBracketIdx = rawRegion.indexOf(']', memoIdx);
-                            if (closeBracketIdx >= 0) {
-                                parsedMemo = rawRegion.slice(memoIdx + 5, closeBracketIdx).trim();
-                            } else {
-                                parsedMemo = rawRegion.slice(memoIdx + 5).trim();
-                            }
-                        }
-                    }
+                    const parsedShipping = parseSavedShippingRegion(firstSelfItem.shipping_region);
+                    const parsedRegion = parsedShipping.region;
+                    const parsedHub = parsedShipping.hub;
+                    const parsedMemo = parsedShipping.memo;
 
                     winnerStateMap[winnerName] = {
                         allItems: winnerAllItems,
@@ -2776,7 +2770,11 @@
                         totalShipping = baseCost + (companyCount - 1) * 7000;
                     }
                     const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping, state.allItems);
-                    const shippingCost = state.shipping_type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
+                    const calculatedShippingCost = shippingAllocations[selectedCo] || 0;
+                    const savedShippingCost = getSavedShippingCost(groupItems);
+                    const shippingCost = state.shipping_type === '배송'
+                        ? (savedShippingCost > 0 ? savedShippingCost : calculatedShippingCost)
+                        : 0;
                     
                     const grandTotal = (totalBid * 10000) + shippingCost;
                     
@@ -3508,8 +3506,9 @@ ${winnerName}님 낙찰 정산 안내입니다.
             const initType = firstItem.shipping_type || '미설정';
             const initCompany = firstItem.shipping_company || '';
             const fullRegion = firstItem.shipping_region || '';
-            const initRegion = fullRegion.split(' ')[0] || '';
-            const initHub = fullRegion.indexOf('(') >= 0 ? fullRegion.slice(fullRegion.indexOf('(') + 1, -1) : '';
+            const parsedShipping = parseSavedShippingRegion(fullRegion);
+            const initRegion = parsedShipping.region;
+            const initHub = parsedShipping.hub;
 
             setBuyerShippingType(initType === '직접수령' ? '픽업' : (initType === '배송' ? initCompany : '미설정'), true);
             if (initType === '배송' && (initCompany === '도도시' || initCompany === '파르게' || initCompany === '랩팡')) {
