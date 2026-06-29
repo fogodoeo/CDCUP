@@ -13,7 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260629-manual-blind"></script>
+    <script src="supabase-bridge.js?v=20260629-round-price"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
@@ -1676,6 +1676,26 @@
             font-weight: 950;
             letter-spacing: -0.06em;
         }
+        .auction-result-amount {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 9px;
+            margin-top: 9px;
+            padding-top: 9px;
+            border-top: 1px solid rgba(148,163,184,0.22);
+            color: #fbbf24;
+            font-size: 25px;
+            font-weight: 950;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.035em;
+        }
+        .auction-result-amount-label {
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+        }
         @keyframes auction-fullscreen-in {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -1712,6 +1732,8 @@
             .auction-result-content { width: calc(100vw - 30px); min-height: 230px; gap: 18px; padding: 32px 24px; }
             .auction-result-team { font-size: 32px; }
             .auction-result-score strong { font-size: 54px; }
+            .auction-result-amount { gap: 6px; font-size: 18px; }
+            .auction-result-amount-label { font-size: 9px; }
         }
         @keyframes live-next-in {
             from { opacity: 0; transform: translateY(-6px); }
@@ -4223,6 +4245,8 @@
                         price: formatAuctionMotionPrice(newestSoldItem.sold_price || newestSoldItem.soldPrice || 0),
                         roundComplete: Boolean(ri?.bothDone),
                         roundWinner: ri?.roundWinner || '',
+                        leftRoundPrice: formatAuctionMotionPrice(ri?.lp || 0),
+                        rightRoundPrice: formatAuctionMotionPrice(ri?.rp || 0),
                         leftScore: leftRoundWins,
                         rightScore: rightRoundWins
                     };
@@ -4240,7 +4264,7 @@
             } else if (auctionMotionEnabled && mot?.phase === 'result') {
                 const lR = mot.roundWinner === 'left' ? '승' : (mot.roundWinner === 'right' ? '패' : '무');
                 const rR = mot.roundWinner === 'right' ? '승' : (mot.roundWinner === 'left' ? '패' : '무');
-                motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftDisplayLabel) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore ?? 0) + ' : ' + esc(mot.rightScore ?? 0) + '</strong></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightDisplayLabel) + ' ' + rR + '</div></div></div>';
+                motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftDisplayLabel) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore ?? 0) + ' : ' + esc(mot.rightScore ?? 0) + '</strong><div class="auction-result-amount"><span class="auction-result-amount-label">낙찰가</span><b>' + esc(mot.leftRoundPrice || '0만원') + '</b><i>:</i><b>' + esc(mot.rightRoundPrice || '0만원') + '</b></div></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightDisplayLabel) + ' ' + rR + '</div></div></div>';
             }
             syncAuctionMotionPortal(motionHtml, mot ? [mot.eventKey, mot.phase].join('|') : '');
 
