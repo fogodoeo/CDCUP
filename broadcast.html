@@ -2222,7 +2222,7 @@
         #host-nametag-2 .nt-role {
             border-radius: 2px;
             background: var(--cdcup-gold-soft);
-            color: var(--cdcup-gold-light);
+            color: #e4c887 !important;
         }
         .top-bar .traits { border-left-color: rgba(195,154,74,0.16); }
 
@@ -2422,6 +2422,108 @@
             pointer-events: none;
             user-select: none;
         }
+        /* ── 승자 중심 결과 연출 / 전체 테마형 진행 번호 ── */
+        #auction-progress.auction-progress {
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 0 12px;
+            border: 1px solid rgba(195,154,74,0.38);
+            border-radius: 3px;
+            background: rgba(14,15,17,0.88);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 8px 24px rgba(0,0,0,0.22);
+            color: #e4c887 !important;
+            font-family: 'Pretendard', sans-serif;
+            font-size: var(--sb-label-size, 20px);
+            font-weight: 780;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum' 1;
+            letter-spacing: -0.025em;
+            line-height: 1;
+            text-shadow: none !important;
+            box-sizing: border-box;
+        }
+        .auction-result-content.winner-focus {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            width: min(820px, calc(100vw - 64px));
+            min-height: 360px;
+            padding: 48px 58px 42px;
+            overflow: hidden;
+            text-align: center;
+        }
+        .auction-result-content.winner-focus::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto;
+            height: 5px;
+            background: linear-gradient(90deg, transparent, var(--cdcup-gold) 20%, var(--cdcup-gold-light) 50%, var(--cdcup-gold) 80%, transparent);
+        }
+        .auction-result-content.winner-focus.is-final {
+            width: min(940px, calc(100vw - 48px));
+            min-height: 440px;
+            border-color: rgba(240,213,146,0.62);
+            box-shadow: 0 34px 120px rgba(0,0,0,0.62), 0 0 70px rgba(195,154,74,0.16), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+        .auction-result-eyebrow {
+            color: var(--cdcup-muted);
+            font-size: 16px;
+            font-weight: 850;
+            letter-spacing: 0.18em;
+        }
+        .auction-result-winner {
+            display: block;
+            margin-top: 14px;
+            color: var(--cdcup-gold-light);
+            font-size: clamp(72px, 9vw, 118px);
+            font-weight: 950;
+            letter-spacing: -0.07em;
+            line-height: 1;
+            text-shadow: 0 0 38px rgba(195,154,74,0.24);
+            animation: scorebug-copy-in 0.5s 0.08s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .winner-focus.is-final .auction-result-winner {
+            font-size: clamp(92px, 11vw, 144px);
+        }
+        .auction-result-verdict {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 14px;
+            padding: 7px 18px;
+            border: 1px solid rgba(195,154,74,0.4);
+            border-radius: 2px;
+            background: rgba(195,154,74,0.1);
+            color: #f4e2b5;
+            font-size: 24px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+        }
+        .winner-focus .auction-result-score { margin-top: 22px; }
+        .winner-focus .auction-result-score strong {
+            display: inline;
+            margin: 0 0 0 8px;
+            color: var(--cdcup-ivory);
+            font-size: 34px;
+            font-weight: 850;
+            letter-spacing: -0.04em;
+        }
+        .winner-focus .auction-result-amount {
+            margin-top: 12px;
+            padding-top: 12px;
+            font-size: 20px;
+        }
+        .winner-focus.is-draw .auction-result-winner {
+            color: #d9d4ca;
+            font-size: clamp(62px, 8vw, 100px);
+            letter-spacing: -0.04em;
+            text-shadow: none;
+        }
+
         /* ── 3P 대진표 모드일 때 경매 관련 모든 UI 강제 숨김 ── */
         body.bracket-page #broadcast,
         body.bracket-page #empty,
@@ -2589,6 +2691,11 @@
         function updateProgressText() {
             const labelEl = document.getElementById("auction-progress");
             if (!labelEl) return;
+            labelEl.style.setProperty('color', '#e4c887', 'important');
+            labelEl.style.setProperty('font-family', "'Pretendard', sans-serif", 'important');
+            labelEl.style.setProperty('font-weight', '780', 'important');
+            labelEl.style.setProperty('letter-spacing', '-0.025em', 'important');
+            labelEl.style.setProperty('text-shadow', 'none', 'important');
             if (window.activeItem && window._totalItemsCount > 0) {
                 const currentOrder = window._completedItemsCount + 1;
                 labelEl.textContent = `${currentOrder}/${window._totalItemsCount}`;
@@ -4669,7 +4776,7 @@
                     repaintBracketFromLatestMap();
                     state.timer = setTimeout(() => {
                         finishAuctionMotion();
-                    }, 2000);
+                    }, payload.isFinalRound ? 7000 : 3600);
                 } else {
                     finishAuctionMotion();
                 }
@@ -4891,6 +4998,7 @@
                         teamLabel: (side === 'left' ? leftTeamLetter : rightTeamLetter) + '팀',
                         itemName: String(newestSoldItem.displayName || newestSoldItem.name || cc).trim(),
                         round: iR,
+                        isFinalRound: iR === rpm,
                         winner: maskAuctionWinner(newestSoldItem.winner || ''),
                         price: formatAuctionMotionPrice(newestSoldItem.sold_price || newestSoldItem.soldPrice || 0),
                         roundComplete: Boolean(ri?.bothDone),
@@ -4912,9 +5020,11 @@
             if (auctionMotionEnabled && mot?.phase === 'sold') {
                 motionHtml = '<div class="auction-motion-overlay"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><strong class="auction-sold-item">' + esc(mot.itemName) + '</strong><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND · SOLD</span><div><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span><span class="auction-sold-team">' + esc(mot.teamLabel) + ' 낙찰</span></div></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div></div>';
             } else if (auctionMotionEnabled && mot?.phase === 'result') {
-                const lR = mot.roundWinner === 'left' ? '승' : (mot.roundWinner === 'right' ? '패' : '무');
-                const rR = mot.roundWinner === 'right' ? '승' : (mot.roundWinner === 'left' ? '패' : '무');
-                motionHtml = '<div class="auction-motion-overlay"><div class="auction-result-content"><div class="auction-result-team ' + (mot.roundWinner === 'left' ? 'is-win' : '') + '">' + esc(leftDisplayLabel) + ' ' + lR + '</div><div class="auction-result-score"><span>' + esc(mot.round) + ' ROUND RESULT</span><strong>' + esc(mot.leftScore ?? 0) + ' : ' + esc(mot.rightScore ?? 0) + '</strong><div class="auction-result-amount"><span class="auction-result-amount-label">낙찰가</span><b>' + esc(mot.leftRoundPrice || '0만원') + '</b><i>:</i><b>' + esc(mot.rightRoundPrice || '0만원') + '</b></div></div><div class="auction-result-team ' + (mot.roundWinner === 'right' ? 'is-win' : '') + '">' + esc(rightDisplayLabel) + ' ' + rR + '</div></div></div>';
+                const isDraw = mot.roundWinner === 'draw';
+                const winningTeam = mot.roundWinner === 'left' ? leftDisplayLabel : rightDisplayLabel;
+                const resultTitle = mot.isFinalRound ? 'FINAL WINNER' : (esc(mot.round) + ' ROUND WINNER');
+                const resultClass = 'auction-result-content winner-focus' + (mot.isFinalRound ? ' is-final' : '') + (isDraw ? ' is-draw' : '');
+                motionHtml = '<div class="auction-motion-overlay"><div class="' + resultClass + '"><span class="auction-result-eyebrow">' + resultTitle + '</span><strong class="auction-result-winner">' + (isDraw ? '무승부' : esc(winningTeam)) + '</strong>' + (isDraw ? '' : '<span class="auction-result-verdict">승리</span>') + '<div class="auction-result-score"><span>현재 스코어</span><strong>' + esc(mot.leftScore ?? 0) + ' : ' + esc(mot.rightScore ?? 0) + '</strong><div class="auction-result-amount"><span class="auction-result-amount-label">라운드 낙찰가</span><b>' + esc(mot.leftRoundPrice || '0만원') + '</b><i>:</i><b>' + esc(mot.rightRoundPrice || '0만원') + '</b></div></div></div></div>';
             }
             syncAuctionMotionPortal(motionHtml, mot ? [mot.eventKey, mot.phase].join('|') : '');
 
