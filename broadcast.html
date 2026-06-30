@@ -2169,6 +2169,252 @@
             .live-next-note { padding-left: 12px; }
         }
 
+        /* ── CDCUP Championship identity: trophy gold / ivory / charcoal ── */
+        body {
+            --cdcup-gold: #c39a4a;
+            --cdcup-gold-light: #dcc17f;
+            --cdcup-gold-soft: rgba(195,154,74,0.16);
+            --cdcup-ivory: #f5f1e8;
+            --cdcup-muted: #aaa59b;
+            --cdcup-surface: rgba(14,15,17,0.96);
+            --cdcup-surface-2: rgba(21,22,25,0.96);
+            --cdcup-logo: url("https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782781147284_d27lxq.png");
+        }
+
+        .top-bar,
+        .host-nametag .nt-inner,
+        .hc-rules-card,
+        .sports-results-board,
+        .live-round-board,
+        .auction-sold-content,
+        .auction-result-content {
+            border-color: rgba(195,154,74,0.28);
+            border-radius: 4px;
+            background: var(--cdcup-surface);
+            color: var(--cdcup-ivory);
+            box-shadow:
+                0 16px 38px rgba(0,0,0,0.3),
+                inset 0 1px 0 rgba(220,193,127,0.09);
+        }
+
+        .top-bar .accent-bar,
+        .host-nametag .nt-accent {
+            display: block !important;
+            flex: 0 0 3px;
+            width: 3px;
+            background: var(--cdcup-gold) !important;
+        }
+        .top-bar .accent-bar { order: -1; }
+        .top-bar,
+        .top-bar .name-section,
+        .top-bar .traits,
+        .host-nametag .nt-body { background: var(--cdcup-surface); }
+        .top-bar .name,
+        .nt-name,
+        .ticker-card-text { color: var(--cdcup-ivory); }
+        .scoreboard-wrap .top-bar-label,
+        .hc-rule-label,
+        .sub-photo .label { color: var(--cdcup-gold-light); }
+        .top-bar .pill,
+        .top-bar .pill.pill-accent,
+        .top-bar .pill.pill-info,
+        .host-nametag .nt-role,
+        #host-nametag-2 .nt-role {
+            border-radius: 2px;
+            background: var(--cdcup-gold-soft);
+            color: var(--cdcup-gold-light);
+        }
+        .top-bar .traits { border-left-color: rgba(195,154,74,0.16); }
+
+        .sub-photo img,
+        .photo-stack.two-photos .sub-photo.slot-secondary img,
+        .hc-banner-float .banner-item-wrap {
+            border-radius: 4px;
+        }
+        .sub-photo img,
+        .hc-banner-float .banner-item-wrap {
+            box-shadow:
+                0 16px 36px rgba(0,0,0,0.3),
+                inset 0 0 0 1px rgba(195,154,74,0.2);
+        }
+        .sub-photo .label {
+            border-radius: 2px;
+            background: rgba(14,15,17,0.94);
+            box-shadow: inset 3px 0 0 var(--cdcup-gold);
+        }
+        .host-nametag .nt-inner { border-radius: 3px; }
+        .host-nametag .nt-inner::after {
+            border-radius: 3px;
+            box-shadow: inset 0 0 0 1px rgba(220,193,127,0.04);
+        }
+        .host-nametag .nt-role { letter-spacing: 0; }
+        .hc-rules-card { border-radius: 3px; }
+        .hc-rule-value { color: var(--cdcup-ivory); }
+
+        .hc-bottom-bar {
+            border-top: 1px solid rgba(195,154,74,0.62);
+            background: rgba(14,15,17,0.95) !important;
+            box-shadow:
+                0 -14px 34px rgba(0,0,0,0.2),
+                inset 0 1px 0 rgba(220,193,127,0.07);
+        }
+        .ticker-card-text span {
+            border-radius: 2px;
+            background: var(--cdcup-gold);
+            color: #111214 !important;
+        }
+
+        .sports-results-board {
+            position: relative;
+            border-radius: 6px;
+            background: var(--cdcup-surface);
+        }
+        .sports-results-board::after {
+            content: '';
+            display: block;
+            position: absolute;
+            right: calc(var(--bracket-fs) * 1.4);
+            bottom: calc(var(--bracket-fs) * 0.9);
+            z-index: 0;
+            width: calc(var(--bracket-fs) * 5.2);
+            height: calc(var(--bracket-fs) * 7.5);
+            background: var(--cdcup-logo) center / contain no-repeat;
+            opacity: 0.065;
+            pointer-events: none;
+        }
+        .sports-results-header,
+        .sports-results-grid,
+        .sports-results-note { position: relative; z-index: 1; }
+        .sports-results-header { border-bottom-color: rgba(195,154,74,0.2); }
+        .sports-results-kicker,
+        .sports-results-live,
+        .sports-match-state,
+        .sports-match-card.is-current .sports-match-state,
+        .sports-team.is-leading .sports-team-name,
+        .sports-team.is-leading .sports-team-code,
+        .sports-score .is-leading { color: var(--cdcup-gold-light); }
+        .sports-results-live::before { background: var(--cdcup-gold); }
+        .sports-match-card,
+        .sports-match-card.is-current {
+            border-color: rgba(195,154,74,0.16);
+            border-radius: 3px;
+            background: rgba(255,255,255,0.035);
+        }
+        .sports-match-card.is-current {
+            border-color: rgba(195,154,74,0.72);
+            box-shadow:
+                inset 3px 0 0 var(--cdcup-gold),
+                inset 0 1px 0 rgba(220,193,127,0.08);
+        }
+        .sports-match-meta { border-bottom-color: rgba(195,154,74,0.13); }
+        .sports-team-name,
+        .sports-score,
+        .sports-results-title { color: var(--cdcup-ivory); }
+        .sports-team,
+        .sports-team-code,
+        .sports-score-unit,
+        .sports-results-note { color: var(--cdcup-muted); }
+        .sports-team-logo { border-radius: calc(var(--bracket-fs) * 0.3); }
+        .sports-match-footer {
+            background: rgba(195,154,74,0.055);
+            color: #c7c0b3;
+        }
+
+        .live-round-board {
+            position: relative;
+            border-radius: 4px;
+            background: rgba(14,15,17,var(--live-panel-opacity,0.95));
+        }
+        .live-round-board::after {
+            content: '';
+            display: block;
+            position: absolute;
+            right: 16px;
+            bottom: 10px;
+            width: 42px;
+            height: 62px;
+            background: var(--cdcup-logo) center / contain no-repeat;
+            opacity: 0.045;
+            pointer-events: none;
+        }
+        .live-round-header { border-bottom-color: rgba(195,154,74,0.18); }
+        .live-round-header::before {
+            border-radius: 1px;
+            background: var(--cdcup-gold);
+            box-shadow: 0 0 0 3px rgba(195,154,74,0.12);
+        }
+        .live-round-header strong,
+        .live-round-number { color: var(--cdcup-muted); }
+        .live-round-result { border-radius: 2px; }
+        .live-round-result.is-win {
+            background: var(--cdcup-gold);
+            color: #111214;
+        }
+        .blind-live-team { color: #d9d4ca; }
+        .blind-live-team.is-active,
+        .live-next-label { color: var(--cdcup-gold-light); }
+        .blind-live-team strong::after { background: var(--cdcup-gold); }
+        .blind-live-score {
+            border-color: rgba(195,154,74,0.2);
+            border-radius: 3px;
+            background: rgba(195,154,74,0.055);
+            color: var(--cdcup-ivory);
+        }
+        .blind-live-score i,
+        .live-next-note { color: var(--cdcup-muted); }
+        .live-next-code { color: var(--cdcup-ivory); }
+        .live-next-note { border-left-color: rgba(195,154,74,0.25); }
+
+        .auction-motion-overlay {
+            background: rgba(8,9,10,0.84);
+        }
+        .auction-motion-overlay::before {
+            content: '';
+            display: block;
+            width: min(28vw, 310px);
+            height: min(52vh, 450px);
+            border: 0;
+            border-radius: 0;
+            background: var(--cdcup-logo) center / contain no-repeat;
+            box-shadow: none;
+            opacity: 0.11;
+        }
+        .auction-sold-content,
+        .auction-result-content {
+            border-color: rgba(195,154,74,0.36);
+            border-radius: 8px;
+            background: rgba(14,15,17,0.98);
+        }
+        .auction-sold-content::after,
+        .auction-result-content::after {
+            border-color: rgba(195,154,74,0.09);
+            border-radius: 4px;
+        }
+        .auction-sold-turn,
+        .auction-sold-team {
+            border-radius: 2px;
+            background: var(--cdcup-gold-soft);
+            color: var(--cdcup-gold-light);
+        }
+        .auction-sold-item,
+        .auction-result-score span,
+        .auction-result-amount-label { color: var(--cdcup-muted); }
+        .auction-sold-winner,
+        .auction-result-score strong { color: var(--cdcup-ivory); }
+        .auction-sold-price,
+        .auction-result-amount,
+        .auction-target-team.is-target,
+        .auction-result-team.is-win { color: var(--cdcup-gold-light); }
+
+        #battle-announcement-overlay {
+            border-color: rgba(195,154,74,0.42) !important;
+            border-radius: 6px !important;
+            background: rgba(14,15,17,0.98) !important;
+        }
+        #battle-ann-title { color: var(--cdcup-muted) !important; }
+        #battle-ann-content { color: var(--cdcup-ivory) !important; }
+        #battle-ann-sub { color: var(--cdcup-gold-light) !important; }
+
         /* ── 배틀 모드 금액 가림용 클래스 ── */
         body.battle-hide-prices #info-sub,
         body.battle-hide-prices .hc-sub {
