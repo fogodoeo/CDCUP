@@ -1756,6 +1756,215 @@
             .sports-results-board { width: 100%; padding: 16px 14px; }
         }
 
+        /* ── 한국 앱 스타일: 플랫한 표면, 단일 포인트 컬러, 절제된 그림자 ── */
+        .top-bar .accent-bar,
+        .host-nametag .nt-accent,
+        .hc-banner-float .banner-item-wrap::after,
+        .hc-bottom-bar::after,
+        .sports-results-board::before,
+        .sports-match-card::before,
+        .live-round-board::before,
+        .auction-sold-content::before {
+            display: none !important;
+        }
+
+        .top-bar,
+        .host-nametag .nt-inner,
+        .hc-rules-card,
+        .live-round-board,
+        .sports-results-board,
+        .auction-sold-content,
+        .auction-result-content {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(25,31,40,0.95);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.22);
+        }
+
+        .top-bar {
+            overflow: hidden;
+            border-radius: 14px;
+        }
+        .top-bar .name-section,
+        .top-bar .traits,
+        .host-nametag .nt-body {
+            background: rgba(25,31,40,0.96);
+        }
+        .scoreboard-wrap .top-bar-label { color: #90c2ff; letter-spacing: 0.08em; }
+        .top-bar .pill,
+        .top-bar .pill.pill-accent,
+        .top-bar .pill.pill-info {
+            border: 0;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.08);
+            color: #d1d6db;
+        }
+        .top-bar .pill.pill-accent,
+        .top-bar .pill.pill-info {
+            background: rgba(49,130,246,0.18);
+            color: #90c2ff;
+        }
+
+        .sub-photo img {
+            border: 0;
+            border-radius: 16px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+        }
+        .photo-stack.two-photos .sub-photo.slot-secondary img { border-radius: 16px; }
+        .sub-photo .label {
+            border: 0;
+            border-radius: 10px;
+            background: rgba(25,31,40,0.92);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+        }
+
+        .host-nametag .nt-inner { border-radius: 14px; }
+        .host-nametag .nt-role,
+        #host-nametag-2 .nt-role {
+            border: 0;
+            border-radius: 999px;
+            background: rgba(49,130,246,0.18);
+            color: #90c2ff;
+        }
+
+        .hc-banner-float .banner-item-wrap {
+            overflow: hidden;
+            border: 0;
+            border-radius: 16px;
+            box-shadow: 0 14px 34px rgba(0,0,0,0.24);
+        }
+        .hc-rules-card { border-radius: 14px; }
+        .hc-rule-label { color: #90c2ff; }
+
+        .hc-bottom-bar {
+            border-top: 1px solid rgba(255,255,255,0.08);
+            background: rgba(25,31,40,0.94) !important;
+            box-shadow: 0 -8px 24px rgba(0,0,0,0.14);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .ticker-card-text { color: #f2f4f6; text-shadow: none; }
+        .ticker-card-text span {
+            border-radius: 8px;
+            background: rgba(49,130,246,0.2);
+            color: #90c2ff !important;
+        }
+
+        .sports-results-board {
+            border-radius: 20px;
+            background: rgba(25,31,40,0.96);
+            color: #f2f4f6;
+        }
+        .sports-results-board::after { display: none; }
+        .sports-results-kicker,
+        .sports-results-live,
+        .sports-match-state,
+        .sports-match-card.is-current .sports-match-state { color: #90c2ff; }
+        .sports-results-live::before {
+            background: #3182f6;
+            box-shadow: none;
+        }
+        .sports-match-card,
+        .sports-match-card.is-current {
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.045);
+            box-shadow: none;
+            color: #f2f4f6;
+        }
+        .sports-match-card.is-current { border-color: rgba(49,130,246,0.65); }
+        .sports-match-meta {
+            border-bottom-color: rgba(255,255,255,0.07);
+            background: transparent;
+            color: #8b95a1;
+        }
+        .sports-team,
+        .sports-team-code,
+        .sports-score-unit { color: #8b95a1; }
+        .sports-team-name,
+        .sports-score { color: #f2f4f6; }
+        .sports-team.is-leading .sports-team-name,
+        .sports-team.is-leading .sports-team-code,
+        .sports-score .is-leading { color: #90c2ff; }
+        .sports-match-footer {
+            background: rgba(255,255,255,0.035);
+            color: #b0b8c1;
+        }
+
+        .live-round-board {
+            border-radius: 18px;
+            background: rgba(25,31,40,var(--live-panel-opacity,0.95));
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+        .live-round-header {
+            justify-content: flex-start;
+            min-height: 34px;
+            padding: 10px 18px 2px;
+            border-bottom: 0;
+            color: #8b95a1;
+        }
+        .live-round-header strong {
+            color: #b0b8c1;
+            font-size: 13px;
+            letter-spacing: -0.01em;
+        }
+        .live-round-chip,
+        .live-round-chip.is-standby {
+            display: none;
+        }
+        .live-round-number {
+            margin-left: auto;
+            color: #6b7684;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+        }
+        .live-round-result {
+            border-radius: 12px;
+            box-shadow: none;
+        }
+        .live-round-result.is-win {
+            border-color: transparent;
+            background: #3182f6;
+            box-shadow: none;
+        }
+        .live-round-result.is-active { box-shadow: none; }
+        .blind-live-team { color: #d1d6db; }
+        .blind-live-team.is-active { color: #90c2ff; }
+        .blind-live-team strong::after {
+            height: 3px;
+            background: #3182f6;
+            box-shadow: none;
+        }
+        .blind-live-score i { color: #6b7684; }
+        .live-next-panel { background: transparent; }
+        .live-next-label { color: #90c2ff; }
+        .live-next-note { color: #8b95a1; }
+
+        .auction-motion-overlay {
+            background: rgba(10,13,18,0.78);
+            backdrop-filter: blur(14px);
+        }
+        .auction-motion-overlay::before { display: none; }
+        .auction-sold-content,
+        .auction-result-content {
+            border-radius: 24px;
+            background: rgba(25,31,40,0.98);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.32);
+        }
+        .auction-sold-turn,
+        .auction-target-team.is-target,
+        .auction-result-team.is-win { color: #90c2ff; }
+        .auction-sold-team {
+            border: 0;
+            border-radius: 999px;
+            background: rgba(49,130,246,0.18);
+            color: #90c2ff;
+        }
+        .auction-sold-price,
+        .auction-result-amount {
+            color: #90c2ff;
+            text-shadow: none;
+        }
+
         /* ── 배틀 모드 금액 가림용 클래스 ── */
         body.battle-hide-prices #info-sub,
         body.battle-hide-prices .hc-sub {
