@@ -1965,6 +1965,210 @@
             text-shadow: none;
         }
 
+        /* 방송 송출용 마감 디테일 */
+        .top-bar,
+        .host-nametag .nt-inner,
+        .hc-rules-card,
+        .live-round-board,
+        .sports-results-board,
+        .auction-sold-content,
+        .auction-result-content {
+            box-shadow:
+                0 14px 36px rgba(0,0,0,0.24),
+                inset 0 1px 0 rgba(255,255,255,0.07);
+        }
+
+        .top-bar .name-section { padding-inline: 18px; }
+        .top-bar .traits { border-left: 1px solid rgba(255,255,255,0.07); }
+        .top-bar .pill {
+            min-height: 25px;
+            padding-inline: 10px;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.01em;
+        }
+
+        .host-nametag .nt-inner {
+            isolation: isolate;
+        }
+        .host-nametag .nt-inner::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            border-radius: inherit;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.025);
+            pointer-events: none;
+        }
+        .host-nametag .nt-role {
+            padding-inline: 10px;
+            letter-spacing: -0.01em;
+        }
+
+        .hc-bottom-bar {
+            box-shadow:
+                0 -12px 30px rgba(0,0,0,0.16),
+                inset 0 1px 0 rgba(255,255,255,0.055);
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            column-gap: 24px;
+            padding-inline: 32px;
+        }
+        .hc-bottom-bar.visible { display: grid; }
+        .ticker-sponsors-left,
+        .ticker-sponsors-right {
+            position: static;
+            align-self: center;
+            transform: none;
+        }
+        .ticker-card-stage {
+            min-width: 0;
+            padding-inline: 0 !important;
+        }
+        .ticker-card-text {
+            font-weight: 780;
+            letter-spacing: -0.035em;
+        }
+        .ticker-card-text span {
+            margin-right: 14px;
+            padding: 5px 11px;
+            font-weight: 850;
+            letter-spacing: -0.01em;
+        }
+
+        .sports-results-header {
+            padding-bottom: calc(var(--bracket-fs) * 0.85);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .sports-results-kicker { letter-spacing: 0.08em; }
+        .sports-results-title { letter-spacing: -0.045em; }
+        .sports-match-card {
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
+        }
+        .sports-match-card.is-current {
+            box-shadow:
+                inset 3px 0 0 #3182f6,
+                inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+        .sports-match-meta { letter-spacing: -0.01em; }
+        .sports-team-logo {
+            border-radius: calc(var(--bracket-fs) * 0.72);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+        }
+        .sports-score,
+        .blind-live-score,
+        .auction-sold-price,
+        .auction-result-score strong,
+        .auction-result-amount {
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum' 1;
+        }
+
+        .live-round-board {
+            isolation: isolate;
+            box-shadow:
+                0 16px 40px rgba(0,0,0,0.25),
+                inset 0 1px 0 rgba(255,255,255,0.075);
+        }
+        .live-round-header::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            flex: 0 0 7px;
+            border-radius: 50%;
+            background: #3182f6;
+            box-shadow: 0 0 0 4px rgba(49,130,246,0.13);
+        }
+        .live-round-header strong { font-weight: 760; }
+        .live-round-number { font-weight: 720; }
+        .live-next-panel {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            min-height: 112px;
+            padding: 8px 24px 20px;
+            gap: 16px;
+        }
+        .live-next-label {
+            letter-spacing: 0.12em;
+            line-height: 1;
+        }
+        .live-next-code {
+            font-size: 70px;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.055em;
+        }
+        .live-next-note {
+            padding-left: 16px;
+            border-left: 1px solid rgba(255,255,255,0.1);
+            line-height: 1.25;
+            letter-spacing: -0.035em;
+        }
+        .blind-live-score {
+            padding: 8px 16px 10px;
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            background: rgba(255,255,255,0.035);
+        }
+        .blind-live-team { letter-spacing: -0.055em; }
+
+        .auction-sold-content,
+        .auction-result-content {
+            position: relative;
+            isolation: isolate;
+        }
+        .auction-sold-content::after,
+        .auction-result-content::after {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            z-index: 2;
+            border: 1px solid rgba(255,255,255,0.035);
+            border-radius: 18px;
+            pointer-events: none;
+        }
+        .auction-sold-turn {
+            display: inline-flex;
+            align-items: center;
+            min-height: 27px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: rgba(49,130,246,0.16);
+            color: #90c2ff;
+            letter-spacing: 0.08em;
+        }
+        .auction-sold-item { color: #b0b8c1; }
+        .auction-sold-winner { letter-spacing: -0.055em; }
+        .auction-sold-price { letter-spacing: -0.075em; }
+        .auction-result-score span,
+        .auction-result-amount-label {
+            color: #8b95a1;
+            letter-spacing: 0.06em;
+        }
+
+        #battle-announcement-overlay {
+            border: 1px solid rgba(255,255,255,0.09) !important;
+            border-radius: 24px !important;
+            background: rgba(25,31,40,0.97) !important;
+            box-shadow:
+                0 24px 64px rgba(0,0,0,0.34),
+                inset 0 1px 0 rgba(255,255,255,0.07) !important;
+        }
+        #battle-ann-title {
+            color: #8b95a1 !important;
+            letter-spacing: 0.02em !important;
+        }
+        #battle-ann-content { text-shadow: none !important; }
+        #battle-ann-sub { color: #90c2ff !important; }
+
+        @media (max-width: 720px) {
+            .live-next-panel {
+                grid-template-columns: auto auto auto;
+                min-height: 104px;
+                padding: 6px 18px 16px;
+                gap: 12px;
+            }
+            .live-next-code { font-size: 62px; }
+            .live-next-note { padding-left: 12px; }
+        }
+
         /* ── 배틀 모드 금액 가림용 클래스 ── */
         body.battle-hide-prices #info-sub,
         body.battle-hide-prices .hc-sub {
