@@ -3886,9 +3886,9 @@ ${winnerName}님 낙찰 정산 안내입니다.
                     return baseCost + (itemCount - 1) * (isJeju ? 4000 : 7000);
                 } else if (comp === '랩팡') {
                     if (itemCount <= 1) return baseCost;
-                    if (itemCount <= 4) return baseCost + getDiscountedWrapangCost((itemCount - 1) * 7000);
-                    if (itemCount <= 20) return baseCost + getDiscountedWrapangCost(28000);
-                    return baseCost + getDiscountedWrapangCost(35000);
+                    if (itemCount <= 4) return baseCost + (itemCount - 1) * 7000;
+                    if (itemCount <= 20) return baseCost + 28000;
+                    return baseCost + 35000;
                 }
                 return baseCost;
             }
