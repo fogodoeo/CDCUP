@@ -76,6 +76,14 @@
         .main-view { display: none; }
         .main-view.active { display: block; }
 
+        .round-nav { position: sticky; top: 0; z-index: 20; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin-bottom: 20px; padding: 5px; border: 1px solid var(--rank-line); background: rgba(7,11,18,.94); backdrop-filter: blur(14px); }
+        .round-nav-btn { min-width: 0; padding: 11px 12px; border: 1px solid transparent; background: transparent; color: var(--rank-muted); font-family: inherit; font-size: 12px; font-weight: 830; cursor: pointer; white-space: nowrap; }
+        .round-nav-btn:hover { color: var(--rank-text); }
+        .round-nav-btn.active { border-color: var(--rank-gold); background: var(--rank-gold); color: #090c11; }
+        .round-stage-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+        .round-stage-grid.final-grid { grid-template-columns: minmax(0, 680px); justify-content: center; }
+        .stage-empty-note { padding: 20px 22px; border-top: 1px solid var(--rank-line); color: var(--rank-dim); text-align: center; font-size: 11px; }
+
         .bracket-panel { border: 1px solid var(--rank-line); background: rgba(13,19,29,.94); }
         .bracket-panel-head { display: flex; justify-content: space-between; gap: 20px; align-items: end; padding: 20px 22px; border-bottom: 1px solid var(--rank-line); }
         .bracket-panel-head strong { display: block; font-size: 16px; font-weight: 880; }
@@ -96,6 +104,8 @@
         .bracket-team { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto auto; gap: 9px; align-items: center; min-height: 42px; padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,.045); color: var(--rank-muted); }
         .bracket-team:last-child { border-bottom: 0; }
         .bracket-team.is-winner { color: var(--rank-text); background: rgba(52,201,143,.075); }
+        .bracket-team.is-placeholder { color: var(--rank-dim); background: rgba(255,255,255,.018); }
+        .bracket-team.is-placeholder .team-logo { opacity: .42; }
         .bracket-team .team-logo { width: 28px; height: 28px; flex-basis: 28px; padding: 3px; }
         .bracket-team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 800; }
         .bracket-team-price { font-size: 11px; font-weight: 820; font-variant-numeric: tabular-nums; }
@@ -171,6 +181,7 @@
             .podium-card { min-height: 145px; }
             .board-head { align-items: flex-start; flex-direction: column; }
             .bracket-scroll { padding: 16px; }
+            .round-stage-grid { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 560px) {
@@ -180,6 +191,23 @@
             .filters { width: 100%; }
             .filter-btn { flex: 1; padding-inline: 7px; }
             .board-foot { flex-direction: column; }
+            .round-nav { margin-inline: -4px; overflow-x: auto; grid-template-columns: repeat(5, minmax(76px, 1fr)); scrollbar-width: none; }
+            .round-nav::-webkit-scrollbar { display: none; }
+            .round-nav-btn { padding: 10px 9px; font-size: 11px; }
+            .ranking-table { min-width: 0; }
+            .ranking-table col.phase-col, .ranking-table th:nth-child(3), .ranking-table th:nth-child(4), .ranking-table td:nth-child(3), .ranking-table td:nth-child(4) { display: none; }
+            .ranking-table col.rank-col { width: 48px; }
+            .ranking-table col.team-col { width: 42%; }
+            .ranking-table col.amount-col { width: 25%; }
+            .ranking-table col.result-col { width: 24%; }
+            .ranking-table th, .ranking-table td { padding-inline: 8px; }
+            .ranking-table td { height: 68px; }
+            .table-team { gap: 8px; }
+            .table-team .team-logo { width: 34px; height: 34px; flex-basis: 34px; }
+            .team-copy strong { font-size: 12px; }
+            .team-copy span { display: none; }
+            .amount strong { font-size: 12px; }
+            .round-badge { padding-inline: 6px; font-size: 9px; white-space: nowrap; }
         }
     </style>
 </head>
@@ -189,7 +217,7 @@
             <div>
                 <div class="hero-kicker">CDCUP OFFICIAL STANDINGS</div>
                 <h1>종합 순위표</h1>
-                <p>16강과 8강 경기 결과를 합산한 공식 순위입니다.<br>순위는 최종 도달 라운드를 우선하고, 동률일 경우 낙찰금 총액으로 결정됩니다.</p>
+                <p>16강부터 결승까지 이어지는 CDCUP 공식 결과 페이지입니다.<br>종합 순위는 최종 도달 라운드를 우선하고, 동률일 경우 낙찰금 총액으로 결정됩니다.</p>
             </div>
             <div class="season-mark"><span>TOURNAMENT SEASON</span><strong id="season-year">2026 CDCUP</strong></div>
         </header>
@@ -197,40 +225,62 @@
         <section class="stat-strip" aria-label="대회 요약">
             <div class="stat"><span class="stat-label">참가 팀</span><strong class="stat-value" id="stat-teams">-</strong></div>
             <div class="stat"><span class="stat-label">총 낙찰금</span><strong class="stat-value" id="stat-amount">-</strong></div>
-            <div class="stat"><span class="stat-label">집계 대회</span><strong class="stat-value" id="stat-events">2<span class="stat-unit">개</span></strong></div>
+            <div class="stat"><span class="stat-label">진행 라운드</span><strong class="stat-value" id="stat-events">2<span class="stat-unit">/ 4</span></strong></div>
             <div class="stat"><span class="stat-label">최종 업데이트</span><strong class="stat-value" id="stat-updated" style="font-size:16px">-</strong></div>
         </section>
 
-        <div class="view-switch" role="tablist" aria-label="순위표 보기 방식">
-            <button class="view-btn active" type="button" onclick="setMainView('ranking', this)">종합 순위</button>
-            <button class="view-btn" type="button" onclick="setMainView('bracket', this)">토너먼트 대진</button>
+        <div class="round-nav" role="tablist" aria-label="토너먼트 라운드 선택">
+            <button class="round-nav-btn active" type="button" onclick="setRoundView('summary', this)">종합</button>
+            <button class="round-nav-btn" type="button" onclick="setRoundView('16', this)">16강</button>
+            <button class="round-nav-btn" type="button" onclick="setRoundView('8', this)">8강</button>
+            <button class="round-nav-btn" type="button" onclick="setRoundView('4', this)">4강</button>
+            <button class="round-nav-btn" type="button" onclick="setRoundView('2', this)">결승</button>
         </div>
 
-        <div class="main-view active" id="ranking-view">
+        <div class="main-view active" id="summary-view">
             <section class="podium" id="podium" aria-label="상위 3개 팀"></section>
 
             <section class="board">
                 <header class="board-head">
                     <div class="board-title"><strong>OFFICIAL TEAM RANKING</strong><span>16강 · 8강 통합 성적</span></div>
-                    <div class="filters" role="tablist">
-                        <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">종합</button>
-                        <button class="filter-btn" data-filter="16" onclick="setFilter('16', this)">16강 성적</button>
-                        <button class="filter-btn" data-filter="8" onclick="setFilter('8', this)">8강 성적</button>
-                    </div>
                 </header>
                 <div id="board-content"><div class="loading"><div class="loader"></div>순위 데이터를 집계하고 있습니다.</div></div>
                 <footer class="board-foot"><span>※ 최종 도달 라운드 → 낙찰금 총액 순으로 집계</span><span>2026 CDCUP OFFICIAL STANDINGS</span></footer>
             </section>
         </div>
 
-        <div class="main-view" id="bracket-view">
+        <div class="main-view" id="16-view">
             <section class="bracket-panel">
                 <header class="bracket-panel-head">
-                    <div><strong>TOURNAMENT BRACKET</strong><span>16강 경기 결과와 8강 진출 흐름</span></div>
+                    <div><strong>ROUND OF 16</strong><span>16강 전체 경기 결과</span></div>
                     <span class="bracket-status">ROUND OF 16 · FINAL</span>
                 </header>
-                <div class="bracket-scroll"><div class="bracket-inner" id="bracket-content"></div></div>
-                <div class="bracket-note">16강은 낙찰금 비교로 승자를 표시하며, 8강은 현재 저장된 공식 대진 순서입니다.</div>
+                <div class="bracket-scroll"><div class="round-stage-grid" id="round-content-16"></div></div>
+                <div class="bracket-note">낙찰금이 높은 팀이 8강에 진출합니다.</div>
+            </section>
+        </div>
+
+        <div class="main-view" id="8-view">
+            <section class="bracket-panel">
+                <header class="bracket-panel-head"><div><strong>QUARTER FINAL</strong><span>8강 전체 경기 결과</span></div><span class="bracket-status">QUARTER FINAL</span></header>
+                <div class="bracket-scroll"><div class="round-stage-grid" id="round-content-8"></div></div>
+                <div class="bracket-note">현재 저장된 공식 8강 대진과 라운드별 낙찰금입니다.</div>
+            </section>
+        </div>
+
+        <div class="main-view" id="4-view">
+            <section class="bracket-panel">
+                <header class="bracket-panel-head"><div><strong>SEMI FINAL</strong><span>4강 대진</span></div><span class="bracket-status">SEMI FINAL · READY</span></header>
+                <div class="bracket-scroll"><div class="round-stage-grid" id="round-content-4"></div></div>
+                <div class="stage-empty-note">8강 승자가 확정되면 4강 슬롯에 자동으로 반영됩니다.</div>
+            </section>
+        </div>
+
+        <div class="main-view" id="2-view">
+            <section class="bracket-panel">
+                <header class="bracket-panel-head"><div><strong>GRAND FINAL</strong><span>결승 대진</span></div><span class="bracket-status">FINAL · READY</span></header>
+                <div class="bracket-scroll"><div class="round-stage-grid final-grid" id="round-content-2"></div></div>
+                <div class="stage-empty-note">4강 승자가 확정되면 결승 슬롯에 자동으로 반영됩니다.</div>
             </section>
         </div>
     </main>
@@ -370,8 +420,8 @@
             return ({4: 800, 8: 700, 16: 600})[round] || 500;
         }
 
-        function setMainView(view, button) {
-            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.toggle('active', btn === button));
+        function setRoundView(view, button) {
+            document.querySelectorAll('.round-nav-btn').forEach(btn => btn.classList.toggle('active', btn === button));
             document.querySelectorAll('.main-view').forEach(panel => panel.classList.toggle('active', panel.id === view + '-view'));
         }
 
@@ -380,66 +430,75 @@
             return logoMarkup(row);
         }
 
-        function renderBracket(map) {
+        function renderRoundViews(map) {
             const officialMap = Object.fromEntries(OFFICIAL_ROUND_RESULTS.map(entry => [entry.name, entry]));
             const rowMap = Object.fromEntries(allRows.map(row => [row.name, row]));
             const stored = parseBracket(map || {}, 8).matches || {};
-            const fallback = [
+            const fallbackQuarterfinals = [
                 { left: '히꼬', right: '어비스' },
                 { left: '자몽', right: '니코게코' },
                 { left: '비송', right: '헤넥톤' },
                 { left: '베누스', right: '렙타일갤러리' }
             ];
-            const quarterfinals = fallback.map((item, index) => {
+            const quarterfinals = fallbackQuarterfinals.map((item, index) => {
                 const saved = stored['8_' + (index + 1)] || {};
-                return { left: saved.left || item.left, right: saved.right || item.right };
+                return { ...saved, left: saved.left || item.left, right: saved.right || item.right };
             });
 
-            const feederFor = team => ROUND_OF_16_MATCHUPS.find(match => match.left === team || match.right === team);
-            const matchNumber = match => ROUND_OF_16_MATCHUPS.indexOf(match) + 1;
-            const r16Markup = match => {
-                const left = officialMap[match.left];
-                const right = officialMap[match.right];
-                const winner = (left?.round16 || 0) >= (right?.round16 || 0) ? match.left : match.right;
+            const storedWinner = match => match?.winner === 'left' || match?.winner === 'right' ? (match[match.winner] || '') : '';
+            const qfWinners = quarterfinals.map(storedWinner);
+            const semifinals = [0, 1].map(index => {
+                const saved = stored['4_' + (index + 1)] || {};
+                return {
+                    ...saved,
+                    left: saved.left || qfWinners[index * 2] || `8강 ${index * 2 + 1}경기 승자`,
+                    right: saved.right || qfWinners[index * 2 + 1] || `8강 ${index * 2 + 2}경기 승자`
+                };
+            });
+            const semifinalWinners = semifinals.map(storedWinner);
+            const savedFinal = stored['2_1'] || {};
+            const finalMatch = {
+                ...savedFinal,
+                left: savedFinal.left || semifinalWinners[0] || '4강 1경기 승자',
+                right: savedFinal.right || semifinalWinners[1] || '4강 2경기 승자'
+            };
+
+            const priceFor = (name, round) => {
+                if (round === 16) return officialMap[name]?.round16;
+                if (round === 8) return officialMap[name]?.round8;
+                return undefined;
+            };
+            const isPlaceholder = name => !name || name.includes('경기 승자') || name === '대기 중';
+            const stageMatchMarkup = (match, round, index) => {
+                let winner = storedWinner(match);
+                if (round === 16) {
+                    const leftPrice = priceFor(match.left, 16) || 0;
+                    const rightPrice = priceFor(match.right, 16) || 0;
+                    winner = leftPrice >= rightPrice ? match.left : match.right;
+                }
                 const teamRow = name => {
-                    const result = officialMap[name];
+                    const placeholder = isPlaceholder(name);
+                    const price = priceFor(name, round);
                     const isWinner = name === winner;
-                    return `<div class="bracket-team ${isWinner ? 'is-winner' : ''}">
-                        ${bracketLogoMarkup(name, rowMap)}
-                        <span class="bracket-team-name">${escapeHtml(name)}</span>
-                        <span class="bracket-team-price">${formatAmount(result?.round16 || 0)}<small>만원</small></span>
+                    return `<div class="bracket-team ${isWinner ? 'is-winner' : ''} ${placeholder ? 'is-placeholder' : ''}">
+                        ${bracketLogoMarkup(name || '대기 중', rowMap)}
+                        <span class="bracket-team-name">${escapeHtml(name || '대기 중')}</span>
+                        <span class="bracket-team-price">${price === undefined ? '-' : formatAmount(price) + '<small>만원</small>'}</span>
                         ${isWinner ? '<span class="winner-chip">WIN</span>' : '<span></span>'}
                     </div>`;
                 };
-                return `<article class="bracket-match">
-                    <div class="bracket-match-head"><span>16강 ${matchNumber(match)}경기</span><span>FINAL</span></div>
-                    ${teamRow(match.left)}${teamRow(match.right)}
-                </article>`;
-            };
-            const qfMarkup = (match, index) => {
-                const teamRow = name => `<div class="bracket-team">
-                    ${bracketLogoMarkup(name, rowMap)}
-                    <span class="bracket-team-name">${escapeHtml(name)}</span>
-                    <span class="bracket-team-price">${formatAmount(officialMap[name]?.round8 || 0)}<small>만원</small></span>
-                    <span></span>
-                </div>`;
-                return `<article class="bracket-match qf">
-                    <div class="bracket-match-head"><span>8강 ${index + 1}경기</span><span>RESULT</span></div>
+                const stageName = round === 2 ? '결승' : round + '강';
+                const status = winner ? 'FINAL' : (round <= 4 ? 'READY' : 'RESULT');
+                return `<article class="bracket-match ${round < 16 ? 'qf' : ''}">
+                    <div class="bracket-match-head"><span>${stageName} ${index + 1}경기</span><span>${status}</span></div>
                     ${teamRow(match.left)}${teamRow(match.right)}
                 </article>`;
             };
 
-            document.getElementById('bracket-content').innerHTML = `
-                <div class="bracket-round-head"><span>ROUND OF 16</span><span>QUARTER FINAL</span></div>
-                <div class="bracket-groups">${quarterfinals.map((match, index) => {
-                    const leftFeeder = feederFor(match.left);
-                    const rightFeeder = feederFor(match.right);
-                    return `<div class="bracket-group">
-                        <div class="r16-stack">${r16Markup(leftFeeder)}${r16Markup(rightFeeder)}</div>
-                        <div class="bracket-connector" aria-hidden="true"><i></i><b></b><span>▶</span></div>
-                        ${qfMarkup(match, index)}
-                    </div>`;
-                }).join('')}</div>`;
+            document.getElementById('round-content-16').innerHTML = ROUND_OF_16_MATCHUPS.map((match, index) => stageMatchMarkup(match, 16, index)).join('');
+            document.getElementById('round-content-8').innerHTML = quarterfinals.map((match, index) => stageMatchMarkup(match, 8, index)).join('');
+            document.getElementById('round-content-4').innerHTML = semifinals.map((match, index) => stageMatchMarkup(match, 4, index)).join('');
+            document.getElementById('round-content-2').innerHTML = stageMatchMarkup(finalMatch, 2, 0);
         }
 
         function finalLabel(row) {
@@ -504,14 +563,14 @@
 
                 if (!allRows.length && new URLSearchParams(location.search).get('demo') === '1') allRows = demoRows();
                 allRows.forEach((row, index) => row.rank = index + 1);
-                renderBracket(map || {});
+                renderRoundViews(map || {});
                 renderPage();
             } catch (error) {
                 console.error(error);
                 if (new URLSearchParams(location.search).get('demo') === '1') {
                     allRows = demoRows();
                     allRows.forEach((row, index) => row.rank = index + 1);
-                    renderBracket({});
+                    renderRoundViews({});
                     renderPage();
                     return;
                 }
