@@ -4645,13 +4645,16 @@
 
                 const isComplete = completedRounds === roundsPerMatch;
                 let calculatedWinner = '';
-                if (completedRounds > 0) {
+                if (isComplete) {
+                    if (leftTotal > rightTotal) calculatedWinner = 'left';
+                    else if (rightTotal > leftTotal) calculatedWinner = 'right';
+                    else calculatedWinner = 'draw';
+                } else if (completedRounds > 0) {
                     if (ls > rs) calculatedWinner = 'left';
                     else if (rs > ls) calculatedWinner = 'right';
-                    else if (isComplete) calculatedWinner = 'draw';
                 }
-                const displayWinner = calculatedWinner || match.winner || '';
                 const hasScore = completedRounds > 0;
+                const displayWinner = calculatedWinner || (!hasScore ? match.winner : '');
                 
                 const node = document.createElement('article');
                 const isCurrent = !isComplete && Boolean(activeAuctionCode) && (
@@ -4697,7 +4700,7 @@
                     </div>
                     <div class="sports-match-footer">
                         <span>${isComplete ? `총 ${leftTotal}만원` : `${ls}승`}</span>
-                        <span class="sports-match-draws">${isComplete ? `FINAL · ${ls}:${rs}` : (draws ? `무 ${draws}` : `${completedRounds}/${roundsPerMatch}`)}</span>
+                        <span class="sports-match-draws">${isComplete ? '낙찰금액 합계' : (draws ? `무 ${draws}` : `${completedRounds}/${roundsPerMatch}`)}</span>
                         <span>${isComplete ? `총 ${rightTotal}만원` : `${rs}승`}</span>
                     </div>
                 `;
@@ -4808,7 +4811,7 @@
                     repaintBracketFromLatestMap();
                     state.timer = setTimeout(() => {
                         finishAuctionMotion();
-                    }, payload.isFinalRound ? 7000 : 3600);
+                    }, payload.matchComplete ? 7000 : 3600);
                 } else {
                     finishAuctionMotion();
                 }
@@ -5029,6 +5032,9 @@
                 roundData.push({ round: r, lItem, rItem, lp, rp, lSold, rSold, bothDone, roundWinner, isCurrent: r === detectedRound, leftItemName: leftTeamLetter + r, rightItemName: rightTeamLetter + r });
             }
             const matchComplete = roundData.length === rpm && roundData.every(data => data.bothDone);
+            const matchWinner = matchComplete
+                ? (leftAuctionTotal > rightAuctionTotal ? 'left' : (rightAuctionTotal > leftAuctionTotal ? 'right' : 'draw'))
+                : '';
 
             // 낙찰 애니메이션
             const auctionMotionEnabled = String(map.auction_animation_enabled ?? '1') !== '0';
@@ -5066,7 +5072,11 @@
                         leftRoundPrice: formatAuctionMotionPrice(ri?.lp || 0),
                         rightRoundPrice: formatAuctionMotionPrice(ri?.rp || 0),
                         leftScore: leftRoundWins,
-                        rightScore: rightRoundWins
+                        rightScore: rightRoundWins,
+                        matchComplete,
+                        matchWinner,
+                        leftAuctionTotal,
+                        rightAuctionTotal
                     };
                     if (auctionMotionEnabled) startAuctionMotion(motionPayload);
                 }
@@ -5080,11 +5090,20 @@
             if (auctionMotionEnabled && mot?.phase === 'sold') {
                 motionHtml = '<div class="auction-motion-overlay"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><strong class="auction-sold-item">' + esc(mot.itemName) + '</strong><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND · SOLD</span><div><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span><span class="auction-sold-team">' + esc(mot.teamLabel) + ' 낙찰</span></div></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div></div>';
             } else if (auctionMotionEnabled && mot?.phase === 'result') {
-                const isDraw = mot.roundWinner === 'draw';
-                const winningTeam = mot.roundWinner === 'left' ? leftDisplayLabel : rightDisplayLabel;
-                const resultTitle = mot.isFinalRound ? 'FINAL WINNER' : (esc(mot.round) + ' ROUND WINNER');
-                const resultClass = 'auction-result-content winner-focus' + (mot.isFinalRound ? ' is-final' : '') + (isDraw ? ' is-draw' : '');
-                motionHtml = '<div class="auction-motion-overlay"><div class="' + resultClass + '"><span class="auction-result-eyebrow">' + resultTitle + '</span><strong class="auction-result-winner">' + (isDraw ? '무승부' : esc(winningTeam)) + '</strong>' + (isDraw ? '' : '<span class="auction-result-verdict">승리</span>') + '<div class="auction-result-score"><span>현재 스코어</span><strong>' + esc(mot.leftScore ?? 0) + ' : ' + esc(mot.rightScore ?? 0) + '</strong><div class="auction-result-amount"><span class="auction-result-amount-label">라운드 낙찰가</span><b>' + esc(mot.leftRoundPrice || '0만원') + '</b><i>:</i><b>' + esc(mot.rightRoundPrice || '0만원') + '</b></div></div></div></div>';
+                const isFinalResult = Boolean(mot.matchComplete);
+                const resultWinner = isFinalResult ? mot.matchWinner : mot.roundWinner;
+                const isDraw = resultWinner === 'draw';
+                const winningTeam = resultWinner === 'left' ? leftDisplayLabel : rightDisplayLabel;
+                const resultTitle = isFinalResult ? 'FINAL WINNER' : (esc(mot.round) + ' ROUND WINNER');
+                const resultClass = 'auction-result-content winner-focus' + (isFinalResult ? ' is-final' : '') + (isDraw ? ' is-draw' : '');
+                const scoreLabel = isFinalResult ? '최종 낙찰금액 합계' : '현재 스코어';
+                const scoreValue = isFinalResult
+                    ? (esc(mot.leftAuctionTotal ?? 0) + ' : ' + esc(mot.rightAuctionTotal ?? 0))
+                    : (esc(mot.leftScore ?? 0) + ' : ' + esc(mot.rightScore ?? 0));
+                const amountHtml = isFinalResult
+                    ? '<div class="auction-result-amount"><b>만원</b></div>'
+                    : '<div class="auction-result-amount"><span class="auction-result-amount-label">라운드 낙찰가</span><b>' + esc(mot.leftRoundPrice || '0만원') + '</b><i>:</i><b>' + esc(mot.rightRoundPrice || '0만원') + '</b></div>';
+                motionHtml = '<div class="auction-motion-overlay"><div class="' + resultClass + '"><span class="auction-result-eyebrow">' + resultTitle + '</span><strong class="auction-result-winner">' + (isDraw ? '무승부' : esc(winningTeam)) + '</strong>' + (isDraw ? '' : '<span class="auction-result-verdict">승리</span>') + '<div class="auction-result-score"><span>' + scoreLabel + '</span><strong>' + scoreValue + '</strong>' + amountHtml + '</div></div></div>';
             }
             syncAuctionMotionPortal(motionHtml, mot ? [mot.eventKey, mot.phase].join('|') : '');
 
@@ -5093,6 +5112,8 @@
             const rightActive = activeItem && activeSide === 'right' ? ' is-active' : '';
             const isWaiting = !activeItem && Boolean(pendingStep);
             const isFinalTotals = !activeItem && !pendingStep && matchComplete;
+            const finalLeftWin = isFinalTotals && matchWinner === 'left' ? ' is-active' : '';
+            const finalRightWin = isFinalTotals && matchWinner === 'right' ? ' is-active' : '';
             const displayRound = getBracketViewRound(scale, map);
             const displayGroup = isWaiting ? pendingStep.group : detectedGroup;
             const displayAuctionRound = isWaiting ? pendingStep.round : detectedRound;
@@ -5115,7 +5136,7 @@
                 ? '<div class="live-next-panel"><span class="live-next-label">NEXT</span><strong class="live-next-code">' + esc(waitingNextCode) + '</strong><span class="live-next-note">' + nextNote + '</span></div>'
                 : '';
             const scoreHtml = isFinalTotals
-                ? '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score is-total" aria-label="합산 낙찰금액 ' + leftAuctionTotal + ' 대 ' + rightAuctionTotal + '"><strong>' + leftAuctionTotal + '</strong><i>:</i><strong>' + rightAuctionTotal + '</strong><em class="blind-live-score-unit">만원</em></div><div class="blind-live-team"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>'
+                ? '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + finalLeftWin + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score is-total" aria-label="합산 낙찰금액 ' + leftAuctionTotal + ' 대 ' + rightAuctionTotal + '"><strong>' + leftAuctionTotal + '</strong><i>:</i><strong>' + rightAuctionTotal + '</strong><em class="blind-live-score-unit">만원</em></div><div class="blind-live-team' + finalRightWin + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>'
                 : '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>';
             const liveBodyHtml = isWaiting ? nextHtml : scoreHtml;
             const periodicNextHtml = activeItem && activeNextCode && !mot
@@ -5350,19 +5371,6 @@
             const round = parseInt(curMatchKey.split('_')[1], 10);
             const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + matchIdx + '조' : (round === 8 ? '8강 ' + matchIdx + '조' : '16강 ' + matchIdx + '조'));
             
-            const scoreKey = 'score_' + scale + '_' + matchKey;
-            let scores = { r1: '', r2: '', r3: '', r4: '' };
-            if (map[scoreKey]) {
-                try { scores = JSON.parse(map[scoreKey]); } catch(e){}
-            }
-            
-            let leftScore = 0;
-            let rightScore = 0;
-            ['r1', 'r2', 'r3', 'r4'].forEach(r => {
-                if (scores[r] === 'left') leftScore++;
-                else if (scores[r] === 'right') rightScore++;
-            });
-            
             const teamToLetter = {};
             const matchCount = scale / 2;
             for (let i = 1; i <= matchCount; i++) {
@@ -5376,12 +5384,19 @@
 
             const leftL = teamToLetter[match.left?.trim()] || 'A';
             const rightL = teamToLetter[match.right?.trim()] || 'B';
-
-            const winnerLetter = teamToLetter[finalWinner?.trim()] || '';
-            const winnerText = winnerLetter ? `${winnerLetter}팀` : finalWinner;
+            const doneStatuses = new Set(['완료', 'sold', '낙찰', '유찰']);
+            let leftTotal = 0;
+            let rightTotal = 0;
+            for (let r = 1; r <= 4; r++) {
+                const leftItem = findItemByCode(items, leftL + r);
+                const rightItem = findItemByCode(items, rightL + r);
+                if (leftItem && doneStatuses.has(leftItem.status)) leftTotal += Number.parseFloat(leftItem.sold_price || leftItem.soldPrice || 0) || 0;
+                if (rightItem && doneStatuses.has(rightItem.status)) rightTotal += Number.parseFloat(rightItem.sold_price || rightItem.soldPrice || 0) || 0;
+            }
+            const winnerText = leftTotal > rightTotal ? `${leftL}팀` : (rightTotal > leftTotal ? `${rightL}팀` : '무승부');
 
             document.getElementById('battle-ann-title').textContent = titleText + ' 최종 결과';
-            document.getElementById('battle-ann-content').innerHTML = `최종 승리: <span style="color:#f59e0b;">${winnerText}</span> (${leftScore} : ${rightScore})`;
+            document.getElementById('battle-ann-content').innerHTML = `최종 승리: <span style="color:#f59e0b;">${winnerText}</span> (${leftTotal} : ${rightTotal}만원)`;
             const subEl = document.getElementById('battle-ann-sub');
             subEl.textContent = `대단히 축하드립니다! (${leftL}팀 vs ${rightL}팀)`;
             subEl.style.display = 'block';
