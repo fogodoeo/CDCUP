@@ -103,6 +103,8 @@
         .phase-result { color: var(--rank-muted); font-weight: 700; }
         .phase-result.best { color: var(--rank-green); }
         .phase-result.none { color: #444d5b; }
+        .phase-amount { display: block; margin-top: 4px; color: var(--rank-text); font-size: 11px; font-weight: 820; font-variant-numeric: tabular-nums; }
+        .phase-amount small { margin-left: 2px; color: var(--rank-dim); font-size: 9px; font-weight: 650; }
         .amount strong { color: var(--rank-text); font-size: 14px; font-weight: 860; font-variant-numeric: tabular-nums; }
         .amount span { margin-left: 3px; color: var(--rank-dim); font-size: 10px; }
         .round-badge { display: inline-flex; align-items: center; min-height: 26px; padding: 0 9px; border: 1px solid rgba(255,255,255,.09); border-radius: 2px; background: rgba(255,255,255,.035); color: var(--rank-muted); font-size: 10px; font-weight: 800; }
@@ -202,6 +204,26 @@
         let allRows = [];
         let activeFilter = 'all';
 
+        // 2026 CDCUP 공식 16강/8강 낙찰 결과
+        const OFFICIAL_ROUND_RESULTS = [
+            { name: '자몽', round16: 67, round8: 101 },
+            { name: '아틀리에', round16: 54 },
+            { name: '니코게코', round16: 60, round8: 67 },
+            { name: '아쿠', round16: 16 },
+            { name: '비송', round16: 175, round8: 252 },
+            { name: '미야게코', round16: 87 },
+            { name: '해치랩', round16: 24 },
+            { name: '헤넥톤', round16: 60, round8: 74 },
+            { name: '베누스', round16: 321, round8: 165 },
+            { name: '라이카', round16: 40 },
+            { name: '렙타일갤러리', round16: 155, round8: 122 },
+            { name: '크레빌딩', round16: 72 },
+            { name: '히꼬', round16: 175, round8: 174 },
+            { name: '크레용', round16: 51 },
+            { name: '앙크레', round16: 23 },
+            { name: '어비스', round16: 100, round8: 91 }
+        ];
+
         const escapeHtml = value => String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
         const formatAmount = value => Number(value || 0).toLocaleString('ko-KR');
         const initials = name => String(name || '?').replace(/\s+/g, '').slice(0, 2).toUpperCase();
@@ -283,6 +305,17 @@
             return scale + '강 참가';
         }
 
+        function phaseMarkup(row, scale) {
+            const result = row.results[scale];
+            const amount = row.phaseAmounts?.[scale];
+            let label = phaseLabel(result, scale);
+            if (scale === 8 && amount !== undefined && amount !== null && label === '8강 참가') label = '8강 결과';
+            return `<span class="phase-result ${label === '우승' ? 'best' : !result ? 'none' : ''}">${escapeHtml(label)}</span>` +
+                (amount !== undefined && amount !== null
+                    ? `<span class="phase-amount">${formatAmount(amount)}<small>만원</small></span>`
+                    : '');
+        }
+
         function resultScore(result) {
             if (!result) return 0;
             if (result.champion) return 1000;
@@ -320,7 +353,19 @@
                 const [map, items] = await Promise.all([getConfigMap(), getBroadcastItems()]);
                 const logos = teamLogoMap(map || {});
                 const phases = { 16: phaseResults(parseBracket(map || {}, 16), 16), 8: phaseResults(parseBracket(map || {}, 8), 8) };
-                const names = new Set([...Object.keys(phases[16]), ...Object.keys(phases[8])]);
+                const officialMap = Object.fromEntries(OFFICIAL_ROUND_RESULTS.map(entry => [entry.name, entry]));
+
+                // 공식 기록을 대진표 데이터와 합친다. 8강 금액이 있는 팀은 16강 통과 팀이다.
+                OFFICIAL_ROUND_RESULTS.forEach(entry => {
+                    phases[16][entry.name] = entry.round8 !== undefined
+                        ? { participated: true, reached: 8, eliminated: null, champion: false }
+                        : { participated: true, reached: 16, eliminated: 16, champion: false };
+                    if (entry.round8 !== undefined && !phases[8][entry.name]) {
+                        phases[8][entry.name] = { participated: true, reached: 8, eliminated: null, champion: false };
+                    }
+                });
+
+                const names = new Set([...Object.keys(phases[16]), ...Object.keys(phases[8]), ...OFFICIAL_ROUND_RESULTS.map(entry => entry.name)]);
                 (items || []).forEach(item => { if (item.company) names.add(String(item.company).trim()); });
                 const amounts = {};
                 (items || []).forEach(item => {
@@ -331,7 +376,12 @@
                 });
                 allRows = [...names].filter(Boolean).map(name => {
                     const results = { 16: phases[16][name] || null, 8: phases[8][name] || null };
-                    return { name, logo: logoFor(name, logos), amount: amounts[name] || 0, results, score: Math.max(resultScore(results[16]), resultScore(results[8])) };
+                    const official = officialMap[name];
+                    const phaseAmounts = official ? { 16: official.round16, 8: official.round8 } : {};
+                    const amount = official
+                        ? (official.round16 || 0) + (official.round8 || 0)
+                        : (amounts[name] || 0);
+                    return { name, logo: logoFor(name, logos), amount, phaseAmounts, results, score: Math.max(resultScore(results[16]), resultScore(results[8])) };
                 }).sort((a, b) => b.score - a.score || b.amount - a.amount || a.name.localeCompare(b.name, 'ko'));
 
                 if (!allRows.length && new URLSearchParams(location.search).get('demo') === '1') allRows = demoRows();
@@ -386,13 +436,11 @@
             }
             const rows = filtered.map(row => {
                 const final = finalLabel(row);
-                const p16 = phaseLabel(row.results[16], 16);
-                const p8 = phaseLabel(row.results[8], 8);
                 return `<tr>
                     <td><span class="rank-no ${row.rank <= 3 ? 'medal' : ''}">${String(row.rank).padStart(2, '0')}</span></td>
                     <td><div class="table-team">${logoMarkup(row)}<div class="team-copy"><strong>${escapeHtml(row.name)}</strong><span>CDCUP TEAM</span></div></div></td>
-                    <td><span class="phase-result ${p16 === '우승' ? 'best' : !row.results[16] ? 'none' : ''}">${escapeHtml(p16)}</span></td>
-                    <td><span class="phase-result ${p8 === '우승' ? 'best' : !row.results[8] ? 'none' : ''}">${escapeHtml(p8)}</span></td>
+                    <td>${phaseMarkup(row, 16)}</td>
+                    <td>${phaseMarkup(row, 8)}</td>
                     <td class="amount"><strong>${formatAmount(row.amount)}</strong><span>만원</span></td>
                     <td><span class="round-badge ${final.kind}">${escapeHtml(final.text)}</span></td>
                 </tr>`;
