@@ -67,6 +67,7 @@
         .podium-team-name { min-width: 0; }
         .podium-team-name strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 19px; font-weight: 870; letter-spacing: -.025em; }
         .podium-team-name span { display: block; margin-top: 4px; color: var(--rank-muted); font-size: 11px; }
+        .podium-team-name small { display: block; margin-top: 4px; color: var(--rank-gold-light); font-size: 9px; font-weight: 760; }
         .podium-amount { position: absolute; left: 24px; bottom: 20px; color: var(--rank-text); font-size: 13px; font-weight: 820; font-variant-numeric: tabular-nums; }
         .podium-amount small { margin-left: 4px; color: var(--rank-muted); font-size: 10px; }
 
@@ -140,7 +141,7 @@
         .ranking-table th.amount, .ranking-table td.amount { text-align: right; }
         .ranking-table td { height: 78px; padding: 0 16px; border-bottom: 1px solid var(--rank-line); color: #dce1e8; font-size: 12px; }
         .ranking-table tbody tr:last-child td { border-bottom: 0; }
-        .ranking-table tbody tr { transition: background .15s ease; }
+        .ranking-table tbody tr { transition: background .15s ease; cursor: pointer; }
         .ranking-table tbody tr:hover { background: rgba(255,255,255,.025); }
         .rank-no { color: var(--rank-muted); font-size: 14px; font-weight: 860; font-variant-numeric: tabular-nums; }
         .rank-no.medal { color: var(--rank-gold-light); }
@@ -159,6 +160,34 @@
         .round-badge { display: inline-flex; align-items: center; min-height: 26px; padding: 0 9px; border: 1px solid rgba(255,255,255,.09); border-radius: 2px; background: rgba(255,255,255,.035); color: var(--rank-muted); font-size: 10px; font-weight: 800; }
         .round-badge.champion { border-color: rgba(195,154,74,.45); background: rgba(195,154,74,.12); color: var(--rank-gold-light); }
         .round-badge.runner { border-color: rgba(79,140,255,.35); background: rgba(79,140,255,.1); color: #8fb5ff; }
+
+        .journey-modal { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(3,6,11,.78); backdrop-filter: blur(9px); }
+        .journey-modal.open { display: flex; }
+        .journey-card { width: min(980px, 100%); max-height: calc(100vh - 48px); overflow-y: auto; border: 1px solid var(--rank-line-strong); background: #0b111a; box-shadow: 0 28px 90px rgba(0,0,0,.55); }
+        .journey-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 22px; border-bottom: 1px solid var(--rank-line); }
+        .journey-team { display: flex; align-items: center; gap: 13px; min-width: 0; }
+        .journey-team .team-logo { width: 48px; height: 48px; flex-basis: 48px; }
+        .journey-team strong { display: block; font-size: 18px; font-weight: 880; }
+        .journey-team span { display: block; margin-top: 3px; color: var(--rank-gold-light); font-size: 10px; font-weight: 760; letter-spacing: .08em; }
+        .journey-close { width: 36px; height: 36px; flex: 0 0 36px; border: 1px solid var(--rank-line); background: transparent; color: var(--rank-muted); font-size: 20px; cursor: pointer; }
+        .journey-close:hover { color: var(--rank-text); border-color: rgba(255,255,255,.22); }
+        .journey-summary { display: flex; gap: 22px; padding: 12px 22px; border-bottom: 1px solid var(--rank-line); color: var(--rank-muted); font-size: 10px; }
+        .journey-summary strong { margin-left: 5px; color: var(--rank-text); font-size: 12px; }
+        .journey-timeline { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 24px 22px 28px; }
+        .journey-step { position: relative; min-width: 0; padding-right: 26px; }
+        .journey-step:last-child { padding-right: 0; }
+        .journey-step:not(:last-child)::after { content: ''; position: absolute; top: 21px; left: 44px; right: 0; height: 2px; background: var(--rank-line); }
+        .journey-step.is-win:not(:last-child)::after { background: linear-gradient(90deg, var(--rank-green), rgba(52,201,143,.25)); }
+        .journey-dot { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 2px solid var(--rank-line); border-radius: 50%; background: #0b111a; color: var(--rank-dim); font-size: 10px; font-weight: 900; }
+        .journey-step.is-win .journey-dot { border-color: var(--rank-green); color: var(--rank-green); box-shadow: 0 0 0 5px rgba(52,201,143,.07); }
+        .journey-step.is-loss .journey-dot { border-color: var(--rank-red); color: var(--rank-red); }
+        .journey-step.is-pending .journey-dot { border-color: var(--rank-gold); color: var(--rank-gold-light); }
+        .journey-copy { margin-top: 14px; padding-right: 8px; }
+        .journey-copy small { display: block; color: var(--rank-dim); font-size: 9px; font-weight: 850; letter-spacing: .1em; }
+        .journey-copy strong { display: block; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--rank-text); font-size: 13px; }
+        .journey-copy span { display: block; margin-top: 5px; color: var(--rank-muted); font-size: 10px; line-height: 1.5; }
+        .journey-step.is-win .journey-copy span { color: var(--rank-green); }
+        .journey-step.is-loss .journey-copy span { color: var(--rank-red); }
 
         .loading, .empty { padding: 86px 24px; text-align: center; color: var(--rank-muted); }
         .loader { width: 26px; height: 26px; margin: 0 auto 14px; border: 2px solid var(--rank-line); border-top-color: var(--rank-gold); border-radius: 50%; animation: spin .75s linear infinite; }
@@ -208,6 +237,16 @@
             .team-copy span { display: none; }
             .amount strong { font-size: 12px; }
             .round-badge { padding-inline: 6px; font-size: 9px; white-space: nowrap; }
+            .journey-modal { align-items: flex-end; padding: 0; }
+            .journey-card { width: 100%; max-height: 86vh; border-width: 1px 0 0; }
+            .journey-head { padding: 16px; }
+            .journey-summary { padding: 11px 16px; overflow-x: auto; white-space: nowrap; }
+            .journey-timeline { grid-template-columns: 1fr; gap: 0; padding: 20px 18px 26px; }
+            .journey-step { min-height: 104px; padding: 0 0 22px 58px; }
+            .journey-step:last-child { min-height: 70px; padding-bottom: 0; }
+            .journey-step:not(:last-child)::after { top: 42px; bottom: 0; left: 21px; right: auto; width: 2px; height: auto; }
+            .journey-dot { position: absolute; left: 0; top: 0; }
+            .journey-copy { margin-top: 0; padding-top: 2px; }
         }
     </style>
 </head>
@@ -217,7 +256,6 @@
             <div>
                 <div class="hero-kicker">CDCUP OFFICIAL STANDINGS</div>
                 <h1>종합 순위표</h1>
-                <p>16강부터 결승까지 이어지는 CDCUP 공식 결과 페이지입니다.<br>종합 순위는 최종 도달 라운드를 우선하고, 동률일 경우 낙찰금 총액으로 결정됩니다.</p>
             </div>
             <div class="season-mark"><span>TOURNAMENT SEASON</span><strong id="season-year">2026 CDCUP</strong></div>
         </header>
@@ -242,7 +280,7 @@
 
             <section class="board">
                 <header class="board-head">
-                    <div class="board-title"><strong>OFFICIAL TEAM RANKING</strong><span>16강 · 8강 통합 성적</span></div>
+                    <div class="board-title"><strong>OFFICIAL TEAM RANKING</strong><span>업체를 선택하면 라운드별 경기 여정을 볼 수 있습니다.</span></div>
                 </header>
                 <div id="board-content"><div class="loading"><div class="loader"></div>순위 데이터를 집계하고 있습니다.</div></div>
                 <footer class="board-foot"><span>※ 최종 도달 라운드 → 낙찰금 총액 순으로 집계</span><span>2026 CDCUP OFFICIAL STANDINGS</span></footer>
@@ -285,6 +323,17 @@
         </div>
     </main>
 
+    <div class="journey-modal" id="team-journey-modal" onclick="if(event.target===this) closeTeamJourney()" role="dialog" aria-modal="true" aria-label="업체 경기 여정">
+        <section class="journey-card">
+            <header class="journey-head">
+                <div class="journey-team" id="journey-team"></div>
+                <button class="journey-close" type="button" onclick="closeTeamJourney()" aria-label="닫기">×</button>
+            </header>
+            <div class="journey-summary" id="journey-summary"></div>
+            <div class="journey-timeline" id="journey-timeline"></div>
+        </section>
+    </div>
+
     <script>
         let allRows = [];
         let activeFilter = 'all';
@@ -320,8 +369,24 @@
             { left: '앙크레', right: '어비스' }
         ];
 
+        const QUARTERFINAL_MATCHUPS = [
+            { left: '히꼬', right: '어비스' },
+            { left: '자몽', right: '니코게코' },
+            { left: '비송', right: '헤넥톤' },
+            { left: '베누스', right: '렙타일갤러리' }
+        ];
+
+        const TEAM_ENGLISH_NAMES = {
+            '니코게코': 'NIKO GECKO', '라이카': 'LAIKA', '렙타일갤러리': 'REPTILE GALLERY',
+            '미야게코': 'MIYA GECKO', '베누스': 'VENUS GECKO', '비송': 'BSONG', '아쿠': 'ACU',
+            '아틀리에': 'ATELIER TRI', '앙크레': 'ANCRE', '어비스': 'ABYSS', '자몽': 'ZAMONG CRE',
+            '크레빌딩': 'CREBUILDING', '크레용': 'CREYON', '헤넥톤': 'HENEKTON',
+            '해치랩': 'HATCH LAB STUDIO', '히꼬': 'HIKKO'
+        };
+
         const escapeHtml = value => String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
         const formatAmount = value => Number(value || 0).toLocaleString('ko-KR');
+        const englishName = name => TEAM_ENGLISH_NAMES[name] || '';
         const initials = name => String(name || '?').replace(/\s+/g, '').slice(0, 2).toUpperCase();
         const logoMarkup = row => row.logo
             ? `<img class="team-logo" src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.name)} 로고" onerror="this.outerHTML='<span class=&quot;team-logo logo-fallback&quot;>${escapeHtml(initials(row.name))}</span>'">`
@@ -420,6 +485,19 @@
             return ({4: 800, 8: 700, 16: 600})[round] || 500;
         }
 
+        function officialPrice(name, round) {
+            const result = OFFICIAL_ROUND_RESULTS.find(entry => entry.name === name);
+            return round === 16 ? result?.round16 : round === 8 ? result?.round8 : undefined;
+        }
+
+        function winnerByOfficialPrice(match, round) {
+            if (!match?.left || !match?.right) return '';
+            const left = officialPrice(match.left, round);
+            const right = officialPrice(match.right, round);
+            if (left === undefined || right === undefined) return '';
+            return left >= right ? match.left : match.right;
+        }
+
         function setRoundView(view, button) {
             document.querySelectorAll('.round-nav-btn').forEach(btn => btn.classList.toggle('active', btn === button));
             document.querySelectorAll('.main-view').forEach(panel => panel.classList.toggle('active', panel.id === view + '-view'));
@@ -434,19 +512,13 @@
             const officialMap = Object.fromEntries(OFFICIAL_ROUND_RESULTS.map(entry => [entry.name, entry]));
             const rowMap = Object.fromEntries(allRows.map(row => [row.name, row]));
             const stored = parseBracket(map || {}, 8).matches || {};
-            const fallbackQuarterfinals = [
-                { left: '히꼬', right: '어비스' },
-                { left: '자몽', right: '니코게코' },
-                { left: '비송', right: '헤넥톤' },
-                { left: '베누스', right: '렙타일갤러리' }
-            ];
-            const quarterfinals = fallbackQuarterfinals.map((item, index) => {
+            const quarterfinals = QUARTERFINAL_MATCHUPS.map((item, index) => {
                 const saved = stored['8_' + (index + 1)] || {};
                 return { ...saved, left: saved.left || item.left, right: saved.right || item.right };
             });
 
             const storedWinner = match => match?.winner === 'left' || match?.winner === 'right' ? (match[match.winner] || '') : '';
-            const qfWinners = quarterfinals.map(storedWinner);
+            const qfWinners = quarterfinals.map(match => storedWinner(match) || winnerByOfficialPrice(match, 8));
             const semifinals = [0, 1].map(index => {
                 const saved = stored['4_' + (index + 1)] || {};
                 return {
@@ -472,9 +544,9 @@
             const stageMatchMarkup = (match, round, index) => {
                 let winner = storedWinner(match);
                 if (round === 16) {
-                    const leftPrice = priceFor(match.left, 16) || 0;
-                    const rightPrice = priceFor(match.right, 16) || 0;
-                    winner = leftPrice >= rightPrice ? match.left : match.right;
+                    winner = winnerByOfficialPrice(match, 16);
+                } else if (round === 8 && !winner) {
+                    winner = winnerByOfficialPrice(match, 8);
                 }
                 const teamRow = name => {
                     const placeholder = isPlaceholder(name);
@@ -501,10 +573,64 @@
             document.getElementById('round-content-2').innerHTML = stageMatchMarkup(finalMatch, 2, 0);
         }
 
+        function showTeamJourney(name) {
+            const row = allRows.find(item => item.name === name);
+            if (!row) return;
+            const r16Match = ROUND_OF_16_MATCHUPS.find(match => match.left === name || match.right === name);
+            const qfMatch = QUARTERFINAL_MATCHUPS.find(match => match.left === name || match.right === name);
+            const r16Winner = winnerByOfficialPrice(r16Match, 16);
+            const qfWinner = winnerByOfficialPrice(qfMatch, 8);
+            const passed16 = r16Winner === name;
+            const passed8 = qfWinner === name;
+            const qfWinners = QUARTERFINAL_MATCHUPS.map(match => winnerByOfficialPrice(match, 8));
+            const semifinalMatches = [
+                { left: qfWinners[0], right: qfWinners[1] },
+                { left: qfWinners[2], right: qfWinners[3] }
+            ];
+            const semifinal = semifinalMatches.find(match => match.left === name || match.right === name);
+            const opponent = (match, team) => !match ? '' : (match.left === team ? match.right : match.left);
+            const final = finalLabel(row);
+
+            const stages = [
+                {
+                    dot: '16', label: 'ROUND OF 16', title: r16Match ? `vs ${opponent(r16Match, name)}` : '대진 정보 없음',
+                    detail: `${formatAmount(officialPrice(name, 16) || 0)}만원 · ${passed16 ? '8강 진출' : '16강 탈락'}`,
+                    state: passed16 ? 'is-win' : 'is-loss'
+                },
+                passed16 ? {
+                    dot: '8', label: 'QUARTER FINAL', title: qfMatch ? `vs ${opponent(qfMatch, name)}` : '대진 정보 없음',
+                    detail: `${formatAmount(officialPrice(name, 8) || 0)}만원 · ${passed8 ? '4강 진출' : '8강 탈락'}`,
+                    state: passed8 ? 'is-win' : 'is-loss'
+                } : { dot: '8', label: 'QUARTER FINAL', title: '진출 실패', detail: '16강에서 여정 종료', state: 'is-locked' },
+                passed8 ? {
+                    dot: '4', label: 'SEMI FINAL', title: `vs ${opponent(semifinal, name) || '상대 대기'}`,
+                    detail: '경기 예정', state: 'is-pending'
+                } : { dot: '4', label: 'SEMI FINAL', title: '진출 전', detail: passed16 ? '8강에서 여정 종료' : '대기', state: 'is-locked' },
+                passed8 ? { dot: 'F', label: 'GRAND FINAL', title: '결승 진출 도전', detail: '4강 승리 시 진출', state: 'is-locked' }
+                    : { dot: 'F', label: 'GRAND FINAL', title: '진출 전', detail: '대기', state: 'is-locked' }
+            ];
+
+            document.getElementById('journey-team').innerHTML = `${logoMarkup(row)}<div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(englishName(name))}</span></div>`;
+            document.getElementById('journey-summary').innerHTML = `<span>현재 순위<strong>${row.rank}위</strong></span><span>합산 낙찰금<strong>${formatAmount(row.amount)}만원</strong></span><span>최종 성적<strong>${escapeHtml(final.text)}</strong></span>`;
+            document.getElementById('journey-timeline').innerHTML = stages.map(stage => `<article class="journey-step ${stage.state}">
+                <div class="journey-dot">${stage.dot}</div>
+                <div class="journey-copy"><small>${stage.label}</small><strong>${escapeHtml(stage.title)}</strong><span>${escapeHtml(stage.detail)}</span></div>
+            </article>`).join('');
+            document.getElementById('team-journey-modal').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTeamJourney() {
+            document.getElementById('team-journey-modal').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', event => { if (event.key === 'Escape') closeTeamJourney(); });
+
         function finalLabel(row) {
             const best = [16, 8].map(scale => ({ scale, result: row.results[scale] }))
                 .filter(entry => entry.result)
-                .sort((a, b) => resultScore(b.result) - resultScore(a.result))[0];
+                .sort((a, b) => resultScore(b.result) - resultScore(a.result) || a.scale - b.scale)[0];
             if (!best) return { text: '참가', kind: '' };
             if (best.result.champion) return { text: 'CHAMPION', kind: 'champion' };
             if (best.result.eliminated === 2) return { text: '준우승', kind: 'runner' };
@@ -537,8 +663,12 @@
                     phases[16][entry.name] = entry.round8 !== undefined
                         ? { participated: true, reached: 8, eliminated: null, champion: false }
                         : { participated: true, reached: 16, eliminated: 16, champion: false };
-                    if (entry.round8 !== undefined && !phases[8][entry.name]) {
-                        phases[8][entry.name] = { participated: true, reached: 8, eliminated: null, champion: false };
+                    if (entry.round8 !== undefined) {
+                        const match = QUARTERFINAL_MATCHUPS.find(item => item.left === entry.name || item.right === entry.name);
+                        const isWinner = winnerByOfficialPrice(match, 8) === entry.name;
+                        phases[8][entry.name] = isWinner
+                            ? { participated: true, reached: 4, eliminated: null, champion: false }
+                            : { participated: true, reached: 8, eliminated: 8, champion: false };
                     }
                 });
 
@@ -595,7 +725,7 @@
                 const result = finalLabel(row);
                 return `<article class="podium-card ${index === 0 ? 'first' : ''}">
                     <div class="podium-rank">${index === 0 ? 'LEADER' : 'RANK ' + (index + 1)}</div>
-                    <div class="podium-team">${logoMarkup(row)}<div class="podium-team-name"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(result.text)}</span></div></div>
+                    <div class="podium-team">${logoMarkup(row)}<div class="podium-team-name"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(englishName(row.name))}</span><small>${escapeHtml(result.text)}</small></div></div>
                     <div class="podium-amount">${formatAmount(row.amount)}<small>만원</small></div>
                 </article>`;
             }).join('');
@@ -615,9 +745,9 @@
             }
             const rows = filtered.map(row => {
                 const final = finalLabel(row);
-                return `<tr>
+                return `<tr data-name="${escapeHtml(row.name)}" onclick="showTeamJourney(this.dataset.name)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showTeamJourney(this.dataset.name)}" tabindex="0" role="button" aria-label="${escapeHtml(row.name)} 경기 여정 보기">
                     <td><span class="rank-no ${row.rank <= 3 ? 'medal' : ''}">${String(row.rank).padStart(2, '0')}</span></td>
-                    <td><div class="table-team">${logoMarkup(row)}<div class="team-copy"><strong>${escapeHtml(row.name)}</strong><span>CDCUP TEAM</span></div></div></td>
+                    <td><div class="table-team">${logoMarkup(row)}<div class="team-copy"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(englishName(row.name))}</span></div></div></td>
                     <td>${phaseMarkup(row, 16)}</td>
                     <td>${phaseMarkup(row, 8)}</td>
                     <td class="amount"><strong>${formatAmount(row.amount)}</strong><span>만원</span></td>
