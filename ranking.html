@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>종합 순위표 | CDCUP</title>
+    <script src="supabase-bridge.js?v=20260702-ranking"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="common.css?v=20260702-ranking">
+    <style>
+        :root {
+            --rank-bg: #070b12;
+            --rank-panel: #0d131d;
+            --rank-panel-2: #111925;
+            --rank-line: rgba(255, 255, 255, .08);
+            --rank-line-strong: rgba(195, 154, 74, .34);
+            --rank-text: #f5f7fa;
+            --rank-muted: #8c97a8;
+            --rank-dim: #606b7b;
+            --rank-gold: #c39a4a;
+            --rank-gold-light: #efd797;
+            --rank-blue: #4f8cff;
+            --rank-green: #34c98f;
+            --rank-red: #ef6d75;
+            --rank-font: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 50% -180px, rgba(195,154,74,.18), transparent 420px),
+                var(--rank-bg);
+            color: var(--rank-text);
+            font-family: var(--rank-font);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .ranking-main { max-width: 1380px; margin: 0 auto; padding: 44px 28px 72px; }
+        .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 32px; margin-bottom: 30px; }
+        .hero-kicker { display: flex; align-items: center; gap: 10px; color: var(--rank-gold); font-size: 11px; font-weight: 850; letter-spacing: .2em; }
+        .hero-kicker::before { content: ''; width: 28px; height: 2px; background: var(--rank-gold); }
+        .hero h1 { margin: 12px 0 8px; font-size: clamp(34px, 5vw, 58px); line-height: 1; letter-spacing: -.055em; font-weight: 920; }
+        .hero p { margin: 0; color: var(--rank-muted); font-size: 14px; line-height: 1.65; }
+        .season-mark { text-align: right; padding-left: 28px; border-left: 1px solid var(--rank-line); }
+        .season-mark span { display: block; color: var(--rank-dim); font-size: 10px; font-weight: 800; letter-spacing: .18em; }
+        .season-mark strong { display: block; margin-top: 5px; color: var(--rank-gold-light); font-size: 20px; letter-spacing: -.02em; }
+
+        .stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--rank-line); background: rgba(13,19,29,.82); margin-bottom: 32px; }
+        .stat { min-width: 0; padding: 18px 22px; border-right: 1px solid var(--rank-line); }
+        .stat:last-child { border-right: 0; }
+        .stat-label { color: var(--rank-dim); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+        .stat-value { display: block; margin-top: 6px; font-size: 22px; font-weight: 880; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+        .stat-unit { margin-left: 4px; color: var(--rank-muted); font-size: 11px; font-weight: 700; }
+
+        .podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+        .podium-card { position: relative; overflow: hidden; min-height: 168px; padding: 24px; border: 1px solid var(--rank-line); background: var(--rank-panel); }
+        .podium-card::after { content: ''; position: absolute; width: 150px; height: 150px; right: -58px; bottom: -72px; border: 1px solid rgba(255,255,255,.06); border-radius: 50%; }
+        .podium-card.first { border-color: var(--rank-line-strong); background: linear-gradient(145deg, rgba(195,154,74,.16), rgba(13,19,29,.96) 62%); }
+        .podium-rank { color: var(--rank-dim); font-size: 10px; font-weight: 900; letter-spacing: .18em; }
+        .podium-card.first .podium-rank { color: var(--rank-gold-light); }
+        .podium-team { display: flex; align-items: center; gap: 14px; margin-top: 18px; min-width: 0; }
+        .team-logo { width: 52px; height: 52px; flex: 0 0 52px; object-fit: contain; padding: 5px; border: 1px solid var(--rank-line); background: rgba(255,255,255,.045); }
+        .logo-fallback { display: flex; align-items: center; justify-content: center; color: var(--rank-gold-light); font-size: 15px; font-weight: 900; letter-spacing: -.04em; }
+        .podium-team-name { min-width: 0; }
+        .podium-team-name strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 19px; font-weight: 870; letter-spacing: -.025em; }
+        .podium-team-name span { display: block; margin-top: 4px; color: var(--rank-muted); font-size: 11px; }
+        .podium-amount { position: absolute; left: 24px; bottom: 20px; color: var(--rank-text); font-size: 13px; font-weight: 820; font-variant-numeric: tabular-nums; }
+        .podium-amount small { margin-left: 4px; color: var(--rank-muted); font-size: 10px; }
+
+        .board { border: 1px solid var(--rank-line); background: rgba(13,19,29,.94); }
+        .board-head { display: flex; justify-content: space-between; align-items: center; gap: 18px; min-height: 72px; padding: 16px 20px; border-bottom: 1px solid var(--rank-line); }
+        .board-title strong { display: block; font-size: 15px; font-weight: 850; }
+        .board-title span { display: block; margin-top: 4px; color: var(--rank-dim); font-size: 10px; }
+        .filters { display: flex; gap: 6px; }
+        .filter-btn { padding: 8px 13px; border: 1px solid var(--rank-line); border-radius: 3px; background: transparent; color: var(--rank-muted); font-family: inherit; font-size: 11px; font-weight: 780; cursor: pointer; }
+        .filter-btn:hover { color: var(--rank-text); border-color: rgba(255,255,255,.2); }
+        .filter-btn.active { color: #0b0e13; border-color: var(--rank-gold); background: var(--rank-gold); }
+
+        .table-scroll { overflow-x: auto; }
+        .ranking-table { width: 100%; min-width: 830px; border-collapse: collapse; table-layout: fixed; }
+        .ranking-table col.rank-col { width: 74px; }
+        .ranking-table col.team-col { width: 30%; }
+        .ranking-table col.phase-col { width: 17%; }
+        .ranking-table col.amount-col { width: 18%; }
+        .ranking-table col.result-col { width: 17%; }
+        .ranking-table th { height: 42px; padding: 0 16px; border-bottom: 1px solid var(--rank-line); background: #0a1018; color: var(--rank-dim); text-align: left; font-size: 9px; font-weight: 850; letter-spacing: .12em; }
+        .ranking-table th.amount, .ranking-table td.amount { text-align: right; }
+        .ranking-table td { height: 78px; padding: 0 16px; border-bottom: 1px solid var(--rank-line); color: #dce1e8; font-size: 12px; }
+        .ranking-table tbody tr:last-child td { border-bottom: 0; }
+        .ranking-table tbody tr { transition: background .15s ease; }
+        .ranking-table tbody tr:hover { background: rgba(255,255,255,.025); }
+        .rank-no { color: var(--rank-muted); font-size: 14px; font-weight: 860; font-variant-numeric: tabular-nums; }
+        .rank-no.medal { color: var(--rank-gold-light); }
+        .table-team { display: flex; align-items: center; gap: 12px; min-width: 0; }
+        .table-team .team-logo { width: 42px; height: 42px; flex-basis: 42px; }
+        .team-copy { min-width: 0; }
+        .team-copy strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--rank-text); font-size: 14px; font-weight: 820; }
+        .team-copy span { display: block; margin-top: 3px; color: var(--rank-dim); font-size: 10px; }
+        .phase-result { color: var(--rank-muted); font-weight: 700; }
+        .phase-result.best { color: var(--rank-green); }
+        .phase-result.none { color: #444d5b; }
+        .amount strong { color: var(--rank-text); font-size: 14px; font-weight: 860; font-variant-numeric: tabular-nums; }
+        .amount span { margin-left: 3px; color: var(--rank-dim); font-size: 10px; }
+        .round-badge { display: inline-flex; align-items: center; min-height: 26px; padding: 0 9px; border: 1px solid rgba(255,255,255,.09); border-radius: 2px; background: rgba(255,255,255,.035); color: var(--rank-muted); font-size: 10px; font-weight: 800; }
+        .round-badge.champion { border-color: rgba(195,154,74,.45); background: rgba(195,154,74,.12); color: var(--rank-gold-light); }
+        .round-badge.runner { border-color: rgba(79,140,255,.35); background: rgba(79,140,255,.1); color: #8fb5ff; }
+
+        .loading, .empty { padding: 86px 24px; text-align: center; color: var(--rank-muted); }
+        .loader { width: 26px; height: 26px; margin: 0 auto 14px; border: 2px solid var(--rank-line); border-top-color: var(--rank-gold); border-radius: 50%; animation: spin .75s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .empty strong { display: block; color: var(--rank-text); font-size: 16px; }
+        .empty p { margin: 7px 0 18px; color: var(--rank-dim); font-size: 12px; }
+        .empty-actions { display: flex; justify-content: center; gap: 8px; }
+        .empty-actions a { padding: 9px 13px; border: 1px solid var(--rank-line); color: var(--rank-muted); text-decoration: none; font-size: 11px; font-weight: 750; }
+        .empty-actions a.primary { border-color: var(--rank-gold); background: var(--rank-gold); color: #0b0e13; }
+        .board-foot { display: flex; justify-content: space-between; gap: 16px; padding: 12px 20px; border-top: 1px solid var(--rank-line); color: var(--rank-dim); font-size: 10px; }
+
+        @media (max-width: 820px) {
+            .ranking-main { padding: 30px 16px 52px; }
+            .hero { grid-template-columns: 1fr; }
+            .season-mark { display: none; }
+            .stat-strip { grid-template-columns: repeat(2, 1fr); }
+            .stat:nth-child(2) { border-right: 0; }
+            .stat:nth-child(-n+2) { border-bottom: 1px solid var(--rank-line); }
+            .podium { grid-template-columns: 1fr; }
+            .podium-card { min-height: 145px; }
+            .board-head { align-items: flex-start; flex-direction: column; }
+        }
+
+        @media (max-width: 560px) {
+            .cdcup-nav__brand { margin-right: 8px; }
+            .cdcup-nav__brand > span:last-child, .cdcup-nav__utils, .cdcup-nav__link:not(.active) { display: none; }
+            .cdcup-nav__links { overflow: visible; }
+            .hero h1 { font-size: 38px; }
+            .stat { padding: 15px; }
+            .stat-value { font-size: 18px; }
+            .filters { width: 100%; }
+            .filter-btn { flex: 1; padding-inline: 7px; }
+            .board-foot { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="cdcup-nav">
+        <a href="index.html" class="cdcup-nav__brand"><span class="cdcup-nav__brand-icon">C</span><span>CDCUP 관리자</span></a>
+        <div class="cdcup-nav__links">
+            <a href="index.html" class="cdcup-nav__link">개체/경매 관리</a>
+            <a href="preview.html?page=1" class="cdcup-nav__link">방송 화면 제어</a>
+            <a href="ranking.html" class="cdcup-nav__link active">종합 순위표</a>
+        </div>
+        <div class="cdcup-nav__utils">
+            <span class="cdcup-nav__live"><span class="cdcup-nav__live-dot"></span>LIVE</span>
+            <div class="cdcup-nav__dropdown">
+                <button class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast"><span>📺 방송 송출 화면</span><span class="caret">▼</span></button>
+                <div class="cdcup-nav__dropdown-menu">
+                    <a href="broadcast.html?page=1" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
+                    <a href="broadcast.html?page=2" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
+                    <a href="broadcast.html?page=3" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="ranking-main">
+        <header class="hero">
+            <div>
+                <div class="hero-kicker">CDCUP OFFICIAL STANDINGS</div>
+                <h1>종합 순위표</h1>
+                <p>16강과 8강 경기 결과를 합산한 공식 순위입니다.<br>순위는 최종 도달 라운드를 우선하고, 동률일 경우 낙찰금 총액으로 결정됩니다.</p>
+            </div>
+            <div class="season-mark"><span>TOURNAMENT SEASON</span><strong id="season-year">2026 CDCUP</strong></div>
+        </header>
+
+        <section class="stat-strip" aria-label="대회 요약">
+            <div class="stat"><span class="stat-label">참가 팀</span><strong class="stat-value" id="stat-teams">-</strong></div>
+            <div class="stat"><span class="stat-label">총 낙찰금</span><strong class="stat-value" id="stat-amount">-</strong></div>
+            <div class="stat"><span class="stat-label">집계 대회</span><strong class="stat-value" id="stat-events">2<span class="stat-unit">개</span></strong></div>
+            <div class="stat"><span class="stat-label">최종 업데이트</span><strong class="stat-value" id="stat-updated" style="font-size:16px">-</strong></div>
+        </section>
+
+        <section class="podium" id="podium" aria-label="상위 3개 팀"></section>
+
+        <section class="board">
+            <header class="board-head">
+                <div class="board-title"><strong>OFFICIAL TEAM RANKING</strong><span>16강 · 8강 통합 성적</span></div>
+                <div class="filters" role="tablist">
+                    <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">종합</button>
+                    <button class="filter-btn" data-filter="16" onclick="setFilter('16', this)">16강 성적</button>
+                    <button class="filter-btn" data-filter="8" onclick="setFilter('8', this)">8강 성적</button>
+                </div>
+            </header>
+            <div id="board-content"><div class="loading"><div class="loader"></div>순위 데이터를 집계하고 있습니다.</div></div>
+            <footer class="board-foot"><span>※ 최종 도달 라운드 → 낙찰금 총액 순으로 집계</span><span>로고: 방송 시스템 설정 · 경기 결과: 3P 대진표 관리</span></footer>
+        </section>
+    </main>
+
+    <script>
+        let allRows = [];
+        let activeFilter = 'all';
+
+        const escapeHtml = value => String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+        const formatAmount = value => Number(value || 0).toLocaleString('ko-KR');
+        const initials = name => String(name || '?').replace(/\s+/g, '').slice(0, 2).toUpperCase();
+        const logoMarkup = row => row.logo
+            ? `<img class="team-logo" src="${escapeHtml(row.logo)}" alt="${escapeHtml(row.name)} 로고" onerror="this.outerHTML='<span class=&quot;team-logo logo-fallback&quot;>${escapeHtml(initials(row.name))}</span>'">`
+            : `<span class="team-logo logo-fallback">${escapeHtml(initials(row.name))}</span>`;
+
+        function parseBracket(map, scale) {
+            try { return JSON.parse(map['tournament_bracket_' + scale] || '{"matches":{}}'); }
+            catch (_) { return { matches: {} }; }
+        }
+
+        function teamLogoMap(map) {
+            const result = {};
+            for (let i = 1; i <= 20; i++) {
+                try {
+                    const value = JSON.parse(map['team_logo' + i] || '{}');
+                    if (value.name && value.url) result[String(value.name).trim()] = value.url;
+                } catch (_) {}
+            }
+            return result;
+        }
+
+        function logoFor(name, logos) {
+            const key = String(name || '').trim();
+            if (logos[key]) return logos[key];
+            const found = Object.keys(logos).find(saved => key.includes(saved) || saved.includes(key));
+            return found ? logos[found] : '';
+        }
+
+        function parentMatch(round, index) {
+            if (round <= 2) return null;
+            return { key: (round / 2) + '_' + Math.ceil(index / 2), slot: index % 2 ? 'left' : 'right' };
+        }
+
+        function matchWinner(bracket, round, index, match) {
+            if (match.winner === 'left' || match.winner === 'right') return match[match.winner] || '';
+            const parent = parentMatch(round, index);
+            if (!parent) return '';
+            const next = bracket.matches?.[parent.key];
+            if (!next) return '';
+            if (next[parent.slot] === match.left) return match.left;
+            if (next[parent.slot] === match.right) return match.right;
+            return '';
+        }
+
+        function phaseResults(bracket, scale) {
+            const state = {};
+            const matches = bracket.matches || {};
+            const ensure = team => {
+                const name = String(team || '').trim();
+                if (!name) return null;
+                return state[name] || (state[name] = { participated: true, reached: scale, eliminated: null, champion: false });
+            };
+
+            for (let round = scale; round >= 2; round /= 2) {
+                for (let index = 1; index <= round / 2; index++) {
+                    const match = matches[round + '_' + index] || {};
+                    const left = ensure(match.left);
+                    const right = ensure(match.right);
+                    if (left) left.reached = Math.min(left.reached, round);
+                    if (right) right.reached = Math.min(right.reached, round);
+                    const winner = matchWinner(bracket, round, index, match);
+                    if (!winner) continue;
+                    const loser = winner === match.left ? match.right : match.left;
+                    if (loser) ensure(loser).eliminated = round;
+                    if (round === 2) ensure(winner).champion = true;
+                }
+            }
+            return state;
+        }
+
+        function phaseLabel(result, scale) {
+            if (!result) return '-';
+            if (result.champion) return '우승';
+            if (result.eliminated === 2) return '준우승';
+            if (result.eliminated) return result.eliminated + '강 탈락';
+            if (result.reached < scale) return result.reached + '강 진출';
+            return scale + '강 참가';
+        }
+
+        function resultScore(result) {
+            if (!result) return 0;
+            if (result.champion) return 1000;
+            if (result.eliminated === 2) return 900;
+            const round = result.eliminated || result.reached;
+            return ({4: 800, 8: 700, 16: 600})[round] || 500;
+        }
+
+        function finalLabel(row) {
+            const best = [16, 8].map(scale => ({ scale, result: row.results[scale] }))
+                .filter(entry => entry.result)
+                .sort((a, b) => resultScore(b.result) - resultScore(a.result))[0];
+            if (!best) return { text: '참가', kind: '' };
+            if (best.result.champion) return { text: 'CHAMPION', kind: 'champion' };
+            if (best.result.eliminated === 2) return { text: '준우승', kind: 'runner' };
+            if (best.result.eliminated) return { text: best.result.eliminated + '강 탈락', kind: '' };
+            if (best.result.reached < best.scale) return { text: best.result.reached + '강 진출', kind: '' };
+            return { text: best.scale + '강 진행 중', kind: '' };
+        }
+
+        function demoRows() {
+            const names = ['아틀리에', '미야게코', '니코게코', '도도시', '게코하우스', '크레오', '라온게코', '모프랩'];
+            const stages = [1000, 900, 800, 800, 700, 700, 600, 600];
+            return names.map((name, i) => ({
+                name, logo: '', amount: [4280, 3910, 3420, 3180, 2860, 2540, 2180, 1970][i],
+                score: stages[i], results: {
+                    16: { participated: true, reached: i < 4 ? 4 : (i < 6 ? 8 : 16), eliminated: i === 0 ? null : (i < 4 ? 4 : i < 6 ? 8 : 16), champion: false },
+                    8: i < 6 ? { participated: true, reached: i < 2 ? 2 : i < 4 ? 4 : 8, eliminated: i === 0 ? null : i === 1 ? 2 : i < 4 ? 4 : 8, champion: i === 0 } : null
+                }
+            }));
+        }
+
+        async function loadRanking() {
+            try {
+                const [map, items] = await Promise.all([getConfigMap(), getBroadcastItems()]);
+                const logos = teamLogoMap(map || {});
+                const phases = { 16: phaseResults(parseBracket(map || {}, 16), 16), 8: phaseResults(parseBracket(map || {}, 8), 8) };
+                const names = new Set([...Object.keys(phases[16]), ...Object.keys(phases[8])]);
+                (items || []).forEach(item => { if (item.company) names.add(String(item.company).trim()); });
+                const amounts = {};
+                (items || []).forEach(item => {
+                    const name = String(item.company || '').trim();
+                    if (!name) return;
+                    const price = Number.parseFloat(item.sold_price || item.soldPrice || 0) || 0;
+                    if (['완료', 'sold', '낙찰'].includes(String(item.status || '').trim())) amounts[name] = (amounts[name] || 0) + price;
+                });
+                allRows = [...names].filter(Boolean).map(name => {
+                    const results = { 16: phases[16][name] || null, 8: phases[8][name] || null };
+                    return { name, logo: logoFor(name, logos), amount: amounts[name] || 0, results, score: Math.max(resultScore(results[16]), resultScore(results[8])) };
+                }).sort((a, b) => b.score - a.score || b.amount - a.amount || a.name.localeCompare(b.name, 'ko'));
+
+                if (!allRows.length && new URLSearchParams(location.search).get('demo') === '1') allRows = demoRows();
+                allRows.forEach((row, index) => row.rank = index + 1);
+                renderPage();
+            } catch (error) {
+                console.error(error);
+                if (new URLSearchParams(location.search).get('demo') === '1') {
+                    allRows = demoRows();
+                    allRows.forEach((row, index) => row.rank = index + 1);
+                    renderPage();
+                    return;
+                }
+                document.getElementById('board-content').innerHTML = `<div class="empty"><strong>순위 데이터를 불러오지 못했습니다.</strong><p>${escapeHtml(error.message || '잠시 후 다시 시도해주세요.')}</p></div>`;
+            }
+        }
+
+        function renderPage() {
+            const now = new Date();
+            document.getElementById('season-year').textContent = now.getFullYear() + ' CDCUP';
+            document.getElementById('stat-teams').innerHTML = `${allRows.length}<span class="stat-unit">팀</span>`;
+            document.getElementById('stat-amount').innerHTML = `${formatAmount(allRows.reduce((sum, row) => sum + row.amount, 0))}<span class="stat-unit">만원</span>`;
+            document.getElementById('stat-updated').textContent = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            renderPodium();
+            renderTable();
+        }
+
+        function renderPodium() {
+            const podium = document.getElementById('podium');
+            if (!allRows.length) { podium.innerHTML = ''; return; }
+            podium.innerHTML = allRows.slice(0, 3).map((row, index) => {
+                const result = finalLabel(row);
+                return `<article class="podium-card ${index === 0 ? 'first' : ''}">
+                    <div class="podium-rank">${index === 0 ? 'LEADER' : 'RANK ' + (index + 1)}</div>
+                    <div class="podium-team">${logoMarkup(row)}<div class="podium-team-name"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(result.text)}</span></div></div>
+                    <div class="podium-amount">${formatAmount(row.amount)}<small>만원</small></div>
+                </article>`;
+            }).join('');
+        }
+
+        function setFilter(filter, button) {
+            activeFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn === button));
+            renderTable();
+        }
+
+        function renderTable() {
+            const filtered = activeFilter === 'all' ? allRows : allRows.filter(row => row.results[activeFilter]);
+            if (!allRows.length) {
+                document.getElementById('board-content').innerHTML = `<div class="empty"><strong>아직 집계할 경기 결과가 없습니다.</strong><p>3P 대진표에서 16강·8강 팀과 승자를 입력하면 이곳에 자동 반영됩니다.</p><div class="empty-actions"><a class="primary" href="preview.html?page=3">대진표 관리</a><a href="settings.html">업체 로고 설정</a></div></div>`;
+                return;
+            }
+            const rows = filtered.map(row => {
+                const final = finalLabel(row);
+                const p16 = phaseLabel(row.results[16], 16);
+                const p8 = phaseLabel(row.results[8], 8);
+                return `<tr>
+                    <td><span class="rank-no ${row.rank <= 3 ? 'medal' : ''}">${String(row.rank).padStart(2, '0')}</span></td>
+                    <td><div class="table-team">${logoMarkup(row)}<div class="team-copy"><strong>${escapeHtml(row.name)}</strong><span>CDCUP TEAM</span></div></div></td>
+                    <td><span class="phase-result ${p16 === '우승' ? 'best' : !row.results[16] ? 'none' : ''}">${escapeHtml(p16)}</span></td>
+                    <td><span class="phase-result ${p8 === '우승' ? 'best' : !row.results[8] ? 'none' : ''}">${escapeHtml(p8)}</span></td>
+                    <td class="amount"><strong>${formatAmount(row.amount)}</strong><span>만원</span></td>
+                    <td><span class="round-badge ${final.kind}">${escapeHtml(final.text)}</span></td>
+                </tr>`;
+            }).join('');
+            document.getElementById('board-content').innerHTML = `<div class="table-scroll"><table class="ranking-table">
+                <colgroup><col class="rank-col"><col class="team-col"><col class="phase-col"><col class="phase-col"><col class="amount-col"><col class="result-col"></colgroup>
+                <thead><tr><th>RANK</th><th>TEAM</th><th>ROUND OF 16</th><th>QUARTER FINAL</th><th class="amount">낙찰금 총액</th><th>최종 성적</th></tr></thead>
+                <tbody>${rows || '<tr><td colspan="6" class="empty">선택한 대회의 참가 팀이 없습니다.</td></tr>'}</tbody>
+            </table></div>`;
+        }
+
+        loadRanking();
+        setInterval(loadRanking, 15000);
+    </script>
+</body>
+</html>
