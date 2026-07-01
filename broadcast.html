@@ -1518,6 +1518,38 @@
             font-size: 20px;
             font-weight: 900;
         }
+        @keyframes live-next-peek-cycle {
+            0%, 84% { opacity: 0; transform: translateY(8px); }
+            86%, 97% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-6px); }
+        }
+        .live-periodic-next {
+            position: absolute;
+            inset: 34px 0 0;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            background: rgba(14,15,17,0.97);
+            color: var(--cdcup-ivory, #f5f1e8);
+            pointer-events: none;
+            opacity: 0;
+            animation: live-next-peek-cycle 10s linear infinite;
+        }
+        .live-periodic-next span {
+            color: var(--cdcup-muted, #aaa59b);
+            font-size: 22px;
+            font-weight: 850;
+            letter-spacing: 0.18em;
+        }
+        .live-periodic-next strong {
+            color: var(--cdcup-gold-light, #dcc17f);
+            font-size: 62px;
+            font-weight: 950;
+            letter-spacing: -0.04em;
+            line-height: 1;
+        }
         @media (max-width: 720px) {
             .live-round-board { min-width: min(480px, 100%); }
             .blind-live-match { gap: 12px; padding-inline: 18px; }
@@ -4866,6 +4898,34 @@
 
             const pendingStep = getPendingAuctionStep();
 
+            function getNextCodeAfterActive(item) {
+                const activeCode = getCleanCode(item) || '';
+                if (!activeCode) return '';
+                const orderedCodes = [];
+                for (const step of scheduleSteps) {
+                    const left = String.fromCharCode(65 + (step.group - 1) * 2);
+                    const right = String.fromCharCode(65 + (step.group - 1) * 2 + 1);
+                    let first = left;
+                    if (step.round > 1) {
+                        const previousLeft = findItemByCode(items, left + (step.round - 1));
+                        const previousRight = findItemByCode(items, right + (step.round - 1));
+                        const leftPrice = parseFloat(previousLeft?.sold_price || previousLeft?.soldPrice || 0) || 0;
+                        const rightPrice = parseFloat(previousRight?.sold_price || previousRight?.soldPrice || 0) || 0;
+                        first = leftPrice >= rightPrice ? left : right;
+                    }
+                    const second = first === left ? right : left;
+                    orderedCodes.push(first + step.round, second + step.round);
+                }
+                const activeIndex = orderedCodes.indexOf(activeCode);
+                if (activeIndex < 0) return '';
+                for (let index = activeIndex + 1; index < orderedCodes.length; index++) {
+                    const code = orderedCodes[index];
+                    if (!isDone(findItemByCode(items, code))) return code;
+                }
+                return '';
+            }
+            const activeNextCode = activeItem ? getNextCodeAfterActive(activeItem) : '';
+
             const contextItem = activeItem || newestSoldItem;
             if (contextItem) {
                 const code = (getCleanCode(contextItem) || (contextItem.name || '').trim().toUpperCase());
@@ -5058,13 +5118,16 @@
                 ? '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score is-total" aria-label="합산 낙찰금액 ' + leftAuctionTotal + ' 대 ' + rightAuctionTotal + '"><strong>' + leftAuctionTotal + '</strong><i>:</i><strong>' + rightAuctionTotal + '</strong><em class="blind-live-score-unit">만원</em></div><div class="blind-live-team"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>'
                 : '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>';
             const liveBodyHtml = isWaiting ? nextHtml : scoreHtml;
+            const periodicNextHtml = activeItem && activeNextCode && !mot
+                ? '<div class="live-periodic-next" aria-label="다음 경매 ' + esc(activeNextCode) + '"><span>NEXT</span><strong>' + esc(activeNextCode) + '</strong></div>'
+                : '';
             const chipClass = isWaiting ? 'live-round-chip is-standby' : 'live-round-chip';
             const chipText = isFinalTotals ? 'FINAL' : (isWaiting ? 'STANDBY' : 'LIVE');
             const roundText = isFinalTotals ? 'TOTAL AUCTION' : (isWaiting ? 'NEXT AUCTION' : (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')));
-            const renderKey = [displayRound, displayGroup, displayAuctionRound, leftRoundWins, rightRoundWins, leftAuctionTotal, rightAuctionTotal, activeSide, waitingNextCode, isFinalTotals, mot?.eventKey || '', mot?.phase || ''].join('|');
+            const renderKey = [displayRound, displayGroup, displayAuctionRound, leftRoundWins, rightRoundWins, leftAuctionTotal, rightAuctionTotal, activeSide, waitingNextCode, activeNextCode, isFinalTotals, mot?.eventKey || '', mot?.phase || ''].join('|');
             if (tree.dataset.liveRenderKey !== renderKey) {
                 tree.dataset.liveRenderKey = renderKey;
-                tree.innerHTML = '<section class="live-round-board"><header class="live-round-header"><span class="' + chipClass + '">' + chipText + '</span><strong>' + scaleLabel + ' ' + displayGroup + '조</strong><span class="live-round-number">' + roundText + '</span></header>' + liveBodyHtml + '</section>';
+                tree.innerHTML = '<section class="live-round-board"><header class="live-round-header"><span class="' + chipClass + '">' + chipText + '</span><strong>' + scaleLabel + ' ' + displayGroup + '조</strong><span class="live-round-number">' + roundText + '</span></header>' + liveBodyHtml + periodicNextHtml + '</section>';
             }
         }
 
