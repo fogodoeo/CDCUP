@@ -70,6 +70,46 @@
         .podium-amount { position: absolute; left: 24px; bottom: 20px; color: var(--rank-text); font-size: 13px; font-weight: 820; font-variant-numeric: tabular-nums; }
         .podium-amount small { margin-left: 4px; color: var(--rank-muted); font-size: 10px; }
 
+        .view-switch { display: inline-flex; gap: 4px; margin-bottom: 18px; padding: 4px; border: 1px solid var(--rank-line); background: rgba(13,19,29,.9); }
+        .view-btn { min-width: 118px; padding: 10px 16px; border: 0; background: transparent; color: var(--rank-muted); font-family: inherit; font-size: 12px; font-weight: 820; cursor: pointer; }
+        .view-btn.active { background: var(--rank-gold); color: #0a0d12; }
+        .main-view { display: none; }
+        .main-view.active { display: block; }
+
+        .bracket-panel { border: 1px solid var(--rank-line); background: rgba(13,19,29,.94); }
+        .bracket-panel-head { display: flex; justify-content: space-between; gap: 20px; align-items: end; padding: 20px 22px; border-bottom: 1px solid var(--rank-line); }
+        .bracket-panel-head strong { display: block; font-size: 16px; font-weight: 880; }
+        .bracket-panel-head span { display: block; margin-top: 5px; color: var(--rank-dim); font-size: 10px; }
+        .bracket-status { color: var(--rank-gold-light) !important; font-weight: 800; letter-spacing: .08em; }
+        .bracket-scroll { overflow-x: auto; padding: 22px; }
+        .bracket-inner { min-width: 780px; }
+        .bracket-round-head { display: grid; grid-template-columns: minmax(360px, 1.45fr) 72px minmax(270px, 1fr); margin-bottom: 10px; color: var(--rank-dim); font-size: 9px; font-weight: 850; letter-spacing: .14em; }
+        .bracket-round-head span:last-child { grid-column: 3; }
+        .bracket-groups { display: grid; gap: 18px; }
+        .bracket-group { display: grid; grid-template-columns: minmax(360px, 1.45fr) 72px minmax(270px, 1fr); align-items: center; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,.045); }
+        .bracket-group:last-child { padding-bottom: 0; border-bottom: 0; }
+        .r16-stack { display: grid; gap: 10px; }
+        .bracket-match { overflow: hidden; border: 1px solid var(--rank-line); background: #0a1018; }
+        .bracket-match.qf { border-color: rgba(195,154,74,.35); background: linear-gradient(145deg, rgba(195,154,74,.09), #0a1018 64%); }
+        .bracket-match-head { display: flex; justify-content: space-between; align-items: center; height: 28px; padding: 0 10px; border-bottom: 1px solid var(--rank-line); color: var(--rank-dim); font-size: 9px; font-weight: 820; letter-spacing: .08em; }
+        .bracket-match.qf .bracket-match-head { color: var(--rank-gold-light); }
+        .bracket-team { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto auto; gap: 9px; align-items: center; min-height: 42px; padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,.045); color: var(--rank-muted); }
+        .bracket-team:last-child { border-bottom: 0; }
+        .bracket-team.is-winner { color: var(--rank-text); background: rgba(52,201,143,.075); }
+        .bracket-team .team-logo { width: 28px; height: 28px; flex-basis: 28px; padding: 3px; }
+        .bracket-team-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 800; }
+        .bracket-team-price { font-size: 11px; font-weight: 820; font-variant-numeric: tabular-nums; }
+        .bracket-team-price small { margin-left: 2px; color: var(--rank-dim); font-size: 8px; }
+        .winner-chip { padding: 3px 5px; border: 1px solid rgba(52,201,143,.3); color: var(--rank-green); font-size: 8px; font-weight: 900; }
+        .bracket-connector { position: relative; align-self: stretch; min-height: 130px; }
+        .bracket-connector::before { content: ''; position: absolute; left: 18px; top: 25%; bottom: 25%; width: 1px; background: rgba(195,154,74,.42); }
+        .bracket-connector::after { content: ''; position: absolute; left: 18px; right: 12px; top: 50%; height: 1px; background: rgba(195,154,74,.42); }
+        .bracket-connector span { position: absolute; right: 5px; top: calc(50% - 8px); color: var(--rank-gold); font-size: 13px; }
+        .bracket-connector i, .bracket-connector b { position: absolute; left: 0; width: 19px; height: 1px; background: rgba(195,154,74,.42); }
+        .bracket-connector i { top: 25%; }
+        .bracket-connector b { bottom: 25%; }
+        .bracket-note { padding: 12px 22px; border-top: 1px solid var(--rank-line); color: var(--rank-dim); font-size: 10px; }
+
         .board { border: 1px solid var(--rank-line); background: rgba(13,19,29,.94); }
         .board-head { display: flex; justify-content: space-between; align-items: center; gap: 18px; min-height: 72px; padding: 16px 20px; border-bottom: 1px solid var(--rank-line); }
         .board-title strong { display: block; font-size: 15px; font-weight: 850; }
@@ -130,6 +170,7 @@
             .podium { grid-template-columns: 1fr; }
             .podium-card { min-height: 145px; }
             .board-head { align-items: flex-start; flex-direction: column; }
+            .bracket-scroll { padding: 16px; }
         }
 
         @media (max-width: 560px) {
@@ -160,20 +201,38 @@
             <div class="stat"><span class="stat-label">최종 업데이트</span><strong class="stat-value" id="stat-updated" style="font-size:16px">-</strong></div>
         </section>
 
-        <section class="podium" id="podium" aria-label="상위 3개 팀"></section>
+        <div class="view-switch" role="tablist" aria-label="순위표 보기 방식">
+            <button class="view-btn active" type="button" onclick="setMainView('ranking', this)">종합 순위</button>
+            <button class="view-btn" type="button" onclick="setMainView('bracket', this)">토너먼트 대진</button>
+        </div>
 
-        <section class="board">
-            <header class="board-head">
-                <div class="board-title"><strong>OFFICIAL TEAM RANKING</strong><span>16강 · 8강 통합 성적</span></div>
-                <div class="filters" role="tablist">
-                    <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">종합</button>
-                    <button class="filter-btn" data-filter="16" onclick="setFilter('16', this)">16강 성적</button>
-                    <button class="filter-btn" data-filter="8" onclick="setFilter('8', this)">8강 성적</button>
-                </div>
-            </header>
-            <div id="board-content"><div class="loading"><div class="loader"></div>순위 데이터를 집계하고 있습니다.</div></div>
-            <footer class="board-foot"><span>※ 최종 도달 라운드 → 낙찰금 총액 순으로 집계</span><span>2026 CDCUP OFFICIAL STANDINGS</span></footer>
-        </section>
+        <div class="main-view active" id="ranking-view">
+            <section class="podium" id="podium" aria-label="상위 3개 팀"></section>
+
+            <section class="board">
+                <header class="board-head">
+                    <div class="board-title"><strong>OFFICIAL TEAM RANKING</strong><span>16강 · 8강 통합 성적</span></div>
+                    <div class="filters" role="tablist">
+                        <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">종합</button>
+                        <button class="filter-btn" data-filter="16" onclick="setFilter('16', this)">16강 성적</button>
+                        <button class="filter-btn" data-filter="8" onclick="setFilter('8', this)">8강 성적</button>
+                    </div>
+                </header>
+                <div id="board-content"><div class="loading"><div class="loader"></div>순위 데이터를 집계하고 있습니다.</div></div>
+                <footer class="board-foot"><span>※ 최종 도달 라운드 → 낙찰금 총액 순으로 집계</span><span>2026 CDCUP OFFICIAL STANDINGS</span></footer>
+            </section>
+        </div>
+
+        <div class="main-view" id="bracket-view">
+            <section class="bracket-panel">
+                <header class="bracket-panel-head">
+                    <div><strong>TOURNAMENT BRACKET</strong><span>16강 경기 결과와 8강 진출 흐름</span></div>
+                    <span class="bracket-status">ROUND OF 16 · FINAL</span>
+                </header>
+                <div class="bracket-scroll"><div class="bracket-inner" id="bracket-content"></div></div>
+                <div class="bracket-note">16강은 낙찰금 비교로 승자를 표시하며, 8강은 현재 저장된 공식 대진 순서입니다.</div>
+            </section>
+        </div>
     </main>
 
     <script>
@@ -198,6 +257,17 @@
             { name: '크레용', round16: 51 },
             { name: '앙크레', round16: 23 },
             { name: '어비스', round16: 100, round8: 91 }
+        ];
+
+        const ROUND_OF_16_MATCHUPS = [
+            { left: '자몽', right: '아틀리에' },
+            { left: '니코게코', right: '아쿠' },
+            { left: '비송', right: '미야게코' },
+            { left: '해치랩', right: '헤넥톤' },
+            { left: '베누스', right: '라이카' },
+            { left: '렙타일갤러리', right: '크레빌딩' },
+            { left: '히꼬', right: '크레용' },
+            { left: '앙크레', right: '어비스' }
         ];
 
         const escapeHtml = value => String(value ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
@@ -300,6 +370,78 @@
             return ({4: 800, 8: 700, 16: 600})[round] || 500;
         }
 
+        function setMainView(view, button) {
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.toggle('active', btn === button));
+            document.querySelectorAll('.main-view').forEach(panel => panel.classList.toggle('active', panel.id === view + '-view'));
+        }
+
+        function bracketLogoMarkup(name, rowMap) {
+            const row = rowMap[name] || { name, logo: '' };
+            return logoMarkup(row);
+        }
+
+        function renderBracket(map) {
+            const officialMap = Object.fromEntries(OFFICIAL_ROUND_RESULTS.map(entry => [entry.name, entry]));
+            const rowMap = Object.fromEntries(allRows.map(row => [row.name, row]));
+            const stored = parseBracket(map || {}, 8).matches || {};
+            const fallback = [
+                { left: '히꼬', right: '어비스' },
+                { left: '자몽', right: '니코게코' },
+                { left: '비송', right: '헤넥톤' },
+                { left: '베누스', right: '렙타일갤러리' }
+            ];
+            const quarterfinals = fallback.map((item, index) => {
+                const saved = stored['8_' + (index + 1)] || {};
+                return { left: saved.left || item.left, right: saved.right || item.right };
+            });
+
+            const feederFor = team => ROUND_OF_16_MATCHUPS.find(match => match.left === team || match.right === team);
+            const matchNumber = match => ROUND_OF_16_MATCHUPS.indexOf(match) + 1;
+            const r16Markup = match => {
+                const left = officialMap[match.left];
+                const right = officialMap[match.right];
+                const winner = (left?.round16 || 0) >= (right?.round16 || 0) ? match.left : match.right;
+                const teamRow = name => {
+                    const result = officialMap[name];
+                    const isWinner = name === winner;
+                    return `<div class="bracket-team ${isWinner ? 'is-winner' : ''}">
+                        ${bracketLogoMarkup(name, rowMap)}
+                        <span class="bracket-team-name">${escapeHtml(name)}</span>
+                        <span class="bracket-team-price">${formatAmount(result?.round16 || 0)}<small>만원</small></span>
+                        ${isWinner ? '<span class="winner-chip">WIN</span>' : '<span></span>'}
+                    </div>`;
+                };
+                return `<article class="bracket-match">
+                    <div class="bracket-match-head"><span>16강 ${matchNumber(match)}경기</span><span>FINAL</span></div>
+                    ${teamRow(match.left)}${teamRow(match.right)}
+                </article>`;
+            };
+            const qfMarkup = (match, index) => {
+                const teamRow = name => `<div class="bracket-team">
+                    ${bracketLogoMarkup(name, rowMap)}
+                    <span class="bracket-team-name">${escapeHtml(name)}</span>
+                    <span class="bracket-team-price">${formatAmount(officialMap[name]?.round8 || 0)}<small>만원</small></span>
+                    <span></span>
+                </div>`;
+                return `<article class="bracket-match qf">
+                    <div class="bracket-match-head"><span>8강 ${index + 1}경기</span><span>RESULT</span></div>
+                    ${teamRow(match.left)}${teamRow(match.right)}
+                </article>`;
+            };
+
+            document.getElementById('bracket-content').innerHTML = `
+                <div class="bracket-round-head"><span>ROUND OF 16</span><span>QUARTER FINAL</span></div>
+                <div class="bracket-groups">${quarterfinals.map((match, index) => {
+                    const leftFeeder = feederFor(match.left);
+                    const rightFeeder = feederFor(match.right);
+                    return `<div class="bracket-group">
+                        <div class="r16-stack">${r16Markup(leftFeeder)}${r16Markup(rightFeeder)}</div>
+                        <div class="bracket-connector" aria-hidden="true"><i></i><b></b><span>▶</span></div>
+                        ${qfMarkup(match, index)}
+                    </div>`;
+                }).join('')}</div>`;
+        }
+
         function finalLabel(row) {
             const best = [16, 8].map(scale => ({ scale, result: row.results[scale] }))
                 .filter(entry => entry.result)
@@ -362,12 +504,14 @@
 
                 if (!allRows.length && new URLSearchParams(location.search).get('demo') === '1') allRows = demoRows();
                 allRows.forEach((row, index) => row.rank = index + 1);
+                renderBracket(map || {});
                 renderPage();
             } catch (error) {
                 console.error(error);
                 if (new URLSearchParams(location.search).get('demo') === '1') {
                     allRows = demoRows();
                     allRows.forEach((row, index) => row.rank = index + 1);
+                    renderBracket({});
                     renderPage();
                     return;
                 }
