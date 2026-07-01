@@ -8,7 +8,6 @@
     <script src="supabase-bridge.js?v=20260702-ranking"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="common.css?v=20260702-ranking">
     <style>
         :root {
             --rank-bg: #070b12;
@@ -134,9 +133,6 @@
         }
 
         @media (max-width: 560px) {
-            .cdcup-nav__brand { margin-right: 8px; }
-            .cdcup-nav__brand > span:last-child, .cdcup-nav__utils, .cdcup-nav__link:not(.active) { display: none; }
-            .cdcup-nav__links { overflow: visible; }
             .hero h1 { font-size: 38px; }
             .stat { padding: 15px; }
             .stat-value { font-size: 18px; }
@@ -147,26 +143,6 @@
     </style>
 </head>
 <body>
-    <nav class="cdcup-nav">
-        <a href="index.html" class="cdcup-nav__brand"><span class="cdcup-nav__brand-icon">C</span><span>CDCUP 관리자</span></a>
-        <div class="cdcup-nav__links">
-            <a href="index.html" class="cdcup-nav__link">개체/경매 관리</a>
-            <a href="preview.html?page=1" class="cdcup-nav__link">방송 화면 제어</a>
-            <a href="ranking.html" class="cdcup-nav__link active">종합 순위표</a>
-        </div>
-        <div class="cdcup-nav__utils">
-            <span class="cdcup-nav__live"><span class="cdcup-nav__live-dot"></span>LIVE</span>
-            <div class="cdcup-nav__dropdown">
-                <button class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast"><span>📺 방송 송출 화면</span><span class="caret">▼</span></button>
-                <div class="cdcup-nav__dropdown-menu">
-                    <a href="broadcast.html?page=1" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
-                    <a href="broadcast.html?page=2" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
-                    <a href="broadcast.html?page=3" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
-                </div>
-            </div>
-        </div>
-    </nav>
-
     <main class="ranking-main">
         <header class="hero">
             <div>
@@ -196,7 +172,7 @@
                 </div>
             </header>
             <div id="board-content"><div class="loading"><div class="loader"></div>순위 데이터를 집계하고 있습니다.</div></div>
-            <footer class="board-foot"><span>※ 최종 도달 라운드 → 낙찰금 총액 순으로 집계</span><span>로고: 방송 시스템 설정 · 경기 결과: 3P 대진표 관리</span></footer>
+            <footer class="board-foot"><span>※ 최종 도달 라운드 → 낙찰금 총액 순으로 집계</span><span>2026 CDCUP OFFICIAL STANDINGS</span></footer>
         </section>
     </main>
 
