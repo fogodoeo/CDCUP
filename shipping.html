@@ -2295,6 +2295,8 @@
 
     <script>
         // 거점 가격표 데이터베이스
+        const WRAPANG_DISCOUNT_RATE = 0.7;
+        const getDiscountedWrapangCost = cost => Math.round((Number(cost) || 0) * WRAPANG_DISCOUNT_RATE);
         const SHIPPING_DATA = {
             '픽업': {
                 regions: { '직접수령': [{ shop: '현장 직접수령', cost: 0 }] }
@@ -2339,12 +2341,12 @@
             '랩팡': {
                 regions: {
                     '수도권': [
-                        { shop: '랩팡 서울거점', cost: 5000 },
-                        { shop: '랩팡 수원거점', cost: 5000 }
+                        { shop: '랩팡 서울거점', cost: getDiscountedWrapangCost(5000) },
+                        { shop: '랩팡 수원거점', cost: getDiscountedWrapangCost(5000) }
                     ],
                     '지방거점': [
-                        { shop: '랩팡 대전거점', cost: 5000 },
-                        { shop: '랩팡 부산거점', cost: 5000 }
+                        { shop: '랩팡 대전거점', cost: getDiscountedWrapangCost(5000) },
+                        { shop: '랩팡 부산거점', cost: getDiscountedWrapangCost(5000) }
                     ]
                 }
             },
@@ -2450,7 +2452,7 @@
                         Object.keys(wrapangRes.data).forEach(regName => {
                             SHIPPING_DATA['랩팡'].regions[regName] = wrapangRes.data[regName].map(shopItem => ({
                                 shop: shopItem.shop,
-                                cost: shopItem.cost || (regName.includes('제주') ? 55000 : 25000),
+                                cost: getDiscountedWrapangCost(shopItem.cost || (regName.includes('제주') ? 55000 : 25000)),
                                 day: shopItem.day || shopItem.arrival_day || shopItem.delivery_day || ''
                             }));
                         });
@@ -3884,9 +3886,9 @@ ${winnerName}님 낙찰 정산 안내입니다.
                     return baseCost + (itemCount - 1) * (isJeju ? 4000 : 7000);
                 } else if (comp === '랩팡') {
                     if (itemCount <= 1) return baseCost;
-                    if (itemCount <= 4) return baseCost + (itemCount - 1) * 7000;
-                    if (itemCount <= 20) return baseCost + 28000;
-                    return baseCost + 35000;
+                    if (itemCount <= 4) return baseCost + getDiscountedWrapangCost((itemCount - 1) * 7000);
+                    if (itemCount <= 20) return baseCost + getDiscountedWrapangCost(28000);
+                    return baseCost + getDiscountedWrapangCost(35000);
                 }
                 return baseCost;
             }
