@@ -2649,9 +2649,13 @@
 
         function getWinnerIdentity(item) {
             const clean = String(item?.winner || '').replace(/[\[\]]/g, '').trim();
-            const parts = clean.split('/').map(part => part.trim()).filter(Boolean);
+            const phoneMatch = clean.match(/01[0-9][\-\.\s]?\d{3,4}[\-\.\s]?\d{4}|(?<!\d)\d{8}(?!\d)/);
+            const embeddedPhone = phoneMatch ? phoneMatch[0] : '';
+            const nameSource = embeddedPhone
+                ? clean.replace(embeddedPhone, ' ').replace(/\s+/g, ' ').trim()
+                : clean;
+            const parts = nameSource.split('/').map(part => part.trim()).filter(Boolean);
             const name = parts[0] || '이름 없음';
-            const embeddedPhone = parts.find((part, index) => index > 0 && part.replace(/[^0-9]/g, '').length >= 7) || '';
             const phone = String(item?.winner_phone || embeddedPhone).replace(/[^0-9]/g, '');
             return {
                 key: phone ? `phone:${phone}` : `name:${name.toLowerCase()}`,
