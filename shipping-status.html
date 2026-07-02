@@ -235,12 +235,11 @@
             return group.items.filter(i=>String(i.company||'').trim()===company).reduce((sum,i)=>sum+itemBidAmount(i),0);
         }
         function smsItemLine(item) {
-            const number=item.num?'No.'+item.num+' ':'';
-            return '- '+number+(item.name||'이름 없음')+' / '+itemBidAmount(item).toLocaleString()+'원';
+            return '- '+(item.name||'이름 없음')+' / '+itemBidAmount(item).toLocaleString()+'원';
         }
         function smsCompanySummary(group, company) {
             const items=group.items.filter(i=>String(i.company||'').trim()===company);
-            return company+': '+items.map(i=>(i.num?'No.'+i.num+' ':'')+(i.name||'이름 없음')).join(', ')+' / '+companyBidAmount(group,company).toLocaleString()+'원';
+            return company+': '+items.map(i=>i.name||'이름 없음').join(', ')+' / '+companyBidAmount(group,company).toLocaleString()+'원';
         }
         function otherCompanyText(group, scopeCompany) {
             const others=group.companies.filter(company=>company!==scopeCompany);

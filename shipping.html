@@ -2516,8 +2516,7 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number} ${WRAPANG_PAYM
         }
 
         function paymentSmsItemLine(item) {
-            const number = item.num ? `No.${item.num} ` : '';
-            return `- ${number}${item.name || '이름 없음'} / ${auctionItemWon(item).toLocaleString()}원`;
+            return `- ${item.name || '이름 없음'} / ${auctionItemWon(item).toLocaleString()}원`;
         }
 
         function otherCompanyPaymentText(allItems, selectedCompany) {
@@ -2532,7 +2531,7 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number} ${WRAPANG_PAYM
             if (!companies.length) return '';
             const lines = companies.map(company => {
                 const items = grouped[company];
-                const names = items.map(item => `${item.num ? `No.${item.num} ` : ''}${item.name || '이름 없음'}`).join(', ');
+                const names = items.map(item => item.name || '이름 없음').join(', ');
                 const bid = items.reduce((sum, item) => sum + auctionItemWon(item), 0);
                 return `- ${company}: ${names} / ${bid.toLocaleString()}원`;
             });
