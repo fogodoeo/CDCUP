@@ -45,6 +45,10 @@
         .hero-kicker::before { content: ''; width: 28px; height: 2px; background: var(--rank-gold); }
         .hero h1 { margin: 8px 0 4px; font-size: clamp(34px, 5vw, 58px); line-height: 1; letter-spacing: -.055em; font-weight: 920; }
         .hero p { margin: 0; color: var(--rank-muted); font-size: 14px; line-height: 1.65; }
+        .hero-brand { display: flex; align-items: center; gap: 18px; }
+        .hero-emblem { position: relative; display: flex; align-items: center; justify-content: center; width: 86px; height: 108px; padding: 8px; border: 1px solid rgba(195,154,74,.5); background: #f4f0e7; box-shadow: inset 0 0 0 4px #0d131d, inset 0 0 0 5px rgba(195,154,74,.45), 0 14px 34px rgba(0,0,0,.24); }
+        .hero-emblem::after { content: 'CDCUP'; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); padding: 2px 7px; background: var(--rank-gold); color: #0a0d12; font-size: 7px; font-weight: 950; letter-spacing: .16em; }
+        .hero-emblem img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .season-mark { text-align: right; padding-left: 28px; border-left: 1px solid var(--rank-line); }
         .season-mark span { display: block; color: var(--rank-dim); font-size: 10px; font-weight: 800; letter-spacing: .18em; }
         .season-mark strong { display: block; margin-top: 5px; color: var(--rank-gold-light); font-size: 20px; letter-spacing: -.02em; }
@@ -84,13 +88,22 @@
         .round-nav-btn.active { border-color: var(--rank-gold); background: var(--rank-gold); color: #090c11; }
         .round-stage-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
         .round-stage-grid.final-grid { grid-template-columns: minmax(0, 680px); justify-content: center; }
-        .stage-empty-note { padding: 20px 22px; border-top: 1px solid var(--rank-line); color: var(--rank-dim); text-align: center; font-size: 11px; }
+        .qualified-strip { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 12px 14px; border: 1px solid var(--rank-line); background: rgba(255,255,255,.018); overflow-x: auto; scrollbar-width: none; }
+        .qualified-strip::-webkit-scrollbar { display: none; }
+        .qualified-strip-label { flex: 0 0 auto; margin-right: 4px; color: var(--rank-dim); font-size: 9px; font-weight: 900; letter-spacing: .1em; }
+        .qualified-team { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; padding: 6px 9px; border: 1px solid rgba(52,201,143,.24); background: rgba(52,201,143,.055); color: var(--rank-text); font-size: 10px; font-weight: 780; }
+        .qualified-team::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: var(--rank-green); }
 
         .bracket-panel { border: 1px solid var(--rank-line); background: rgba(13,19,29,.94); }
-        .bracket-panel-head { display: flex; justify-content: space-between; gap: 20px; align-items: end; padding: 20px 22px; border-bottom: 1px solid var(--rank-line); }
-        .bracket-panel-head strong { display: block; font-size: 16px; font-weight: 880; }
-        .bracket-panel-head span { display: block; margin-top: 5px; color: var(--rank-dim); font-size: 10px; }
-        .bracket-status { color: var(--rank-gold-light) !important; font-weight: 800; letter-spacing: .08em; }
+        .bracket-panel-head { display: flex; justify-content: space-between; gap: 20px; align-items: center; min-height: 78px; padding: 16px 20px; border-bottom: 1px solid var(--rank-line); background: linear-gradient(90deg, rgba(195,154,74,.07), transparent 38%); }
+        .stage-heading { display: flex; align-items: center; gap: 14px; min-width: 0; }
+        .stage-number { display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; flex: 0 0 42px; border: 1px solid rgba(195,154,74,.42); color: var(--rank-gold-light); font-size: 11px; font-weight: 900; }
+        .stage-heading-copy small { display: block; color: var(--rank-gold); font-size: 8px; font-weight: 900; letter-spacing: .16em; }
+        .stage-heading-copy strong { display: block; margin-top: 3px; color: var(--rank-text); font-size: 16px; font-weight: 880; }
+        .stage-heading-copy span { display: block; margin-top: 2px; color: var(--rank-dim); font-size: 10px; }
+        .bracket-status { display: inline-flex !important; align-items: center; min-height: 28px; margin: 0 !important; padding: 0 10px; border: 1px solid var(--rank-line); background: rgba(255,255,255,.025); color: var(--rank-muted) !important; font-size: 9px !important; font-weight: 850; letter-spacing: .08em; white-space: nowrap; }
+        .bracket-status.is-complete { border-color: rgba(52,201,143,.28); background: rgba(52,201,143,.07); color: var(--rank-green) !important; }
+        .bracket-status.is-pending { border-color: rgba(195,154,74,.35); background: rgba(195,154,74,.08); color: var(--rank-gold-light) !important; }
         .bracket-scroll { overflow-x: auto; padding: 22px; }
         .bracket-inner { min-width: 780px; }
         .bracket-round-head { display: grid; grid-template-columns: minmax(360px, 1.45fr) 72px minmax(270px, 1fr); margin-bottom: 10px; color: var(--rank-dim); font-size: 9px; font-weight: 850; letter-spacing: .14em; }
@@ -99,10 +112,13 @@
         .bracket-group { display: grid; grid-template-columns: minmax(360px, 1.45fr) 72px minmax(270px, 1fr); align-items: center; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,.045); }
         .bracket-group:last-child { padding-bottom: 0; border-bottom: 0; }
         .r16-stack { display: grid; gap: 10px; }
-        .bracket-match { overflow: hidden; border: 1px solid var(--rank-line); background: #0a1018; }
-        .bracket-match.qf { border-color: rgba(195,154,74,.35); background: linear-gradient(145deg, rgba(195,154,74,.09), #0a1018 64%); }
-        .bracket-match-head { display: flex; justify-content: space-between; align-items: center; height: 28px; padding: 0 10px; border-bottom: 1px solid var(--rank-line); color: var(--rank-dim); font-size: 9px; font-weight: 820; letter-spacing: .08em; }
-        .bracket-match.qf .bracket-match-head { color: var(--rank-gold-light); }
+        .bracket-match { overflow: hidden; border: 1px solid var(--rank-line); background: #0a1018; box-shadow: 0 10px 24px rgba(0,0,0,.12); }
+        .bracket-match.is-complete { border-color: rgba(52,201,143,.18); }
+        .bracket-match.is-pending { border-color: rgba(195,154,74,.28); background: linear-gradient(145deg, rgba(195,154,74,.055), #0a1018 64%); }
+        .bracket-match-head { display: flex; justify-content: space-between; align-items: center; height: 32px; padding: 0 11px; border-bottom: 1px solid var(--rank-line); color: var(--rank-dim); font-size: 9px; font-weight: 820; letter-spacing: .08em; }
+        .bracket-match-head span:last-child { padding: 2px 5px; border: 1px solid var(--rank-line); color: var(--rank-muted); }
+        .bracket-match.is-complete .bracket-match-head span:last-child { border-color: rgba(52,201,143,.25); color: var(--rank-green); }
+        .bracket-match.is-pending .bracket-match-head span:last-child { border-color: rgba(195,154,74,.3); color: var(--rank-gold-light); }
         .bracket-team { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto auto; gap: 9px; align-items: center; min-height: 42px; padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,.045); color: var(--rank-muted); }
         .bracket-team:last-child { border-bottom: 0; }
         .bracket-team.is-winner { color: var(--rank-text); background: rgba(52,201,143,.075); }
@@ -204,8 +220,10 @@
 
         @media (max-width: 820px) {
             .ranking-main { padding: 16px 12px 36px; }
-            .hero { grid-template-columns: 1fr; }
+            .hero { grid-template-columns: minmax(0,1fr) 72px; align-items: center; gap: 12px; }
             .season-mark { display: none; }
+            .hero-brand { display: block; }
+            .hero-emblem { width: 68px; height: 86px; padding: 6px; }
             .stat-strip { grid-template-columns: repeat(2, 1fr); }
             .stat:nth-child(2) { border-right: 0; }
             .stat:nth-child(-n+2) { border-bottom: 1px solid var(--rank-line); }
@@ -272,7 +290,10 @@
                     <button class="download-btn" type="button" onclick="saveAsImage()" data-html2canvas-ignore>PNG 이미지 저장</button>
                 </div>
             </div>
-            <div class="season-mark"><span>TOURNAMENT SEASON</span><strong id="season-year">2026 CDCUP</strong></div>
+            <div class="hero-brand">
+                <div class="hero-emblem"><img src="assets/cdcup-official-emblem.png" alt="CDCUP 공식 트로피 로고"></div>
+                <div class="season-mark"><span>TOURNAMENT SEASON</span><strong id="season-year">2026 CDCUP</strong></div>
+            </div>
         </header>
 
         <section class="stat-strip" aria-label="대회 요약">
@@ -305,8 +326,8 @@
         <div class="main-view" id="16-view">
             <section class="bracket-panel">
                 <header class="bracket-panel-head">
-                    <div><strong>ROUND OF 16</strong><span>16강 전체 경기 결과</span></div>
-                    <span class="bracket-status">ROUND OF 16 · FINAL</span>
+                    <div class="stage-heading"><span class="stage-number">01</span><div class="stage-heading-copy"><small>TOURNAMENT STAGE</small><strong>16강</strong><span>ROUND OF 16</span></div></div>
+                    <span class="bracket-status is-complete">경기 종료</span>
                 </header>
                 <div class="bracket-scroll"><div class="round-stage-grid" id="round-content-16"></div></div>
                 <div class="bracket-note">낙찰금이 높은 팀이 8강에 진출합니다.</div>
@@ -315,7 +336,7 @@
 
         <div class="main-view" id="8-view">
             <section class="bracket-panel">
-                <header class="bracket-panel-head"><div><strong>QUARTER FINAL</strong><span>8강 전체 경기 결과</span></div><span class="bracket-status">QUARTER FINAL</span></header>
+                <header class="bracket-panel-head"><div class="stage-heading"><span class="stage-number">02</span><div class="stage-heading-copy"><small>TOURNAMENT STAGE</small><strong>8강</strong><span>QUARTER FINAL</span></div></div><span class="bracket-status is-complete">경기 종료</span></header>
                 <div class="bracket-scroll"><div class="round-stage-grid" id="round-content-8"></div></div>
                 <div class="bracket-note">현재 저장된 공식 8강 대진과 라운드별 낙찰금입니다.</div>
             </section>
@@ -323,17 +344,17 @@
 
         <div class="main-view" id="4-view">
             <section class="bracket-panel">
-                <header class="bracket-panel-head"><div><strong>SEMI FINAL</strong><span>4강 대진</span></div><span class="bracket-status">SEMI FINAL · READY</span></header>
+                <header class="bracket-panel-head"><div class="stage-heading"><span class="stage-number">03</span><div class="stage-heading-copy"><small>TOURNAMENT STAGE</small><strong>4강</strong><span>SEMI FINAL</span></div></div><span class="bracket-status is-pending">대진 · 일정 미정</span></header>
                 <div class="bracket-scroll"><div class="round-stage-grid" id="round-content-4"></div></div>
-                <div class="stage-empty-note">8강 승자가 확정되면 4강 슬롯에 자동으로 반영됩니다.</div>
+                <div class="bracket-note">4강 진출팀은 확정되었으며, 대진 상대와 경기 일정은 아직 미정입니다.</div>
             </section>
         </div>
 
         <div class="main-view" id="2-view">
             <section class="bracket-panel">
-                <header class="bracket-panel-head"><div><strong>GRAND FINAL</strong><span>결승 대진</span></div><span class="bracket-status">FINAL · READY</span></header>
+                <header class="bracket-panel-head"><div class="stage-heading"><span class="stage-number">04</span><div class="stage-heading-copy"><small>TOURNAMENT STAGE</small><strong>결승</strong><span>GRAND FINAL</span></div></div><span class="bracket-status is-pending">대진 · 일정 미정</span></header>
                 <div class="bracket-scroll"><div class="round-stage-grid final-grid" id="round-content-2"></div></div>
-                <div class="stage-empty-note">4강 승자가 확정되면 결승 슬롯에 자동으로 반영됩니다.</div>
+                <div class="bracket-note">4강 승자가 확정되면 결승 슬롯에 자동으로 반영됩니다.</div>
             </section>
         </div>
     </main>
@@ -538,16 +559,16 @@
                 const saved = stored['4_' + (index + 1)] || {};
                 return {
                     ...saved,
-                    left: saved.left || qfWinners[index * 2] || `8강 ${index * 2 + 1}경기 승자`,
-                    right: saved.right || qfWinners[index * 2 + 1] || `8강 ${index * 2 + 2}경기 승자`
+                    left: saved.left || '대진 미정',
+                    right: saved.right || '대진 미정'
                 };
             });
             const semifinalWinners = semifinals.map(storedWinner);
             const savedFinal = stored['2_1'] || {};
             const finalMatch = {
                 ...savedFinal,
-                left: savedFinal.left || semifinalWinners[0] || '4강 1경기 승자',
-                right: savedFinal.right || semifinalWinners[1] || '4강 2경기 승자'
+                left: savedFinal.left || semifinalWinners[0] || '결승 진출팀 미정',
+                right: savedFinal.right || semifinalWinners[1] || '결승 진출팀 미정'
             };
 
             const priceFor = (name, round) => {
@@ -555,7 +576,7 @@
                 if (round === 8) return officialMap[name]?.round8;
                 return undefined;
             };
-            const isPlaceholder = name => !name || name.includes('경기 승자') || name === '대기 중';
+            const isPlaceholder = name => !name || name.includes('미정') || name === '대기 중';
             const stageMatchMarkup = (match, round, index) => {
                 let winner = storedWinner(match);
                 if (round === 16) {
@@ -568,15 +589,16 @@
                     const price = priceFor(name, round);
                     const isWinner = name === winner;
                     return `<div class="bracket-team ${isWinner ? 'is-winner' : ''} ${placeholder ? 'is-placeholder' : ''}">
-                        ${bracketLogoMarkup(name || '대기 중', rowMap)}
+                        ${placeholder ? '<span class="team-logo logo-fallback">?</span>' : bracketLogoMarkup(name || '대기 중', rowMap)}
                         <span class="bracket-team-name">${escapeHtml(name || '대기 중')}</span>
                         <span class="bracket-team-price">${price === undefined ? '-' : formatAmount(price) + '<small>만원</small>'}</span>
                         ${isWinner ? '<span class="winner-chip">WIN</span>' : '<span></span>'}
                     </div>`;
                 };
                 const stageName = round === 2 ? '결승' : round + '강';
-                const status = winner ? 'FINAL' : (round <= 4 ? 'READY' : 'RESULT');
-                return `<article class="bracket-match ${round < 16 ? 'qf' : ''}">
+                const isComplete = Boolean(winner);
+                const status = isComplete ? '경기 종료' : '대진 미정';
+                return `<article class="bracket-match ${isComplete ? 'is-complete' : 'is-pending'}">
                     <div class="bracket-match-head"><span>${stageName} ${index + 1}경기</span><span>${status}</span></div>
                     ${teamRow(match.left)}${teamRow(match.right)}
                 </article>`;
@@ -584,7 +606,7 @@
 
             document.getElementById('round-content-16').innerHTML = ROUND_OF_16_MATCHUPS.map((match, index) => stageMatchMarkup(match, 16, index)).join('');
             document.getElementById('round-content-8').innerHTML = quarterfinals.map((match, index) => stageMatchMarkup(match, 8, index)).join('');
-            document.getElementById('round-content-4').innerHTML = semifinals.map((match, index) => stageMatchMarkup(match, 4, index)).join('');
+            document.getElementById('round-content-4').innerHTML = `<div class="qualified-strip"><span class="qualified-strip-label">4강 진출 확정</span>${qfWinners.map(name => `<span class="qualified-team">${escapeHtml(name)} · ${escapeHtml(englishName(name))}</span>`).join('')}</div>` + semifinals.map((match, index) => stageMatchMarkup(match, 4, index)).join('');
             document.getElementById('round-content-2').innerHTML = stageMatchMarkup(finalMatch, 2, 0);
         }
 
@@ -597,12 +619,6 @@
             const qfWinner = winnerByOfficialPrice(qfMatch, 8);
             const passed16 = r16Winner === name;
             const passed8 = qfWinner === name;
-            const qfWinners = QUARTERFINAL_MATCHUPS.map(match => winnerByOfficialPrice(match, 8));
-            const semifinalMatches = [
-                { left: qfWinners[0], right: qfWinners[1] },
-                { left: qfWinners[2], right: qfWinners[3] }
-            ];
-            const semifinal = semifinalMatches.find(match => match.left === name || match.right === name);
             const opponent = (match, team) => !match ? '' : (match.left === team ? match.right : match.left);
             const final = finalLabel(row);
 
@@ -618,8 +634,8 @@
                     state: passed8 ? 'is-win' : 'is-loss'
                 } : { dot: '8', label: 'QUARTER FINAL', title: '진출 실패', detail: '16강에서 여정 종료', state: 'is-locked' },
                 passed8 ? {
-                    dot: '4', label: 'SEMI FINAL', title: `vs ${opponent(semifinal, name) || '상대 대기'}`,
-                    detail: '경기 예정', state: 'is-pending'
+                    dot: '4', label: 'SEMI FINAL', title: '상대 미정',
+                    detail: '대진 · 일정 미정', state: 'is-pending'
                 } : { dot: '4', label: 'SEMI FINAL', title: '진출 전', detail: passed16 ? '8강에서 여정 종료' : '대기', state: 'is-locked' },
                 passed8 ? { dot: 'F', label: 'GRAND FINAL', title: '결승 진출 도전', detail: '4강 승리 시 진출', state: 'is-locked' }
                     : { dot: 'F', label: 'GRAND FINAL', title: '진출 전', detail: '대기', state: 'is-locked' }
