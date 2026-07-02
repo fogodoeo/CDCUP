@@ -197,9 +197,11 @@
         .round-badge.runner { border-color: rgba(79,140,255,.35); background: rgba(79,140,255,.1); color: #8fb5ff; }
         .download-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--rank-gold); background: rgba(195, 154, 74, 0.08); color: var(--rank-gold-light); font-family: inherit; font-size: 11px; font-weight: 850; cursor: pointer; transition: all 0.2s ease; border-radius: 3px; }
         .download-btn:hover { background: var(--rank-gold); color: #0a0d12; }
-        .hero-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
-        .page-switch-link { display:inline-flex; align-items:center; justify-content:center; height:30px; padding:0 12px; border:1px solid var(--rank-gold); border-radius:3px; background:var(--rank-gold); color:#090c11; font-size:11px; font-weight:880; text-decoration:none; transition:all .2s ease; }
-        .page-switch-link:hover { background:var(--rank-gold-light); border-color:var(--rank-gold-light); }
+        body { padding-bottom:calc(74px + env(safe-area-inset-bottom)); }
+        .app-bottom-nav { position:fixed; left:50%; bottom:max(10px,env(safe-area-inset-bottom)); z-index:1900; display:grid; grid-template-columns:repeat(2,1fr); gap:4px; width:min(336px,calc(100% - 24px)); height:58px; padding:5px; border:1px solid rgba(255,255,255,.13); border-radius:18px; background:rgba(13,19,29,.96); box-shadow:0 14px 42px rgba(0,0,0,.38); transform:translateX(-50%); backdrop-filter:blur(16px); }
+        .app-bottom-nav a { display:flex; align-items:center; justify-content:center; gap:7px; min-width:0; border-radius:13px; color:#98a3b4; font-size:12px; font-weight:850; text-decoration:none; }
+        .app-bottom-nav a span { font-size:16px; line-height:1; }
+        .app-bottom-nav a.active { background:var(--rank-gold); color:#090c11; }
 
         .journey-modal { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 24px; background: rgba(3,6,11,.78); backdrop-filter: blur(9px); }
         .journey-modal.open { display: flex; }
@@ -313,10 +315,7 @@
                 <div class="hero-kicker">CDCUP OFFICIAL STANDINGS</div>
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 8px;">
                     <h1 style="margin: 0; line-height: 1;">종합 순위표</h1>
-                    <div class="hero-actions" data-html2canvas-ignore>
-                        <a class="page-switch-link" href="shipping.html">배송관리</a>
-                        <button class="download-btn" type="button" onclick="saveAsImage()">PNG 이미지 저장</button>
-                    </div>
+                    <button class="download-btn" type="button" onclick="saveAsImage()" data-html2canvas-ignore>PNG 이미지 저장</button>
                 </div>
             </div>
             <div class="hero-brand">
@@ -394,6 +393,11 @@
             </section>
         </div>
     </main>
+
+    <nav class="app-bottom-nav" aria-label="CDCUP 페이지 이동">
+        <a class="active" href="ranking.html" aria-current="page"><span aria-hidden="true">🏆</span>종합 순위표</a>
+        <a href="shipping.html"><span aria-hidden="true">🚚</span>배송관리</a>
+    </nav>
 
     <div class="journey-modal" id="team-journey-modal" onclick="if(event.target===this) closeTeamJourney()" role="dialog" aria-modal="true" aria-label="업체 경기 여정">
         <section class="journey-card">
