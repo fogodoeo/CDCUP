@@ -101,7 +101,9 @@ async function getItems() {
         shipping_type: r.shipping_type || '',
         shipping_company: r.shipping_company || '',
         shipping_region: r.shipping_region || '',
-        shipping_cost: r.shipping_cost || 0
+        shipping_cost: r.shipping_cost || 0,
+        updated_at: r.updated_at || '',
+        updatedAt: r.updated_at || ''
     }));
 }
 

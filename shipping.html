@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>CDCUP - 배송/수령 정보 등록</title>
-    <script src="supabase-bridge.js?v=20260629-logic-fix"></script>
+    <script src="supabase-bridge.js?v=20260702-shipping-overview"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <style>
         /* ══════════════════════════════════════
@@ -2021,6 +2021,167 @@
             background: #E2E8F0 !important;
             color: #1E293B !important;
         }
+
+        .registration-overview {
+            margin-bottom: 22px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            background: #FFFFFF;
+            box-shadow: var(--shadow);
+        }
+
+        .registration-overview-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 18px 20px 14px;
+        }
+
+        .registration-overview-title small {
+            display: block;
+            margin-bottom: 3px;
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 850;
+            letter-spacing: .11em;
+        }
+
+        .registration-overview-title h2 {
+            color: var(--text-title);
+            font-size: 18px;
+            font-weight: 850;
+        }
+
+        .registration-overview-title p {
+            margin-top: 4px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .overview-refresh {
+            flex: 0 0 auto;
+            padding: 8px 12px;
+            border: 1px solid #DCE2EA;
+            border-radius: 9px;
+            background: #F8FAFC;
+            color: #475467;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 750;
+            cursor: pointer;
+        }
+
+        .overview-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            border-top: 1px solid #EDF0F4;
+            border-bottom: 1px solid #EDF0F4;
+            background: #FAFBFC;
+        }
+
+        .overview-stat {
+            padding: 12px 16px;
+            border-right: 1px solid #EDF0F4;
+        }
+
+        .overview-stat:last-child { border-right: 0; }
+        .overview-stat span { display: block; color: #7A8493; font-size: 10px; font-weight: 700; }
+        .overview-stat strong { display: block; margin-top: 4px; color: var(--text-title); font-size: 18px; font-weight: 850; }
+        .overview-stat strong.is-good { color: #15803D; }
+        .overview-stat strong.is-alert { color: #C2410C; }
+
+        .overview-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            border-bottom: 1px solid #EDF0F4;
+        }
+
+        .overview-company-filter {
+            min-width: 160px;
+            height: 34px;
+            padding: 0 34px 0 10px;
+            border: 1px solid #DCE2EA;
+            border-radius: 9px;
+            background: #FFFFFF;
+            color: #344054;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .overview-status-filter { display: flex; flex-wrap: wrap; gap: 5px; }
+        .overview-filter-btn {
+            height: 32px;
+            padding: 0 10px;
+            border: 1px solid #E1E6EE;
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #667085;
+            font-family: inherit;
+            font-size: 10px;
+            font-weight: 750;
+            cursor: pointer;
+        }
+
+        .overview-filter-btn.active { border-color: #172033; background: #172033; color: #FFFFFF; }
+        .overview-privacy-note { padding: 9px 14px; background: #F8FAFC; color: #7A8493; font-size: 10px; line-height: 1.5; }
+        .registration-overview-list { max-height: 430px; overflow-y: auto; padding: 0 14px 14px; }
+
+        .registration-entry {
+            display: grid;
+            grid-template-columns: 94px 140px minmax(190px, 1fr) minmax(220px, 1.3fr) 150px;
+            align-items: center;
+            gap: 14px;
+            min-height: 64px;
+            padding: 11px 4px;
+            border-bottom: 1px solid #EDF0F4;
+        }
+
+        .registration-entry:last-child { border-bottom: 0; }
+        .registration-entry strong { color: #253044; font-size: 12px; font-weight: 800; }
+        .registration-entry span { color: #7A8493; font-size: 10px; line-height: 1.45; }
+        .registration-winner strong, .registration-companies strong, .registration-method strong, .registration-time strong { display: block; }
+        .registration-winner span, .registration-companies span, .registration-method span, .registration-time span { display: block; margin-top: 2px; }
+
+        .registration-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 25px;
+            padding: 0 8px;
+            border: 1px solid #DCE2EA;
+            border-radius: 999px;
+            background: #F8FAFC;
+            color: #667085;
+            font-size: 9px;
+            font-weight: 850;
+        }
+
+        .registration-badge.complete { border-color: #BBE6CB; background: #F0FDF4; color: #15803D; }
+        .registration-badge.partial { border-color: #FED7AA; background: #FFF7ED; color: #C2410C; }
+        .registration-badge.mismatch { border-color: #FECACA; background: #FEF2F2; color: #B91C1C; }
+        .overview-empty { padding: 34px 12px 20px; color: #98A2B3; font-size: 12px; text-align: center; }
+
+        @media (max-width: 820px) {
+            .registration-overview-head { align-items: flex-start; padding: 16px; }
+            .overview-stats { grid-template-columns: repeat(2, 1fr); }
+            .overview-stat:nth-child(2) { border-right: 0; }
+            .overview-stat:nth-child(-n+2) { border-bottom: 1px solid #EDF0F4; }
+            .overview-toolbar { align-items: stretch; flex-direction: column; }
+            .overview-company-filter { width: 100%; }
+            .registration-entry { grid-template-columns: minmax(0, 1fr) auto; gap: 9px 12px; padding: 14px 2px; }
+            .registration-status { grid-column: 2; grid-row: 1; }
+            .registration-winner { grid-column: 1; grid-row: 1; }
+            .registration-companies, .registration-method { grid-column: 1 / -1; }
+            .registration-time { grid-column: 1 / -1; padding-top: 4px; border-top: 1px dashed #E5E9F0; }
+            .registration-time strong { display: inline; margin-left: 5px; }
+            .registration-overview-list { max-height: 520px; }
+        }
     </style>
 </head>
 <body>
@@ -2037,6 +2198,32 @@
                 </div>
                 <button class="btn btn-secondary" onclick="openCompanySelectModal()" style="padding: 8px 16px; font-size: 13.5px; font-weight: 700; border-radius: 9px;">업체 변경</button>
             </div>
+
+            <section class="registration-overview" aria-labelledby="registration-overview-heading">
+                <header class="registration-overview-head">
+                    <div class="registration-overview-title">
+                        <small>PUBLIC CROSS-CHECK</small>
+                        <h2 id="registration-overview-heading">전체 배송 등록 현황</h2>
+                        <p>업체별 등록 여부와 최종 등록·수정 시각을 함께 확인합니다.</p>
+                    </div>
+                    <button class="overview-refresh" type="button" onclick="refreshRegistrationOverview(this)">새로고침</button>
+                </header>
+                <div class="overview-stats" id="registration-overview-stats"></div>
+                <div class="overview-toolbar">
+                    <select class="overview-company-filter" id="overview-company-filter" onchange="setRegistrationCompanyFilter(this.value)">
+                        <option value="">전체 업체</option>
+                    </select>
+                    <div class="overview-status-filter" aria-label="등록 상태 필터">
+                        <button class="overview-filter-btn active" type="button" data-filter="all" onclick="setRegistrationStatusFilter('all', this)">전체</button>
+                        <button class="overview-filter-btn" type="button" data-filter="complete" onclick="setRegistrationStatusFilter('complete', this)">등록 완료</button>
+                        <button class="overview-filter-btn" type="button" data-filter="attention" onclick="setRegistrationStatusFilter('attention', this)">확인 필요</button>
+                    </div>
+                </div>
+                <div class="overview-privacy-note">이름과 연락처는 공개 확인용으로 마스킹되며, 상세 주소와 요청사항은 표시하지 않습니다.</div>
+                <div class="registration-overview-list" id="registration-overview-list">
+                    <div class="overview-empty">등록 현황을 불러오는 중입니다.</div>
+                </div>
+            </section>
 
             <!-- 업체 선택 전용 팝업 모달 (사이즈 확장 및 2열 그리드화) -->
             <div id="company-select-modal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 2000; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);">
@@ -2468,6 +2655,7 @@
                 console.log('[INIT] Step 5: Got', allItems.length, 'items, isAdminMode:', isAdminMode);
 
                 if (isAdminMode) {
+                    renderRegistrationOverview();
                     const companies = allItems.map(it => (it.company || '').trim()).filter(Boolean);
                     uniqueSellerCompanies = [...new Set(companies)].sort();
                     console.log('[INIT] Step 6: Companies:', uniqueSellerCompanies);
@@ -2662,6 +2850,174 @@
                 name,
                 phone
             };
+        }
+
+        let registrationStatusFilter = 'all';
+        let registrationCompanyFilter = '';
+
+        function escapeOverviewHtml(value) {
+            return String(value == null ? '' : value).replace(/[&<>'"]/g, function (char) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char];
+            });
+        }
+
+        function maskOverviewName(value) {
+            const chars = Array.from(String(value || '이름 없음').trim());
+            if (chars.length <= 1) return '*';
+            if (chars.length === 2) return chars[0] + '*';
+            return chars[0] + '*'.repeat(Math.min(chars.length - 2, 3)) + chars[chars.length - 1];
+        }
+
+        function maskOverviewPhone(value) {
+            const digits = String(value || '').replace(/[^0-9]/g, '');
+            return digits.length >= 4 ? '****-' + digits.slice(-4) : '연락처 미확인';
+        }
+
+        function overviewShippingSignature(item) {
+            return [item.shipping_type || '', item.shipping_company || '', item.shipping_region || ''].join('|');
+        }
+
+        function overviewShippingSummary(item) {
+            if (!item || !item.shipping_type) return '수령 방법 미등록';
+            if (item.shipping_type === '직접수령') return '현장 직접 수령';
+            if (item.shipping_type !== '배송') return item.shipping_type;
+            const company = String(item.shipping_company || '기타 배송').trim();
+            if (!['도도시', '파르게', '랩팡'].includes(company)) return company + ' · 상세 정보 비공개';
+            const parsed = parseSavedShippingRegion(item.shipping_region);
+            const location = [parsed.region, parsed.hub].filter(Boolean).join(' · ');
+            return company + (location ? ' · ' + location : '');
+        }
+
+        function formatOverviewTime(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '-';
+            return date.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function buildRegistrationOverviewGroups() {
+            const map = {};
+            allItems.forEach(item => {
+                const identity = getWinnerIdentity(item);
+                if (!map[identity.key]) map[identity.key] = { identity, items: [] };
+                map[identity.key].items.push(item);
+            });
+
+            return Object.values(map).map(group => {
+                const registeredItems = group.items.filter(item => Boolean(item.shipping_type));
+                const signatures = [...new Set(registeredItems.map(overviewShippingSignature))];
+                let status = 'complete';
+                if (registeredItems.length === 0) status = 'pending';
+                else if (registeredItems.length < group.items.length) status = 'partial';
+                else if (signatures.length > 1) status = 'mismatch';
+
+                const companies = [...new Set(group.items.map(item => String(item.company || '').trim()).filter(Boolean))].sort();
+                const representative = registeredItems.slice().sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))[0] || null;
+                const latestTime = registeredItems.reduce((latest, item) => {
+                    const time = new Date(item.updated_at || 0).getTime();
+                    return Number.isFinite(time) && time > latest ? time : latest;
+                }, 0);
+
+                return {
+                    key: group.identity.key,
+                    name: group.identity.name,
+                    phone: group.identity.phone,
+                    items: group.items,
+                    companies,
+                    status,
+                    representative,
+                    latestTime
+                };
+            }).sort((a, b) => {
+                const priority = { mismatch: 0, partial: 1, pending: 2, complete: 3 };
+                return priority[a.status] - priority[b.status] || b.latestTime - a.latestTime || a.name.localeCompare(b.name, 'ko');
+            });
+        }
+
+        function renderRegistrationOverview() {
+            const list = document.getElementById('registration-overview-list');
+            const stats = document.getElementById('registration-overview-stats');
+            const companySelect = document.getElementById('overview-company-filter');
+            if (!list || !stats || !companySelect) return;
+
+            const groups = buildRegistrationOverviewGroups();
+            const companies = [...new Set(groups.flatMap(group => group.companies))].sort();
+            const previousCompany = registrationCompanyFilter;
+            companySelect.innerHTML = '<option value="">전체 업체</option>' + companies.map(company =>
+                '<option value="' + escapeOverviewHtml(company) + '">' + escapeOverviewHtml(company) + '</option>'
+            ).join('');
+            if (companies.includes(previousCompany)) companySelect.value = previousCompany;
+            else registrationCompanyFilter = '';
+
+            const completeCount = groups.filter(group => group.status === 'complete').length;
+            const attentionCount = groups.length - completeCount;
+            const rate = groups.length ? Math.round(completeCount / groups.length * 100) : 0;
+            stats.innerHTML = [
+                ['전체 낙찰자', groups.length + '명', ''],
+                ['등록 완료', completeCount + '명', 'is-good'],
+                ['확인 필요', attentionCount + '명', attentionCount ? 'is-alert' : 'is-good'],
+                ['등록률', rate + '%', rate === 100 ? 'is-good' : '']
+            ].map(item => '<div class="overview-stat"><span>' + item[0] + '</span><strong class="' + item[2] + '">' + item[1] + '</strong></div>').join('');
+
+            const filtered = groups.filter(group => {
+                const companyMatches = !registrationCompanyFilter || group.companies.includes(registrationCompanyFilter);
+                const statusMatches = registrationStatusFilter === 'all'
+                    || (registrationStatusFilter === 'complete' && group.status === 'complete')
+                    || (registrationStatusFilter === 'attention' && group.status !== 'complete');
+                return companyMatches && statusMatches;
+            });
+
+            const statusInfo = {
+                complete: ['등록 완료', 'complete'],
+                pending: ['미등록', ''],
+                partial: ['부분 등록', 'partial'],
+                mismatch: ['확인 필요', 'mismatch']
+            };
+
+            if (!filtered.length) {
+                list.innerHTML = '<div class="overview-empty">선택한 조건에 해당하는 등록 내역이 없습니다.</div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(group => {
+                const info = statusInfo[group.status];
+                const method = group.status === 'mismatch' ? '업체별 입력값이 서로 다릅니다.' : overviewShippingSummary(group.representative);
+                const methodSub = group.status === 'complete' ? '교차 확인 완료' : (group.status === 'pending' ? '배송 정보 입력 대기' : '관리자 확인 권장');
+                return '<article class="registration-entry">' +
+                    '<div class="registration-status"><span class="registration-badge ' + info[1] + '">' + info[0] + '</span></div>' +
+                    '<div class="registration-winner"><strong>' + escapeOverviewHtml(maskOverviewName(group.name)) + '</strong><span>' + escapeOverviewHtml(maskOverviewPhone(group.phone)) + '</span></div>' +
+                    '<div class="registration-companies"><strong>' + escapeOverviewHtml(group.companies.join(', ') || '업체 미지정') + '</strong><span>' + group.items.length + '개체 · ' + group.companies.length + '개 업체</span></div>' +
+                    '<div class="registration-method"><strong>' + escapeOverviewHtml(method) + '</strong><span>' + methodSub + '</span></div>' +
+                    '<div class="registration-time"><span>최종 등록·수정</span><strong>' + escapeOverviewHtml(formatOverviewTime(group.latestTime)) + '</strong></div>' +
+                '</article>';
+            }).join('');
+        }
+
+        function setRegistrationStatusFilter(filter, button) {
+            registrationStatusFilter = filter;
+            document.querySelectorAll('.overview-filter-btn').forEach(item => item.classList.toggle('active', item === button));
+            renderRegistrationOverview();
+        }
+
+        function setRegistrationCompanyFilter(company) {
+            registrationCompanyFilter = company || '';
+            renderRegistrationOverview();
+        }
+
+        async function refreshRegistrationOverview(button) {
+            const originalText = button ? button.textContent : '';
+            if (button) { button.disabled = true; button.textContent = '갱신 중...'; }
+            try {
+                const items = await getItems();
+                allItems = (items || []).filter(item => item.status && item.status.indexOf('낙찰') >= 0);
+                renderRegistrationOverview();
+                showToast('전체 등록 현황을 갱신했습니다.');
+            } catch (error) {
+                console.error(error);
+                showToast('등록 현황 갱신에 실패했습니다.', true);
+            } finally {
+                if (button) { button.disabled = false; button.textContent = originalText; }
+            }
         }
 
         // 총 배송비를 업체별 **개체 수 비례**로 나눈다.
@@ -3433,6 +3789,7 @@ ${winnerName}님 낙찰 정산 안내입니다.
 
                 const items = await getItems();
                 allItems = (items || []).filter(it => it.status && it.status.indexOf('낙찰') >= 0);
+                renderRegistrationOverview();
                 renderGrid();
             } catch (err) {
                 console.error(err);
