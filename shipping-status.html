@@ -77,11 +77,6 @@
         .payment.split p { color:#5b6f91; }
         .split-list { display:grid; gap:5px; margin-top:9px; }
         .split-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 9px; border-radius:8px; background:rgba(255,255,255,.8); color:#334155; font-size:10px; font-weight:750; }
-        .payment.split .action { background:#2563eb; }
-        .payment.split .action.secondary { border-color:#bfdbfe; background:#fff; color:#1d4ed8; }
-        .payment-actions { display:flex; gap:7px; margin-top:11px; }
-        .action { display:inline-flex; align-items:center; justify-content:center; min-height:36px; padding:0 12px; border:0; border-radius:9px; background:#166534; color:#fff; font-size:11px; font-weight:800; text-decoration:none; cursor:pointer; }
-        .action.secondary { border:1px solid #bbe6cb; background:#fff; color:#166534; }
         .empty { padding:34px 12px; color:#98a2b3; font-size:12px; text-align:center; }
         .loading { position:fixed; inset:0; z-index:20; display:grid; place-items:center; background:rgba(244,247,251,.86); color:#475569; font-size:13px; font-weight:800; backdrop-filter:blur(4px); }
         .toast { position:fixed; left:50%; bottom:22px; z-index:30; transform:translate(-50%,20px); padding:11px 15px; border-radius:10px; background:#172033; color:#fff; font-size:11px; font-weight:750; opacity:0; pointer-events:none; transition:.2s; }
@@ -97,8 +92,6 @@
             .directory { grid-template-columns:1fr; max-height:none; }
             .record-grid { grid-template-columns:1fr; gap:9px; }
             .info-block { padding-top:8px; border-top:1px dashed #e5e9f0; }
-            .payment-actions { display:grid; grid-template-columns:1fr 1fr; }
-            .action { width:100%; }
         }
     </style>
 </head>
@@ -228,59 +221,14 @@
         function companyShippingShare(group, company) {
             return group.items.filter(i=>String(i.company||'').trim()===company).reduce((sum,i)=>sum+(Number(i.shipping_cost)||0),0);
         }
-        function itemBidAmount(item) {
-            return (Number(item.sold_price||item.soldPrice)||0)*10000;
-        }
-        function companyBidAmount(group, company) {
-            return group.items.filter(i=>String(i.company||'').trim()===company).reduce((sum,i)=>sum+itemBidAmount(i),0);
-        }
-        function smsItemLine(item) {
-            return '- '+(item.name||'이름 없음')+' / '+itemBidAmount(item).toLocaleString()+'원';
-        }
-        function smsCompanySummary(group, company) {
-            const items=group.items.filter(i=>String(i.company||'').trim()===company);
-            return company+': '+items.map(i=>i.name||'이름 없음').join(', ')+' / '+companyBidAmount(group,company).toLocaleString()+'원';
-        }
-        function otherCompanyText(group, scopeCompany) {
-            const others=group.companies.filter(company=>company!==scopeCompany);
-            if(!others.length) return '';
-            return `\n[함께 낙찰한 업체]\n${others.map(company=>'- '+smsCompanySummary(group,company)).join('\n')}\n각 업체의 안내 방식에 따라 별도로 결제해 주세요.`;
-        }
-        function standardSmsText(group, ship, scopeCompany) {
-            const companies=scopeCompany?[scopeCompany]:group.companies;
-            const splitShipping=['도도시','파르게'].includes(ship.company);
-            const sections=companies.map(company=>{
-                const items=group.items.filter(i=>String(i.company||'').trim()===company);
-                const bid=companyBidAmount(group,company);
-                const shipping=companyShippingShare(group,company);
-                const shippingLabel=splitShipping&&group.companies.length>1?ship.company+' 배분 배송비':'배송비';
-                return `[${company} 결제금액]\n${items.map(smsItemLine).join('\n')}\n낙찰금: ${bid.toLocaleString()}원\n${shippingLabel}: ${shipping.toLocaleString()}원\n최종 결제금액: ${(bid+shipping).toLocaleString()}원`;
-            }).join('\n\n');
-            const splitNote=splitShipping?(group.companies.length>1?`\n\n${ship.company} 전체 합배송비 ${group.shippingCost.toLocaleString()}원을 전체 ${group.items.length}개체 기준으로 업체별 배분했습니다.`:`\n\n현재 ${ship.company} 배송 대상은 ${group.items.length}개체이므로 배송비 전액이 적용되었습니다.`):'';
-            const paymentNote=scopeCompany?`\n결제 방법은 ${scopeCompany}의 안내에 따라 진행해 주세요.`:'\n업체별 안내 방식에 따라 각각 결제해 주세요.';
-            return `[CDCUP · ${scopeCompany||ship.company||'배송'} 결제안내]\n${group.name}님\n\n${sections}${splitNote}${paymentNote}${scopeCompany?otherCompanyText(group,scopeCompany):''}`;
-        }
-        function smsText(group, ship, scopeCompany) {
-            if(ship.company!=='랩팡') return standardSmsText(group,ship,scopeCompany);
-            const companies=scopeCompany?[scopeCompany]:group.companies;
-            const sections=companies.map(company=>{
-                const items=group.items.filter(i=>String(i.company||'').trim()===company);
-                return `[${company} 결제금액]\n${items.map(smsItemLine).join('\n')}\n낙찰금: ${companyBidAmount(group,company).toLocaleString()}원\n※ ${company}에는 낙찰금만 결제`;
-            }).join('\n\n');
-            return `[CDCUP · ${scopeCompany||'랩팡'} 결제안내]\n${group.name}님\n\n${sections}${scopeCompany?otherCompanyText(group,scopeCompany):''}\n\n[랩팡 합배송비 · 별도 입금]\n합배송 업체: ${group.companies.join(', ')}\n전체 ${group.items.length}개체 배송비: ${group.shippingCost.toLocaleString()}원\n${WRAPANG_ACCOUNT.bank} ${WRAPANG_ACCOUNT.number} ${WRAPANG_ACCOUNT.holder}\n\n다른 업체의 안내를 받아 이미 랩팡 합배송비를 입금했다면 추가로 입금하지 마세요.\n아직 입금하지 않았다면 위 계좌로 별도 1회만 입금해 주세요.`;
-        }
-        function smsHref(group, ship, scopeCompany) {
-            const sep=/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?';
-            return 'sms:'+group.phone+sep+'body='+encodeURIComponent(smsText(group,ship,scopeCompany));
-        }
         function settlementHtml(group, ship, scopeCompany) {
-            if(ship.company==='랩팡') return '<div class="payment"><div class="payment-title"><strong>랩팡 합배송비 · 1회 입금</strong><b>'+group.shippingCost.toLocaleString()+'원</b></div><div class="account">'+WRAPANG_ACCOUNT.bank+' '+WRAPANG_ACCOUNT.number+' · '+WRAPANG_ACCOUNT.holder+'</div><p>다른 업체의 안내를 받아 이미 입금했다면 추가 입금하지 않습니다. 미입금 시에만 합배송 전체 금액을 위 계좌로 한 번 입금합니다.</p><div class="payment-actions">'+(group.phone?'<a class="action" href="'+smsHref(group,ship,scopeCompany)+'">문자 보내기</a>':'')+'<button class="action secondary" type="button" onclick="copyPaymentMessage(\''+esc(group.key)+'\',\''+esc(scopeCompany||'')+'\')">문구 복사</button></div></div>';
+            if(ship.company==='랩팡') return '<div class="payment"><div class="payment-title"><strong>랩팡 합배송비 · 1회 입금</strong><b>'+group.shippingCost.toLocaleString()+'원</b></div><div class="account">랩팡 배송비 입금계좌 · '+WRAPANG_ACCOUNT.bank+' '+WRAPANG_ACCOUNT.number+' · '+WRAPANG_ACCOUNT.holder+'</div><p>참여 업체와 합배송비를 교차 확인하는 내역입니다.</p></div>';
             if(!['도도시','파르게'].includes(ship.company) || group.shippingCost<=0) return '';
             const companies=scopeCompany?[scopeCompany]:group.companies;
             const rows=companies.map(company=>'<div class="split-row"><span>'+esc(company)+'</span><strong>'+companyShippingShare(group,company).toLocaleString()+'원</strong></div>').join('');
             const shownAmount=scopeCompany?companyShippingShare(group,scopeCompany):group.shippingCost;
-            const splitNote=group.companies.length>1?(scopeCompany?'전체 '+group.items.length+'개체 기준으로 나눈 '+esc(scopeCompany)+' 배분액입니다. 결제 방식은 업체 안내에 따릅니다.':'전체 개체 수 기준으로 나눈 배송비이며 결제 방식은 각 업체 안내에 따릅니다.'):'합배송 대상이 1개체이므로 배송비 전액이 적용됩니다. 결제 방식은 업체 안내에 따릅니다.';
-            return '<div class="payment split"><div class="payment-title"><strong>'+esc(ship.company)+' · 업체별 배송비 정산</strong><b>'+shownAmount.toLocaleString()+'원</b></div><p>'+splitNote+'</p><div class="split-list">'+rows+'</div><div class="payment-actions">'+(group.phone?'<a class="action" href="'+smsHref(group,ship,scopeCompany)+'">문자 보내기</a>':'')+'<button class="action secondary" type="button" onclick="copyPaymentMessage(\''+esc(group.key)+'\',\''+esc(scopeCompany||'')+'\')">문구 복사</button></div></div>';
+            const splitNote=group.companies.length>1?(scopeCompany?'전체 '+group.items.length+'개체 기준으로 나눈 '+esc(scopeCompany)+' 배분액입니다.':'전체 개체 수 기준으로 나눈 업체별 배송비입니다.'):'합배송 대상이 1개체이므로 배송비 전액이 적용됩니다.';
+            return '<div class="payment split"><div class="payment-title"><strong>'+esc(ship.company)+' · 업체별 배송비 정산</strong><b>'+shownAmount.toLocaleString()+'원</b></div><p>'+splitNote+'</p><div class="split-list">'+rows+'</div></div>';
         }
         function recordHtml(group, scopedItems, scopeCompany) {
             const meta=statusMeta(group.status), ship=shippingInfo(group), items=scopedItems||group.items;
@@ -316,12 +264,6 @@
             renderWinnerDirectory('');
             search.focus();
             window.scrollTo({top:0,behavior:'smooth'});
-        }
-        async function copyPaymentMessage(key, scopeCompany) {
-            const group=winnerGroups.find(g=>g.key===key); if(!group) return;
-            const text=smsText(group,shippingInfo(group),scopeCompany||'');
-            try { await navigator.clipboard.writeText(text); showToast('문자 안내 문구를 복사했습니다.'); }
-            catch(e){ const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();showToast('문자 안내 문구를 복사했습니다.'); }
         }
         function showToast(text){const t=document.getElementById('toast');t.textContent=text;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
         async function loadData() {

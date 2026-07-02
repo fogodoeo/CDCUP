@@ -2348,7 +2348,7 @@
                 <section class="wrapang-payment-card" id="buyer-wrapang-payment-card">
                     <div class="wrapang-payment-head"><strong>랩팡 합배송비 · 1회 입금</strong><b id="buyer-wrapang-payment-amount">0원</b></div>
                     <div class="wrapang-account">국민은행 645901-04-465911 · 이시안</div>
-                    <p>다른 업체의 안내를 받아 이미 입금했다면 추가 입금하지 않습니다. 아직 입금하지 않은 경우에만 합배송 전체 배송비를 위 계좌로 한 번 입금합니다.</p>
+                    <p>랩팡 배송비 입금계좌입니다. 다른 업체를 통해 이미 납부한 경우 중복 입금하지 않습니다.</p>
                     <div class="wrapang-payment-actions"><button type="button" onclick="copyWrapangAccount()">계좌 복사</button></div>
                 </section>
 
@@ -2388,11 +2388,10 @@
                         </div>
                     </div>
                     
-                    <!-- 대형 통화/문자/카톡 버튼 세트 (우측 정렬) -->
+                    <!-- 통화와 전체 안내문 복사 (우측 정렬) -->
                     <div style="display: flex; align-items: center; gap: 6px; margin-right: 24px;">
                         <a id="editor-info-call-btn" href="#" class="action-icon-btn" title="전화걸기" style="width: 40px; height: 40px; font-size: 17px; border-radius: 50%; background: #EFF6FF; border: 1.5px solid #DBEAFE; color: var(--accent); display: flex; align-items: center; justify-content: center; text-decoration: none;">📞</a>
-                        <a id="editor-info-sms-btn" href="#" class="action-icon-btn" title="문자발송" style="width: 40px; height: 40px; font-size: 17px; border-radius: 50%; background: #F0FDF4; border: 1.5px solid #DCFCE7; color: #15803D; display: flex; align-items: center; justify-content: center; text-decoration: none;">💬</a>
-                        <a id="editor-info-kakao-btn" href="#" class="action-icon-btn" title="카카오톡 전송" style="width: 40px; height: 40px; font-size: 13.5px; font-weight: 900; border-radius: 50%; background: #FEE500; border: 1.5px solid #F3D900; color: #191919; display: flex; align-items: center; justify-content: center; text-decoration: none;">톡</a>
+                        <button id="editor-info-copy-btn" type="button" title="낙찰금과 배송비가 포함된 전체 안내문 복사" style="height: 40px; padding: 0 13px; border-radius: 12px; background: #172033; border: 0; color: #fff; font-size: 12px; font-weight: 850; cursor: pointer; white-space: nowrap;">전체 안내 복사</button>
                     </div>
                 </div>
 
@@ -2457,8 +2456,7 @@
                 <section class="wrapang-payment-card" id="editor-wrapang-payment-card">
                     <div class="wrapang-payment-head"><strong>랩팡 합배송비 · 낙찰자 1회 입금</strong><b id="editor-wrapang-payment-amount">0원</b></div>
                     <div class="wrapang-account">국민은행 645901-04-465911 · 이시안</div>
-                    <p>다른 업체의 안내를 받아 이미 입금했다면 추가 입금하지 않도록 안내합니다. 미입금 시에만 합배송 총액을 랩팡 계좌로 한 번 입금합니다.</p>
-                    <div class="wrapang-payment-actions"><a id="editor-wrapang-sms-btn" href="#">입금 안내 문자</a><button type="button" onclick="copyCurrentWrapangMessage()">문구 복사</button></div>
+                    <p>합배송 내역과 배송비를 확인하는 영역입니다. 발송 문구는 상단의 ‘전체 안내 복사’ 하나만 사용합니다.</p>
                 </section>
 
                 <!-- 메모 입력 -->
@@ -2493,23 +2491,7 @@
         // 거점 가격표 데이터베이스
         const WRAPANG_DISCOUNT_RATE = 0.7;
         const WRAPANG_PAYMENT_ACCOUNT = { bank: '국민은행', number: '645901-04-465911', holder: '이시안' };
-        let currentWrapangSmsText = '';
         const getDiscountedWrapangCost = cost => Math.round((Number(cost) || 0) * WRAPANG_DISCOUNT_RATE);
-
-        function buildWrapangPaymentMessage(winnerName, companies, itemCount, totalShipping, region, hub) {
-            const location = [region, hub].filter(Boolean).join(' · ') || '선택 거점';
-            return `[CDCUP 랩팡 합배송비 안내]
-${winnerName}님
-
-[랩팡 합배송비 · 별도 입금]
-합배송 업체: ${companies.join(', ')}
-전체 ${itemCount}개체 배송비: ${totalShipping.toLocaleString()}원
-배송지: ${location}
-${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number} ${WRAPANG_PAYMENT_ACCOUNT.holder}
-
-다른 업체의 안내를 받아 이미 랩팡 합배송비를 입금했다면 추가로 입금하지 마세요.
-아직 입금하지 않았다면 위 계좌로 별도 1회만 입금해 주세요.`;
-        }
 
         function auctionItemWon(item) {
             return (parseFloat(item.soldPrice || item.sold_price) || 0) * 10000;
@@ -2535,7 +2517,10 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number} ${WRAPANG_PAYM
                 const bid = items.reduce((sum, item) => sum + auctionItemWon(item), 0);
                 return `- ${company}: ${names} / ${bid.toLocaleString()}원`;
             });
-            return `\n\n[함께 낙찰한 업체]\n${lines.join('\n')}\n각 업체의 안내 방식에 따라 별도로 결제해 주세요.`;
+            const contactText=companies.length===1
+                ? `${companies[0]} 낙찰분은 ${companies[0]}에 연락해 결제 안내를 받아 주세요.`
+                : `${companies.join('·')} 낙찰분은 각 업체에 연락해 결제 안내를 받아 주세요.`;
+            return `\n\n[별도 결제 낙찰분]\n${lines.join('\n')}\n${contactText}`;
         }
 
         function buildVendorPaymentMessage(options) {
@@ -2544,58 +2529,57 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number} ${WRAPANG_PAYM
                 shippingCompany, shippingInfo, shippingShare, totalShipping
             } = options;
             const sellerCompanies = [...new Set((allItems || []).map(item => String(item.company || '').trim()).filter(Boolean))];
+            const otherCompanies = sellerCompanies.filter(company => company !== selectedCompany);
             const bid = (selectedItems || []).reduce((sum, item) => sum + auctionItemWon(item), 0);
             const itemLines = (selectedItems || []).map(paymentSmsItemLine).join('\n');
             const others = otherCompanyPaymentText(allItems, selectedCompany);
 
             if (shippingType === '배송' && shippingCompany === '랩팡') {
-                return `[CDCUP · ${selectedCompany} 결제안내]
-${winnerName}님
+                const duplicateNote=otherCompanies.length
+                    ? `\n\n${otherCompanies.length===1?otherCompanies[0]+'의 안내로':otherCompanies.join('·')+' 중 한 업체의 안내로'} 이미 랩팡 배송비를 입금하셨다면 중복 입금하지 마세요.`
+                    : '';
+                return `[CDCUP | ${selectedCompany}]
+${winnerName}님, ${selectedCompany}입니다.
 
-[${selectedCompany} 결제금액]
+[${selectedCompany} 낙찰]
 ${itemLines}
-낙찰금: ${bid.toLocaleString()}원
-※ ${selectedCompany}에는 낙찰금만 결제${others}
 
-[랩팡 합배송비 · 별도 입금]
-합배송 업체: ${sellerCompanies.join(', ')}
-전체 ${(allItems || []).length}개체 배송비: ${totalShipping.toLocaleString()}원
-${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number} ${WRAPANG_PAYMENT_ACCOUNT.holder}
+${selectedCompany} 결제금액: ${bid.toLocaleString()}원
+※ 랩팡 배송비는 아래 계좌로 별도 입금${others}
 
-다른 업체의 안내를 받아 이미 랩팡 합배송비를 입금했다면 추가로 입금하지 마세요.
-아직 입금하지 않았다면 위 계좌로 별도 1회만 입금해 주세요.`;
+[랩팡 합배송]
+참여 업체: ${sellerCompanies.join(', ')}
+총 ${(allItems || []).length}개체 / 배송비 ${totalShipping.toLocaleString()}원
+
+[랩팡 배송비 입금계좌]
+${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
+예금주 ${WRAPANG_PAYMENT_ACCOUNT.holder}${duplicateNote}`;
             }
 
             const splitShipping = shippingType === '배송' && ['도도시', '파르게'].includes(shippingCompany);
-            const shippingLabel = splitShipping && sellerCompanies.length > 1
-                ? `${shippingCompany} 배분 배송비`
-                : '배송비';
-            const shippingLine = shippingType === '직접수령'
-                ? '배송: 현장 직접 수령'
-                : `배송: ${shippingInfo}`;
-            const splitNote = splitShipping
-                ? (sellerCompanies.length > 1
-                    ? `\n${shippingCompany} 전체 합배송비 ${totalShipping.toLocaleString()}원을 전체 ${(allItems || []).length}개체 기준으로 업체별 배분했습니다.`
-                    : `\n현재 ${shippingCompany} 배송 대상은 ${(allItems || []).length}개체이므로 배송비 전액이 적용되었습니다.`)
-                : '';
-            return `[CDCUP · ${selectedCompany} 결제안내]
-${winnerName}님
+            const selectedItemCount=(selectedItems || []).length;
+            let deliverySection='';
+            if(shippingType==='직접수령') {
+                deliverySection='[직접 수령]\n배송비 없음';
+            } else if(splitShipping) {
+                deliverySection=sellerCompanies.length>1
+                    ? `[${shippingCompany} 합배송]\n참여 업체: ${sellerCompanies.join(', ')}\n전체 ${(allItems || []).length}개체 / 배송비 ${totalShipping.toLocaleString()}원\n${selectedCompany} 배분 배송비: ${shippingShare.toLocaleString()}원\n(${selectedCompany} 낙찰 ${selectedItemCount}개체 기준)`
+                    : `[${shippingCompany} 배송]\n${shippingInfo}\n배송비: ${shippingShare.toLocaleString()}원`;
+            } else {
+                deliverySection=`[배송]\n${shippingInfo}\n배송비: ${shippingShare.toLocaleString()}원`;
+            }
+            return `[CDCUP | ${selectedCompany}]
+${winnerName}님, ${selectedCompany}입니다.
 
-[낙찰 개체]
+[${selectedCompany} 낙찰]
 ${itemLines}
+
+${deliverySection}
 
 [${selectedCompany} 결제금액]
 낙찰금: ${bid.toLocaleString()}원
-${shippingLabel}: ${shippingShare.toLocaleString()}원
-최종 결제금액: ${(bid + shippingShare).toLocaleString()}원
-${shippingLine}${splitNote}
-결제 방법은 ${selectedCompany}의 안내에 따라 진행해 주세요.${others}`;
-        }
-
-        function wrapangSmsHref(phone, text) {
-            const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
-            const separator = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? '&' : '?';
-            return cleanPhone ? `sms:${cleanPhone}${separator}body=${encodeURIComponent(text)}` : '';
+배송비: ${shippingShare.toLocaleString()}원
+합계: ${(bid + shippingShare).toLocaleString()}원${others}`;
         }
 
         async function copyPlainText(text, successMessage) {
@@ -2622,9 +2606,6 @@ ${shippingLine}${splitNote}
             copyPlainText(`${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number} ${WRAPANG_PAYMENT_ACCOUNT.holder}`, '랩팡 입금 계좌를 복사했습니다.');
         }
 
-        function copyCurrentWrapangMessage() {
-            if (currentWrapangSmsText) copyPlainText(currentWrapangSmsText, '랩팡 입금 안내 문구를 복사했습니다.');
-        }
         const SHIPPING_DATA = {
             '픽업': {
                 regions: { '직접수령': [{ shop: '현장 직접수령', cost: 0 }] }
@@ -3777,22 +3758,12 @@ ${shippingLine}${splitNote}
 
             const wrapangCard = document.getElementById('editor-wrapang-payment-card');
             const wrapangAmount = document.getElementById('editor-wrapang-payment-amount');
-            const wrapangSmsButton = document.getElementById('editor-wrapang-sms-btn');
-            currentWrapangSmsText = isWrapangCentralPayment
-                ? buildWrapangPaymentMessage(winnerName, sellerCos, state.allItems.length, totalShipping, reg, hub)
-                : '';
             if (wrapangCard) wrapangCard.classList.toggle('active', isWrapangCentralPayment);
             if (wrapangAmount) wrapangAmount.textContent = totalShipping.toLocaleString() + '원';
-            if (wrapangSmsButton) {
-                const href = wrapangSmsHref(state.phone, currentWrapangSmsText);
-                if (href) { wrapangSmsButton.href = href; wrapangSmsButton.style.display = 'inline-flex'; }
-                else { wrapangSmsButton.removeAttribute('href'); wrapangSmsButton.style.display = 'none'; }
-            }
 
-            // 실시간 전화걸기 및 정산 안내 문자(SMS) 연동
+            // 상단에는 통화와 전체 안내문 복사만 제공한다.
             const callBtn = document.getElementById('editor-info-call-btn');
-            const smsBtn = document.getElementById('editor-info-sms-btn');
-            const kakaoBtn = document.getElementById('editor-info-kakao-btn');
+            const copyBtn = document.getElementById('editor-info-copy-btn');
             const cleanPhone = (state.phone || '').replace(/[^0-9]/g, '');
 
             if (callBtn) {
@@ -3805,56 +3776,36 @@ ${shippingLine}${splitNote}
                 }
             }
 
-            if (cleanPhone) {
-                let smsShipInfo = '';
-                if (editorShippingState.type === '직접수령') {
-                    smsShipInfo = '현장 직접 수령';
-                } else if (editorShippingState.type === '배송') {
-                    if (comp === '기타') {
-                        smsShipInfo = `[기타배송] ${reg}`;
-                    } else if (reg && hub) {
-                        smsShipInfo = `[${comp}] ${reg} (${hub})`;
-                    } else {
-                        smsShipInfo = `배송 거점 미지정`;
-                    }
+            let smsShipInfo = '';
+            if (editorShippingState.type === '직접수령') {
+                smsShipInfo = '현장 직접 수령';
+            } else if (editorShippingState.type === '배송') {
+                if (comp === '기타') {
+                    smsShipInfo = `[기타배송] ${reg}`;
+                } else if (reg && hub) {
+                    smsShipInfo = `[${comp}] ${reg} (${hub})`;
                 } else {
-                    smsShipInfo = '미설정';
-                }
-
-                const smsText = buildVendorPaymentMessage({
-                    winnerName,
-                    selectedCompany: selectedCo,
-                    selectedItems: groupItems,
-                    allItems: state.allItems,
-                    shippingType: editorShippingState.type,
-                    shippingCompany: comp,
-                    shippingInfo: smsShipInfo,
-                    shippingShare: shipCost,
-                    totalShipping
-                });
-
-                if (smsBtn) {
-                    smsBtn.href = wrapangSmsHref(cleanPhone, smsText);
-                    smsBtn.style.display = 'inline-flex';
-                }
-                if (kakaoBtn) {
-                    kakaoBtn.removeAttribute('href');
-                    kakaoBtn.style.cursor = 'pointer';
-                    kakaoBtn.onclick = (e) => {
-                        e.preventDefault();
-                        copyToClipboardAndOpenKakao(smsText);
-                    };
-                    kakaoBtn.style.display = 'inline-flex';
+                    smsShipInfo = `배송 거점 미지정`;
                 }
             } else {
-                if (smsBtn) {
-                    smsBtn.removeAttribute('href');
-                    smsBtn.style.display = 'none';
-                }
-                if (kakaoBtn) {
-                    kakaoBtn.removeAttribute('href');
-                    kakaoBtn.style.display = 'none';
-                }
+                smsShipInfo = '미설정';
+            }
+
+            const totalMessage = buildVendorPaymentMessage({
+                winnerName,
+                selectedCompany: selectedCo,
+                selectedItems: groupItems,
+                allItems: state.allItems,
+                shippingType: editorShippingState.type,
+                shippingCompany: comp,
+                shippingInfo: smsShipInfo,
+                shippingShare: shipCost,
+                totalShipping
+            });
+
+            if (copyBtn) {
+                copyBtn.onclick = () => copyPlainText(totalMessage, '전체 결제·배송 안내를 복사했습니다.');
+                copyBtn.style.display = 'inline-flex';
             }
             } catch (pricingErr) {
                 console.error('[updateEditorPricing ERROR]', pricingErr);
