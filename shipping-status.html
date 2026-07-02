@@ -30,12 +30,9 @@
         .section-title small { color:var(--blue); font-size:10px; font-weight:850; letter-spacing:.1em; }
         .section-title h2 { margin:4px 0 3px; font-size:18px; }
         .section-title p { margin:0; color:var(--muted); font-size:12px; }
-        .mode-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-        .mode-card { display:flex; align-items:flex-start; gap:14px; min-height:112px; padding:18px; border:1px solid var(--line); border-radius:15px; background:#fff; color:inherit; text-align:left; cursor:pointer; transition:.16s; }
-        .mode-card:hover { border-color:#9bbaf7; background:#f8fbff; transform:translateY(-1px); }
-        .mode-icon { display:grid; place-items:center; width:42px; height:42px; flex:0 0 42px; border-radius:12px; background:#eff6ff; font-size:21px; }
-        .mode-card strong { display:block; font-size:16px; }
-        .mode-card span { display:block; margin-top:5px; color:var(--muted); font-size:11px; line-height:1.5; }
+        .basis-tabs { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; margin-bottom:10px; padding:5px; border:1px solid var(--line); border-radius:14px; background:#eef2f7; }
+        .basis-tab { min-height:42px; border:0; border-radius:10px; background:transparent; color:#64748b; font-size:12px; font-weight:850; cursor:pointer; }
+        .basis-tab.active { background:#fff; color:var(--blue); box-shadow:0 3px 10px rgba(23,32,51,.09); }
         .view { display:none; }
         .view.active { display:block; }
         .view-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px; }
@@ -45,9 +42,12 @@
         .winner-search { margin-bottom:10px; }
         .directory { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; max-height:430px; overflow-y:auto; }
         .directory-btn { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 13px; border:1px solid var(--line); border-radius:11px; background:#fff; color:inherit; text-align:left; cursor:pointer; }
+        .directory-main { min-width:0; }
         .directory-btn strong { display:block; font-size:13px; }
-        .directory-btn span { display:block; margin-top:3px; color:var(--muted); font-size:10px; }
-        .directory-btn em { color:var(--blue); font-size:11px; font-style:normal; font-weight:800; }
+        .directory-meta { display:block; margin-top:3px; overflow:hidden; color:var(--muted); font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+        .directory-side { display:flex; flex:0 0 auto; flex-direction:column; align-items:flex-end; gap:5px; }
+        .directory-side em { color:var(--blue); font-size:10px; font-style:normal; font-weight:800; }
+        .directory-side .badge { min-height:22px; margin:0; padding:0 7px; }
         .result { margin-top:16px; }
         .result-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:10px; padding:0 2px; }
         .result-head strong { font-size:18px; }
@@ -72,6 +72,13 @@
         .payment-title b { color:#166534; font-size:17px; }
         .account { margin-top:8px; color:#253044; font-size:12px; font-weight:800; }
         .payment p { margin:6px 0 0; color:#587064; font-size:10px; line-height:1.55; }
+        .payment.split { border-color:#bfdbfe; background:linear-gradient(110deg,#eff6ff,#fff); }
+        .payment.split .payment-title strong,.payment.split .payment-title b { color:#1d4ed8; }
+        .payment.split p { color:#5b6f91; }
+        .split-list { display:grid; gap:5px; margin-top:9px; }
+        .split-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 9px; border-radius:8px; background:rgba(255,255,255,.8); color:#334155; font-size:10px; font-weight:750; }
+        .payment.split .action { background:#2563eb; }
+        .payment.split .action.secondary { border-color:#bfdbfe; background:#fff; color:#1d4ed8; }
         .payment-actions { display:flex; gap:7px; margin-top:11px; }
         .action { display:inline-flex; align-items:center; justify-content:center; min-height:36px; padding:0 12px; border:0; border-radius:9px; background:#166534; color:#fff; font-size:11px; font-weight:800; text-decoration:none; cursor:pointer; }
         .action.secondary { border:1px solid #bbe6cb; background:#fff; color:#166534; }
@@ -87,8 +94,7 @@
             .stats { grid-template-columns:repeat(2,1fr); }
             .stat:nth-child(2) { border-right:0; }
             .stat:nth-child(-n+2) { border-bottom:1px solid var(--line); }
-            .mode-grid,.directory { grid-template-columns:1fr; }
-            .mode-card { min-height:94px; padding:15px; }
+            .directory { grid-template-columns:1fr; max-height:none; }
             .record-grid { grid-template-columns:1fr; gap:9px; }
             .info-block { padding-top:8px; border-top:1px dashed #e5e9f0; }
             .payment-actions { display:grid; grid-template-columns:1fr 1fr; }
@@ -102,26 +108,23 @@
         <header class="hero">
             <small>INTERNAL SHIPPING CHECK</small>
             <h1>배송 등록 조회</h1>
-            <p>업체 또는 낙찰자를 먼저 선택해 등록 내용과 합배송 정산을 교차 확인합니다.</p>
+            <p>낙찰자별 등록 완료 여부를 한눈에 보고, 업체 기준으로도 교차 확인합니다.</p>
             <div class="stats" id="stats"></div>
         </header>
 
-        <section class="mode-section view active" id="mode-home">
-            <div class="section-title"><small>STEP 1</small><h2>조회 기준을 선택하세요</h2><p>선택 전에는 전체 내역을 펼치지 않습니다.</p></div>
-            <div class="mode-grid">
-                <button class="mode-card" type="button" onclick="openMode('company')"><span class="mode-icon">🏢</span><span><strong>업체 기준</strong><span>출품 업체를 선택하고 해당 업체의 모든 낙찰자·개체·배송 정보를 확인합니다.</span></span></button>
-                <button class="mode-card" type="button" onclick="openMode('winner')"><span class="mode-icon">👤</span><span><strong>낙찰자 기준</strong><span>이름이나 연락처로 찾아 합배송 업체 구성과 배송비 입금 안내를 확인합니다.</span></span></button>
-            </div>
-        </section>
+        <div class="basis-tabs" aria-label="조회 기준">
+            <button class="basis-tab active" id="basis-winner" type="button" onclick="openMode('winner')">낙찰자 기준</button>
+            <button class="basis-tab" id="basis-company" type="button" onclick="openMode('company')">업체 기준</button>
+        </div>
 
         <section class="mode-section view" id="mode-company">
-            <div class="view-head"><div class="section-title"><small>COMPANY VIEW</small><h2>업체 기준 조회</h2><p>업체를 선택하면 관련 내역만 표시됩니다.</p></div><button class="view-back" type="button" onclick="openMode('home')">기준 다시 선택</button></div>
+            <div class="view-head"><div class="section-title"><small>COMPANY VIEW</small><h2>업체 기준 조회</h2><p>업체를 선택하면 해당 업체의 낙찰자와 배송 등록 내역만 표시됩니다.</p></div></div>
             <select class="picker" id="company-picker" onchange="renderCompany(this.value)"><option value="">업체를 선택하세요</option></select>
             <div class="result" id="company-result"><div class="empty">업체를 선택해 주세요.</div></div>
         </section>
 
-        <section class="mode-section view" id="mode-winner">
-            <div class="view-head"><div class="section-title"><small>WINNER VIEW</small><h2>낙찰자 기준 조회</h2><p>이름 또는 연락처로 빠르게 찾을 수 있습니다.</p></div><button class="view-back" type="button" onclick="openMode('home')">기준 다시 선택</button></div>
+        <section class="mode-section view active" id="mode-winner">
+            <div class="view-head"><div class="section-title"><small>WINNER VIEW</small><h2>전체 낙찰자 등록 현황</h2><p>완료 여부를 확인하고 이름 또는 연락처로 빠르게 찾을 수 있습니다.</p></div></div>
             <input class="picker winner-search" id="winner-search" type="search" placeholder="이름 또는 연락처 검색" oninput="renderWinnerDirectory(this.value)">
             <div class="directory" id="winner-directory"></div>
             <div class="result" id="winner-result"></div>
@@ -188,12 +191,25 @@
                 const shippingCost=group.items.reduce((sum,i)=>sum+(Number(i.shipping_cost)||0),0);
                 const totalBid=group.items.reduce((sum,i)=>sum+(Number(i.sold_price||i.soldPrice)||0)*10000,0);
                 return {...group,companies,status:groupStatus(group.items),latest,shippingCost,totalBid};
-            }).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+            }).sort((a,b)=>{
+                const priority={mismatch:0,partial:1,pending:2,complete:3};
+                return priority[a.status]-priority[b.status] || a.name.localeCompare(b.name,'ko');
+            });
         }
         function openMode(mode) {
             document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
             document.getElementById('mode-'+mode).classList.add('active');
-            if(mode==='winner') renderWinnerDirectory('');
+            document.querySelectorAll('.basis-tab').forEach(v=>v.classList.remove('active'));
+            document.getElementById('basis-'+mode).classList.add('active');
+            if(mode==='winner') {
+                const search=document.getElementById('winner-search');
+                const directory=document.getElementById('winner-directory');
+                search.style.display='block';
+                directory.style.display='grid';
+                search.value='';
+                document.getElementById('winner-result').innerHTML='';
+                renderWinnerDirectory('');
+            }
             window.scrollTo({top:0,behavior:'smooth'});
         }
         function renderStats() {
@@ -209,32 +225,47 @@
         function itemChips(items) {
             return '<div class="items">'+items.map(i=>'<span class="item-chip">'+esc((i.company?'['+i.company+'] ':'')+(i.num?'No.'+i.num+' ':'')+(i.name||'이름 없음'))+'</span>').join('')+'</div>';
         }
-        function smsText(group, ship) {
+        function companyShippingShare(group, company) {
+            return group.items.filter(i=>String(i.company||'').trim()===company).reduce((sum,i)=>sum+(Number(i.shipping_cost)||0),0);
+        }
+        function standardSmsText(group, ship, scopeCompany) {
+            const companies=scopeCompany?[scopeCompany]:group.companies;
+            const rows=companies.map(company=>`- ${company}: ${companyShippingShare(group,company).toLocaleString()}원`).join('\n');
+            const breakdown=scopeCompany?`■ ${scopeCompany} 배분 배송비: ${companyShippingShare(group,scopeCompany).toLocaleString()}원`:`■ 업체별 배분\n${rows}`;
+            return `[CDCUP ${ship.company||'합배송'} 배송비 안내]\n${group.name}님 배송비 정산 안내입니다.\n\n■ 배송방식: ${ship.label}\n■ 전체 합배송비: ${group.shippingCost.toLocaleString()}원\n${breakdown}\n\n도도시·파르게 합배송비는 개체 수 기준 1/N으로 나눈 금액입니다. 각 출품업체가 안내한 계좌로 업체별 배송비를 각각 입금해 주세요. 감사합니다.`;
+        }
+        function smsText(group, ship, scopeCompany) {
+            if(ship.company!=='랩팡') return standardSmsText(group,ship,scopeCompany);
             return `[CDCUP 랩팡 합배송비 안내]\n${group.name}님, ${group.companies.length}개 업체 ${group.items.length}개체의 합배송비 안내입니다.\n\n■ 배송지: ${ship.label}\n■ 합배송비: ${group.shippingCost.toLocaleString()}원\n■ 입금계좌: ${WRAPANG_ACCOUNT.bank} ${WRAPANG_ACCOUNT.number}\n■ 예금주: ${WRAPANG_ACCOUNT.holder}\n\n업체별로 나누어 보내지 마시고, 합배송비 총액을 위 계좌로 1회만 입금해 주세요. 감사합니다.`;
         }
-        function smsHref(group, ship) {
+        function smsHref(group, ship, scopeCompany) {
             const sep=/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?';
-            return 'sms:'+group.phone+sep+'body='+encodeURIComponent(smsText(group,ship));
+            return 'sms:'+group.phone+sep+'body='+encodeURIComponent(smsText(group,ship,scopeCompany));
         }
-        function paymentHtml(group, ship) {
-            if(ship.company!=='랩팡') return '';
-            return '<div class="payment"><div class="payment-title"><strong>랩팡 합배송비 · 1회 입금</strong><b>'+group.shippingCost.toLocaleString()+'원</b></div><div class="account">'+WRAPANG_ACCOUNT.bank+' '+WRAPANG_ACCOUNT.number+' · '+WRAPANG_ACCOUNT.holder+'</div><p>업체별로 나누지 않고 합배송 전체 금액을 위 계좌로 한 번만 입금합니다.</p><div class="payment-actions">'+(group.phone?'<a class="action" href="'+smsHref(group,ship)+'">문자 보내기</a>':'')+'<button class="action secondary" type="button" onclick="copyPaymentMessage(\''+esc(group.key)+'\')">문구 복사</button></div></div>';
+        function settlementHtml(group, ship, scopeCompany) {
+            if(ship.company==='랩팡') return '<div class="payment"><div class="payment-title"><strong>랩팡 합배송비 · 1회 입금</strong><b>'+group.shippingCost.toLocaleString()+'원</b></div><div class="account">'+WRAPANG_ACCOUNT.bank+' '+WRAPANG_ACCOUNT.number+' · '+WRAPANG_ACCOUNT.holder+'</div><p>업체별로 나누지 않고 합배송 전체 금액을 위 계좌로 한 번만 입금합니다.</p><div class="payment-actions">'+(group.phone?'<a class="action" href="'+smsHref(group,ship,scopeCompany)+'">문자 보내기</a>':'')+'<button class="action secondary" type="button" onclick="copyPaymentMessage(\''+esc(group.key)+'\',\''+esc(scopeCompany||'')+'\')">문구 복사</button></div></div>';
+            if(!['도도시','파르게'].includes(ship.company) || group.companies.length<2 || group.shippingCost<=0) return '';
+            const companies=scopeCompany?[scopeCompany]:group.companies;
+            const rows=companies.map(company=>'<div class="split-row"><span>'+esc(company)+'</span><strong>'+companyShippingShare(group,company).toLocaleString()+'원</strong></div>').join('');
+            const shownAmount=scopeCompany?companyShippingShare(group,scopeCompany):group.shippingCost;
+            const splitNote=scopeCompany?'전체 합배송비 '+group.shippingCost.toLocaleString()+'원 중 '+esc(scopeCompany)+' 배분액입니다. 각 업체 계좌로 각각 입금합니다.':'개체 수 기준으로 나눈 배송비를 각 출품업체가 안내한 계좌로 각각 입금합니다.';
+            return '<div class="payment split"><div class="payment-title"><strong>'+esc(ship.company)+' · 업체별 1/N 정산</strong><b>'+shownAmount.toLocaleString()+'원</b></div><p>'+splitNote+'</p><div class="split-list">'+rows+'</div><div class="payment-actions">'+(group.phone?'<a class="action" href="'+smsHref(group,ship,scopeCompany)+'">문자 보내기</a>':'')+'<button class="action secondary" type="button" onclick="copyPaymentMessage(\''+esc(group.key)+'\',\''+esc(scopeCompany||'')+'\')">문구 복사</button></div></div>';
         }
-        function recordHtml(group, scopedItems) {
+        function recordHtml(group, scopedItems, scopeCompany) {
             const meta=statusMeta(group.status), ship=shippingInfo(group), items=scopedItems||group.items;
-            return '<article class="record"><div class="record-top"><div class="record-person"><strong>'+esc(group.name)+'</strong><a href="tel:'+esc(group.phone)+'">'+esc(fmtPhone(group.phone))+'</a></div><span class="badge '+meta[1]+'">'+meta[0]+'</span></div><div class="record-grid"><div class="info-block"><span>관련 업체</span><strong>'+esc(group.companies.join(', ')||'-')+' · '+group.items.length+'개체</strong></div><div class="info-block"><span>배송 정보</span><strong>'+esc(ship.label)+(ship.memo?'<br>요청: '+esc(ship.memo):'')+'</strong></div><div class="info-block"><span>최종 등록·수정</span><strong>'+esc(fmtTime(group.latest))+'</strong></div></div>'+itemChips(items)+paymentHtml(group,ship)+'</article>';
+            return '<article class="record"><div class="record-top"><div class="record-person"><strong>'+esc(group.name)+'</strong><a href="tel:'+esc(group.phone)+'">'+esc(fmtPhone(group.phone))+'</a></div><span class="badge '+meta[1]+'">'+meta[0]+'</span></div><div class="record-grid"><div class="info-block"><span>관련 업체</span><strong>'+esc(group.companies.join(', ')||'-')+' · '+group.items.length+'개체</strong></div><div class="info-block"><span>배송 정보</span><strong>'+esc(ship.label)+(ship.memo?'<br>요청: '+esc(ship.memo):'')+'</strong></div><div class="info-block"><span>최종 등록·수정</span><strong>'+esc(fmtTime(group.latest))+'</strong></div></div>'+itemChips(items)+settlementHtml(group,ship,scopeCompany)+'</article>';
         }
         function renderCompany(company) {
             const box=document.getElementById('company-result');
             if(!company){box.innerHTML='<div class="empty">업체를 선택해 주세요.</div>';return;}
             const groups=winnerGroups.filter(g=>g.companies.includes(company));
             const scopedCount=soldItems.filter(i=>String(i.company||'').trim()===company).length;
-            box.innerHTML='<div class="result-head"><strong>'+esc(company)+'</strong><span>'+groups.length+'명 · '+scopedCount+'개체</span></div><div class="record-list">'+groups.map(g=>recordHtml(g,g.items.filter(i=>String(i.company||'').trim()===company))).join('')+'</div>';
+            box.innerHTML='<div class="result-head"><strong>'+esc(company)+'</strong><span>'+groups.length+'명 · '+scopedCount+'개체</span></div><div class="record-list">'+groups.map(g=>recordHtml(g,g.items.filter(i=>String(i.company||'').trim()===company),company)).join('')+'</div>';
         }
         function renderWinnerDirectory(query) {
             const q=String(query||'').replace(/[^0-9가-힣a-zA-Z]/g,'').toLowerCase();
             const list=winnerGroups.filter(g=>!q||(g.name+g.phone).replace(/[^0-9가-힣a-zA-Z]/g,'').toLowerCase().includes(q));
-            document.getElementById('winner-directory').innerHTML=list.length?list.map(g=>'<button class="directory-btn" type="button" onclick="renderWinner(\''+esc(g.key)+'\')"><span><strong>'+esc(g.name)+'</strong><span>'+esc(fmtPhone(g.phone))+' · '+esc(g.companies.join(', '))+'</span></span><em>'+g.items.length+'개체</em></button>').join(''):'<div class="empty">검색 결과가 없습니다.</div>';
+            document.getElementById('winner-directory').innerHTML=list.length?list.map(g=>{const meta=statusMeta(g.status);return '<button class="directory-btn" type="button" onclick="renderWinner(\''+esc(g.key)+'\')"><span class="directory-main"><strong>'+esc(g.name)+'</strong><span class="directory-meta">'+esc(fmtPhone(g.phone))+' · '+esc(g.companies.join(', '))+'</span></span><span class="directory-side"><span class="badge '+meta[1]+'">'+meta[0]+'</span><em>'+g.items.length+'개체</em></span></button>';}).join(''):'<div class="empty">검색 결과가 없습니다.</div>';
         }
         function renderWinner(key) {
             const group=winnerGroups.find(g=>g.key===key), box=document.getElementById('winner-result');
@@ -255,9 +286,9 @@
             search.focus();
             window.scrollTo({top:0,behavior:'smooth'});
         }
-        async function copyPaymentMessage(key) {
+        async function copyPaymentMessage(key, scopeCompany) {
             const group=winnerGroups.find(g=>g.key===key); if(!group) return;
-            const text=smsText(group,shippingInfo(group));
+            const text=smsText(group,shippingInfo(group),scopeCompany||'');
             try { await navigator.clipboard.writeText(text); showToast('문자 안내 문구를 복사했습니다.'); }
             catch(e){ const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();showToast('문자 안내 문구를 복사했습니다.'); }
         }
@@ -265,7 +296,7 @@
         async function loadData() {
             document.getElementById('loading').style.display='grid';
             try { const items=await getItems(); soldItems=(items||[]).filter(i=>i.status&&i.status.includes('낙찰')); buildGroups(); renderStats(); populateCompanies(); renderWinnerDirectory(''); }
-            catch(e){ console.error(e); document.getElementById('mode-home').innerHTML='<div class="empty">데이터를 불러오지 못했습니다.</div>'; }
+            catch(e){ console.error(e); document.getElementById('mode-winner').innerHTML='<div class="empty">데이터를 불러오지 못했습니다.</div>'; }
             finally { document.getElementById('loading').style.display='none'; }
         }
         async function reloadData(button){const text=button.textContent;button.disabled=true;button.textContent='갱신 중...';await loadData();button.disabled=false;button.textContent=text;showToast('최신 등록 내역으로 갱신했습니다.');}
