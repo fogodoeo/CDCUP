@@ -2518,8 +2518,8 @@
                 return `- ${company}: ${names} / ${bid.toLocaleString()}원`;
             });
             const contactText=companies.length===1
-                ? `${companies[0]} 낙찰분은 ${companies[0]}에 연락해 결제 안내를 받아 주세요.`
-                : `${companies.join('·')} 낙찰분은 각 업체에 연락해 결제 안내를 받아 주세요.`;
+                ? `${companies[0]} 낙찰분은 ${companies[0]}의 연락을 받으신 후 결제해 주세요.`
+                : `${companies.join('·')} 낙찰분은 각 업체의 연락을 받으신 후 결제해 주세요.`;
             return `\n\n[별도 결제 낙찰분]\n${lines.join('\n')}\n${contactText}`;
         }
 
