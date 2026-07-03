@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260703-archive-system"></script>
+    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
     <script src="assets/vendor/xlsx.mini.min.js?v=0.18.5"></script>
     <link rel="stylesheet" as="style" crossorigin
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
@@ -2532,8 +2532,7 @@
                 <label for="f-auction-type">경매 구분</label>
                 <select id="f-auction-type" aria-label="경매 구분">
                     <option value="tournament">토너먼트 후보</option>
-                    <option value="event">이벤트 매치</option>
-                    <option value="extra">추가 경매</option>
+                    <option value="extra">일반 경매</option>
                 </select>
             </div>
 
@@ -4108,7 +4107,7 @@
                 '<div class="item-entry" style="margin:0;">' +
                 '<div style="font-size:16px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:6px;margin-bottom:12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> 정보 수정</div>' +
                 '<div class="entry-fields"><div class="ef" style="flex:1"><label>업체명</label><input type="text" id="ed-c-' + row + '" value="' + esc(it.company) + '"></div><div class="ef" style="flex:1"><label>개체명 *</label><input type="text" id="ed-n-' + row + '" value="' + esc(it.name) + '"></div></div>' +
-                '<div class="entry-fields"><div class="ef"><label>경매 구분</label><select id="ed-auction-' + row + '"><option value="tournament"' + (currentAuctionType === 'tournament' ? ' selected' : '') + '>토너먼트</option><option value="event"' + (currentAuctionType === 'event' ? ' selected' : '') + '>이벤트 매치</option><option value="extra"' + (currentAuctionType === 'extra' ? ' selected' : '') + '>추가 경매</option></select></div></div>' +
+                '<div class="entry-fields"><div class="ef"><label>경매 구분</label><select id="ed-auction-' + row + '"><option value="tournament"' + (currentAuctionType === 'tournament' ? ' selected' : '') + '>토너먼트</option><option value="extra"' + (currentAuctionType !== 'tournament' ? ' selected' : '') + '>일반 경매</option></select></div></div>' +
                 '<div class="entry-fields"><div class="ef" style="flex:1"><label>시작가</label><input type="text" id="ed-p-' + row + '" value="' + esc(it.startPrice) + '" placeholder="미입력 시 1만" inputmode="numeric"></div><div class="ef" style="flex:1"><label>특이사항</label><input type="text" id="ed-note-' + row + '" value="' + esc(it.note || '') + '" placeholder="특이사항"></div></div>' +
                 '<div class="entry-fields"><div class="ef"><label>안내문구</label><input type="text" id="ed-ann-' + row + '" value="' + esc(it.announce || '') + '" placeholder="경매 시 안내할 문구"></div></div>' +
                 '<div class="photo-row-mini">' +

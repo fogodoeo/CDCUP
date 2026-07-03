@@ -33,10 +33,10 @@ function getItemAuctionMeta(itemOrChecklist, fallbackName) {
     const name = String(item ? (item.name || '') : (fallbackName || '')).trim();
     const pairs = _checklistPairs(checklist);
     const storedType = String(pairs._auction || '').toLowerCase();
-    // 이벤트/추가 경매의 E2 같은 실제 개체명을 예전 팀 코드로 오인하지 않는다.
+    // 일반 경매의 E2 같은 실제 개체명을 예전 팀 코드로 오인하지 않는다.
     const legacy = [AUCTION_TYPES.EVENT, AUCTION_TYPES.EXTRA].includes(storedType)
         ? null
-        : name.toUpperCase().match(/^([A-P])\s*[-_]?\s*([1-4])(?=\s|[-·:]|$)/);
+        : name.toUpperCase().match(/^([A-P])\s*[-_]?\s*([1-9]\d*)(?=\s|[-·:]|$)/);
     const tournamentCode = String(pairs._slot || (legacy ? legacy[1] + legacy[2] : '')).toUpperCase();
     const teamCode = String(pairs._team || (tournamentCode ? tournamentCode.charAt(0) : '')).toUpperCase();
     const tournamentStage = Number.parseInt(pairs._stage, 10) || 0;
@@ -78,13 +78,13 @@ function isTournamentAuctionItem(item) {
 
 function auctionTypeLabel(itemOrType) {
     const type = typeof itemOrType === 'string' ? itemOrType : getItemAuctionMeta(itemOrType).auctionType;
-    return type === AUCTION_TYPES.TOURNAMENT ? '토너먼트' : (type === AUCTION_TYPES.EVENT ? '이벤트 매치' : '추가 경매');
+    return type === AUCTION_TYPES.TOURNAMENT ? '토너먼트' : '일반 경매';
 }
 
 function auctionStageLabel(item) {
     const meta = getItemAuctionMeta(item);
     if (meta.auctionType === AUCTION_TYPES.TOURNAMENT) return meta.tournamentStage ? meta.tournamentStage + '강' : '토너먼트';
-    return meta.auctionType === AUCTION_TYPES.EVENT ? '이벤트 매치' : '추가 경매';
+    return '일반 경매';
 }
 
 function auctionNumber(itemOrNumber) {
@@ -661,7 +661,7 @@ async function rebuildTournamentItems(assignments, pw) {
         const id = Number(assignment.row);
         const code = String(assignment.code || "").trim().toUpperCase();
         const stage = Number.parseInt(assignment.stage, 10) || 0;
-        if (!Number.isInteger(id) || id <= 0 || !/^[A-Z][1-4]$/.test(code)) {
+        if (!Number.isInteger(id) || id <= 0 || !/^[A-Z][1-9]\d*$/.test(code)) {
             return { success: false, error: "개체 편성 데이터가 올바르지 않습니다." };
         }
         if (seenIds.has(id) || seenCodes.has(code)) {
@@ -725,7 +725,7 @@ async function rebuildTournamentItems(assignments, pw) {
     const legacyLetters = [...new Set(extras.map(item => getItemAuctionMeta({ name: item.name, checklist: item.checklist, num: item.num })).filter(meta => meta.auctionType === AUCTION_TYPES.TOURNAMENT && !meta.tournamentStage && meta.teamCode).map(meta => meta.teamCode))];
     const legacyScale = [2, 4, 8, 16].find(scale => legacyLetters.length <= scale) || 16;
 
-    // 토너먼트 개체만 상태를 초기화하고 이벤트/추가 경매는 보존한 채 뒤 번호로 이어 붙인다.
+    // 토너먼트 개체만 상태를 초기화하고 일반 경매는 보존한 채 뒤 번호로 이어 붙인다.
     await _sbFetch('items?on_conflict=id', {
         method: 'POST',
         headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
