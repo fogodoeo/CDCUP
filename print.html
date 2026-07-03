@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260703-auction-system"></script>
+    <script src="supabase-bridge.js?v=20260703-archive-system"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
@@ -573,7 +573,7 @@
             var w = parseWinner(it.winner);
             var shortName = truncatePrintName(it.name, 10);
             var r = '<tr>';
-            r += '<td class="col-num">' + (it.publicNumber || it.num || '') + '</td>';
+            r += '<td class="col-num">' + auctionNumber(it) + '</td>';
             r += '<td>' + auctionStageLabel(it) + '</td>';
             r += '<td class="col-name-sm">' + shortName + '</td>';
             if (showCompany) r += '<td class="col-company">' + (it.company || '') + '</td>';
@@ -608,7 +608,7 @@
                 var info = infoParts.join(' / ');
                 var shortName = truncatePrintName(it.name, 10);
                 lhtml += '<tr>';
-                lhtml += '<td class="col-num">' + (it.publicNumber || it.num || '') + '</td>';
+                lhtml += '<td class="col-num">' + auctionNumber(it) + '</td>';
                 lhtml += '<td>' + auctionStageLabel(it) + '</td>';
                 lhtml += '<td class="col-name">' + shortName + '</td>';
                 lhtml += '<td class="col-company">' + (it.company || '') + '</td>';
@@ -850,7 +850,7 @@
                         chtml += '<td class="col-company" rowspan="' + list.length + '" style="' + compStyle + '">'
                             + company + '<br><span style="font-size:9pt;font-weight:500;color:#888;">' + fmtPrice(companySales) + '</span></td>';
                     }
-                    chtml += '<td class="col-num">' + (it.publicNumber || it.num || '') + '</td>';
+                    chtml += '<td class="col-num">' + auctionNumber(it) + '</td>';
                     chtml += '<td>' + auctionStageLabel(it) + '</td>';
                     chtml += '<td class="col-name-sm">' + truncatePrintName(it.name, 10) + '</td>';
                     chtml += '<td class="col-result-price">' + (it.soldPrice ? fmtPrice(it.soldPrice) : '') + '</td>';

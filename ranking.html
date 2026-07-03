@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>종합 순위표 | CDCUP</title>
-    <script src="supabase-bridge.js?v=20260703-auction-system"></script>
+    <script src="supabase-bridge.js?v=20260703-archive-system"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
@@ -888,7 +888,7 @@
             list.innerHTML = sideAuctionRows.map(item => {
                 const price = Number.parseFloat(item.sold_price || item.soldPrice || 0) || 0;
                 const meta = getItemAuctionMeta(item);
-                return `<article class="side-auction-row"><span class="side-auction-no">NO. ${escapeHtml(meta.publicNumber || item.num || '-')}</span><span class="side-auction-type">${escapeHtml(auctionStageLabel(item))}</span><span class="side-auction-copy"><strong>${escapeHtml(meta.publicName)}</strong><span>${escapeHtml(item.company || '업체 미정')}</span></span><span class="side-auction-price">${price ? formatAmount(price) + '만원' : escapeHtml(item.status || '-')}</span></article>`;
+                return `<article class="side-auction-row"><span class="side-auction-no">${auctionNumber(item)}</span><span class="side-auction-type">${escapeHtml(auctionStageLabel(item))}</span><span class="side-auction-copy"><strong>${escapeHtml(meta.publicName)}</strong><span>${escapeHtml(item.company || '업체 미정')}</span></span><span class="side-auction-price">${price ? formatAmount(price) + '만원' : escapeHtml(item.status || '-')}</span></article>`;
             }).join('');
         }
 

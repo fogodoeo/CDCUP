@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260703-auction-system"></script>
+    <script src="supabase-bridge.js?v=20260703-archive-system"></script>
     <script src="assets/vendor/xlsx.mini.min.js?v=0.18.5"></script>
     <link rel="stylesheet" as="style" crossorigin
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
@@ -2439,6 +2439,50 @@
             .entry-fields { flex-wrap: wrap; }
             .entry-fields .ef { min-width: 100%; }
         }
+
+        .archive-hero { background:linear-gradient(135deg,#111827,#1F2937);color:#fff;border-radius:16px;padding:20px;margin-bottom:16px; }
+        .archive-hero h2 { margin:0 0 6px;font-size:20px; }
+        .archive-hero p { margin:0;color:#CBD5E1;font-size:13px;line-height:1.6; }
+        .archive-create { display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;margin-top:16px; }
+        .archive-create input { min-width:0;border:1px solid #475569;background:#fff;color:#111827;border-radius:10px;padding:11px 12px;font-size:14px; }
+        .archive-action { border:0;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:750;cursor:pointer;white-space:nowrap; }
+        .archive-action.save { background:#E5E7EB;color:#111827; }
+        .archive-action.reset { background:#2563EB;color:#fff; }
+        .archive-action:disabled { opacity:.55;cursor:wait; }
+        .archive-guide { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px; }
+        .archive-guide div { background:#F8FAFC;border:1px solid #E5E7EB;border-radius:12px;padding:12px;color:#475569;font-size:12px;line-height:1.55; }
+        .archive-guide strong { display:block;color:#111827;font-size:13px;margin-bottom:2px; }
+        .archive-list { display:grid;gap:10px; }
+        .archive-card { display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid #E5E7EB;background:#fff;border-radius:14px;padding:15px; }
+        .archive-card h3 { margin:0;color:#111827;font-size:15px; }
+        .archive-meta { display:flex;flex-wrap:wrap;gap:5px 10px;margin-top:6px;color:#64748B;font-size:11px; }
+        .archive-stages { margin-top:8px;color:#334155;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .archive-open { border:1px solid #D1D5DB;background:#fff;color:#111827;border-radius:9px;padding:8px 11px;font-weight:700;font-size:12px;cursor:pointer; }
+        .archive-empty { text-align:center;padding:36px 12px;color:#64748B;border:1px dashed #CBD5E1;border-radius:14px;background:#F8FAFC; }
+        .archive-detail { display:none;margin-top:18px;border-top:1px solid #E5E7EB;padding-top:18px; }
+        .archive-detail.show { display:block; }
+        .archive-detail-head { display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px; }
+        .archive-detail-head h3 { margin:0;font-size:17px;color:#111827; }
+        .archive-detail-head p { margin:4px 0 0;font-size:12px;color:#64748B; }
+        .archive-detail-actions { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px; }
+        .archive-detail-actions button { border:1px solid #D1D5DB;background:#fff;color:#111827;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer; }
+        .archive-detail-actions .restore { color:#B42318;border-color:#FECACA;background:#FFF7F7; }
+        .archive-table-wrap { overflow:auto;border:1px solid #E5E7EB;border-radius:12px; }
+        .archive-table { width:100%;border-collapse:collapse;min-width:660px;font-size:12px; }
+        .archive-table th { position:sticky;top:0;background:#F8FAFC;color:#475569;text-align:left;padding:9px;border-bottom:1px solid #E5E7EB; }
+        .archive-table td { padding:9px;border-bottom:1px solid #F1F5F9;color:#1F2937; }
+        .archive-table tr:last-child td { border-bottom:0; }
+        .archive-table .money { text-align:right;font-variant-numeric:tabular-nums;font-weight:700; }
+        @media (max-width: 700px) {
+            .cdcup-tabs { overflow-x:auto;scrollbar-width:none; }
+            .cdcup-tabs .cdcup-tab { flex:0 0 auto; }
+            .archive-hero { padding:16px;border-radius:14px; }
+            .archive-create { grid-template-columns:1fr 1fr; }
+            .archive-create input { grid-column:1/-1; }
+            .archive-action { padding:10px 8px;font-size:12px; }
+            .archive-guide { grid-template-columns:1fr; }
+            .archive-card { padding:13px; }
+        }
     </style>
 </head>
 
@@ -2475,6 +2519,7 @@
             <button class="cdcup-tab tab-btn" onclick="showTab('register',this)">등록</button>
             <button class="cdcup-tab tab-btn active" onclick="showTab('list',this)">목록</button>
             <button class="cdcup-tab tab-btn" onclick="showTab('print',this)">인쇄</button>
+            <button class="cdcup-tab tab-btn" onclick="showTab('archive',this)">회차 기록</button>
             <span style="margin-left: auto;"></span>
             <a href="summary.html" class="cdcup-tab" style="text-decoration: none; font-size: 13px;">📊 경매결과 조회</a>
             <a href="shipping.html" class="cdcup-tab" style="text-decoration: none; font-size: 13px; color: #60a5fa; font-weight: 700; margin-left: 10px;">🚚 배송 정보 관리</a>
@@ -2520,6 +2565,25 @@
             </div>
 
             <div id="item-list"></div>
+        </div>
+
+        <!-- ═══ 회차 기록 탭 ═══ -->
+        <div id="tab-archive" class="section">
+            <div class="archive-hero">
+                <h2>회차 기록</h2>
+                <p>현재 개체·낙찰·배송·대진·방송 설정을 한 시점으로 보관합니다. 저장된 개체는 나중에 골라서 새 경매에 다시 등록할 수 있습니다.</p>
+                <div class="archive-create">
+                    <input id="archive-title" type="text" maxlength="80" placeholder="예: CDCUP 1회차 · 8강 종료">
+                    <button class="archive-action save" type="button" onclick="saveCurrentArchive(false,this)">현재 상태 저장</button>
+                    <button class="archive-action reset" type="button" onclick="saveCurrentArchive(true,this)">저장 후 새 회차</button>
+                </div>
+            </div>
+            <div class="archive-guide">
+                <div><strong>라운드가 바뀔 때</strong>현재 상태 저장만 누른 뒤 4강·결승 개체를 이어서 편성합니다.</div>
+                <div><strong>대회가 끝났을 때</strong>저장 후 새 회차를 누르면 기록을 남긴 뒤 개체 목록과 대진 진행값만 초기화합니다.</div>
+            </div>
+            <div id="archive-list" class="archive-list"><div class="archive-empty">기록을 불러오는 중입니다.</div></div>
+            <div id="archive-detail" class="archive-detail"></div>
         </div>
 
         <!-- 하단 고정 삭제 바 -->
@@ -2833,7 +2897,7 @@
             btn.classList.add('active');
             document.getElementById('tab-' + tab).classList.add('active');
             // 헤더 타이틀 갱신
-            const titles = { register: '개체 등록', list: '개체 목록', print: '인쇄' };
+            const titles = { register: '개체 등록', list: '개체 목록', print: '인쇄', archive: '회차 기록' };
             const h1 = document.getElementById('header-title');
             if (h1) {
                 h1.style.opacity = '0';
@@ -2841,6 +2905,155 @@
             }
             if (tab === 'list') loadList();
             if (tab === 'print') loadPrint();
+            if (tab === 'archive') loadArchiveList();
+        }
+
+        let activeArchiveId = '';
+
+        function archiveDate(value) {
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return '-';
+            return new Intl.DateTimeFormat('ko-KR', {
+                year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+            }).format(date);
+        }
+
+        function archiveAmount(value) {
+            const number = Number(value) || 0;
+            return number.toLocaleString('ko-KR') + '만원';
+        }
+
+        function archiveDefaultTitle() {
+            const now = new Date();
+            return 'CDCUP ' + now.getFullYear() + '.' + String(now.getMonth() + 1).padStart(2, '0') + '.' + String(now.getDate()).padStart(2, '0');
+        }
+
+        async function loadArchiveList() {
+            const list = document.getElementById('archive-list');
+            const title = document.getElementById('archive-title');
+            if (title && !title.value) title.value = archiveDefaultTitle();
+            list.innerHTML = '<div class="archive-empty">기록을 불러오는 중입니다.</div>';
+            try {
+                const archives = await listAuctionArchives();
+                if (!archives || !archives.length) {
+                    list.innerHTML = '<div class="archive-empty">아직 저장된 회차가 없습니다.<br>현재 상태 저장으로 첫 기록을 만들어보세요.</div>';
+                    return;
+                }
+                list.innerHTML = archives.map(archive => {
+                    const stages = Object.entries(archive.stageCounts || {}).map(([key, count]) => key + ' ' + count + '개체').join(' · ');
+                    return '<article class="archive-card">' +
+                        '<div><h3>' + esc(archive.title || '제목 없는 기록') + '</h3>' +
+                        '<div class="archive-meta"><span>' + archiveDate(archive.createdAt) + '</span><span>전체 ' + Number(archive.itemCount || 0) + '개체</span><span>낙찰 ' + Number(archive.soldCount || 0) + '개체</span><span>낙찰 합계 ' + archiveAmount(archive.totalSoldAmount) + '</span></div>' +
+                        '<div class="archive-stages">' + esc(stages || '분류 없음') + '</div></div>' +
+                        '<button class="archive-open" type="button" onclick="openArchiveDetail(\'' + archive.id + '\')">내역 보기</button></article>';
+                }).join('');
+            } catch (error) {
+                list.innerHTML = '<div class="archive-empty">기록을 불러오지 못했습니다.<br>' + esc(error.message) + '</div>';
+            }
+        }
+
+        async function saveCurrentArchive(resetAfter, button) {
+            const titleInput = document.getElementById('archive-title');
+            const title = (titleInput.value || archiveDefaultTitle()).trim();
+            if (resetAfter && !confirm('현재 상태를 먼저 저장한 뒤 새 회차를 시작합니다.\n\n현재 개체 목록과 16강~결승 대진 진행값은 초기화되고, 룰·로고·방송 디자인 설정은 유지됩니다. 계속할까요?')) return;
+            const pw = getAdminPw();
+            if (!pw) return;
+            button.disabled = true;
+            const original = button.textContent;
+            button.textContent = resetAfter ? '저장·초기화 중...' : '저장 중...';
+            try {
+                const result = resetAfter
+                    ? await archiveAndResetAuction(title, pw)
+                    : await createAuctionArchive(title, pw);
+                if (!result || result.success === false) {
+                    if (String(result?.error || '').includes('비밀번호')) clearAdminPw();
+                    throw new Error(result?.error || '처리하지 못했습니다.');
+                }
+                toast(resetAfter ? '기록 저장 완료 · 새 회차 준비 완료' : '현재 상태를 기록했습니다.');
+                titleInput.value = archiveDefaultTitle();
+                activeArchiveId = '';
+                document.getElementById('archive-detail').classList.remove('show');
+                await loadArchiveList();
+            } catch (error) {
+                toast(error.message, true);
+            } finally {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        }
+
+        async function openArchiveDetail(id) {
+            const detail = document.getElementById('archive-detail');
+            activeArchiveId = id;
+            detail.classList.add('show');
+            detail.innerHTML = '<div class="archive-empty">상세 내역을 불러오는 중입니다.</div>';
+            detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            try {
+                const archive = await getAuctionArchive(id);
+                if (!archive) throw new Error('기록을 찾을 수 없습니다.');
+                const items = archive.items || [];
+                const rows = items.map((item, index) => {
+                    const price = item.sold_price ? archiveAmount(item.sold_price) : '-';
+                    return '<tr><td><input class="archive-item-check" type="checkbox" value="' + index + '"></td>' +
+                        '<td>' + auctionNumber(item) + '</td><td>' + esc(auctionStageLabel(item)) + '</td><td>' + esc(item.company || '-') + '</td>' +
+                        '<td>' + esc(getItemAuctionMeta(item).publicName || item.name || '-') + '</td><td>' + esc(item.status || '-') + '</td>' +
+                        '<td>' + esc(item.winner || '-') + '</td><td class="money">' + price + '</td></tr>';
+                }).join('');
+                detail.innerHTML = '<div class="archive-detail-head"><div><h3>' + esc(archive.title || '제목 없는 기록') + '</h3><p>' + archiveDate(archive.createdAt) + ' · ' + items.length + '개체</p></div>' +
+                    '<button class="archive-open" type="button" onclick="closeArchiveDetail()">닫기</button></div>' +
+                    '<div class="archive-detail-actions"><button type="button" onclick="toggleArchiveItems(this)">전체 선택</button><button type="button" onclick="reuseArchiveItems(this)">선택 개체 현재 목록에 복사</button><button class="restore" type="button" onclick="restoreArchiveState(this)">이 시점 전체 복원</button></div>' +
+                    '<div class="archive-table-wrap"><table class="archive-table"><thead><tr><th></th><th>번호</th><th>구분</th><th>업체</th><th>개체명</th><th>상태</th><th>낙찰자</th><th style="text-align:right">낙찰가</th></tr></thead><tbody>' +
+                    (rows || '<tr><td colspan="8" style="text-align:center;padding:28px;color:#64748B">저장된 개체가 없습니다.</td></tr>') + '</tbody></table></div>';
+            } catch (error) {
+                detail.innerHTML = '<div class="archive-empty">' + esc(error.message) + '</div>';
+            }
+        }
+
+        function closeArchiveDetail() {
+            activeArchiveId = '';
+            const detail = document.getElementById('archive-detail');
+            detail.classList.remove('show');
+            detail.innerHTML = '';
+        }
+
+        function toggleArchiveItems(button) {
+            const checks = Array.from(document.querySelectorAll('#archive-detail .archive-item-check'));
+            const shouldCheck = checks.some(check => !check.checked);
+            checks.forEach(check => { check.checked = shouldCheck; });
+            button.textContent = shouldCheck ? '전체 해제' : '전체 선택';
+        }
+
+        async function reuseArchiveItems(button) {
+            const selected = Array.from(document.querySelectorAll('#archive-detail .archive-item-check:checked')).map(check => Number(check.value));
+            if (!selected.length) { toast('재사용할 개체를 선택해주세요.', true); return; }
+            if (!confirm(selected.length + '개체를 현재 목록에 대기 상태로 복사할까요?\n낙찰자·낙찰가·배송·라운드 배정은 비우고 새 번호를 부여합니다.')) return;
+            const pw = getAdminPw();
+            if (!pw) return;
+            button.disabled = true;
+            try {
+                const result = await copyAuctionArchiveItems(activeArchiveId, selected, pw);
+                if (!result || result.success === false) throw new Error(result?.error || '복사하지 못했습니다.');
+                toast(result.count + '개체를 현재 목록에 복사했습니다.');
+            } catch (error) {
+                if (String(error.message).includes('비밀번호')) clearAdminPw();
+                toast(error.message, true);
+            } finally { button.disabled = false; }
+        }
+
+        async function restoreArchiveState(button) {
+            if (!confirm('현재 전체 상태를 이 기록 시점으로 교체할까요?\n현재 목록이 있으면 먼저 “복원 전 자동 백업”으로 보관한 뒤 복원합니다.')) return;
+            const pw = getAdminPw();
+            if (!pw) return;
+            button.disabled = true;
+            try {
+                const result = await restoreAuctionArchive(activeArchiveId, pw);
+                if (!result || result.success === false) throw new Error(result?.error || '복원하지 못했습니다.');
+                toast(result.count + '개체와 당시 설정을 복원했습니다.');
+                await loadArchiveList();
+            } catch (error) {
+                if (String(error.message).includes('비밀번호')) clearAdminPw();
+                toast(error.message, true);
+            } finally { button.disabled = false; }
         }
 
         // ── 개체 행 추가 ──
@@ -2854,7 +3067,7 @@
             div.id = 'entry-' + id;
             div.innerHTML = `
     <div class="entry-header">
-      <span class="entry-num">#${entries.length}</span>
+      <span class="entry-num">${String(entries.length).padStart(3, '0')}</span>
       <button class="entry-del" onclick="removeEntry(${id})">✕</button>
     </div>
     <div class="entry-fields">
@@ -3408,7 +3621,7 @@
             } catch (e) { }
             const cl = parseChecklist(it.checklist);
             const detailIsActive = getStatusClass(it.status || '') === 'st-active';
-            const detailTitle = (detailIsActive ? '' : '#' + esc(it.publicNumber || it.num) + ' ') + esc(it.name);
+            const detailTitle = (detailIsActive ? '' : auctionNumber(it) + ' · ') + esc(it.name);
             let d = '<div class="card-detail-inner" style="background:#F9FAFB; padding:20px; min-height:100%; border-radius:12px;">';
             d += '<div style="font-size:18px; font-weight:800; color:var(--text-title); margin-bottom:16px;">' + detailTitle + '</div>';
             var photos = [];
@@ -3620,7 +3833,7 @@
                     // 정보 (번호, 이름, 업체)
                     '<div class="card-info">' +
                     '<div style="display:flex;align-items:center;gap:6px;">' +
-                    (isActive ? '' : '<span style="font-size:10px;font-weight:700;color:var(--text3);background:#F3F4F6;padding:1px 4px;border-radius:2px;letter-spacing:-0.03em;">' + (it.publicNumber || it.num || '-') + '</span>') +
+                    (isActive ? '' : '<span style="font-size:10px;font-weight:700;color:var(--text3);background:#F3F4F6;padding:1px 4px;border-radius:2px;letter-spacing:.04em;">' + auctionNumber(it) + '</span>') +
                     '<span style="font-size:9px;font-weight:750;color:' + (it.auctionType === 'tournament' ? '#2563EB' : '#9A6700') + ';background:' + (it.auctionType === 'tournament' ? '#EFF6FF' : '#FFF7E8') + ';padding:2px 5px;border-radius:3px;white-space:nowrap;">' + esc(auctionStageLabel(it)) + '</span>' +
                     '<span class="item-name">' + esc(it.name) + '</span>' +
                     '</div>' +
@@ -4203,7 +4416,7 @@
             var w = parseWinnerP(it.winner);
             var shortName = truncatePrintListName(it.name, 10);
             var r = '<tr>';
-            r += '<td class="pnum">' + (it.publicNumber || it.num || '-') + '</td>';
+            r += '<td class="pnum">' + auctionNumber(it) + '</td>';
             r += '<td class="ptype">' + auctionStageLabel(it) + '</td>';
             if (showCo) r += '<td class="pcomp">' + (it.company || '') + '</td>';
             r += '<td class="pname">' + shortName + '</td>';
@@ -4243,7 +4456,7 @@
                 var cl = pChecklist(it.checklist), info = []; var t = pTraits(cl); if (t) info.push(t); if (it.note) info.push(it.note);
                 var infoStr = info.join(' / ');
                 var shortName = truncatePrintListName(it.name, 10);
-                lh += '<tr><td class="pnum">' + (it.publicNumber || it.num || '-') + '</td><td class="ptype">' + auctionStageLabel(it) + '</td><td class="pcomp">' + (it.company || '') + '</td><td class="pname">' + shortName + '</td><td class="pinfo" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + infoStr + '</td></tr>';
+                lh += '<tr><td class="pnum">' + auctionNumber(it) + '</td><td class="ptype">' + auctionStageLabel(it) + '</td><td class="pcomp">' + (it.company || '') + '</td><td class="pname">' + shortName + '</td><td class="pinfo" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + infoStr + '</td></tr>';
             });
             lh += '</tbody></table>';
             document.getElementById('pl-body').innerHTML = lh;
@@ -4311,7 +4524,7 @@
                 var winner = parseWinnerP(it.winner);
                 var soldPrice = it.soldPrice === '' || it.soldPrice == null ? '' : Number(it.soldPrice);
                 return [
-                    Number(it.publicNumber || it.num) || '',
+                    auctionNumber(it),
                     auctionStageLabel(it),
                     it.company || '',
                     it.name || '',
@@ -4528,7 +4741,7 @@
                     var sx = st.indexOf('낙찰') >= 0 ? '낙찰' : st;
                     var shortName = truncatePrintListName(it.name, 10);
                     ch += '<tr class="pc-selected-row">';
-                    ch += '<td class="pnum">' + (it.publicNumber || it.num || '-') + '</td>';
+                    ch += '<td class="pnum">' + auctionNumber(it) + '</td>';
                     ch += '<td class="ptype">' + auctionStageLabel(it) + '</td>';
                     ch += '<td class="pcomp" style="font-weight:700;white-space:nowrap;">' + esc((it.company || '').trim() || '(미입력)') + '</td>';
                     ch += '<td class="pname">' + esc(shortName) + '</td>';
@@ -4636,7 +4849,7 @@
                         ch += '<td rowspan="' + grp.items.length + '" class="pphone" style="vertical-align:middle;text-align:center;">' + fmtPhoneP(grp.phone) + '</td>';
                     }
 
-                    ch += '<td class="pnum">' + (it.publicNumber || it.num || '-') + '</td>';
+                    ch += '<td class="pnum">' + auctionNumber(it) + '</td>';
                     ch += '<td class="ptype">' + auctionStageLabel(it) + '</td>';
                     var compStyle = isOtherCo ? 'color:#999;' : 'font-weight:700;';
                     var shortName = truncatePrintListName(it.name, 10);

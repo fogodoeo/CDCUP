@@ -32,12 +32,15 @@ function getItemAuctionMeta(itemOrChecklist, fallbackName) {
     const checklist = item ? item.checklist : itemOrChecklist;
     const name = String(item ? (item.name || '') : (fallbackName || '')).trim();
     const pairs = _checklistPairs(checklist);
-    const legacy = name.toUpperCase().match(/^([A-P])\s*[-_]?\s*([1-4])(?=\s|[-·:]|$)/);
+    const storedType = String(pairs._auction || '').toLowerCase();
+    // 이벤트/추가 경매의 E2 같은 실제 개체명을 예전 팀 코드로 오인하지 않는다.
+    const legacy = [AUCTION_TYPES.EVENT, AUCTION_TYPES.EXTRA].includes(storedType)
+        ? null
+        : name.toUpperCase().match(/^([A-P])\s*[-_]?\s*([1-4])(?=\s|[-·:]|$)/);
     const tournamentCode = String(pairs._slot || (legacy ? legacy[1] + legacy[2] : '')).toUpperCase();
     const teamCode = String(pairs._team || (tournamentCode ? tournamentCode.charAt(0) : '')).toUpperCase();
     const tournamentStage = Number.parseInt(pairs._stage, 10) || 0;
     const publicNumber = Number.parseInt(pairs._label || (item ? item.num : ''), 10) || 0;
-    const storedType = String(pairs._auction || '').toLowerCase();
     const auctionType = Object.values(AUCTION_TYPES).includes(storedType)
         ? storedType
         : (tournamentCode ? AUCTION_TYPES.TOURNAMENT : AUCTION_TYPES.EXTRA);
@@ -84,10 +87,17 @@ function auctionStageLabel(item) {
     return meta.auctionType === AUCTION_TYPES.EVENT ? '이벤트 매치' : '추가 경매';
 }
 
+function auctionNumber(itemOrNumber) {
+    const value = itemOrNumber && typeof itemOrNumber === 'object'
+        ? (getItemAuctionMeta(itemOrNumber).publicNumber || itemOrNumber.num)
+        : itemOrNumber;
+    const number = Number.parseInt(value, 10);
+    return Number.isFinite(number) && number > 0 ? String(number).padStart(3, '0') : '---';
+}
+
 function auctionItemLabel(item, options = {}) {
     const meta = getItemAuctionMeta(item);
-    const number = Number.parseInt(meta.publicNumber || item?.num, 10);
-    const prefix = Number.isFinite(number) ? 'NO. ' + number : 'NO. -';
+    const prefix = auctionNumber(item);
     const team = options.includeTeam && meta.teamCode ? ' · ' + meta.teamCode + '팀' : '';
     return prefix + (meta.publicName ? ' · ' + meta.publicName : '') + team;
 }
@@ -892,6 +902,233 @@ async function updateConfigs(configMap) {
         headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
         body: JSON.stringify(payloads),
     });
+}
+
+// ── 회차/라운드 아카이브 ──
+// 별도 테이블 없이 config에 스냅샷을 저장한다. admin_pw와 아카이브 자체는 재귀 저장하지 않는다.
+const AUCTION_ARCHIVE_INDEX_KEY = 'auction_archive_index';
+const AUCTION_ARCHIVE_KEY_PREFIX = 'auction_archive_';
+
+function _archiveSafeConfigs(configMap) {
+    const result = {};
+    Object.entries(configMap || {}).forEach(([key, value]) => {
+        if (key === 'admin_pw' || key === AUCTION_ARCHIVE_INDEX_KEY || key.startsWith(AUCTION_ARCHIVE_KEY_PREFIX)) return;
+        result[key] = value;
+    });
+    return result;
+}
+
+function _archiveWonAmount(row) {
+    const value = String(row?.sold_price ?? '').replace(/[^0-9.-]/g, '');
+    const number = Number.parseFloat(value) || 0;
+    // 현재 DB의 낙찰가는 만원 단위다. 아카이브 요약도 기존 화면과 같은 단위를 유지한다.
+    return number;
+}
+
+function _archiveSummary(snapshot) {
+    const items = snapshot?.items || [];
+    const sold = items.filter(item => ['완료', 'sold', '낙찰'].includes(String(item.status || '').trim()));
+    const stageCounts = {};
+    items.forEach(item => {
+        const meta = getItemAuctionMeta(item);
+        const key = meta.auctionType === AUCTION_TYPES.TOURNAMENT
+            ? (meta.tournamentStage ? meta.tournamentStage + '강' : '토너먼트')
+            : auctionTypeLabel(meta.auctionType);
+        stageCounts[key] = (stageCounts[key] || 0) + 1;
+    });
+    return {
+        id: snapshot.id,
+        title: snapshot.title,
+        createdAt: snapshot.createdAt,
+        itemCount: items.length,
+        soldCount: sold.length,
+        totalSoldAmount: sold.reduce((sum, item) => sum + _archiveWonAmount(item), 0),
+        stageCounts
+    };
+}
+
+async function _readArchiveIndex() {
+    const rows = await _sbFetch(`config?key=eq.${AUCTION_ARCHIVE_INDEX_KEY}&select=value`);
+    if (!rows || !rows.length) return [];
+    try {
+        const parsed = JSON.parse(rows[0].value || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+async function listAuctionArchives() {
+    return _readArchiveIndex();
+}
+
+async function getAuctionArchive(id) {
+    const safeId = encodeURIComponent(String(id || ''));
+    const rows = await _sbFetch(`config?key=eq.${AUCTION_ARCHIVE_KEY_PREFIX}${safeId}&select=value`);
+    if (!rows || !rows.length) return null;
+    try { return JSON.parse(rows[0].value || 'null'); } catch (_) { return null; }
+}
+
+async function _createAuctionArchive(title) {
+    const [items, parents, configMap] = await Promise.all([
+        _sbFetch('items?select=*&order=num.asc'),
+        _sbFetch('parents?select=*'),
+        getConfigMap()
+    ]);
+    const now = new Date();
+    const id = now.toISOString().replace(/[-:.TZ]/g, '').slice(0, 14) + '_' + Math.random().toString(36).slice(2, 7);
+    const snapshot = {
+        version: 1,
+        id,
+        title: String(title || '').trim() || `경매 기록 ${now.toLocaleDateString('ko-KR')}`,
+        createdAt: now.toISOString(),
+        items: items || [],
+        parents: parents || [],
+        configs: _archiveSafeConfigs(configMap)
+    };
+    const summary = _archiveSummary(snapshot);
+    const index = await _readArchiveIndex();
+    index.unshift(summary);
+    await _sbFetch('config', {
+        method: 'POST',
+        headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
+        body: JSON.stringify([
+            { key: AUCTION_ARCHIVE_KEY_PREFIX + id, value: JSON.stringify(snapshot) },
+            { key: AUCTION_ARCHIVE_INDEX_KEY, value: JSON.stringify(index.slice(0, 100)) }
+        ])
+    });
+    return summary;
+}
+
+async function createAuctionArchive(title, pw) {
+    if (!(await verifyAdmin(pw))) return { success: false, error: '비밀번호 불일치' };
+    try {
+        const archive = await _createAuctionArchive(title);
+        return { success: true, archive };
+    } catch (error) {
+        console.error('createAuctionArchive error:', error);
+        return { success: false, error: '아카이브 저장 중 오류가 발생했습니다: ' + error.message };
+    }
+}
+
+async function archiveAndResetAuction(title, pw) {
+    if (!(await verifyAdmin(pw))) return { success: false, error: '비밀번호 불일치' };
+    const active = await _sbFetch('items?status=eq.진행중&select=id&limit=1');
+    if (active && active.length) return { success: false, error: '진행 중인 경매를 먼저 종료해주세요.' };
+    try {
+        // 저장 성공 전에는 현재 데이터를 절대 지우지 않는다.
+        const archive = await _createAuctionArchive(title);
+        await _sbFetch('items?id=gt.0', {
+            method: 'DELETE',
+            headers: { ..._sbHeaders, 'Prefer': 'return=minimal' }
+        });
+        await updateConfigs({
+            active_tournament: 'none',
+            tournament_bracket_16: JSON.stringify({ matches: {} }),
+            tournament_bracket_8: JSON.stringify({ matches: {} }),
+            tournament_bracket_4: JSON.stringify({ matches: {} }),
+            tournament_bracket_2: JSON.stringify({ matches: {} }),
+            battle_current_match: '',
+            battle_state: ''
+        });
+        return { success: true, archive };
+    } catch (error) {
+        console.error('archiveAndResetAuction error:', error);
+        return { success: false, error: '새 회차 준비 중 오류가 발생했습니다: ' + error.message };
+    }
+}
+
+const _ARCHIVE_ITEM_COLUMNS = [
+    'company', 'num', 'name', 'start_price', 'note', 'announce',
+    'photo_item', 'photo_sire', 'photo_dam', 'photo_sibling', 'status',
+    'sold_price', 'winner', 'winner_phone', 'start_time', 'bid_log',
+    'checklist', 'checklist_parsed', 'sire_id', 'dam_id',
+    'shipping_type', 'shipping_company', 'shipping_region', 'shipping_cost'
+];
+
+function _archiveItemPayload(row) {
+    const payload = {};
+    _ARCHIVE_ITEM_COLUMNS.forEach(key => {
+        if (row && row[key] !== undefined) payload[key] = row[key];
+    });
+    return payload;
+}
+
+async function restoreAuctionArchive(id, pw) {
+    if (!(await verifyAdmin(pw))) return { success: false, error: '비밀번호 불일치' };
+    const active = await _sbFetch('items?status=eq.진행중&select=id&limit=1');
+    if (active && active.length) return { success: false, error: '진행 중인 경매를 먼저 종료해주세요.' };
+    const snapshot = await getAuctionArchive(id);
+    if (!snapshot) return { success: false, error: '아카이브를 찾을 수 없습니다.' };
+    try {
+        const current = await _sbFetch('items?select=id&limit=1');
+        let safetyArchive = null;
+        if (current && current.length) safetyArchive = await _createAuctionArchive('복원 전 자동 백업');
+        await _sbFetch('items?id=gt.0', {
+            method: 'DELETE',
+            headers: { ..._sbHeaders, 'Prefer': 'return=minimal' }
+        });
+        const payloads = (snapshot.items || []).map(_archiveItemPayload);
+        if (payloads.length) {
+            await _sbFetch('items', {
+                method: 'POST',
+                headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
+                body: JSON.stringify(payloads)
+            });
+        }
+        await updateConfigs(_archiveSafeConfigs(snapshot.configs || {}));
+        return { success: true, count: payloads.length, safetyArchive };
+    } catch (error) {
+        console.error('restoreAuctionArchive error:', error);
+        return { success: false, error: '아카이브 복원 중 오류가 발생했습니다: ' + error.message };
+    }
+}
+
+async function copyAuctionArchiveItems(id, selectedIndexes, pw) {
+    if (!(await verifyAdmin(pw))) return { success: false, error: '비밀번호 불일치' };
+    const snapshot = await getAuctionArchive(id);
+    if (!snapshot) return { success: false, error: '아카이브를 찾을 수 없습니다.' };
+    const indexes = [...new Set((selectedIndexes || []).map(Number).filter(Number.isInteger))];
+    const selected = indexes.map(index => snapshot.items?.[index]).filter(Boolean);
+    if (!selected.length) return { success: false, error: '재사용할 개체를 선택해주세요.' };
+    try {
+        const existing = await _sbFetch('items?select=num');
+        let maxNum = Math.max(0, ...(existing || []).map(row => Number.parseInt(row.num, 10) || 0));
+        const payloads = selected.map((row, index) => {
+            const payload = _archiveItemPayload(row);
+            const num = maxNum + index + 1;
+            const meta = getItemAuctionMeta(row);
+            payload.num = num;
+            payload.status = '대기';
+            payload.sold_price = null;
+            payload.winner = '';
+            payload.winner_phone = '';
+            payload.start_time = null;
+            payload.bid_log = '';
+            payload.shipping_type = '';
+            payload.shipping_company = '';
+            payload.shipping_region = '';
+            payload.shipping_cost = 0;
+            payload.checklist = mergeItemAuctionMeta(row.checklist || '', {
+                auctionType: meta.auctionType,
+                tournamentCode: '',
+                teamCode: '',
+                tournamentStage: 0,
+                publicNumber: num
+            });
+            payload.checklist_parsed = formatChecklist(payload.checklist);
+            return payload;
+        });
+        await _sbFetch('items', {
+            method: 'POST',
+            headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
+            body: JSON.stringify(payloads)
+        });
+        return { success: true, count: payloads.length };
+    } catch (error) {
+        console.error('copyAuctionArchiveItems error:', error);
+        return { success: false, error: '개체 재사용 중 오류가 발생했습니다: ' + error.message };
+    }
 }
 
 /**
