@@ -14,7 +14,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>방송 화면 실시간 미리보기 및 배치기 - CDCUP</title>
-    <script src="supabase-bridge.js?v=20260629-logic-fix"></script>
+    <script src="supabase-bridge.js?v=20260703-auction-system"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     <link rel="stylesheet" href="common.css?v=20260629-logic-fix">
@@ -854,6 +854,7 @@
                             <option value="16">16강</option>
                             <option value="8">8강</option>
                             <option value="4">4강</option>
+                            <option value="2">결승</option>
                         </select>
                     </div>
                     <div class="switch-container" id="toggle-bracket-full-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
@@ -878,6 +879,7 @@
                             <option value="16">16강 대진표 송출</option>
                             <option value="8">8강 대진표 송출</option>
                             <option value="4">4강 대진표 송출</option>
+                            <option value="2">결승 대진표 송출</option>
                         </select>
                     </div>
                 </div>
@@ -913,6 +915,7 @@
                     <button class="t-btn active" id="t-btn-16" onclick="tChangeScale(16)">16강</button>
                     <button class="t-btn" id="t-btn-8" onclick="tChangeScale(8)">8강</button>
                     <button class="t-btn" id="t-btn-4" onclick="tChangeScale(4)">4강</button>
+                    <button class="t-btn" id="t-btn-2" onclick="tChangeScale(2)">결승</button>
                 </div>
                 <div class="t-controls">
                     <span class="t-label">방송 송출:</span>
@@ -921,6 +924,7 @@
                         <option value="16">16강 송출</option>
                         <option value="8">8강 송출</option>
                         <option value="4">4강 송출</option>
+                        <option value="2">결승 송출</option>
                     </select>
                 </div>
 
@@ -970,16 +974,16 @@
                 <div class="t-item-setup-head">
                     <div>
                         <div class="t-item-setup-title">대진 개체 일괄 편성</div>
-                        <div class="t-item-setup-desc">배치된 업체별로 4개체를 선택하면 클릭 순서대로 A1~A4, B1~B4 코드가 붙습니다.</div>
+                        <div class="t-item-setup-desc">업체별 4개체를 내부 팀 슬롯에 연결합니다. 공개 라벨은 팀과 무관한 숫자 번호로 자동 배치됩니다.</div>
                     </div>
                     <div class="t-item-setup-actions">
                         <span class="t-item-progress" id="t-item-progress">배치를 먼저 완료해주세요</span>
                         <button class="t-btn" type="button" onclick="tAutoSelectAllItems()">업체별 앞 4개</button>
-                        <button class="t-btn save" id="t-item-apply" type="button" onclick="tApplyTournamentItems()" disabled>선택 개체로 목록 재구성</button>
+                        <button class="t-btn save" id="t-item-apply" type="button" onclick="tApplyTournamentItems()" disabled>토너먼트 개체 편성</button>
                     </div>
                 </div>
                 <div class="t-item-setup-grid" id="t-item-setup-grid"></div>
-                <div class="t-item-warning">적용 시 대진표가 함께 저장되며, 선택하지 않은 등록 개체는 목록에서 제거됩니다. 선택 개체의 사진·상세 정보는 유지되고 낙찰·배송 정보는 대기 상태로 초기화됩니다.</div>
+                <div class="t-item-warning">선택한 개체만 토너먼트 슬롯에 연결되고 낙찰·배송 상태가 초기화됩니다. 이벤트·추가 경매는 삭제하지 않으며 토너먼트 뒤 숫자 번호로 유지됩니다.</div>
             </section>
 
 
@@ -2108,7 +2112,7 @@
         //  3P Tournament Dashboard Logic
         // ════════════════════════════════════════════
         let tScale = 16;
-        let tBrackets = { 16: { matches: {} }, 8: { matches: {} }, 4: { matches: {} } };
+        let tBrackets = { 16: { matches: {} }, 8: { matches: {} }, 4: { matches: {} }, 2: { matches: {} } };
         let tActiveTournament = 'none';
         let tEditingMatch = null;
         let tAllItems = [];
@@ -2120,11 +2124,24 @@
             return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         }
 
+        function tLegacyTournamentScale() {
+            const letters = [...new Set(tAllItems.map(item => getItemAuctionMeta(item)).filter(meta => meta.auctionType === 'tournament' && !meta.tournamentStage && meta.teamCode).map(meta => meta.teamCode))];
+            return [2, 4, 8, 16].find(scale => letters.length <= scale) || 16;
+        }
+
+        function tIsCurrentStageItem(item) {
+            const meta = getItemAuctionMeta(item);
+            if (meta.auctionType !== 'tournament') return false;
+            if (meta.tournamentStage) return meta.tournamentStage === Number(tScale);
+            if (!meta.tournamentCode) return true;
+            return tLegacyTournamentScale() === Number(tScale);
+        }
+
         async function tInit() {
             try {
                 const map = await getConfigMap();
                 if (map) {
-                    [16, 8, 4].forEach(s => {
+                    [16, 8, 4, 2].forEach(s => {
                         const k = 'tournament_bracket_' + s;
                         if (map[k]) try { tBrackets[s] = JSON.parse(map[k]); } catch(e){}
                     });
@@ -2162,7 +2179,7 @@
             try {
                 const items = await getItems();
                 tAllItems = items || [];
-                const teams = [...new Set((items || []).map(i => i.company).filter(Boolean))];
+                const teams = [...new Set((items || []).filter(tIsCurrentStageItem).map(i => i.company).filter(Boolean))];
                 const pool = document.getElementById('t-team-pool');
                 if (teams.length === 0) {
                     pool.innerHTML = '<span style="color:#64748b; font-size:12px;">등록된 업체가 없습니다. 개체를 먼저 등록해주세요.</span>';
@@ -2222,7 +2239,7 @@
             const count = Math.max(1, Number(document.getElementById('t-quick-item-count')?.value) || 4);
             if (!names.length) { toast('업체명을 입력해주세요.'); return; }
 
-            const existing = new Set(tAllItems.map(item => String(item.company || '').trim().toLocaleLowerCase()).filter(Boolean));
+            const existing = new Set(tAllItems.filter(tIsCurrentStageItem).map(item => String(item.company || '').trim().toLocaleLowerCase()).filter(Boolean));
             const duplicates = names.filter(name => existing.has(name.toLocaleLowerCase()));
             if (duplicates.length) {
                 toast('이미 등록된 업체가 있습니다: ' + duplicates.join(', '));
@@ -2258,7 +2275,7 @@
                 await tLoadTeams();
 
                 if (document.getElementById('t-quick-random')?.checked) {
-                    const teamCount = new Set(tAllItems.map(item => String(item.company || '').trim()).filter(Boolean)).size;
+                    const teamCount = new Set(tAllItems.filter(tIsCurrentStageItem).map(item => String(item.company || '').trim()).filter(Boolean)).size;
                     const bestScale = teamCount <= 4 ? 4 : (teamCount <= 8 ? 8 : 16);
                     tChangeScale(bestScale);
                     await tRandomFill();
@@ -2276,8 +2293,9 @@
         }
 
         async function tDeleteAllTournamentItems() {
-            if (!tAllItems.length) { toast('삭제할 등록 개체가 없습니다.'); tToggleQuickRegister(true); return; }
-            if (!confirm(`등록된 개체 ${tAllItems.length}건을 모두 삭제합니다.\n\n대진표 배치는 유지되며 개체 데이터만 삭제됩니다. 이 작업은 되돌릴 수 없습니다.\n\n계속할까요?`)) return;
+            const targets = tAllItems.filter(tIsCurrentStageItem);
+            if (!targets.length) { toast('현재 단계에서 삭제할 토너먼트 개체가 없습니다.'); tToggleQuickRegister(true); return; }
+            if (!confirm(`현재 ${tScale}강 토너먼트 개체 ${targets.length}건을 삭제합니다.\n\n이전 라운드 기록과 이벤트·추가 경매는 유지됩니다. 이 작업은 되돌릴 수 없습니다.\n\n계속할까요?`)) return;
             const pw = prompt('관리자 비밀번호를 입력하세요.');
             if (pw === null) return;
 
@@ -2285,13 +2303,13 @@
             button.disabled = true;
             button.textContent = '삭제 중...';
             try {
-                const result = await deleteAll(pw);
+                const result = await deleteItems(targets.map(item => item.row), pw);
                 if (!result || result.success === false) throw new Error(result?.error || '일괄 삭제 실패');
                 tAllItems = [];
                 tItemSelections = {};
                 await tLoadTeams();
                 tToggleQuickRegister(true);
-                toast('등록 개체 전체 삭제 완료');
+                toast(`${tScale}강 토너먼트 개체 ${result.count || targets.length}건 삭제 완료`);
             } catch (err) {
                 toast('개체 일괄삭제 실패: ' + err.message);
             } finally {
@@ -2302,12 +2320,13 @@
 
         function tChangeScale(scale) {
             tScale = scale;
-            [16, 8, 4].forEach(s => {
+            [16, 8, 4, 2].forEach(s => {
                 const btn = document.getElementById('t-btn-' + s);
                 if (btn) btn.classList.toggle('active', s === scale);
             });
             tEditingMatch = null;
             tRenderTree();
+            if (tAllItems.length) tLoadTeams();
         }
 
         function tGetMatch(scale, key) {
@@ -2410,8 +2429,8 @@
 
         function tCompanyItems(company) {
             return tAllItems
-                .filter(item => String(item.company || '').trim() === company)
-                .sort((a, b) => (Number(a.num) || 0) - (Number(b.num) || 0));
+                .filter(item => String(item.company || '').trim() === company && tIsCurrentStageItem(item))
+                .sort((a, b) => (Number(a.publicNumber || a.num) || 0) - (Number(b.publicNumber || b.num) || 0));
         }
 
         function tRenderItemSetup() {
@@ -2443,8 +2462,8 @@
                     const price = item.startPrice || item.price || '';
                     return `<button type="button" class="t-item-choice ${code ? 'selected' : ''}" data-letter="${tEsc(seed.letter)}" data-row="${tEsc(rowKey)}" onclick="tToggleItemSelection(this.dataset.letter,this.dataset.row)">
                         <span class="t-item-thumb">${photo ? `<img src="${tEsc(photo)}" alt="">` : 'NO'}</span>
-                        <span class="t-item-copy"><strong>${tEsc(item.name || '이름 없음')}</strong><span>#${tEsc(item.num || '-')} · 시작가 ${tEsc(price || '-')}</span></span>
-                        <span class="t-item-code">${code || '선택'}</span>
+                        <span class="t-item-copy"><strong>${tEsc(item.name || '이름 없음')}</strong><span>#${tEsc(item.publicNumber || item.num || '-')} · 시작가 ${tEsc(price || '-')}</span></span>
+                        <span class="t-item-code">${code ? seed.letter + '팀 · 슬롯 ' + code.slice(1) : '선택'}</span>
                     </button>`;
                 }).join('') : '<div class="t-item-empty">이 업체에 등록된 개체가 없습니다.</div>';
                 return `<article class="t-item-team ${selection.rows.length === 4 ? 'ready' : ''}">
@@ -2507,13 +2526,13 @@
                         toast('선택 목록이 변경되었습니다. 개체를 다시 선택해주세요.'); return;
                     }
                     usedRows.add(row);
-                    assignments.push({ row: item.row, company: seed.company, code: seed.letter + (idx + 1) });
+                    assignments.push({ row: item.row, company: seed.company, code: seed.letter + (idx + 1), stage: tScale });
                 }
             }
             if (!assignments.length) { toast('편성할 개체가 없습니다.'); return; }
 
-            const removeCount = Math.max(0, tAllItems.length - assignments.length);
-            const confirmed = confirm(`선택한 ${assignments.length}개체로 경매 등록 목록을 다시 구성합니다.\n\n· 대진표 자동 저장\n· 코드 ${assignments[0].code} ~ ${assignments[assignments.length - 1].code} 적용\n· 미선택 ${removeCount}개체 삭제\n· 낙찰/배송 상태 초기화\n\n계속할까요?`);
+            const preserveCount = Math.max(0, tAllItems.length - assignments.length);
+            const confirmed = confirm(`선택한 ${assignments.length}개체를 토너먼트에 편성합니다.\n\n· 공개 번호는 1부터 팀 정보와 분리해 자동 배치\n· 팀/라운드 코드는 내부 데이터로만 저장\n· 이벤트·추가 경매 ${preserveCount}개체 유지\n· 선택된 토너먼트 개체의 낙찰/배송 상태 초기화\n\n계속할까요?`);
             if (!confirmed) return;
             const pw = prompt('관리자 비밀번호를 입력하세요.');
             if (pw === null) return;
@@ -2523,7 +2542,7 @@
             applyBtn.textContent = '목록 구성 중...';
             try {
                 const bracketPayload = {};
-                [16, 8, 4].forEach(scale => {
+                [16, 8, 4, 2].forEach(scale => {
                     bracketPayload['tournament_bracket_' + scale] = JSON.stringify(tBrackets[scale]);
                 });
                 await updateConfigs(bracketPayload);
@@ -2531,11 +2550,11 @@
                 if (!result || result.success === false) throw new Error(result?.error || '목록 재구성 실패');
                 tItemSelections = {};
                 await tLoadTeams();
-                toast(result.count + '개체 대진 코드 등록 완료');
+                toast(result.count + '개체 편성 완료 · 추가 경매 ' + (result.preserved || 0) + '개체 유지');
             } catch (err) {
                 toast('개체 편성 실패: ' + err.message);
             } finally {
-                applyBtn.textContent = '선택 개체로 목록 재구성';
+                applyBtn.textContent = '토너먼트 개체 편성';
                 tRenderItemSetup();
             }
         }
@@ -2611,7 +2630,7 @@
         async function tSave(silent = false) {
             try {
                 const payload = {};
-                [16, 8, 4].forEach(s => {
+                [16, 8, 4, 2].forEach(s => {
                     payload['tournament_bracket_' + s] = JSON.stringify(tBrackets[s]);
                 });
                 await updateConfigs(payload);

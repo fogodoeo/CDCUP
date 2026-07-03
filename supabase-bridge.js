@@ -13,6 +13,85 @@ const _sbHeaders = {
     'Content-Type': 'application/json',
 };
 
+// ── 경매 개체 분류/블라인드 메타데이터 ──
+// DB 스키마를 바꾸지 않고 checklist의 숨김 키로 보관한다.
+// _auction: tournament | event | extra, _stage: 8, _slot: A1, _team: A, _label: 1
+const AUCTION_TYPES = Object.freeze({ TOURNAMENT: 'tournament', EVENT: 'event', EXTRA: 'extra' });
+
+function _checklistPairs(raw) {
+    const result = {};
+    String(raw || '').split('|').forEach(part => {
+        const index = part.indexOf(':');
+        if (index > 0) result[part.slice(0, index)] = part.slice(index + 1);
+    });
+    return result;
+}
+
+function getItemAuctionMeta(itemOrChecklist, fallbackName) {
+    const item = itemOrChecklist && typeof itemOrChecklist === 'object' ? itemOrChecklist : null;
+    const checklist = item ? item.checklist : itemOrChecklist;
+    const name = String(item ? (item.name || '') : (fallbackName || '')).trim();
+    const pairs = _checklistPairs(checklist);
+    const legacy = name.toUpperCase().match(/^([A-P])\s*[-_]?\s*([1-4])(?=\s|[-·:]|$)/);
+    const tournamentCode = String(pairs._slot || (legacy ? legacy[1] + legacy[2] : '')).toUpperCase();
+    const teamCode = String(pairs._team || (tournamentCode ? tournamentCode.charAt(0) : '')).toUpperCase();
+    const tournamentStage = Number.parseInt(pairs._stage, 10) || 0;
+    const publicNumber = Number.parseInt(pairs._label || (item ? item.num : ''), 10) || 0;
+    const storedType = String(pairs._auction || '').toLowerCase();
+    const auctionType = Object.values(AUCTION_TYPES).includes(storedType)
+        ? storedType
+        : (tournamentCode ? AUCTION_TYPES.TOURNAMENT : AUCTION_TYPES.EXTRA);
+    const publicName = legacy ? name.slice(legacy[0].length).replace(/^\s*[-·:]?\s*/, '').trim() : name;
+    return { auctionType, tournamentCode, teamCode, tournamentStage, publicNumber, publicName: publicName || (legacy ? '개체' : (name || '이름 없음')) };
+}
+
+function mergeItemAuctionMeta(rawChecklist, meta) {
+    const previous = _checklistPairs(rawChecklist);
+    const visible = String(rawChecklist || '').split('|').filter(Boolean).filter(part => !/^_(auction|slot|team|stage|label):/.test(part));
+    const auctionType = Object.values(AUCTION_TYPES).includes(String(meta?.auctionType || '').toLowerCase())
+        ? String(meta.auctionType).toLowerCase()
+        : AUCTION_TYPES.EXTRA;
+    visible.push('_auction:' + auctionType);
+    const publicNumber = Number.parseInt(meta?.publicNumber ?? previous._label, 10) || 0;
+    if (publicNumber) visible.push('_label:' + publicNumber);
+    if (auctionType === AUCTION_TYPES.TOURNAMENT) {
+        const slot = String(meta?.tournamentCode ?? previous._slot ?? '').trim().toUpperCase();
+        const team = String(meta?.teamCode ?? previous._team ?? (slot ? slot.charAt(0) : '')).trim().toUpperCase();
+        const stage = Number.parseInt(meta?.tournamentStage ?? previous._stage, 10) || 0;
+        if (stage) visible.push('_stage:' + stage);
+        if (slot) visible.push('_slot:' + slot);
+        if (team) visible.push('_team:' + team);
+    }
+    return visible.join('|');
+}
+
+function itemAuctionFields(row) {
+    return getItemAuctionMeta(row || {});
+}
+
+function isTournamentAuctionItem(item) {
+    return getItemAuctionMeta(item).auctionType === AUCTION_TYPES.TOURNAMENT;
+}
+
+function auctionTypeLabel(itemOrType) {
+    const type = typeof itemOrType === 'string' ? itemOrType : getItemAuctionMeta(itemOrType).auctionType;
+    return type === AUCTION_TYPES.TOURNAMENT ? '토너먼트' : (type === AUCTION_TYPES.EVENT ? '이벤트 매치' : '추가 경매');
+}
+
+function auctionStageLabel(item) {
+    const meta = getItemAuctionMeta(item);
+    if (meta.auctionType === AUCTION_TYPES.TOURNAMENT) return meta.tournamentStage ? meta.tournamentStage + '강' : '토너먼트';
+    return meta.auctionType === AUCTION_TYPES.EVENT ? '이벤트 매치' : '추가 경매';
+}
+
+function auctionItemLabel(item, options = {}) {
+    const meta = getItemAuctionMeta(item);
+    const number = Number.parseInt(meta.publicNumber || item?.num, 10);
+    const prefix = Number.isFinite(number) ? 'NO. ' + number : 'NO. -';
+    const team = options.includeTeam && meta.teamCode ? ' · ' + meta.teamCode + '팀' : '';
+    return prefix + (meta.publicName ? ' · ' + meta.publicName : '') + team;
+}
+
 async function _sbFetch(path, options = {}) {
     const url = `${SUPABASE_URL}/rest/v1/${path}`;
     const resp = await fetch(url, {
@@ -39,6 +118,7 @@ function formatChecklist(raw) {
         const idx = parts[i].indexOf(":");
         if (idx < 0) continue;
         const k = parts[i].substring(0, idx);
+        if (k.charAt(0) === '_') continue;
         let v = parts[i].substring(idx + 1);
         const label = labels[k] || k;
         if (k === "gender") v = genderMap[v] || v;
@@ -103,7 +183,8 @@ async function getItems() {
         shipping_region: r.shipping_region || '',
         shipping_cost: r.shipping_cost || 0,
         updated_at: r.updated_at || '',
-        updatedAt: r.updated_at || ''
+        updatedAt: r.updated_at || '',
+        ...itemAuctionFields(r)
     }));
 }
 
@@ -150,7 +231,8 @@ async function getActiveItem() {
         damId: r.dam_id || '',
         sireName: r.sire_id && parentMap[r.sire_id] ? parentMap[r.sire_id].name : '',
         damName: r.dam_id && parentMap[r.dam_id] ? parentMap[r.dam_id].name : '',
-        hiddenPhotos: hiddenPhotos
+        hiddenPhotos: hiddenPhotos,
+        ...itemAuctionFields(r)
     };
 }
 
@@ -206,7 +288,8 @@ function _mapBroadcastItem(r) {
         shipping_region: r.shipping_region || '',
         shipping_cost: r.shipping_cost || 0,
         updated_at: r.updated_at || '',
-        updatedAt: r.updated_at || ''
+        updatedAt: r.updated_at || '',
+        ...itemAuctionFields(r)
     };
 }
 
@@ -319,8 +402,16 @@ async function updateItem(row, data, pw) {
     }
     
     // checklist가 변경되었으면 파싱본도 자동 반영
-    if (data.checklist !== undefined) {
-        payload.checklist_parsed = formatChecklist(data.checklist);
+    if (data.checklist !== undefined || data.auctionType !== undefined || data.tournamentCode !== undefined || data.teamCode !== undefined) {
+        const existingChecklist = data.checklist !== undefined ? data.checklist : '';
+        payload.checklist = mergeItemAuctionMeta(existingChecklist, {
+            auctionType: data.auctionType,
+            tournamentCode: data.tournamentCode,
+            teamCode: data.teamCode,
+            tournamentStage: data.tournamentStage,
+            publicNumber: data.publicNumber
+        });
+        payload.checklist_parsed = formatChecklist(payload.checklist);
     }
 
     await _sbFetch(`items?id=eq.${row}`, {
@@ -443,6 +534,13 @@ async function registerBatch(itemsArray) {
 
         const payloads = itemsArray.map((d, idx) => {
             const num = maxNum + idx + 1;
+            const checklist = mergeItemAuctionMeta(d.checklist || '', {
+                auctionType: d.auctionType || AUCTION_TYPES.TOURNAMENT,
+                tournamentCode: d.tournamentCode || '',
+                teamCode: d.teamCode || '',
+                tournamentStage: d.tournamentStage || 0,
+                publicNumber: d.publicNumber || num
+            });
             return {
                 company: d.company || "",
                 num: num,
@@ -455,8 +553,8 @@ async function registerBatch(itemsArray) {
                 photo_dam: d.photoDam || "",
                 photo_sibling: d.photoSibling || "",
                 status: "대기",
-                checklist: d.checklist || "",
-                checklist_parsed: formatChecklist(d.checklist || ""),
+                checklist: checklist,
+                checklist_parsed: formatChecklist(checklist),
                 sire_id: d.sireId || null,
                 dam_id: d.damId || null
             };
@@ -546,54 +644,99 @@ async function rebuildTournamentItems(assignments, pw) {
     const ids = [];
     const seenIds = new Set();
     const seenCodes = new Set();
-    const payloads = [];
+    const assignmentRows = [];
+    let tournamentStage = 0;
     for (let idx = 0; idx < assignments.length; idx++) {
         const assignment = assignments[idx] || {};
         const id = Number(assignment.row);
         const code = String(assignment.code || "").trim().toUpperCase();
+        const stage = Number.parseInt(assignment.stage, 10) || 0;
         if (!Number.isInteger(id) || id <= 0 || !/^[A-Z][1-4]$/.test(code)) {
             return { success: false, error: "개체 편성 데이터가 올바르지 않습니다." };
         }
         if (seenIds.has(id) || seenCodes.has(code)) {
             return { success: false, error: "같은 개체 또는 코드가 중복 선택되었습니다." };
         }
+        if (!stage || ![2, 4, 8, 16].includes(stage) || (tournamentStage && tournamentStage !== stage)) {
+            return { success: false, error: "토너먼트 단계 정보가 올바르지 않습니다." };
+        }
+        tournamentStage = stage;
         seenIds.add(id);
         seenCodes.add(code);
         ids.push(id);
-        payloads.push({
-            id: id,
-            company: String(assignment.company || "").trim(),
-            num: idx + 1,
-            name: code,
-            status: "대기",
-            sold_price: null,
-            winner: "",
-            winner_phone: "",
-            start_time: null,
-            bid_log: "",
-            shipping_type: "",
-            shipping_company: "",
-            shipping_region: "",
-            shipping_cost: 0
-        });
+        assignmentRows.push({ id, code, company: String(assignment.company || '').trim() });
     }
 
-    const existing = await _sbFetch(`items?id=in.(${ids.join(',')})&select=id`);
+    const allExisting = await _sbFetch('items?order=num.asc');
+    const existing = (allExisting || []).filter(item => seenIds.has(Number(item.id)));
     if (!existing || existing.length !== ids.length) {
         return { success: false, error: "선택한 개체 중 현재 목록에서 찾을 수 없는 항목이 있습니다. 새로고침 후 다시 시도해주세요." };
     }
 
-    // 선택된 행을 한 번에 갱신한 뒤, 성공한 경우에만 나머지 행을 제거한다.
+    const existingMap = Object.fromEntries(existing.map(item => [Number(item.id), item]));
+    const byCode = Object.fromEntries(assignmentRows.map(item => [item.code, item]));
+    const letters = [...new Set(assignmentRows.map(item => item.code.charAt(0)))].sort();
+    const rounds = Math.max(...assignmentRows.map(item => Number(item.code.slice(1)) || 1));
+    const matchCount = Math.ceil(letters.length / 2);
+    const publicOrder = [];
+    for (let round = 1; round <= rounds; round++) {
+        const startGroup = matchCount ? ((round - 1) % matchCount) : 0;
+        for (let offset = 0; offset < matchCount; offset++) {
+            const group = (startGroup + offset) % matchCount;
+            const left = letters[group * 2];
+            const right = letters[group * 2 + 1];
+            if (left && byCode[left + round]) publicOrder.push(byCode[left + round]);
+            if (right && byCode[right + round]) publicOrder.push(byCode[right + round]);
+        }
+    }
+
+    const maxExistingNum = Math.max(0, ...(allExisting || []).map(item => Number.parseInt(item.num, 10) || 0));
+    const payloads = publicOrder.map((assignment, index) => {
+        const original = existingMap[assignment.id];
+        const checklist = mergeItemAuctionMeta(original.checklist || '', {
+            auctionType: AUCTION_TYPES.TOURNAMENT,
+            tournamentCode: assignment.code,
+            teamCode: assignment.code.charAt(0),
+            tournamentStage,
+            publicNumber: index + 1
+        });
+        return {
+            id: assignment.id,
+            company: assignment.company,
+            num: maxExistingNum + index + 1,
+            checklist,
+            checklist_parsed: formatChecklist(checklist),
+            status: '대기', sold_price: null, winner: '', winner_phone: '', start_time: null, bid_log: '',
+            shipping_type: '', shipping_company: '', shipping_region: '', shipping_cost: 0
+        };
+    });
+
+    const extras = (allExisting || []).filter(item => !seenIds.has(Number(item.id)));
+    const legacyLetters = [...new Set(extras.map(item => getItemAuctionMeta({ name: item.name, checklist: item.checklist, num: item.num })).filter(meta => meta.auctionType === AUCTION_TYPES.TOURNAMENT && !meta.tournamentStage && meta.teamCode).map(meta => meta.teamCode))];
+    const legacyScale = [2, 4, 8, 16].find(scale => legacyLetters.length <= scale) || 16;
+
+    // 토너먼트 개체만 상태를 초기화하고 이벤트/추가 경매는 보존한 채 뒤 번호로 이어 붙인다.
     await _sbFetch('items?on_conflict=id', {
         method: 'POST',
         headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
         body: JSON.stringify(payloads)
     });
-    await _sbFetch(`items?id=not.in.(${ids.join(',')})`, {
-        method: 'DELETE',
-        headers: { ..._sbHeaders, 'Prefer': 'return=minimal' }
-    });
-    return { success: true, count: payloads.length };
+    for (const item of extras) {
+        const meta = getItemAuctionMeta({ name: item.name, checklist: item.checklist, num: item.num });
+        if (meta.auctionType !== AUCTION_TYPES.TOURNAMENT || meta.tournamentStage || !meta.tournamentCode) continue;
+        const checklist = mergeItemAuctionMeta(item.checklist || '', {
+            auctionType: AUCTION_TYPES.TOURNAMENT,
+            tournamentCode: meta.tournamentCode,
+            teamCode: meta.teamCode,
+            tournamentStage: legacyScale,
+            publicNumber: meta.publicNumber || item.num
+        });
+        await _sbFetch(`items?id=eq.${item.id}`, {
+            method: 'PATCH', headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
+            body: JSON.stringify({ checklist, checklist_parsed: formatChecklist(checklist) })
+        });
+    }
+    return { success: true, count: publicOrder.length, preserved: extras.length };
 }
 
 /**

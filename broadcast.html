@@ -13,7 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260629-logic-fix"></script>
+    <script src="supabase-bridge.js?v=20260703-auction-system"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
@@ -1646,6 +1646,7 @@
             font-weight: 900;
             letter-spacing: 0.08em;
         }
+        .auction-sold-team img { width: 18px; height: 18px; margin-right: 6px; object-fit: contain; border-radius: 3px; background: rgba(255,255,255,.08); }
         .auction-sold-price {
             display: block;
             margin-top: 8px;
@@ -2737,11 +2738,13 @@
         }
 
         function processItemsList(items) {
-            window._totalItemsCount = items.length;
+            const activeScale = Number(window.latestConfigMap?.active_tournament) || 0;
+            const progressItems = activeScale ? scopeTournamentItems(items, activeScale) : items;
+            window._totalItemsCount = progressItems.length;
             window._lastCountFetchTime = Date.now();
             
             let completed = 0;
-            items.forEach(it => {
+            progressItems.forEach(it => {
                 const status = (it.status || '').trim();
                 if (status.indexOf('낙찰') >= 0 || status.indexOf('유찰') >= 0) {
                     completed++;
@@ -2754,6 +2757,8 @@
 
         function getCleanCode(item) {
             if (!item) return '';
+            const metaCode = String(item.tournamentCode || getItemAuctionMeta(item).tournamentCode || '').trim().toUpperCase();
+            if (/^[A-P][1-4]$/.test(metaCode)) return metaCode;
             const numStr = String(item.num || '').trim().toUpperCase();
             if (numStr.match(/^[A-Z]\d+$/)) {
                 return numStr;
@@ -2767,6 +2772,7 @@
             if (!items || !code) return null;
             const target = code.trim().toUpperCase();
             return items.find(i => {
+                if (getCleanCode(i) === target) return true;
                 const numStr = String(i.num || '').trim().toUpperCase();
                 if (numStr === target) return true;
                 const nameUpper = (i.name || '').trim().toUpperCase();
@@ -2775,6 +2781,28 @@
                 if (nameUpper === target) return true;
                 return false;
             });
+        }
+
+        function getConfiguredTeamLogo(map, teamName) {
+            const target = String(teamName || '').trim();
+            if (!target) return '';
+            let partial = '';
+            for (let i = 1; i <= 20; i++) {
+                try {
+                    const value = JSON.parse(map?.['team_logo' + i] || '{}');
+                    const name = String(value.name || '').trim();
+                    if (!name || !value.url) continue;
+                    if (name === target) return value.url;
+                    if (!partial && (name.includes(target) || target.includes(name))) partial = value.url;
+                } catch (_) {}
+            }
+            return partial;
+        }
+
+        function scopeTournamentItems(items, scale) {
+            const tournament = (items || []).filter(isTournamentAuctionItem);
+            const staged = tournament.filter(item => Number(getItemAuctionMeta(item).tournamentStage) === Number(scale));
+            return staged.length ? staged : tournament.filter(item => !getItemAuctionMeta(item).tournamentStage);
         }
 
         // URL 파라미터 확인 후 host-mode 적용
@@ -3820,12 +3848,13 @@
                     cleanInfoName = codeFromItem;
                 }
             }
-            document.getElementById("info-name").textContent = cleanInfoName;
-            // 페이지2 상단 바에서 업체명 표시 제거
-            document.getElementById("info-sub").textContent = '';
+            // 공개 화면은 팀 슬롯과 분리된 숫자 라벨만 사용한다.
+            document.getElementById("info-name").textContent = auctionItemLabel(item);
+            // 토너먼트 외 경매만 구분을 표시하고 업체명은 낙찰 전까지 노출하지 않는다.
+            document.getElementById("info-sub").textContent = item.auctionType === 'tournament' ? '' : auctionTypeLabel(item);
 
             // 호스트 카드 데이터 렌더링
-            document.getElementById("hc-name").textContent = origName;
+            document.getElementById("hc-name").textContent = auctionItemLabel(item, { includeTeam: true });
             const subParts = [];
             if (item.company) subParts.push(item.company);
             document.getElementById("hc-sub").textContent = subParts.join(' · ');
@@ -4360,12 +4389,11 @@
                 window.latestItemsList = items;
             }
             
-            const activeItems = window.latestItemsList || [];
-            
             const fullShow = (map.bracket_full_show !== undefined ? String(map.bracket_full_show) : '1') === '1';
             const liveShow = (map.bracket_live_show !== undefined ? String(map.bracket_live_show) : '0') === '1';
             const bShow = map.bracket_show !== undefined ? String(map.bracket_show) : '1';
             const active = map.active_tournament || 'none';
+            const activeItems = active !== 'none' ? scopeTournamentItems(window.latestItemsList || [], Number(active)) : [];
             
             // Apply bracket positioning & size
             const treeFull = document.getElementById('bracket-page-tree-full');
@@ -4825,7 +4853,7 @@
             const titleEl = document.getElementById('bracket-page-title');
 
             let items = [];
-            try { items = await getBattleItemsCached(); } catch(e){}
+            try { items = scopeTournamentItems(await getBattleItemsCached(), scale); } catch(e){}
             if (renderId !== window._bracketLiveRenderId) return;
 
             // bracket 매치에서 팀 letter 매핑 자동 구성
@@ -4840,6 +4868,8 @@
                 if (m.left) { letterToTeam[lL] = m.left.trim(); letterToGroup[lL] = i; }
                 if (m.right) { letterToTeam[rL] = m.right.trim(); letterToGroup[rL] = i; }
             }
+            const revealCompany = String(map.bracket_full_blind ?? '1') === '0';
+            const displayTeam = letter => revealCompany && letterToTeam[letter] ? letterToTeam[letter] : letter + '팀';
             const rpm = parseInt(map.battle_rounds_per_match || '4', 10) || 4;
 
             const doneStatuses = new Set(['완료', 'sold', '낙찰', '유찰']);
@@ -5059,10 +5089,11 @@
                         side,
                         leftTeamLetter,
                         rightTeamLetter,
-                        leftTeamLabel: leftTeamLetter + '팀',
-                        rightTeamLabel: rightTeamLetter + '팀',
-                        teamLabel: (side === 'left' ? leftTeamLetter : rightTeamLetter) + '팀',
-                        itemName: String(newestSoldItem.displayName || newestSoldItem.name || cc).trim(),
+                        leftTeamLabel: displayTeam(leftTeamLetter),
+                        rightTeamLabel: displayTeam(rightTeamLetter),
+                        teamLabel: displayTeam(side === 'left' ? leftTeamLetter : rightTeamLetter),
+                        teamLogo: revealCompany ? getConfiguredTeamLogo(map, letterToTeam[side === 'left' ? leftTeamLetter : rightTeamLetter]) : '',
+                        itemName: auctionItemLabel(newestSoldItem),
                         round: iR,
                         isFinalRound: iR === rpm,
                         winner: maskAuctionWinner(newestSoldItem.winner || ''),
@@ -5088,7 +5119,8 @@
             const leftDisplayLabel = mot?.leftTeamLabel || (leftTeamLetter + '팀');
             const rightDisplayLabel = mot?.rightTeamLabel || (rightTeamLetter + '팀');
             if (auctionMotionEnabled && mot?.phase === 'sold') {
-                motionHtml = '<div class="auction-motion-overlay"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><strong class="auction-sold-item">' + esc(mot.itemName) + '</strong><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND · SOLD</span><div><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span><span class="auction-sold-team">' + esc(mot.teamLabel) + ' 낙찰</span></div></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div></div>';
+                const soldLogo = mot.teamLogo ? '<img src="' + esc(mot.teamLogo) + '" alt="">' : '';
+                motionHtml = '<div class="auction-motion-overlay"><div class="auction-sold-content"><div class="auction-target-team ' + (mot.side === 'left' ? 'is-target' : '') + '">' + esc(leftDisplayLabel) + '</div><div class="auction-sold-copy"><strong class="auction-sold-item">' + esc(mot.itemName) + '</strong><span class="auction-sold-turn">' + esc(mot.round) + ' ROUND · SOLD</span><div><strong class="auction-sold-winner">' + esc(mot.winner) + '님 낙찰</strong><span class="auction-sold-price">' + esc(mot.price) + '</span><span class="auction-sold-team">' + soldLogo + esc(mot.teamLabel) + ' 낙찰</span></div></div><div class="auction-target-team ' + (mot.side === 'right' ? 'is-target' : '') + '">' + esc(rightDisplayLabel) + '</div></div></div>';
             } else if (auctionMotionEnabled && mot?.phase === 'result') {
                 const isFinalResult = Boolean(mot.matchComplete);
                 const resultWinner = isFinalResult ? mot.matchWinner : mot.roundWinner;
@@ -5200,9 +5232,10 @@
                 }
                 
                 // 3. 전체 개체 목록 가져오기
-                const items = Array.isArray(prefetchedItems)
+                const rawItems = Array.isArray(prefetchedItems)
                     ? prefetchedItems
                     : await getBattleItemsCached();
+                const items = scopeTournamentItems(rawItems, scale);
                 if (!items || items.length === 0) return;
 
                 // Sync bracket overlay visibility & positioning on all pages (items 포함)

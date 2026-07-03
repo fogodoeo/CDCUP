@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260629-logic-fix"></script>
+    <script src="supabase-bridge.js?v=20260703-auction-system"></script>
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
@@ -560,8 +560,8 @@
             return ph;
         }
 
-        var headersAll = '<th>번호</th><th>이름</th><th>업체</th><th>시작가</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
-        var headersList = '<th>번호</th><th>이름</th><th>업체</th><th>시작가</th><th>정보</th>';
+        var headersAll = '<th>번호</th><th>구분</th><th>이름</th><th>업체</th><th>시작가</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
+        var headersList = '<th>번호</th><th>구분</th><th>이름</th><th>업체</th><th>시작가</th><th>정보</th>';
 
         function buildResultRow(it, showCompany) {
             var st = it.status || '';
@@ -573,7 +573,8 @@
             var w = parseWinner(it.winner);
             var shortName = truncatePrintName(it.name, 10);
             var r = '<tr>';
-            r += '<td class="col-num">' + (it.num || '') + '</td>';
+            r += '<td class="col-num">' + (it.publicNumber || it.num || '') + '</td>';
+            r += '<td>' + auctionStageLabel(it) + '</td>';
             r += '<td class="col-name-sm">' + shortName + '</td>';
             if (showCompany) r += '<td class="col-company">' + (it.company || '') + '</td>';
             r += '<td class="col-price">' + fmtPrice(it.startPrice) + '</td>';
@@ -607,7 +608,8 @@
                 var info = infoParts.join(' / ');
                 var shortName = truncatePrintName(it.name, 10);
                 lhtml += '<tr>';
-                lhtml += '<td class="col-num">' + (it.num || '') + '</td>';
+                lhtml += '<td class="col-num">' + (it.publicNumber || it.num || '') + '</td>';
+                lhtml += '<td>' + auctionStageLabel(it) + '</td>';
                 lhtml += '<td class="col-name">' + shortName + '</td>';
                 lhtml += '<td class="col-company">' + (it.company || '') + '</td>';
                 lhtml += '<td class="col-price">' + fmtPrice(it.startPrice) + '</td>';
@@ -782,7 +784,7 @@
 
             chtml += '<div class="company-view-wrapper" id="company-wrapper">';
             chtml += '<table id="company-filtered-table">';
-            chtml += '<thead><tr><th>업체</th><th>번호</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th></tr></thead>';
+            chtml += '<thead><tr><th>업체</th><th>번호</th><th>구분</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th></tr></thead>';
             chtml += '<tbody>';
 
             var rowIndex = 0;
@@ -848,7 +850,8 @@
                         chtml += '<td class="col-company" rowspan="' + list.length + '" style="' + compStyle + '">'
                             + company + '<br><span style="font-size:9pt;font-weight:500;color:#888;">' + fmtPrice(companySales) + '</span></td>';
                     }
-                    chtml += '<td class="col-num">' + (it.num || '') + '</td>';
+                    chtml += '<td class="col-num">' + (it.publicNumber || it.num || '') + '</td>';
+                    chtml += '<td>' + auctionStageLabel(it) + '</td>';
                     chtml += '<td class="col-name-sm">' + truncatePrintName(it.name, 10) + '</td>';
                     chtml += '<td class="col-result-price">' + (it.soldPrice ? fmtPrice(it.soldPrice) : '') + '</td>';
                     chtml += '<td class="col-winner">' + w.name + '</td>';

@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>CDCUP - 배송/수령 정보 등록</title>
-    <script src="supabase-bridge.js?v=20260702-shipping-overview"></script>
+    <script src="supabase-bridge.js?v=20260703-auction-system"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <style>
         /* ══════════════════════════════════════
@@ -2535,7 +2535,7 @@
         }
 
         function paymentSmsItemLine(item) {
-            return `- ${item.name || '이름 없음'} / ${auctionItemWon(item).toLocaleString()}원`;
+            return `- ${auctionItemLabel(item, { includeTeam: true })} / ${auctionItemWon(item).toLocaleString()}원`;
         }
 
         function otherCompanyPaymentText(allItems, selectedCompany) {
@@ -2550,7 +2550,7 @@
             if (!companies.length) return '';
             const lines = companies.map(company => {
                 const items = grouped[company];
-                const names = items.map(item => item.name || '이름 없음').join(', ');
+                const names = items.map(item => auctionItemLabel(item, { includeTeam: true })).join(', ');
                 const bid = items.reduce((sum, item) => sum + auctionItemWon(item), 0);
                 return `- ${company}: ${names} / ${bid.toLocaleString()}원`;
             });
@@ -3320,11 +3320,11 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
                     const otherCoItems = state.allItems.filter(it => (it.company || '').trim() !== selectedCo);
 
                     const currentGeckoTagsHtml = currentCoItems.map(it => `
-                        <span class="gecko-tag">${it.name || '이름 없음'}</span>
+                        <span class="gecko-tag">${auctionItemLabel(it, { includeTeam: true })}</span>
                     `).join('');
 
                     const otherGeckoTagsHtml = otherCoItems.map(it => `
-                        <span class="gecko-tag gecko-tag-dimmed" style="opacity: 0.45; border: 1.5px dashed var(--text-secondary); filter: grayscale(100%);">[${it.company}] ${it.name || '이름 없음'}</span>
+                        <span class="gecko-tag gecko-tag-dimmed" style="opacity: 0.45; border: 1.5px dashed var(--text-secondary); filter: grayscale(100%);">[${it.company}] ${auctionItemLabel(it, { includeTeam: true })}</span>
                     `).join('');
 
                     const geckoTagsHtml = currentGeckoTagsHtml + otherGeckoTagsHtml;
@@ -3494,9 +3494,9 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
                     btnArrow.textContent = '▼';
                 }
                 
-                // 4. 낙찰개체 정보 한줄로 (No. 제외하고 개체명 + 낙찰가)
+                // 4. 낙찰개체 정보 한줄로 (공개 번호 + 개체명 + 낙찰 후 팀)
                 const objectNames = currentCoItems.map(it => {
-                    const name = it.name || '이름 없음';
+                    const name = auctionItemLabel(it, { includeTeam: true });
                     const priceVal = parseFloat(it.soldPrice || it.sold_price) || 0;
                     const priceText = priceVal > 0 ? ` (${priceVal}만)` : '';
                     return `${name}${priceText}`;
@@ -3718,8 +3718,7 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
                 const shippingShare = isWrapangCentralPayment ? 0 : (allocations[co] || 0);
                 const collectTotal = bidWon + shippingShare;
                 const objectNames = items.map(it => {
-                    const numberText = it.num ? `No.${it.num} ` : '';
-                    return `${numberText}${it.name || '이름 없음'}`;
+                    return auctionItemLabel(it, { includeTeam: true });
                 }).join(' · ');
                 const isCurrent = co === selectedCo;
                 const pct = totalObjectCount > 0 ? Math.round(items.length / totalObjectCount * 100) : 0;
@@ -4012,7 +4011,7 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
             container.innerHTML = buyerFoundItems.map(it => `
                 <div class="buyer-item-row">
                     <div>
-                        <strong style="color: var(--text-title); font-size: 14px;">${it.name || '개체명 없음'}</strong>
+                        <strong style="color: var(--text-title); font-size: 14px;">${auctionItemLabel(it, { includeTeam: true })}</strong>
                         <div style="font-size: 11px; color: var(--text-secondary); margin-top: 2px;">출품: ${it.company || '미지정'}</div>
                     </div>
                     <div style="font-weight: 800; color: #E11D48;">${parseFloat(it.soldPrice || it.sold_price)}만</div>

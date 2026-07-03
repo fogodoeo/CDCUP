@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260629-logic-fix"></script>
+    <script src="supabase-bridge.js?v=20260703-auction-system"></script>
     <script src="assets/vendor/xlsx.mini.min.js?v=0.18.5"></script>
     <link rel="stylesheet" as="style" crossorigin
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
@@ -159,7 +159,8 @@
             white-space: nowrap;
         }
 
-        .company-bar input {
+        .company-bar input,
+        .company-bar select {
             flex: 1;
             background: var(--input-bg);
             border: 1px solid var(--input-border);
@@ -170,6 +171,8 @@
             font-weight: 700;
             outline: none;
         }
+
+        .company-bar select { max-width: 190px; cursor: pointer; }
 
         .company-bar input:focus {
             border-color: var(--accent);
@@ -223,7 +226,8 @@
             min-width: 100px;
         }
 
-        .entry-fields input {
+        .entry-fields input,
+        .entry-fields select {
             width: 100%;
             padding: 12px;
             border: 1px solid var(--input-border);
@@ -234,6 +238,8 @@
             -webkit-appearance: none;
             appearance: none;
         }
+
+        .entry-fields select { cursor: pointer; }
 
         .entry-fields .ef input:focus {
             border-color: var(--accent);
@@ -1686,13 +1692,15 @@
             font-size: 12pt;
         }
 
-        .ptable-result col:nth-child(1) { width: 13%; }
-        .ptable-result col:nth-child(2) { width: 16%; }
-        .ptable-result col:nth-child(3) { width: 10%; }
-        .ptable-result col:nth-child(4) { width: 13%; }
-        .ptable-result col:nth-child(5) { width: 18%; }
-        .ptable-result col:nth-child(6) { width: 22%; }
-        .ptable-result col:nth-child(7) { width: 8%; }
+        .ptable-result col:nth-child(1) { width: 6%; }
+        .ptable-result col:nth-child(2) { width: 10%; }
+        .ptable-result col:nth-child(3) { width: 12%; }
+        .ptable-result col:nth-child(4) { width: 14%; }
+        .ptable-result col:nth-child(5) { width: 9%; }
+        .ptable-result col:nth-child(6) { width: 12%; }
+        .ptable-result col:nth-child(7) { width: 14%; }
+        .ptable-result col:nth-child(8) { width: 15%; }
+        .ptable-result col:nth-child(9) { width: 8%; }
 
         .ptable-buyer col:nth-child(1) { width: 13%; }
         .ptable-buyer col:nth-child(2) { width: 18%; }
@@ -2423,6 +2431,14 @@
             cursor: pointer;
             font-weight: 600;
         }
+
+        @media (max-width: 640px) {
+            .company-bar { flex-wrap: wrap; align-items: stretch; padding: 14px; }
+            .company-bar label { width: 72px; display: flex; align-items: center; }
+            .company-bar input, .company-bar select { min-width: calc(100% - 86px); max-width: none; }
+            .entry-fields { flex-wrap: wrap; }
+            .entry-fields .ef { min-width: 100%; }
+        }
     </style>
 </head>
 
@@ -2468,6 +2484,12 @@
             <div class="company-bar">
                 <label>업체명</label>
                 <input type="text" id="f-company" placeholder="업체/팀 이름">
+                <label for="f-auction-type">경매 구분</label>
+                <select id="f-auction-type" aria-label="경매 구분">
+                    <option value="tournament">토너먼트 후보</option>
+                    <option value="event">이벤트 매치</option>
+                    <option value="extra">추가 경매</option>
+                </select>
             </div>
 
             <div id="entries"></div>
@@ -2964,6 +2986,7 @@
         async function submitAll() {
             if (entries.length === 0) { toast('개체를 추가해주세요', true); return; }
             const company = document.getElementById('f-company').value.trim();
+            const auctionType = document.getElementById('f-auction-type').value || 'tournament';
 
             // 유효성
             for (const e of entries) {
@@ -3032,6 +3055,7 @@
                         photoDam: damPhoto,
                         photoSibling: photoResults[e.id].sibling,
                         checklist: gatherChecklist(e.id),
+                        auctionType: auctionType,
                         sireId: e.sireId || '',
                         damId: e.damId || ''
                     };
@@ -3055,6 +3079,7 @@
             entries.length = 0; entryId = 0;
             document.getElementById('entries').innerHTML = '';
             addEntry(); // 빈 행 하나 추가
+            document.getElementById('f-auction-type').value = 'tournament';
         }
 
         // ── 체크리스트 헬퍼 ──
@@ -3383,7 +3408,7 @@
             } catch (e) { }
             const cl = parseChecklist(it.checklist);
             const detailIsActive = getStatusClass(it.status || '') === 'st-active';
-            const detailTitle = (detailIsActive ? '' : '#' + esc(it.num) + ' ') + esc(it.name);
+            const detailTitle = (detailIsActive ? '' : '#' + esc(it.publicNumber || it.num) + ' ') + esc(it.name);
             let d = '<div class="card-detail-inner" style="background:#F9FAFB; padding:20px; min-height:100%; border-radius:12px;">';
             d += '<div style="font-size:18px; font-weight:800; color:var(--text-title); margin-bottom:16px;">' + detailTitle + '</div>';
             var photos = [];
@@ -3595,7 +3620,8 @@
                     // 정보 (번호, 이름, 업체)
                     '<div class="card-info">' +
                     '<div style="display:flex;align-items:center;gap:6px;">' +
-                    (isActive ? '' : '<span style="font-size:10px;font-weight:700;color:var(--text3);background:#F3F4F6;padding:1px 4px;border-radius:2px;letter-spacing:-0.03em;">' + (it.num || '-') + '</span>') +
+                    (isActive ? '' : '<span style="font-size:10px;font-weight:700;color:var(--text3);background:#F3F4F6;padding:1px 4px;border-radius:2px;letter-spacing:-0.03em;">' + (it.publicNumber || it.num || '-') + '</span>') +
+                    '<span style="font-size:9px;font-weight:750;color:' + (it.auctionType === 'tournament' ? '#2563EB' : '#9A6700') + ';background:' + (it.auctionType === 'tournament' ? '#EFF6FF' : '#FFF7E8') + ';padding:2px 5px;border-radius:3px;white-space:nowrap;">' + esc(auctionStageLabel(it)) + '</span>' +
                     '<span class="item-name">' + esc(it.name) + '</span>' +
                     '</div>' +
                     '<div class="company-name">' + esc(it.company) + '</div>' +
@@ -3850,6 +3876,7 @@
             document.querySelector('.bs-footer').style.display = 'none';
 
             const cl = parseChecklist(it.checklist || '');
+            const currentAuctionType = it.auctionType || getItemAuctionMeta(it).auctionType;
             var birthY = '', birthM = '';
             if (cl.birth) { var bp = cl.birth.split('-'); birthY = bp[0] || ''; birthM = bp[1] || ''; }
             var yearOpts = '<option value="">년도</option>';
@@ -3868,6 +3895,7 @@
                 '<div class="item-entry" style="margin:0;">' +
                 '<div style="font-size:16px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:6px;margin-bottom:12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> 정보 수정</div>' +
                 '<div class="entry-fields"><div class="ef" style="flex:1"><label>업체명</label><input type="text" id="ed-c-' + row + '" value="' + esc(it.company) + '"></div><div class="ef" style="flex:1"><label>개체명 *</label><input type="text" id="ed-n-' + row + '" value="' + esc(it.name) + '"></div></div>' +
+                '<div class="entry-fields"><div class="ef"><label>경매 구분</label><select id="ed-auction-' + row + '"><option value="tournament"' + (currentAuctionType === 'tournament' ? ' selected' : '') + '>토너먼트</option><option value="event"' + (currentAuctionType === 'event' ? ' selected' : '') + '>이벤트 매치</option><option value="extra"' + (currentAuctionType === 'extra' ? ' selected' : '') + '>추가 경매</option></select></div></div>' +
                 '<div class="entry-fields"><div class="ef" style="flex:1"><label>시작가</label><input type="text" id="ed-p-' + row + '" value="' + esc(it.startPrice) + '" placeholder="미입력 시 1만" inputmode="numeric"></div><div class="ef" style="flex:1"><label>특이사항</label><input type="text" id="ed-note-' + row + '" value="' + esc(it.note || '') + '" placeholder="특이사항"></div></div>' +
                 '<div class="entry-fields"><div class="ef"><label>안내문구</label><input type="text" id="ed-ann-' + row + '" value="' + esc(it.announce || '') + '" placeholder="경매 시 안내할 문구"></div></div>' +
                 '<div class="photo-row-mini">' +
@@ -4004,6 +4032,7 @@
             const pw = getAdminPw();
             if (!pw) return;
             const container = document.getElementById('bs-content');
+            const existingItem = (window._lastItems || []).find(function (item) { return String(item.row) === String(row); }) || {};
 
             // 저장 버튼 스피너 효과 (임시)
             const saveBtn = document.getElementById('ed-save-' + row);
@@ -4015,7 +4044,12 @@
                 startPrice: document.getElementById('ed-p-' + row).value.trim(),
                 note: (document.getElementById('ed-note-' + row) || {}).value || '',
                 announce: (document.getElementById('ed-ann-' + row) || {}).value || '',
-                checklist: gatherEditChecklist(container)
+                checklist: gatherEditChecklist(container),
+                auctionType: document.getElementById('ed-auction-' + row).value,
+                tournamentCode: existingItem.tournamentCode || '',
+                teamCode: existingItem.teamCode || '',
+                tournamentStage: existingItem.tournamentStage || 0,
+                publicNumber: existingItem.publicNumber || existingItem.num || 0
             };
 
             const photoKeys = ['photoItem', 'photoSire', 'photoDam', 'photoSibling'];
@@ -4169,6 +4203,8 @@
             var w = parseWinnerP(it.winner);
             var shortName = truncatePrintListName(it.name, 10);
             var r = '<tr>';
+            r += '<td class="pnum">' + (it.publicNumber || it.num || '-') + '</td>';
+            r += '<td class="ptype">' + auctionStageLabel(it) + '</td>';
             if (showCo) r += '<td class="pcomp">' + (it.company || '') + '</td>';
             r += '<td class="pname">' + shortName + '</td>';
             r += '<td class="psold">' + (it.soldPrice ? fmtPriceP(it.soldPrice) : '') + '</td>';
@@ -4202,19 +4238,19 @@
 
             // 경매 리스트
             document.getElementById('pl-meta').textContent = dateStr + ' · 총 ' + items.length + '개체';
-            var lh = '<table class="ptable" style="table-layout:fixed"><thead><tr><th style="width:100px">업체</th><th style="width:120px">이름</th><th>정보</th></tr></thead><tbody>';
+            var lh = '<table class="ptable" style="table-layout:fixed"><thead><tr><th style="width:48px">번호</th><th style="width:82px">구분</th><th style="width:100px">업체</th><th style="width:120px">이름</th><th>정보</th></tr></thead><tbody>';
             items.forEach(function (it) {
                 var cl = pChecklist(it.checklist), info = []; var t = pTraits(cl); if (t) info.push(t); if (it.note) info.push(it.note);
                 var infoStr = info.join(' / ');
                 var shortName = truncatePrintListName(it.name, 10);
-                lh += '<tr><td class="pcomp">' + (it.company || '') + '</td><td class="pname">' + shortName + '</td><td class="pinfo" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + infoStr + '</td></tr>';
+                lh += '<tr><td class="pnum">' + (it.publicNumber || it.num || '-') + '</td><td class="ptype">' + auctionStageLabel(it) + '</td><td class="pcomp">' + (it.company || '') + '</td><td class="pname">' + shortName + '</td><td class="pinfo" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + infoStr + '</td></tr>';
             });
             lh += '</tbody></table>';
             document.getElementById('pl-body').innerHTML = lh;
 
             // 낙찰 결과
             document.getElementById('pr-meta').textContent = dateStr + ' · 낙찰 ' + sold.length + '건 / 유찰 ' + unsold.length + '건 / 전체 ' + items.length + '건 · 총매출 ' + fmtPriceP(total);
-            var rh = '<table class="ptable ptable-result"><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr><th>업체</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th></tr></thead><tbody>';
+            var rh = '<table class="ptable ptable-result"><colgroup><col><col><col><col><col><col><col><col><col></colgroup><thead><tr><th>번호</th><th>구분</th><th>업체</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th></tr></thead><tbody>';
             items.forEach(function (it) { rh += buildRow(it, true); });
             rh += '</tbody></table>';
             document.getElementById('pr-body').innerHTML = rh;
@@ -4270,11 +4306,13 @@
         function auctionResultExportRows() {
             var items = window._lastItems || [];
             return [
-                ['업체', '이름', '낙찰가(만원)', '낙찰자', '연락처', '배송', '상태']
+                ['번호', '경매 구분', '업체', '이름', '낙찰가(만원)', '낙찰자', '연락처', '배송', '상태']
             ].concat(items.map(function (it) {
                 var winner = parseWinnerP(it.winner);
                 var soldPrice = it.soldPrice === '' || it.soldPrice == null ? '' : Number(it.soldPrice);
                 return [
+                    Number(it.publicNumber || it.num) || '',
+                    auctionStageLabel(it),
                     it.company || '',
                     it.name || '',
                     Number.isFinite(soldPrice) ? soldPrice : '',
@@ -4314,10 +4352,10 @@
             try {
                 var worksheet = XLSX.utils.aoa_to_sheet(rows);
                 worksheet['!cols'] = [
-                    { wch: 18 }, { wch: 24 }, { wch: 16 }, { wch: 18 },
-                    { wch: 16 }, { wch: 28 }, { wch: 12 }
+                    { wch: 8 }, { wch: 14 }, { wch: 18 }, { wch: 24 }, { wch: 16 },
+                    { wch: 18 }, { wch: 16 }, { wch: 28 }, { wch: 12 }
                 ];
-                worksheet['!autofilter'] = { ref: 'A1:G' + rows.length };
+                worksheet['!autofilter'] = { ref: 'A1:I' + rows.length };
                 var workbook = XLSX.utils.book_new();
                 workbook.Props = { Title: 'CDCUP 낙찰 결과', Subject: '낙찰 결과 표', Author: 'CDCUP' };
                 XLSX.utils.book_append_sheet(workbook, worksheet, '낙찰 결과');
@@ -4481,8 +4519,8 @@
                 });
 
                 var ch = '<div class="pc-wrapper" id="pc-wrapper">';
-                ch += '<table class="ptable ptable-company-selected" id="pc-table"><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr>';
-                ch += '<th>업체</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
+                ch += '<table class="ptable ptable-company-selected" id="pc-table"><colgroup><col><col><col><col><col><col><col><col><col></colgroup><thead><tr>';
+                ch += '<th>번호</th><th>구분</th><th>업체</th><th>이름</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
                 ch += '</tr></thead><tbody>';
                 sold.forEach(function (it) {
                     var w = parseWinnerP(it.winner);
@@ -4490,6 +4528,8 @@
                     var sx = st.indexOf('낙찰') >= 0 ? '낙찰' : st;
                     var shortName = truncatePrintListName(it.name, 10);
                     ch += '<tr class="pc-selected-row">';
+                    ch += '<td class="pnum">' + (it.publicNumber || it.num || '-') + '</td>';
+                    ch += '<td class="ptype">' + auctionStageLabel(it) + '</td>';
                     ch += '<td class="pcomp" style="font-weight:700;white-space:nowrap;">' + esc((it.company || '').trim() || '(미입력)') + '</td>';
                     ch += '<td class="pname">' + esc(shortName) + '</td>';
                     ch += '<td class="psold">' + (it.soldPrice ? fmtPriceP(it.soldPrice) : '') + '</td>';
@@ -4502,7 +4542,7 @@
                     ch += '</tr>';
                 });
                 if (!sold.length) {
-                    ch += '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">선택한 업체의 낙찰 결과가 없습니다</td></tr>';
+                    ch += '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">선택한 업체의 낙찰 결과가 없습니다</td></tr>';
                 }
                 ch += '</tbody></table></div>';
                 document.getElementById('pc-body').innerHTML = ch;
@@ -4563,8 +4603,8 @@
 
             // 테이블 생성
             var ch = '<div class="pc-wrapper" id="pc-wrapper">';
-            ch += '<table class="ptable ptable-buyer" id="pc-table"><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr>';
-            ch += '<th>낙찰자</th><th>연락처</th><th>업체</th><th>이름</th><th>낙찰가</th><th>배송</th><th>상태</th>';
+            ch += '<table class="ptable ptable-buyer" id="pc-table"><colgroup><col><col><col><col><col><col><col><col><col></colgroup><thead><tr>';
+            ch += '<th>낙찰자</th><th>연락처</th><th>번호</th><th>구분</th><th>업체</th><th>이름</th><th>낙찰가</th><th>배송</th><th>상태</th>';
             ch += '</tr></thead><tbody>';
 
             var multiCount = 0;
@@ -4596,6 +4636,8 @@
                         ch += '<td rowspan="' + grp.items.length + '" class="pphone" style="vertical-align:middle;text-align:center;">' + fmtPhoneP(grp.phone) + '</td>';
                     }
 
+                    ch += '<td class="pnum">' + (it.publicNumber || it.num || '-') + '</td>';
+                    ch += '<td class="ptype">' + auctionStageLabel(it) + '</td>';
                     var compStyle = isOtherCo ? 'color:#999;' : 'font-weight:700;';
                     var shortName = truncatePrintListName(it.name, 10);
                     ch += '<td class="pcomp" style="' + compStyle + 'white-space:nowrap;">' + co + '</td>';
@@ -4610,7 +4652,7 @@
             });
 
             if (!sold.length) {
-                ch += '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text3);">낙찰 결과가 없습니다</td></tr>';
+                ch += '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3);">낙찰 결과가 없습니다</td></tr>';
             }
 
             ch += '</tbody></table></div>';
