@@ -2594,6 +2594,7 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
             }
 
             const splitShipping = shippingType === '배송' && ['도도시', '파르게'].includes(shippingCompany);
+            const hasShippingMethod = shippingType === '배송' || shippingType === '직접수령';
             const selectedItemCount=(selectedItems || []).length;
             let deliverySection='';
             if(shippingType==='직접수령') {
@@ -2602,21 +2603,20 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
                 deliverySection=sellerCompanies.length>1
                     ? `[${shippingCompany} 합배송]\n참여 업체: ${sellerCompanies.join(', ')}\n전체 ${(allItems || []).length}개체 / 배송비 ${totalShipping.toLocaleString()}원\n${selectedCompany} 배분 배송비: ${shippingShare.toLocaleString()}원\n(${selectedCompany} 낙찰 ${selectedItemCount}개체 기준)`
                     : `[${shippingCompany} 배송]\n${shippingInfo}\n배송비: ${shippingShare.toLocaleString()}원`;
-            } else {
+            } else if(shippingType === '배송') {
                 deliverySection=`[배송]\n${shippingInfo}\n배송비: ${shippingShare.toLocaleString()}원`;
             }
-            return `[CDCUP | ${selectedCompany}]
-${winnerName}님, ${selectedCompany}입니다.
+            const paymentLines = [`낙찰금: ${bid.toLocaleString()}원`];
+            if (hasShippingMethod) paymentLines.push(`배송비: ${shippingShare.toLocaleString()}원`);
+            paymentLines.push(`합계: ${(bid + shippingShare).toLocaleString()}원`);
 
-[${selectedCompany} 낙찰]
-${itemLines}
-
-${deliverySection}
-
-[${selectedCompany} 결제금액]
-낙찰금: ${bid.toLocaleString()}원
-배송비: ${shippingShare.toLocaleString()}원
-합계: ${(bid + shippingShare).toLocaleString()}원${others}`;
+            const messageSections = [
+                `[CDCUP | ${selectedCompany}]\n${winnerName}님, ${selectedCompany}입니다.`,
+                `[${selectedCompany} 낙찰]\n${itemLines}`
+            ];
+            if (deliverySection) messageSections.push(deliverySection);
+            messageSections.push(`[${selectedCompany} 결제금액]\n${paymentLines.join('\n')}`);
+            return messageSections.join('\n\n') + others;
         }
 
         async function copyPlainText(text, successMessage) {
