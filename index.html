@@ -239,7 +239,7 @@
             <div>
                 <div class="kicker">AUCTION OPERATIONS HUB</div>
                 <h1>CREO 운영 허브</h1>
-                <p class="lead">Band 모니터링 앱과 공통 데이터는 유지하고, 이벤트별 설정/방송/순위 화면만 분리합니다. CDCUP과 크레와트가 같은 서버 안에서 서로 다른 운영 동선을 갖습니다.</p>
+                <p class="lead">Band 모니터링 앱과 공통 데이터는 유지하고, 방송 콘솔에서 이벤트 모듈만 선택합니다. CDCUP과 크레와트는 같은 서버 안에서 서로 다른 운영 동선을 갖습니다.</p>
             </div>
             <div class="domain">
                 Render service
@@ -253,7 +253,7 @@
                     <span class="mark">G</span>
                     <div>
                         <h2>공통 운영</h2>
-                        <p>모든 경매가 함께 쓰는 등록/배송 흐름입니다.</p>
+                        <p>모든 경매가 함께 쓰는 등록, 배송, 방송 콘솔입니다.</p>
                     </div>
                 </div>
                 <div class="section-tag">GLOBAL</div>
@@ -273,6 +273,27 @@
                     </div>
                     <span class="arrow">›</span>
                 </a>
+                <a class="link-card" href="settings.html">
+                    <div>
+                        <strong>방송 화면 제어</strong>
+                        <span>자막, 배너, 사진 노출, 방송 모듈을 한 곳에서 제어합니다.</span>
+                    </div>
+                    <span class="arrow">›</span>
+                </a>
+                <a class="link-card" href="preview.html?page=1">
+                    <div>
+                        <strong>방송 미리보기</strong>
+                        <span>현재 선택된 모듈 기준으로 송출 화면을 확인하고 배치합니다.</span>
+                    </div>
+                    <span class="arrow">›</span>
+                </a>
+                <a class="link-card wide" href="broadcast-router.html" target="_blank" rel="noopener">
+                    <div>
+                        <strong>송출 화면</strong>
+                        <span>OBS에는 이 공통 주소를 연결하고, 방송 화면 제어에서 CDCUP 또는 크레와트를 선택합니다.</span>
+                    </div>
+                    <span class="arrow">›</span>
+                </a>
             </div>
         </section>
 
@@ -282,13 +303,13 @@
                     <span class="mark">C</span>
                     <div>
                         <h2>CDCUP 설정/관리</h2>
-                        <p>토너먼트 경매, 경기 결과, 기존 CDCUP 방송 화면을 관리합니다.</p>
+                        <p>토너먼트 경매 데이터와 경기 결과를 관리합니다.</p>
                     </div>
                 </div>
                 <div class="section-tag">TOURNAMENT</div>
             </div>
             <div class="link-grid">
-                <a class="link-card" href="cdcup-index.html">
+                <a class="link-card" href="cdcup/">
                     <div>
                         <strong>CDCUP 설정/관리</strong>
                         <span>개체 목록, 회차 기록, 토너먼트 후보를 관리합니다.</span>
@@ -299,27 +320,6 @@
                     <div>
                         <strong>경기결과표</strong>
                         <span>낙찰 결과와 정산용 결과표를 확인합니다.</span>
-                    </div>
-                    <span class="arrow">›</span>
-                </a>
-                <a class="link-card" href="settings.html">
-                    <div>
-                        <strong>방송 화면 제어</strong>
-                        <span>자막, 배너, 사진 노출, 방송 시스템 설정을 제어합니다.</span>
-                    </div>
-                    <span class="arrow">›</span>
-                </a>
-                <a class="link-card" href="preview.html?page=1">
-                    <div>
-                        <strong>방송 미리보기</strong>
-                        <span>1P/2P/3P 송출 레이아웃을 미리 보고 배치합니다.</span>
-                    </div>
-                    <span class="arrow">›</span>
-                </a>
-                <a class="link-card" href="broadcast.html?page=1&amp;v=20260701-status-ui" target="_blank" rel="noopener">
-                    <div>
-                        <strong>송출 화면</strong>
-                        <span>OBS 브라우저 소스로 쓰는 CDCUP 송출 화면을 엽니다. 2P/3P 화면은 방송 미리보기에서 바로 열 수 있습니다.</span>
                     </div>
                     <span class="arrow">›</span>
                 </a>
@@ -339,13 +339,13 @@
                     <span class="mark">W</span>
                     <div>
                         <h2>크레와트 설정/관리</h2>
-                        <p>기숙사 배정 설문과 기숙사 점수전 방송 화면을 관리합니다.</p>
+                        <p>기숙사 배정 설문과 기숙사 점수 데이터를 관리합니다.</p>
                     </div>
                 </div>
                 <div class="section-tag">HOUSE CUP</div>
             </div>
             <div class="link-grid">
-                <a class="link-card" href="crewart-settings.html">
+                <a class="link-card" href="crewarts/">
                     <div>
                         <strong>기숙사 설정</strong>
                         <span>기숙사 이름, 색상, 입찰자 매칭, 점수 환산을 설정합니다.</span>
@@ -356,27 +356,6 @@
                     <div>
                         <strong>설문</strong>
                         <span>밸런스 게임 답변으로 참여자 기숙사를 자동 배정합니다.</span>
-                    </div>
-                    <span class="arrow">›</span>
-                </a>
-                <a class="link-card" href="crewart-control.html">
-                    <div>
-                        <strong>방송 화면 제어</strong>
-                        <span>점수판, 현재 경매, 진행 대기 모드를 선택합니다.</span>
-                    </div>
-                    <span class="arrow">›</span>
-                </a>
-                <a class="link-card" href="crewart-preview.html">
-                    <div>
-                        <strong>방송 미리보기</strong>
-                        <span>크레와트 전용 송출 화면을 iframe으로 확인합니다.</span>
-                    </div>
-                    <span class="arrow">›</span>
-                </a>
-                <a class="link-card" href="crewart-broadcast.html" target="_blank" rel="noopener">
-                    <div>
-                        <strong>송출 화면</strong>
-                        <span>OBS에는 이 주소를 연결하고, 제어 페이지에서 점수판/현재 경매/진행 대기 모드를 바꿉니다.</span>
                     </div>
                     <span class="arrow">›</span>
                 </a>

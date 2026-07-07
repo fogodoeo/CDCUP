@@ -13,7 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>방송 화면 실시간 미리보기 및 배치기 - CDCUP</title>
+    <title>방송 미리보기 - CREO</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
     <script src="event-modules.js?v=20260707-modules"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -705,30 +705,31 @@
 
 <body>
     <nav class="cdcup-nav">
-        <a href="cdcup-index.html" class="cdcup-nav__brand">
+        <a href="index.html" class="cdcup-nav__brand">
             <span class="cdcup-nav__brand-icon js-event-nav-icon">C</span>
-            <span class="js-event-admin-title">CDCUP 관리자</span>
+            <span class="js-event-admin-title">CREO 방송 콘솔</span>
         </a>
         <div class="cdcup-nav__links">
             <a href="index.html" class="cdcup-nav__link">허브</a>
-            <a href="cdcup-index.html" class="cdcup-nav__link">CDCUP 관리</a>
-            <a href="summary.html" class="cdcup-nav__link">경기결과표</a>
             <a href="settings.html" class="cdcup-nav__link">방송 화면 제어</a>
             <a href="preview.html?page=1" class="cdcup-nav__link active">방송 미리보기</a>
-            <a href="ranking.html" class="cdcup-nav__link">종합 순위표</a>
-            <a href="crewart-settings.html" class="cdcup-nav__link">크레와트</a>
+            <a href="broadcast-router.html" class="cdcup-nav__link" target="_blank" rel="noopener">송출 화면</a>
+            <a href="cdcup/" class="cdcup-nav__link">CDCUP</a>
+            <a href="crewarts/" class="cdcup-nav__link">크레와트</a>
         </div>
         <div class="cdcup-nav__utils">
             <!-- 방송 송출 드롭다운 메뉴 -->
             <div class="cdcup-nav__dropdown">
                 <button class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
-                    <span>방송 송출 화면</span>
+                    <span>송출 화면</span>
                     <span class="caret">▼</span>
                 </button>
                 <div class="cdcup-nav__dropdown-menu">
+                    <a href="broadcast-router.html" target="_blank" rel="noopener" class="cdcup-nav__dropdown-item">공통 송출</a>
                     <a href="broadcast.html?page=1&amp;v=20260701-status-ui" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
                     <a href="broadcast.html?page=2&amp;v=20260701-status-ui" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
                     <a href="broadcast.html?page=3&amp;v=20260701-status-ui" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
+                    <a href="crewart-broadcast.html" target="_blank" rel="noopener" class="cdcup-nav__dropdown-item">크레와트 송출</a>
                 </div>
             </div>
         </div>
@@ -740,7 +741,7 @@
             <a href="preview.html?page=1" id="btn-tab-p1" class="cdcup-tab" style="text-decoration: none;">1P 배치기</a>
             <a href="preview.html?page=2" id="btn-tab-p2" class="cdcup-tab" style="text-decoration: none;">2P 배치기</a>
             <a href="preview.html?page=3" id="btn-tab-p3" class="cdcup-tab" style="text-decoration: none;">3P 배치기</a>
-            <a href="settings.html" class="cdcup-tab" style="text-decoration: none;">방송 시스템 설정</a>
+            <a href="settings.html" class="cdcup-tab" style="text-decoration: none;">방송 화면 제어</a>
         </div>
         <div class="event-module-panel" id="preview-event-module-panel">
             <div>
@@ -1014,7 +1015,7 @@
                 <div class="t-controls">
                     <span class="t-label">크레와트 3P</span>
                     <button class="t-btn save" type="button" onclick="refreshCrewartPreview()">점수판 새로고침</button>
-                    <a class="t-btn" href="settings.html" style="text-decoration:none;">기숙사 설정</a>
+                    <a class="t-btn" href="crewart-settings.html" style="text-decoration:none;">기숙사 설정</a>
                 </div>
                 <div class="t-controls">
                     <span class="t-label">송출 화면:</span>
@@ -1317,7 +1318,10 @@
             try {
             const cfg = await getConfigMap();
             if (cfg) {
-                applyPreviewEventModule(cfg);
+                const requestedRaw = params.get('module') || params.get('event');
+                const requestedModule = String(requestedRaw || '').toLowerCase() === 'crewarts' ? 'crewart' : requestedRaw;
+                const displayCfg = requestedModule ? { ...cfg, active_event_module: requestedModule } : cfg;
+                applyPreviewEventModule(displayCfg);
 
                 // Load Banner values (페이지별 접두사 적용)
                 elements.banner.top = cfg[cfgPrefix+'banner_top'] || 'auto';

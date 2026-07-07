@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>CDCUP - 배송/수령 정보 등록</title>
+    <title>CREO - 배송/수령 정보 등록</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <style>
@@ -2389,10 +2389,10 @@
 
     </div>
 
-    <nav class="app-bottom-nav" aria-label="CDCUP 페이지 이동">
+    <nav class="app-bottom-nav" aria-label="CREO 공통 페이지 이동">
         <a class="active" href="shipping.html" aria-current="page">배송관리</a>
         <a href="shipping-status.html">전체조회</a>
-        <a href="ranking.html">순위표</a>
+        <a href="index.html">허브</a>
         <button class="utility" type="button" onclick="openCompanySelectModal()">업체변경</button>
     </nav>
 
@@ -2575,7 +2575,7 @@
                 const duplicateNote=otherCompanies.length
                     ? `\n\n${otherCompanies.length===1?otherCompanies[0]+'의 안내로':otherCompanies.join('·')+' 중 한 업체의 안내로'} 이미 랩팡 배송비를 입금하셨다면 중복 입금하지 마세요.`
                     : '';
-                return `[CDCUP | ${selectedCompany}]
+                return `[CREO | ${selectedCompany}]
 ${winnerName}님, ${selectedCompany}입니다.
 
 [${selectedCompany} 낙찰]
@@ -2611,7 +2611,7 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
             paymentLines.push(`합계: ${(bid + shippingShare).toLocaleString()}원`);
 
             const messageSections = [
-                `[CDCUP | ${selectedCompany}]\n${winnerName}님, ${selectedCompany}입니다.`,
+                `[CREO | ${selectedCompany}]\n${winnerName}님, ${selectedCompany}입니다.`,
                 `[${selectedCompany} 낙찰]\n${itemLines}`
             ];
             if (deliverySection) messageSections.push(deliverySection);

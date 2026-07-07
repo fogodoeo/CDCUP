@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>시스템 설정 - CDCUP</title>
+    <title>방송 화면 제어 - CREO</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
     <script src="event-modules.js?v=20260707-modules"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -217,35 +217,49 @@
         .save-fab { position:fixed; bottom:20px; right:20px; width:56px; height:56px; border-radius:50%; background:var(--green); border:none; color:#fff; font-size:22px; cursor:pointer; box-shadow:0 4px 16px rgba(16,185,129,0.4); z-index:999; transition:transform .2s; display:flex; align-items:center; justify-content:center; }
         .save-fab:hover { transform:scale(1.1); }
         .save-fab:active { transform:scale(0.95); }
+
+        @media (max-width: 720px) {
+            .container {
+                margin: 14px auto;
+                padding: 0 12px 72px;
+            }
+            .form-row {
+                flex-direction: column;
+            }
+            .card {
+                padding: 16px;
+            }
+        }
     </style>
 </head>
 
 <body>
     <nav class="cdcup-nav">
-        <a href="cdcup-index.html" class="cdcup-nav__brand">
-            <span class="cdcup-nav__brand-icon">🏆</span>
-            <span class="js-event-admin-title">CDCUP 관리자</span>
+        <a href="index.html" class="cdcup-nav__brand">
+            <span class="cdcup-nav__brand-icon">C</span>
+            <span class="js-event-admin-title">CREO 방송 콘솔</span>
         </a>
         <div class="cdcup-nav__links">
             <a href="index.html" class="cdcup-nav__link">허브</a>
-            <a href="cdcup-index.html" class="cdcup-nav__link">CDCUP 관리</a>
-            <a href="summary.html" class="cdcup-nav__link">경기결과표</a>
             <a href="settings.html" class="cdcup-nav__link active">방송 화면 제어</a>
             <a href="preview.html?page=1" class="cdcup-nav__link">방송 미리보기</a>
-            <a href="ranking.html" class="cdcup-nav__link">종합 순위표</a>
-            <a href="crewart-settings.html" class="cdcup-nav__link">크레와트</a>
+            <a href="broadcast-router.html" class="cdcup-nav__link" target="_blank" rel="noopener">송출 화면</a>
+            <a href="cdcup/" class="cdcup-nav__link">CDCUP</a>
+            <a href="crewarts/" class="cdcup-nav__link">크레와트</a>
         </div>
         <div class="cdcup-nav__utils">
             <!-- 방송 송출 드롭다운 메뉴 -->
             <div class="cdcup-nav__dropdown">
                 <button class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
-                    <span>📺 방송 송출 화면</span>
+                    <span>송출 화면</span>
                     <span class="caret">▼</span>
                 </button>
                 <div class="cdcup-nav__dropdown-menu">
+                    <a href="broadcast-router.html" target="_blank" rel="noopener" class="cdcup-nav__dropdown-item">공통 송출</a>
                     <a href="broadcast.html?page=1&amp;v=20260701-status-ui" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
                     <a href="broadcast.html?page=2&amp;v=20260701-status-ui" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
                     <a href="broadcast.html?page=3&amp;v=20260701-status-ui" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
+                    <a href="crewart-broadcast.html" target="_blank" rel="noopener" class="cdcup-nav__dropdown-item">크레와트 송출</a>
                 </div>
             </div>
         </div>
@@ -257,13 +271,13 @@
             <a href="preview.html?page=1" class="cdcup-tab" style="text-decoration: none;">1P 배치기</a>
             <a href="preview.html?page=2" class="cdcup-tab" style="text-decoration: none;">2P 배치기</a>
             <a href="preview.html?page=3" class="cdcup-tab" style="text-decoration: none;">3P 배치기</a>
-            <a href="settings.html" class="cdcup-tab active" style="text-decoration: none;">방송 시스템 설정</a>
+            <a href="settings.html" class="cdcup-tab active" style="text-decoration: none;">방송 화면 제어</a>
         </div>
 
         <!-- ══ 이벤트 화면 모듈 ══ -->
         <div class="card" style="grid-column: span 2;">
             <div class="card-title">이벤트 화면 모듈</div>
-            <div class="section-desc">Band 모니터링 앱은 그대로 두고, 송출/배치/순위 화면의 세계관과 집계 방식을 전환합니다.</div>
+            <div class="section-desc">Band 모니터링 앱은 그대로 두고, 공통 방송 콘솔에서 송출 세계관과 집계 방식을 전환합니다.</div>
             <div class="form-row">
                 <div class="form-group">
                     <label>현재 모듈</label>
@@ -1021,14 +1035,16 @@
             try {
                 const cfg = await getConfigMap();
                 if (!cfg) return;
-                _cfg = cfg;
-                document.getElementById('cfg-active-event-module').value = cfg.active_event_module || 'cdcup';
+                const requestedRaw = new URLSearchParams(location.search).get('module') || new URLSearchParams(location.search).get('event');
+                const requestedModule = String(requestedRaw || '').toLowerCase() === 'crewarts' ? 'crewart' : requestedRaw;
+                _cfg = requestedModule ? { ...cfg, active_event_module: requestedModule } : cfg;
+                document.getElementById('cfg-active-event-module').value = _cfg.active_event_module || 'cdcup';
                 document.getElementById('cfg-crewart-houses').value = cfg.crewart_houses || serializeCrewartHouses(parseCrewartHouses(''));
                 document.getElementById('cfg-crewart-participants').value = cfg.crewart_participants || '';
                 document.getElementById('cfg-crewart-score-per-man').value = cfg.crewart_score_per_man || '1';
                 document.getElementById('cfg-crewart-sold-bonus').value = cfg.crewart_sold_bonus || '0';
                 document.getElementById('cfg-crewart-score-scope').value = cfg.crewart_score_scope || 'crewart';
-                applyAuctionEventModule(cfg);
+                applyAuctionEventModule(_cfg);
                 document.getElementById('cfg-ticker').value = cfg.ticker || '';
                 document.getElementById('cfg-badge-text').value = cfg.badge_text || 'LIVE';
                 document.getElementById('cfg-ticker-interval').value = cfg.ticker_interval || '4200';

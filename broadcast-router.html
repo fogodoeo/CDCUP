@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>CREO 송출 화면</title>
+    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        iframe {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: #000;
+        }
+
+        .status {
+            position: fixed;
+            left: 16px;
+            top: 16px;
+            z-index: 2;
+            padding: 10px 12px;
+            border: 1px solid rgba(255,255,255,.16);
+            background: rgba(0,0,0,.72);
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        body:not(.debug) .status { display: none; }
+    </style>
+</head>
+<body>
+    <iframe id="broadcast-frame" title="CREO 송출 화면"></iframe>
+    <div class="status" id="status">송출 화면 연결 중</div>
+
+    <script>
+        const params = new URLSearchParams(location.search);
+        const frame = document.getElementById('broadcast-frame');
+        const statusEl = document.getElementById('status');
+        const assetVersion = '20260701-status-ui';
+        let lastSrc = '';
+        let lastMode = '';
+
+        if (params.get('debug') === '1') document.body.classList.add('debug');
+
+        function normalizeEvent(value) {
+            value = String(value || '').toLowerCase();
+            return value === 'crewart' || value === 'crewarts' ? 'crewart' : 'cdcup';
+        }
+
+        function targetFor(config) {
+            const eventId = normalizeEvent(params.get('event') || config.active_event_module || 'cdcup');
+            if (eventId === 'crewart') {
+                const page = params.get('page') || params.get('mode') || config.crewart_broadcast_mode || '';
+                return page
+                    ? 'crewart-broadcast.html?page=' + encodeURIComponent(page)
+                    : 'crewart-broadcast.html';
+            }
+            const page = params.get('page') || config.cdcup_broadcast_page || '1';
+            return 'broadcast.html?page=' + encodeURIComponent(page) + '&v=' + encodeURIComponent(assetVersion);
+        }
+
+        async function refreshRoute() {
+            try {
+                const config = await getConfigMap() || {};
+                const src = targetFor(config);
+                if (src !== lastSrc) {
+                    frame.src = src;
+                    lastSrc = src;
+                }
+                const mode = normalizeEvent(params.get('event') || config.active_event_module || 'cdcup');
+                if (mode !== lastMode || statusEl.textContent.indexOf('연결 중') >= 0) {
+                    statusEl.textContent = (mode === 'crewart' ? '크레와트' : 'CDCUP') + ' 송출 중';
+                    lastMode = mode;
+                }
+            } catch (error) {
+                statusEl.textContent = '송출 설정 오류: ' + (error.message || error);
+                document.body.classList.add('debug');
+            }
+        }
+
+        refreshRoute();
+        setInterval(refreshRoute, 2400);
+    </script>
+</body>
+</html>

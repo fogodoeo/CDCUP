@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>크레와트 운영</title>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <style>
+        :root { --bg:#100b16; --panel:#211829; --line:rgba(214,178,94,.24); --text:#f7f1df; --muted:#b9ab8e; --accent:#d6b25e; --font:'Pretendard Variable','Pretendard',-apple-system,BlinkMacSystemFont,sans-serif; }
+        * { box-sizing:border-box; }
+        body { margin:0; min-height:100vh; background:linear-gradient(180deg,#100b16,#08060d); color:var(--text); font-family:var(--font); }
+        main { width:min(920px,calc(100% - 28px)); margin:0 auto; padding:34px 0; }
+        .top { display:flex; justify-content:space-between; align-items:flex-end; gap:18px; margin-bottom:18px; }
+        .kicker { color:var(--accent); font-size:11px; font-weight:900; letter-spacing:.16em; }
+        h1 { margin:7px 0 0; font-size:clamp(34px,6vw,58px); line-height:1; }
+        p { margin:8px 0 0; color:var(--muted); font-size:14px; line-height:1.65; }
+        .home { color:var(--muted); text-decoration:none; font-size:12px; font-weight:850; }
+        .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); }
+        a.card { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; min-height:96px; padding:18px; background:var(--panel); color:inherit; text-decoration:none; }
+        a.card:hover { background:#2b2132; }
+        strong { display:block; font-size:15px; font-weight:920; }
+        span { display:block; margin-top:6px; color:var(--muted); font-size:12px; line-height:1.5; }
+        .arrow { align-self:center; color:var(--accent); font-size:22px; font-weight:950; }
+        @media (max-width:720px) { .top { display:block; } .grid { grid-template-columns:1fr; } .home { display:inline-block; margin-top:14px; } }
+    </style>
+</head>
+<body>
+    <main>
+        <header class="top">
+            <div>
+                <div class="kicker">HOUSE SCORE AUCTION</div>
+                <h1>크레와트 운영</h1>
+                <p>기숙사 배정과 점수표를 관리합니다. 방송 화면은 메인 허브의 공통 방송 콘솔에서 크레와트를 선택합니다.</p>
+            </div>
+            <a class="home" href="../index.html">허브로 이동</a>
+        </header>
+        <section class="grid" aria-label="크레와트 메뉴">
+            <a class="card" href="../crewart-settings.html"><div><strong>기숙사 설정</strong><span>기숙사, 입찰자 매칭, 점수 환산을 설정합니다.</span></div><b class="arrow">›</b></a>
+            <a class="card" href="../crewart-survey.html"><div><strong>설문</strong><span>밸런스 게임 답변으로 참여자 기숙사를 배정합니다.</span></div><b class="arrow">›</b></a>
+            <a class="card" href="../crewart-ranking.html"><div><strong>점수표</strong><span>기숙사별 점수와 미배정 낙찰자를 확인합니다.</span></div><b class="arrow">›</b></a>
+            <a class="card" href="../settings.html"><div><strong>공통 방송 콘솔</strong><span>방송 제어, 미리보기, 송출 화면은 여기에서 모듈을 선택합니다.</span></div><b class="arrow">›</b></a>
+        </section>
+    </main>
+</body>
+</html>
