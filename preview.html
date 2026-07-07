@@ -202,8 +202,8 @@
         }
 
         .draggable-blind-totals {
-            width: 30%;
-            height: 46%;
+            width: 42%;
+            height: 24%;
             background: rgba(217, 176, 92, 0.14);
             border: 2px dashed #d9b05c;
             border-radius: 8px;
@@ -780,7 +780,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260708-blind-totals"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260708-mobile-blind-totals"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -920,7 +920,7 @@
                     </div>
                     <div class="switch-container" id="toggle-blind-totals-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">팀합산 폰트:</span>
-                        <input type="number" id="blind-totals-font-input" onchange="updateBracketFontSize('blind_totals', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="10" max="48" value="18">
+                        <input type="number" id="blind-totals-font-input" onchange="updateBracketFontSize('blind_totals', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="9" max="32" value="14">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
                     </div>
                     <div class="switch-container" id="toggle-bracket-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
@@ -1067,7 +1067,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260708-blind-totals';
+        const broadcastAssetVersion = '20260708-mobile-blind-totals';
         let previewConfigMap = {};
 
         function requestedModuleId() {
@@ -1331,8 +1331,8 @@
             };
             elements.blind_totals = {
                 el: document.getElementById('draggable-blind-totals'),
-                top: "14%", left: "4%", right: "auto", bottom: "auto",
-                show: "1", width: "30%", height: "46%", fontSize: "18"
+                top: "10%", left: "2%", right: "auto", bottom: "auto",
+                show: "1", width: "42%", height: "24%", fontSize: "14"
             };
         }
 
@@ -1541,14 +1541,14 @@
                     elements.battle_ann.height = cfg.battle_ann_height || '25%';
                 }
                 if (elements.blind_totals) {
-                    elements.blind_totals.top = cfg.blind_totals_top || '14%';
-                    elements.blind_totals.left = cfg.blind_totals_left || '4%';
+                    elements.blind_totals.top = cfg.blind_totals_top || '10%';
+                    elements.blind_totals.left = cfg.blind_totals_left || '2%';
                     elements.blind_totals.right = cfg.blind_totals_right || 'auto';
                     elements.blind_totals.bottom = cfg.blind_totals_bottom || 'auto';
                     elements.blind_totals.show = cfg.blind_totals_show !== undefined ? String(cfg.blind_totals_show) : '1';
-                    elements.blind_totals.width = cfg.blind_totals_width || '30%';
-                    elements.blind_totals.height = cfg.blind_totals_height || '46%';
-                    elements.blind_totals.fontSize = cfg.blind_totals_font_size || '18';
+                    elements.blind_totals.width = cfg.blind_totals_width || '42%';
+                    elements.blind_totals.height = cfg.blind_totals_height || '24%';
+                    elements.blind_totals.fontSize = cfg.blind_totals_font_size || '14';
 
                     const blindFontInput = document.getElementById('blind-totals-font-input');
                     if (blindFontInput) blindFontInput.value = elements.blind_totals.fontSize;
@@ -1955,8 +1955,8 @@
                     elements.battle_ann.el.style.width = convertToPercent(elements.battle_ann.width);
                     elements.battle_ann.el.style.height = convertToPercent(elements.battle_ann.height);
                 } else if (resizeTarget === 'blind_totals' && elements.blind_totals) {
-                    const newW = Math.max(120, resizeStartW + dx);
-                    const newH = Math.max(80, resizeStartH + dy);
+                    const newW = Math.max(90, resizeStartW + dx);
+                    const newH = Math.max(54, resizeStartH + dy);
                     elements.blind_totals.width = ((newW / containerRect.width) * 100).toFixed(1) + '%';
                     elements.blind_totals.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
                     elements.blind_totals.el.style.width = convertToPercent(elements.blind_totals.width);
@@ -2223,7 +2223,7 @@
                     configMap['blind_totals_width'] = elements.blind_totals.width;
                     configMap['blind_totals_height'] = elements.blind_totals.height;
                     configMap['blind_totals_show'] = elements.blind_totals.show;
-                    configMap['blind_totals_font_size'] = elements.blind_totals.fontSize || '18';
+                    configMap['blind_totals_font_size'] = elements.blind_totals.fontSize || '14';
                     configMap['active_tournament'] = 'none';
                     configMap['bracket_full_show'] = '0';
                     configMap['bracket_live_show'] = '0';
@@ -2388,20 +2388,20 @@
                     applyVisualState('battle_ann');
                 }
                 if (elements.blind_totals) {
-                    elements.blind_totals.top = "14%";
-                    elements.blind_totals.left = "4%";
+                    elements.blind_totals.top = "10%";
+                    elements.blind_totals.left = "2%";
                     elements.blind_totals.right = "auto";
                     elements.blind_totals.bottom = "auto";
                     elements.blind_totals.show = resetIsCrewart ? "0" : "1";
-                    elements.blind_totals.width = "30%";
-                    elements.blind_totals.height = "46%";
-                    elements.blind_totals.fontSize = "18";
-                    elements.blind_totals.el.style.width = '30%';
-                    elements.blind_totals.el.style.height = '46%';
+                    elements.blind_totals.width = "42%";
+                    elements.blind_totals.height = "24%";
+                    elements.blind_totals.fontSize = "14";
+                    elements.blind_totals.el.style.width = '42%';
+                    elements.blind_totals.el.style.height = '24%';
                     const blindShowToggle = document.getElementById('toggle-blind-totals-show');
                     if (blindShowToggle) blindShowToggle.checked = !resetIsCrewart;
                     const blindFontInput = document.getElementById('blind-totals-font-input');
-                    if (blindFontInput) blindFontInput.value = '18';
+                    if (blindFontInput) blindFontInput.value = '14';
                     applyVisualState('blind_totals');
                     focusBracketLayer(resetIsCrewart ? 'bracket_full' : 'blind_totals');
                 }

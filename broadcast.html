@@ -2586,41 +2586,40 @@
         }
 
         #blind-team-total-overlay {
-            --blind-total-fs: 18px;
+            --blind-total-fs: 14px;
             display: none;
             position: absolute;
-            top: 14%;
-            left: 4%;
+            top: 10%;
+            left: 2%;
             z-index: 10008;
-            width: 30%;
-            min-width: 300px;
-            max-width: 560px;
-            min-height: 220px;
-            padding: calc(var(--blind-total-fs) * 0.9);
-            border: 1px solid rgba(217, 176, 92, 0.46);
-            border-radius: 8px;
-            background:
-                linear-gradient(135deg, rgba(8, 13, 24, 0.94), rgba(21, 26, 35, 0.9)),
-                radial-gradient(circle at 100% 0%, rgba(217, 176, 92, 0.14), transparent 42%);
-            box-shadow: 0 18px 46px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255,255,255,0.07);
+            width: 42%;
+            min-width: 168px;
+            max-width: 330px;
+            min-height: 0;
+            padding: calc(var(--blind-total-fs) * 0.58);
+            border: 1px solid rgba(217, 176, 92, 0.38);
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(8, 13, 24, 0.94), rgba(20, 24, 32, 0.9));
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255,255,255,0.06);
             color: #f8fafc;
             font-family: 'Pretendard', sans-serif;
             box-sizing: border-box;
             pointer-events: none;
+            overflow: hidden;
         }
         #blind-team-total-overlay.visible {
             display: block;
         }
         .blind-total-head {
             display: flex;
-            align-items: end;
+            align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            padding-bottom: calc(var(--blind-total-fs) * 0.58);
+            gap: 8px;
+            padding-bottom: calc(var(--blind-total-fs) * 0.36);
             border-bottom: 1px solid rgba(217, 176, 92, 0.26);
         }
         .blind-total-kicker {
-            display: block;
+            display: none;
             color: #d9b05c;
             font-size: calc(var(--blind-total-fs) * 0.54);
             font-weight: 920;
@@ -2628,32 +2627,32 @@
         }
         .blind-total-title {
             display: block;
-            margin-top: 4px;
             color: #fff7df;
-            font-size: calc(var(--blind-total-fs) * 1.02);
+            font-size: calc(var(--blind-total-fs) * 0.9);
             font-weight: 940;
             letter-spacing: 0;
+            white-space: nowrap;
         }
         .blind-total-meta {
             color: #94a3b8;
-            font-size: calc(var(--blind-total-fs) * 0.58);
+            font-size: calc(var(--blind-total-fs) * 0.62);
             font-weight: 820;
             white-space: nowrap;
         }
         .blind-total-list {
             display: grid;
-            gap: calc(var(--blind-total-fs) * 0.42);
-            margin-top: calc(var(--blind-total-fs) * 0.72);
+            gap: calc(var(--blind-total-fs) * 0.28);
+            margin-top: calc(var(--blind-total-fs) * 0.48);
         }
         .blind-total-row {
             display: grid;
-            grid-template-columns: minmax(72px, 0.56fr) minmax(0, 1fr) auto;
+            grid-template-columns: minmax(34px, 0.42fr) minmax(38px, 0.52fr) minmax(0, 1fr);
             align-items: center;
-            gap: calc(var(--blind-total-fs) * 0.56);
-            min-height: calc(var(--blind-total-fs) * 2.5);
-            padding: 0 calc(var(--blind-total-fs) * 0.58);
+            gap: calc(var(--blind-total-fs) * 0.42);
+            min-height: calc(var(--blind-total-fs) * 1.82);
+            padding: calc(var(--blind-total-fs) * 0.26) calc(var(--blind-total-fs) * 0.42);
             border: 1px solid rgba(148, 163, 184, 0.18);
-            border-radius: 5px;
+            border-radius: 4px;
             background: rgba(255,255,255,0.036);
         }
         .blind-total-row.is-active {
@@ -2672,11 +2671,7 @@
             min-width: 0;
         }
         .blind-total-bar {
-            position: relative;
-            height: 7px;
-            overflow: hidden;
-            border-radius: 999px;
-            background: rgba(148, 163, 184, 0.18);
+            display: none;
         }
         .blind-total-bar span {
             position: absolute;
@@ -2687,20 +2682,21 @@
         }
         .blind-total-count {
             display: block;
-            margin-top: 4px;
             color: #64748b;
-            font-size: calc(var(--blind-total-fs) * 0.52);
+            font-size: calc(var(--blind-total-fs) * 0.66);
             font-weight: 760;
+            white-space: nowrap;
         }
         .blind-total-amount {
             color: #fff7df;
-            font-size: calc(var(--blind-total-fs) * 0.9);
+            font-size: calc(var(--blind-total-fs) * 0.8);
             font-weight: 950;
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
+            text-align: right;
         }
         .blind-total-empty {
-            padding: 26px 12px;
+            padding: 14px 8px;
             color: #94a3b8;
             text-align: center;
             font-size: calc(var(--blind-total-fs) * 0.72);
@@ -4202,7 +4198,7 @@
             try {
                 const now = Date.now();
                 const isHot = now < _auctionHotUntil;
-                const needsData = forceData || isHot || now - _auctionLastDataAt >= AUCTION_IDLE_DATA_MS;
+                const needsData = forceData || isBracketPageTemp || isHot || now - _auctionLastDataAt >= AUCTION_IDLE_DATA_MS;
 
                 if (needsData) {
                     const items = await getBroadcastItems();
@@ -4516,11 +4512,15 @@
         }
 
         function isSoldForTotals(item) {
-            return ['낙찰', '완료', 'sold'].includes(String(item?.status || '').trim());
+            const status = String(item?.status || '').trim();
+            return status.includes('낙찰')
+                || ['완료', 'sold'].includes(status)
+                || (readSoldAmount(item) > 0 && String(item?.winner || '').trim());
         }
 
         function isActiveForTotals(item) {
-            return ['진행', '진행중', 'active'].includes(String(item?.status || '').trim());
+            const status = String(item?.status || '').trim();
+            return status.includes('진행') || status === 'active';
         }
 
         function formatBlindTotalAmount(value) {
@@ -4528,26 +4528,104 @@
             return amount.toLocaleString('ko-KR') + '원';
         }
 
-        function getBlindTotalRows(items) {
+        function normalizeBlindTeamKey(value) {
+            return String(value || '').trim().toLocaleLowerCase();
+        }
+
+        function makeBlindBracketTeamIndex(map) {
+            const byScale = {};
+            const anyScale = {};
+            [16, 8, 4, 2].forEach(scale => {
+                let bracket = { matches: {} };
+                try { bracket = JSON.parse(map?.['tournament_bracket_' + scale] || '{"matches":{}}'); } catch (_) {}
+                const scaleIndex = {};
+                const matchCount = scale / 2;
+                for (let i = 1; i <= matchCount; i++) {
+                    const match = bracket?.matches?.[scale + '_' + i] || {};
+                    [
+                        { company: match.left, letter: String.fromCharCode(65 + (i - 1) * 2) },
+                        { company: match.right, letter: String.fromCharCode(65 + (i - 1) * 2 + 1) }
+                    ].forEach(entry => {
+                        const key = normalizeBlindTeamKey(entry.company);
+                        if (!key) return;
+                        scaleIndex[key] = entry.letter;
+                        if (!anyScale[key]) anyScale[key] = entry.letter;
+                    });
+                }
+                byScale[scale] = scaleIndex;
+            });
+            return { byScale, anyScale };
+        }
+
+        function getBlindPreferredScale(items, map) {
+            const configured = Number.parseInt(map?.blind_totals_stage || '', 10);
+            if ([16, 8, 4, 2].includes(configured)) return configured;
+            const active = Number.parseInt(map?.active_tournament || '', 10);
+            if ([16, 8, 4, 2].includes(active)) return active;
+
+            const counts = {};
+            (items || []).forEach(item => {
+                const stage = Number(getItemAuctionMeta(item).tournamentStage) || 0;
+                if ([16, 8, 4, 2].includes(stage)) counts[stage] = (counts[stage] || 0) + 1;
+            });
+            const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+            return best ? Number(best[0]) : 0;
+        }
+
+        function getBracketTeamLetterForItem(item, teamIndex, preferredScale) {
+            const companyKey = normalizeBlindTeamKey(item.company);
+            if (!companyKey) return '';
+            const meta = getItemAuctionMeta(item);
+            const scale = Number(meta.tournamentStage) || Number(preferredScale) || 0;
+            if (scale && teamIndex.byScale?.[scale]?.[companyKey]) return teamIndex.byScale[scale][companyKey];
+            return teamIndex.anyScale?.[companyKey] || '';
+        }
+
+        function resolveBlindTeamLetter(item, teamIndex, fallbackByCompany, preferredScale) {
+            const meta = getItemAuctionMeta(item);
+            const metaTeam = String(meta.teamCode || '').trim().toUpperCase();
+            if (/^[A-Z]$/.test(metaTeam)) return metaTeam;
+            const codeTeam = String(meta.tournamentCode || '').trim().toUpperCase().charAt(0);
+            if (/^[A-Z]$/.test(codeTeam)) return codeTeam;
+
+            const companyKey = normalizeBlindTeamKey(item.company);
+            const bracketTeam = getBracketTeamLetterForItem(item, teamIndex, preferredScale);
+            if (bracketTeam) return bracketTeam;
+
+            if (!fallbackByCompany[companyKey]) {
+                fallbackByCompany[companyKey] = String.fromCharCode(65 + Object.keys(fallbackByCompany).length);
+            }
+            return fallbackByCompany[companyKey];
+        }
+
+        function getBlindTotalRows(items, map) {
+            const teamIndex = makeBlindBracketTeamIndex(map || {});
+            const preferredScale = getBlindPreferredScale(items, map || {});
+            const fallbackByCompany = {};
             const tournamentItems = (items || [])
-                .filter(item => getItemAuctionMeta(item).auctionType === AUCTION_TYPES.TOURNAMENT)
+                .filter(item => {
+                    const meta = getItemAuctionMeta(item);
+                    return meta.auctionType === AUCTION_TYPES.TOURNAMENT
+                        || Boolean(getBracketTeamLetterForItem(item, teamIndex, preferredScale));
+                })
                 .sort((a, b) => Number(a.num || 0) - Number(b.num || 0));
             const groups = [];
-            const byCompany = {};
+            const byTeam = {};
             tournamentItems.forEach(item => {
                 const company = String(item.company || '').trim() || '미지정';
-                if (!byCompany[company]) {
-                    byCompany[company] = {
+                const team = resolveBlindTeamLetter(item, teamIndex, fallbackByCompany, preferredScale);
+                if (!byTeam[team]) {
+                    byTeam[team] = {
                         company,
-                        team: String.fromCharCode(65 + groups.length),
+                        team,
                         total: 0,
                         soldCount: 0,
                         itemCount: 0,
                         active: false
                     };
-                    groups.push(byCompany[company]);
+                    groups.push(byTeam[team]);
                 }
-                const group = byCompany[company];
+                const group = byTeam[team];
                 group.itemCount += 1;
                 if (isSoldForTotals(item)) {
                     group.total += readSoldAmount(item);
@@ -4555,7 +4633,7 @@
                 }
                 if (isActiveForTotals(item)) group.active = true;
             });
-            return groups;
+            return groups.sort((a, b) => a.team.localeCompare(b.team, 'en'));
         }
 
         function renderBlindTeamTotals(map, items) {
@@ -4567,13 +4645,13 @@
                 return;
             }
 
-            const top = map.blind_totals_top || '14%';
-            const left = map.blind_totals_left || '4%';
+            const top = map.blind_totals_top || '10%';
+            const left = map.blind_totals_left || '2%';
             const right = map.blind_totals_right || 'auto';
             const bottom = map.blind_totals_bottom || 'auto';
-            const width = map.blind_totals_width || '30%';
-            const height = map.blind_totals_height || '46%';
-            const fontSize = Math.max(10, Math.min(48, parseInt(map.blind_totals_font_size || '18', 10) || 18));
+            const width = map.blind_totals_width || '42%';
+            const height = map.blind_totals_height || '24%';
+            const fontSize = Math.max(9, Math.min(32, parseInt(map.blind_totals_font_size || '14', 10) || 14));
             panel.style.removeProperty('top');
             panel.style.removeProperty('left');
             panel.style.removeProperty('right');
@@ -4587,8 +4665,7 @@
             panel.style.height = height;
             panel.style.setProperty('--blind-total-fs', fontSize + 'px');
 
-            const rows = getBlindTotalRows(items);
-            const maxTotal = Math.max(1, ...rows.map(row => row.total));
+            const rows = getBlindTotalRows(items, map);
             const totalSold = rows.reduce((sum, row) => sum + row.total, 0);
             const totalDone = rows.reduce((sum, row) => sum + row.soldCount, 0);
             const totalItems = rows.reduce((sum, row) => sum + row.itemCount, 0);
@@ -4597,9 +4674,9 @@
                 <header class="blind-total-head">
                     <div>
                         <span class="blind-total-kicker">BLIND TEAM TOTAL</span>
-                        <strong class="blind-total-title">실시간 누적 낙찰금액</strong>
+                        <strong class="blind-total-title">팀별 누적</strong>
                     </div>
-                    <span class="blind-total-meta">${totalDone}/${totalItems} SOLD</span>
+                    <span class="blind-total-meta">${totalDone}/${totalItems}</span>
                 </header>
                 ${rows.length ? `
                     <div class="blind-total-list">
@@ -4607,14 +4684,13 @@
                             <div class="blind-total-row${row.active ? ' is-active' : ''}">
                                 <strong class="blind-total-team">${row.team}팀</strong>
                                 <div class="blind-total-progress">
-                                    <div class="blind-total-bar"><span style="--total-ratio:${Math.round((row.total / maxTotal) * 100)}%;"></span></div>
-                                    <span class="blind-total-count">${row.soldCount}/${row.itemCount} 개체 낙찰</span>
+                                    <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
                                 </div>
                                 <strong class="blind-total-amount">${formatBlindTotalAmount(row.total)}</strong>
                             </div>
                         `).join('')}
                     </div>
-                    <div class="blind-total-meta" style="margin-top:12px;text-align:right;">TOTAL ${formatBlindTotalAmount(totalSold)}</div>
+                    <div class="blind-total-meta" style="margin-top:6px;text-align:right;">합계 ${formatBlindTotalAmount(totalSold)}</div>
                 ` : '<div class="blind-total-empty">토너먼트 개체 대기 중</div>'}
             `;
             panel.classList.add('visible');
