@@ -460,9 +460,81 @@
         return module;
     }
 
+    let activeNavDropdown = null;
+    let activeNavButton = null;
+
+    function ensureNavPortalMenu() {
+        let portal = document.getElementById('cdcup-nav-portal-menu');
+        if (!portal) {
+            portal = document.createElement('div');
+            portal.id = 'cdcup-nav-portal-menu';
+            portal.className = 'cdcup-nav-portal-menu';
+            portal.setAttribute('role', 'menu');
+            document.body.appendChild(portal);
+        }
+        return portal;
+    }
+
+    function closeNavPortalMenu() {
+        const portal = document.getElementById('cdcup-nav-portal-menu');
+        if (portal) {
+            portal.classList.remove('is-open');
+            portal.replaceChildren();
+        }
+        if (activeNavDropdown) activeNavDropdown.classList.remove('is-open');
+        if (activeNavButton) activeNavButton.setAttribute('aria-expanded', 'false');
+        activeNavDropdown = null;
+        activeNavButton = null;
+    }
+
+    function positionNavPortalMenu(portal, button) {
+        const margin = 12;
+        const rect = button.getBoundingClientRect();
+        const viewportWidth = document.documentElement.clientWidth || global.innerWidth || 0;
+        const viewportHeight = document.documentElement.clientHeight || global.innerHeight || 0;
+        const minWidth = Math.max(220, Math.ceil(rect.width));
+        portal.style.minWidth = `${minWidth}px`;
+        portal.style.maxWidth = `calc(100vw - ${margin * 2}px)`;
+        portal.style.left = `${Math.max(margin, Math.round(rect.left))}px`;
+        portal.style.top = `${Math.round(rect.bottom + 6)}px`;
+        portal.style.maxHeight = `${Math.max(160, viewportHeight - rect.bottom - 18)}px`;
+
+        requestAnimationFrame(() => {
+            const portalRect = portal.getBoundingClientRect();
+            const width = Math.min(portalRect.width || minWidth, viewportWidth - margin * 2);
+            let left = rect.left;
+            if (left + width > viewportWidth - margin) left = viewportWidth - margin - width;
+            if (left < margin) left = margin;
+            portal.style.left = `${Math.round(left)}px`;
+        });
+    }
+
+    function openNavPortalMenu(dropdown, button) {
+        const sourceMenu = dropdown.querySelector('.cdcup-nav__dropdown-menu');
+        if (!sourceMenu) return;
+        const portal = ensureNavPortalMenu();
+        portal.replaceChildren();
+        sourceMenu.querySelectorAll('.cdcup-nav__dropdown-item').forEach(item => {
+            const clone = item.cloneNode(true);
+            clone.setAttribute('role', 'menuitem');
+            clone.addEventListener('click', () => {
+                setTimeout(closeNavPortalMenu, 0);
+            });
+            portal.appendChild(clone);
+        });
+
+        activeNavDropdown = dropdown;
+        activeNavButton = button;
+        dropdown.classList.add('is-open');
+        button.setAttribute('aria-expanded', 'true');
+        portal.classList.add('is-open');
+        positionNavPortalMenu(portal, button);
+    }
+
     function initNavDropdowns() {
         const nav = document.querySelector('.cdcup-nav');
         if (!nav) return;
+        if (document.body) document.body.classList.add('nav-dropdown-portal-ready');
         const dropdowns = Array.from(nav.querySelectorAll('.cdcup-nav__dropdown'));
         const closeDropdowns = except => {
             dropdowns.forEach(dropdown => {
@@ -471,6 +543,7 @@
                 const button = dropdown.querySelector('button.cdcup-nav__link');
                 if (button) button.setAttribute('aria-expanded', 'false');
             });
+            if (!except) closeNavPortalMenu();
         };
 
         dropdowns.forEach(dropdown => {
@@ -481,21 +554,25 @@
             button.setAttribute('aria-expanded', 'false');
             button.addEventListener('click', event => {
                 event.preventDefault();
-                const shouldOpen = !dropdown.classList.contains('is-open');
+                event.stopPropagation();
+                const shouldOpen = activeNavDropdown !== dropdown;
                 closeDropdowns(dropdown);
-                dropdown.classList.toggle('is-open', shouldOpen);
-                button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+                if (shouldOpen) openNavPortalMenu(dropdown, button);
+                else closeNavPortalMenu();
             });
         });
 
         if (nav.dataset.navDropdownGlobalBound === '1') return;
         nav.dataset.navDropdownGlobalBound = '1';
         document.addEventListener('click', event => {
-            if (!nav.contains(event.target)) closeDropdowns();
+            const portal = document.getElementById('cdcup-nav-portal-menu');
+            if (!nav.contains(event.target) && !portal?.contains(event.target)) closeDropdowns();
         });
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape') closeDropdowns();
         });
+        global.addEventListener('resize', closeNavPortalMenu);
+        global.addEventListener('scroll', closeNavPortalMenu, true);
     }
 
     async function setActiveEventModule(moduleId, href) {

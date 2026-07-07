@@ -267,6 +267,12 @@ body {
     display: block;
 }
 
+body.nav-dropdown-portal-ready .cdcup-nav__dropdown:hover .cdcup-nav__dropdown-menu,
+body.nav-dropdown-portal-ready .cdcup-nav__dropdown:focus-within .cdcup-nav__dropdown-menu,
+body.nav-dropdown-portal-ready .cdcup-nav__dropdown.is-open .cdcup-nav__dropdown-menu {
+    display: none;
+}
+
 .cdcup-nav__module {
     flex: 0 0 auto;
 }
@@ -307,6 +313,31 @@ body {
 .cdcup-nav__dropdown-item:hover {
     background: var(--accent-light);
     color: var(--accent);
+}
+
+.cdcup-nav-portal-menu {
+    position: fixed;
+    top: var(--nav-height);
+    left: 12px;
+    z-index: 9999;
+    display: none;
+    min-width: 220px;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - var(--nav-height) - 16px);
+    padding: 6px;
+    overflow-y: auto;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+}
+
+.cdcup-nav-portal-menu.is-open {
+    display: block;
+}
+
+.cdcup-nav-portal-menu .cdcup-nav__dropdown-item {
+    min-height: 38px;
 }
 
 /* 드롭다운 캐럿 */
