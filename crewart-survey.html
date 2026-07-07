@@ -9,7 +9,7 @@
     <script src="event-modules.js?v=20260707-nav3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260707-magic2">
+    <link rel="stylesheet" href="crewart.css?v=20260708-survey1">
 </head>
 <body class="crewart-page">
     <nav class="cw-nav">
@@ -60,6 +60,7 @@
             <div class="cw-kicker">SORTING COMPLETE</div>
             <h1 id="result-house" style="margin:10px 0 6px;font-size:clamp(40px,7vw,88px);"></h1>
             <p id="result-copy" style="color:var(--cw-muted);font-weight:800;"></p>
+            <div class="cw-result-breakdown" id="result-breakdown"></div>
             <div class="cw-actions" style="justify-content:center;margin-top:20px;">
                 <a class="cw-btn" href="crewart-ranking.html">점수표 보기</a>
                 <button class="cw-btn primary" type="button" onclick="submitSurvey()">배정 저장</button>
@@ -75,15 +76,47 @@
         let current = 0;
         let answers = [];
         let finalHouse = null;
+        let finalScores = [];
+        let isLoaded = false;
+
+        const HOUSE_PROFILES = [
+            { title: '하이엔드 승부형', copy: '희소성, 임팩트, 퀄리티에 가장 빠르게 반응하는 타입입니다.' },
+            { title: '분석형 브리더', copy: '형질, 라인, 영양과 근거를 차분하게 따지는 타입입니다.' },
+            { title: '케어 밸런스형', copy: '사육 안정감, 경험, 개체와의 관계를 중시하는 타입입니다.' },
+            { title: '컬렉터 야망형', copy: '모프, 규모, 번식 가능성과 큰 그림에 끌리는 타입입니다.' }
+        ];
 
         const QUESTIONS = [
-            { q: '낙찰 직전, 더 끌리는 선택은?', a: ['마지막 순간 과감하게 한 번 더', '가격선을 지키며 차분하게 판단'], h: [0, 1] },
-            { q: '새 개체를 고를 때 먼저 보는 것은?', a: ['한눈에 강한 인상', '오래 볼수록 드러나는 균형감'], h: [0, 2] },
-            { q: '경쟁자가 치고 들어왔다.', a: ['승부는 지금부터', '전체 판을 다시 계산한다'], h: [3, 1] },
-            { q: '가장 마음이 가는 개체 설명은?', a: ['희귀하고 존재감이 강하다', '건강하고 안정감이 좋다'], h: [3, 2] },
-            { q: '예상 밖의 변수가 생기면?', a: ['바로 새로운 길을 만든다', '근거를 모아 정확히 고른다'], h: [0, 1] },
-            { q: '기숙사에 더 필요한 사람은?', a: ['분위기를 끌어올리는 사람', '끝까지 챙기고 맞춰주는 사람'], h: [3, 2] }
+            { q: 'Q1. 당신은 둘 중 어떤 화이트가 더 좋나요?', a: ['화이트 양은 적지만, 퓨어화이트', '화이트 양은 많지만, 아이보리 또는 노란색'], w: [[2, 1, 0, 0], [0, 0, 1, 2]] },
+            { q: 'Q2. 비슷하지만 좀 더 끌리는 모프는?', a: ['세이블 릴리', '프라푸치노'], w: [[1, 0, 0, 2], [0, 2, 1, 0]] },
+            { q: 'Q3. 두가지 타입 중 하나를 고른다면?', a: ['쿼드 타입', '익할(익스트림 할리퀸) 타입'], w: [[0, 1, 2, 0], [2, 0, 0, 1]] },
+            { q: 'Q4. 둘 중 더 선호하는 먹이급여 방식은?', a: ['슈퍼푸드 단일', '슈퍼푸드 & 충식 병행'], w: [[0, 2, 1, 0], [1, 0, 2, 0]] },
+            { q: 'Q5. 내가 좋아하는 사육장은?', a: ['아크릴사육장 또는 유리장', '적재형 케이지'], w: [[0, 1, 2, 0], [0, 1, 0, 2]] },
+            { q: 'Q6. 내가 조금 더 선호하는 유명 라인은?', a: ['보바', 'SPT'], w: [[1, 0, 0, 2], [0, 2, 1, 0]] },
+            { q: 'Q7. 장단점이 뚜렷한 크레 두마리가 있습니다.\n어느아이로 선택하시겠습니까?', a: ['옆구리(레터럴)이 아쉽지만, 크라운이 매우 좋음', '크라운이 없지만, 옆구리(레터럴)이 매우 좋음'], w: [[2, 0, 0, 1], [0, 2, 1, 0]] },
+            { q: 'Q8. 평소 입양할때 조금 더 선호하는 방식은?', a: ['오프라인 (행사, 샵 등)', '온라인 (피들, 파사모 등)'], w: [[1, 0, 2, 0], [0, 2, 0, 1]] },
+            { q: 'Q9. 두 가지 형질 중 하나를 골라야한다면?', a: ['색감은 매우좋지만, 형질이 아쉬운', '형질이 매우 좋지만, 색감이 아쉬운'], w: [[2, 0, 1, 0], [0, 2, 0, 1]] },
+            { q: 'Q10. 내가 처음 해칭한 크레는?', a: ['모프(릴리, 카푸, 세이블, 아잔틱 등)', '노멀 (트라이, 챠콜, 달마 등)'], w: [[0, 1, 0, 2], [1, 0, 2, 0]] },
+            { q: 'Q11. 내가 선호하는 슈퍼푸드는?', a: ['기호도는 낮으나, 영양성분이 좋은 슈퍼푸드', '영양성분이 낮으나, 기호도가 좋은 슈퍼푸드'], w: [[0, 2, 1, 0], [1, 0, 0, 2]] },
+            { q: 'Q12. 메인숫을 한마리만 입양할 수 있습니다.\n두마리중 어느아이로 고르시겠습니까?', a: ['일년에 한번 메이팅하는 초 하이엔드 수컷', '매일 메이팅하는 나의 돌쇠 수컷 (퀄리티 보장 못함)'], w: [[2, 1, 0, 0], [0, 0, 2, 1]] },
+            { q: 'Q13. 두 가지 상황 중 하나를 골라야합니다.\n누구와 함께하시겠습니까?', a: ['파충류샵 데이트 가자 하는 “카리나” 또는 “차은우”', '같이 크레 입양하러 가자 하는 “이재용”'], w: [[2, 0, 1, 0], [0, 1, 0, 2]] },
+            { q: 'Q14. 로또에 당첨됐습니다! 어떻게 사용하시겠습니까?', a: ['1000만원 퀄리티 10마리 입양', '100만원 퀄리티 100마리 입양'], w: [[2, 1, 0, 0], [0, 0, 1, 2]] },
+            { q: 'Q15. 마지막 문항입니다. 당신이 크레를 키우며,\n가장 설레였던 순간은 둘중 언제였나요?', a: ['처음 입양했던 기억', '처음 해칭했던 순간'], w: [[1, 0, 2, 0], [0, 1, 1, 2]] }
         ];
+
+        function escapeHtml(value) {
+            return String(value || '').replace(/[&<>"']/g, ch => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[ch]));
+        }
+
+        function formatText(value) {
+            return escapeHtml(value).replace(/\n/g, '<br>');
+        }
 
         function toast(message, isError) {
             const el = document.getElementById('toast');
@@ -100,6 +133,7 @@
         function startSurvey() {
             const nickname = document.getElementById('nickname').value.trim();
             if (!nickname) { toast('닉네임을 입력해주세요.', true); return; }
+            if (!isLoaded || !houses.length) { toast('기숙사 설정을 불러오는 중입니다. 잠시 후 다시 시작해주세요.', true); return; }
             document.getElementById('intro-panel').style.display = 'none';
             document.getElementById('question-area').style.display = '';
             renderQuestions();
@@ -109,9 +143,9 @@
             const wrap = document.getElementById('questions');
             wrap.innerHTML = QUESTIONS.map((question, index) => `
                 <article class="cw-question ${index === current ? 'active' : ''}">
-                    <h2>${question.q}</h2>
+                    <h2>${formatText(question.q)}</h2>
                     <div class="cw-choice-grid">
-                        ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice ${answers[index] === choiceIndex ? 'selected' : ''}" onclick="chooseAnswer(${index}, ${choiceIndex})">${label}</button>`).join('')}
+                        ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice ${answers[index] === choiceIndex ? 'selected' : ''}" onclick="chooseAnswer(${index}, ${choiceIndex})">${formatText(label)}</button>`).join('')}
                     </div>
                 </article>
             `).join('');
@@ -138,20 +172,51 @@
             finishSurvey();
         }
 
-        function finishSurvey() {
+        function scoreAnswers() {
             const scores = houses.map(() => 0);
             answers.forEach((choice, index) => {
-                const houseIndex = QUESTIONS[index].h[choice] % houses.length;
-                scores[houseIndex] += 1;
+                const weights = QUESTIONS[index].w && QUESTIONS[index].w[choice] ? QUESTIONS[index].w[choice] : [];
+                for (let houseIndex = 0; houseIndex < Math.min(weights.length, houses.length); houseIndex += 1) {
+                    scores[houseIndex] += Number(weights[houseIndex]) || 0;
+                }
             });
-            const best = scores.map((score, index) => ({ score, index }))
-                .sort((a, b) => b.score - a.score || a.index - b.index)[0];
+            return scores;
+        }
+
+        function houseProfile(index) {
+            return HOUSE_PROFILES[index % HOUSE_PROFILES.length] || HOUSE_PROFILES[0];
+        }
+
+        function renderScoreBreakdown(scores, bestIndex) {
+            const wrap = document.getElementById('result-breakdown');
+            wrap.innerHTML = houses.map((house, index) => `
+                <div class="cw-score-pill ${index === bestIndex ? 'active' : ''}" style="--house:${escapeHtml(house.color || '#e0b85a')};--house-accent:${escapeHtml(house.accent || house.color || '#e0b85a')};">
+                    <span>${escapeHtml(house.name)}</span>
+                    <strong>${Math.round(scores[index] || 0)}점</strong>
+                </div>
+            `).join('');
+        }
+
+        function finishSurvey() {
+            const missing = QUESTIONS.findIndex((_, index) => answers[index] === undefined);
+            if (missing >= 0) {
+                current = missing;
+                renderQuestions();
+                toast('선택하지 않은 문항이 있습니다.', true);
+                return;
+            }
+            finalScores = scoreAnswers();
+            const tieSeed = answers.reduce((sum, choice, index) => sum + ((choice + 1) * (index + 1)), 0) % Math.max(1, houses.length);
+            const best = finalScores.map((score, index) => ({ score, index }))
+                .sort((a, b) => b.score - a.score || Math.abs(a.index - tieSeed) - Math.abs(b.index - tieSeed) || a.index - b.index)[0];
             finalHouse = houses[best.index] || houses[0];
+            const profile = houseProfile(best.index);
             document.getElementById('question-area').style.display = 'none';
             document.getElementById('result-panel').style.display = '';
             document.getElementById('result-house').textContent = finalHouse.name;
             document.getElementById('result-house').style.color = finalHouse.accent || finalHouse.color || 'var(--cw-gold)';
-            document.getElementById('result-copy').textContent = '낙찰 시 이 기숙사 점수로 자동 반영됩니다.';
+            document.getElementById('result-copy').textContent = `${profile.title} · ${profile.copy} 낙찰 시 이 기숙사 점수로 자동 반영됩니다.`;
+            renderScoreBreakdown(finalScores, best.index);
         }
 
         function participantLine(name, house, aliases) {
@@ -181,7 +246,19 @@
                     name,
                     aliases,
                     house: finalHouse.name,
-                    answers,
+                    houseId: finalHouse.id,
+                    profile: houseProfile(houses.findIndex(house => house.id === finalHouse.id)).title,
+                    answers: answers.slice(),
+                    answerLabels: answers.map((choice, index) => ({
+                        question: QUESTIONS[index].q,
+                        choice: choice + 1,
+                        label: QUESTIONS[index].a[choice]
+                    })),
+                    scores: houses.map((house, index) => ({
+                        house: house.name,
+                        score: finalScores[index] || 0
+                    })),
+                    questionVersion: 'crewart-20260708-v1',
                     createdAt: new Date().toISOString()
                 });
                 await updateConfigs({
@@ -196,9 +273,15 @@
         }
 
         async function load() {
-            config = await getConfigMap() || {};
-            applyAuctionEventModule({ ...config, active_event_module: 'crewart' });
-            houses = parseCrewartHouses(config.crewart_houses);
+            try {
+                config = await getConfigMap() || {};
+                applyAuctionEventModule({ ...config, active_event_module: 'crewart' });
+                houses = parseCrewartHouses(config.crewart_houses);
+            } catch (error) {
+                toast('기숙사 설정을 불러오지 못했습니다: ' + error.message, true);
+            } finally {
+                isLoaded = true;
+            }
         }
 
         load();
