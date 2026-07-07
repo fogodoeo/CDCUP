@@ -2597,61 +2597,76 @@
             min-width: 168px;
             max-width: 330px;
             min-height: 0;
-            padding: calc(var(--blind-total-fs) * 0.58);
-            border: 1px solid rgba(217, 176, 92, 0.22);
-            border-radius: 10px;
-            background: rgba(8, 13, 24, var(--blind-total-opacity));
-            backdrop-filter: blur(18px) saturate(1.3);
-            -webkit-backdrop-filter: blur(18px) saturate(1.3);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+            padding: 0;
+            border: none;
+            border-radius: 0;
+            background: transparent;
             color: #f8fafc;
             font-family: 'Pretendard', sans-serif;
             box-sizing: border-box;
             pointer-events: none;
-            overflow: hidden;
+            overflow: visible;
         }
         #blind-team-total-overlay.visible {
-            display: block;
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--blind-total-fs) * 0.32);
         }
         .blind-total-head {
             display: none;
         }
         .blind-total-kicker {
             display: none;
-            color: #d9b05c;
-            font-size: calc(var(--blind-total-fs) * 0.54);
-            font-weight: 920;
-            letter-spacing: 0.16em;
         }
         .blind-total-title {
-            display: block;
-            color: #fff7df;
-            font-size: calc(var(--blind-total-fs) * 0.9);
-            font-weight: 940;
-            letter-spacing: 0;
-            white-space: nowrap;
+            display: none;
         }
         .blind-total-meta {
-            color: #94a3b8;
-            font-size: calc(var(--blind-total-fs) * 0.62);
-            font-weight: 820;
-            white-space: nowrap;
+            display: none;
         }
         .blind-total-list {
-            display: grid;
+            display: flex;
+            flex-direction: column;
             gap: calc(var(--blind-total-fs) * 0.28);
-            margin-top: calc(var(--blind-total-fs) * 0.48);
+            position: relative;
         }
         .blind-total-row {
             display: grid;
-            grid-template-columns: minmax(34px, 0.42fr) minmax(38px, 0.52fr) minmax(0, 1fr);
+            grid-template-columns: auto minmax(34px, 0.42fr) minmax(38px, 0.52fr) minmax(0, 1fr);
             align-items: center;
             gap: calc(var(--blind-total-fs) * 0.42);
             min-height: calc(var(--blind-total-fs) * 1.82);
-            padding: calc(var(--blind-total-fs) * 0.26) calc(var(--blind-total-fs) * 0.42);
-            border: 1px solid rgba(148, 163, 184, 0.18);
-            border-radius: 4px;
-            background: rgba(255,255,255,0.036);
+            padding: calc(var(--blind-total-fs) * 0.32) calc(var(--blind-total-fs) * 0.5);
+            border: 1px solid rgba(217, 176, 92, 0.18);
+            border-radius: 8px;
+            background: rgba(8, 13, 24, var(--blind-total-opacity));
+            backdrop-filter: blur(18px) saturate(1.3);
+            -webkit-backdrop-filter: blur(18px) saturate(1.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+            transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+            will-change: transform;
+        }
+        .blind-total-row.rank-changed {
+            box-shadow: 0 4px 24px rgba(217, 176, 92, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+            border-color: rgba(217, 176, 92, 0.5);
+        }
+        .blind-total-rank {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: calc(var(--blind-total-fs) * 1.1);
+            height: calc(var(--blind-total-fs) * 1.1);
+            border-radius: 50%;
+            background: rgba(217, 176, 92, 0.15);
+            color: #d9b05c;
+            font-size: calc(var(--blind-total-fs) * 0.58);
+            font-weight: 950;
+            flex-shrink: 0;
+        }
+        .blind-total-rank.rank-1 {
+            background: rgba(217, 176, 92, 0.3);
+            color: #fbbf24;
+            box-shadow: 0 0 8px rgba(217, 176, 92, 0.2);
         }
         .blind-total-row.is-active {
             border-color: rgba(217, 176, 92, 0.62);
@@ -2672,11 +2687,7 @@
             display: none;
         }
         .blind-total-bar span {
-            position: absolute;
-            inset: 0 auto 0 0;
-            width: var(--total-ratio, 0%);
-            border-radius: inherit;
-            background: linear-gradient(90deg, #d9b05c, #fff1b8);
+            display: none;
         }
         .blind-total-count {
             display: block;
@@ -2700,16 +2711,23 @@
             font-size: calc(var(--blind-total-fs) * 0.72);
             font-weight: 780;
         }
-        /* ── 진행도 카운터 (패널 내부 좌측 상단) ── */
+        /* ── 진행도 카운터 (개별 glassmorphism 카드) ── */
         .blind-total-counter {
             display: flex;
             align-items: center;
             gap: calc(var(--blind-total-fs) * 0.3);
-            margin-bottom: calc(var(--blind-total-fs) * 0.36);
+            padding: calc(var(--blind-total-fs) * 0.3) calc(var(--blind-total-fs) * 0.5);
             font-size: calc(var(--blind-total-fs) * 0.72);
             font-weight: 840;
             color: #fff7df;
             letter-spacing: 0.04em;
+            border: 1px solid rgba(217, 176, 92, 0.18);
+            border-radius: 8px;
+            background: rgba(8, 13, 24, var(--blind-total-opacity));
+            backdrop-filter: blur(18px) saturate(1.3);
+            -webkit-backdrop-filter: blur(18px) saturate(1.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+            width: fit-content;
         }
         .blind-total-counter-num {
             font-variant-numeric: tabular-nums;
@@ -4809,6 +4827,9 @@
             }, 3500);
         }
 
+        // 이전 순위 추적 (애니메이션용)
+        const _blindRankState = { prevOrder: [] };
+
         function renderBlindTeamTotals(map, items) {
             const panel = document.getElementById('blind-team-total-overlay');
             if (!panel) return;
@@ -4844,29 +4865,91 @@
             const totalDone = rows.reduce((sum, row) => sum + row.soldCount, 0);
             const totalItems = rows.reduce((sum, row) => sum + row.itemCount, 0);
 
+            // 금액 내림차순 정렬 (1위가 최상단)
+            const sorted = [...rows].sort((a, b) => b.total - a.total);
+            const newOrder = sorted.map(r => r.team);
+            const prevOrder = _blindRankState.prevOrder;
+            const rankChanged = prevOrder.length > 0 && JSON.stringify(newOrder) !== JSON.stringify(prevOrder);
+            _blindRankState.prevOrder = newOrder;
+
             // 낙찰 감지
             const soldItem = detectBlindSoldItem(items);
 
-            panel.innerHTML = `
-                <div class="blind-total-counter">
-                    <span class="blind-total-counter-num">${totalDone}</span>
-                    <span class="blind-total-counter-sep">/</span>
-                    <span class="blind-total-counter-num">${totalItems}</span>
-                </div>
-                ${rows.length ? `
-                    <div class="blind-total-list">
-                        ${rows.map(row => `
-                            <div class="blind-total-row">
-                                <strong class="blind-total-team">${row.team}팀</strong>
-                                <div class="blind-total-progress">
-                                    <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
-                                </div>
-                                <strong class="blind-total-amount">${formatBlindTotalAmount(row.total)}</strong>
-                            </div>
-                        `).join('')}
-                    </div>
-                ` : '<div class="blind-total-empty">토너먼트 개체 대기 중</div>'}
+            // 카운터 업데이트 (DOM 재사용)
+            let counterEl = panel.querySelector('.blind-total-counter');
+            if (!counterEl) {
+                counterEl = document.createElement('div');
+                counterEl.className = 'blind-total-counter';
+                panel.prepend(counterEl);
+            }
+            counterEl.innerHTML = `
+                <span class="blind-total-counter-num">${totalDone}</span>
+                <span class="blind-total-counter-sep">/</span>
+                <span class="blind-total-counter-num">${totalItems}</span>
             `;
+
+            // 리스트 컨테이너
+            let listEl = panel.querySelector('.blind-total-list');
+            if (!listEl) {
+                listEl = document.createElement('div');
+                listEl.className = 'blind-total-list';
+                panel.appendChild(listEl);
+            }
+
+            if (!sorted.length) {
+                listEl.innerHTML = '<div class="blind-total-empty">토너먼트 개체 대기 중</div>';
+                panel.classList.add('visible');
+                return;
+            }
+
+            // 기존 행 DOM 맵 구축
+            const existingRows = {};
+            listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
+                existingRows[el.dataset.team] = el;
+            });
+
+            // 각 팀 행 업데이트 또는 생성
+            const fragment = document.createDocumentFragment();
+            sorted.forEach((row, idx) => {
+                const rank = idx + 1;
+                let rowEl = existingRows[row.team];
+                const isNew = !rowEl;
+                if (isNew) {
+                    rowEl = document.createElement('div');
+                    rowEl.className = 'blind-total-row';
+                    rowEl.dataset.team = row.team;
+                }
+
+                // 이전 순위에서 위치 변동 여부 확인
+                const prevIdx = prevOrder.indexOf(row.team);
+                const didRankChange = rankChanged && prevIdx >= 0 && prevIdx !== idx;
+
+                rowEl.innerHTML = `
+                    <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
+                    <strong class="blind-total-team">${row.team}팀</strong>
+                    <div class="blind-total-progress">
+                        <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
+                    </div>
+                    <strong class="blind-total-amount">${formatBlindTotalAmount(row.total)}</strong>
+                `;
+
+                if (didRankChange) {
+                    rowEl.classList.add('rank-changed');
+                    setTimeout(() => rowEl.classList.remove('rank-changed'), 1200);
+                }
+
+                fragment.appendChild(rowEl);
+                delete existingRows[row.team];
+            });
+
+            // 제거된 팀 삭제
+            Object.values(existingRows).forEach(el => el.remove());
+
+            // 기존 empty 제거
+            const emptyEl = listEl.querySelector('.blind-total-empty');
+            if (emptyEl) emptyEl.remove();
+
+            listEl.appendChild(fragment);
 
             panel.classList.add('visible');
 
