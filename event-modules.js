@@ -460,6 +460,44 @@
         return module;
     }
 
+    function initNavDropdowns() {
+        const nav = document.querySelector('.cdcup-nav');
+        if (!nav) return;
+        const dropdowns = Array.from(nav.querySelectorAll('.cdcup-nav__dropdown'));
+        const closeDropdowns = except => {
+            dropdowns.forEach(dropdown => {
+                if (dropdown === except) return;
+                dropdown.classList.remove('is-open');
+                const button = dropdown.querySelector('button.cdcup-nav__link');
+                if (button) button.setAttribute('aria-expanded', 'false');
+            });
+        };
+
+        dropdowns.forEach(dropdown => {
+            const button = dropdown.querySelector('button.cdcup-nav__link');
+            if (!button || button.dataset.navDropdownBound === '1') return;
+            button.dataset.navDropdownBound = '1';
+            button.setAttribute('aria-haspopup', 'true');
+            button.setAttribute('aria-expanded', 'false');
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                const shouldOpen = !dropdown.classList.contains('is-open');
+                closeDropdowns(dropdown);
+                dropdown.classList.toggle('is-open', shouldOpen);
+                button.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            });
+        });
+
+        if (nav.dataset.navDropdownGlobalBound === '1') return;
+        nav.dataset.navDropdownGlobalBound = '1';
+        document.addEventListener('click', event => {
+            if (!nav.contains(event.target)) closeDropdowns();
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape') closeDropdowns();
+        });
+    }
+
     async function setActiveEventModule(moduleId, href) {
         const next = normalizeModuleId(moduleId);
         if (global.updateConfigs) await global.updateConfigs({ active_event_module: next });
@@ -490,4 +528,10 @@
     global.resolveCrewartWinnerHouse = resolveCrewartWinnerHouse;
     global.resolveCrewartItemResult = resolveCrewartItemResult;
     global.crewartPointsForAmount = crewartPointsForAmount;
+    global.initAuctionNavDropdowns = initNavDropdowns;
+
+    if (global.document) {
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initNavDropdowns);
+        else initNavDropdowns();
+    }
 })(window);
