@@ -4457,7 +4457,7 @@
             document.getElementById('pl-meta').textContent = dateStr + ' · 총 ' + items.length + '개체';
             var lh = '<table class="ptable" style="table-layout:fixed"><thead><tr><th style="width:48px">번호</th><th style="width:82px">구분</th><th style="width:100px">업체</th><th style="width:120px">이름</th><th>정보</th></tr></thead><tbody>';
             items.forEach(function (it) {
-                var cl = pChecklist(it.checklist), info = []; var t = pTraits(cl); if (t) info.push(t); if (it.note) info.push(it.note);
+                var cl = pChecklist(it.checklist), info = []; var t = pTraits(cl); if (t) info.push(t); if (it.note && it.note !== cl.memo) info.push(it.note);
                 var infoStr = info.join(' / ');
                 var shortName = truncatePrintListName(it.name, 10);
                 lh += '<tr><td class="pnum">' + auctionNumber(it) + '</td><td class="ptype">' + auctionStageLabel(it) + '</td><td class="pcomp">' + (it.company || '') + '</td><td class="pname">' + shortName + '</td><td class="pinfo" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + infoStr + '</td></tr>';

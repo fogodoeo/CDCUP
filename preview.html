@@ -923,6 +923,11 @@
                         <input type="number" id="blind-totals-font-input" onchange="updateBracketFontSize('blind_totals', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="9" max="32" value="14">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
                     </div>
+                    <div class="switch-container" id="toggle-blind-totals-opacity-group" style="display:none; gap: 7px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">투명도:</span>
+                        <input type="range" id="blind-totals-opacity-input" min="0" max="100" step="5" value="45" oninput="previewBlindTotalsOpacity(this.value)" onchange="updateBlindTotalsOpacity(this.value)" style="width:86px; accent-color:#d9b05c;">
+                        <strong id="blind-totals-opacity-value" style="min-width:32px; font-size:11px; color:var(--text-muted);">45%</strong>
+                    </div>
                     <div class="switch-container" id="toggle-bracket-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">송출 모드:</span>
                         <select id="bracket-active-select" onchange="changeActiveTournament(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
@@ -1157,6 +1162,7 @@
                 setDisplay('toggle-bracket-full-font-group', isCrewart);
                 setDisplay('toggle-blind-totals-show-group', !isCrewart);
                 setDisplay('toggle-blind-totals-font-group', !isCrewart);
+                setDisplay('toggle-blind-totals-opacity-group', !isCrewart);
                 setDisplay('bracket-coords', isCrewart);
                 setDisplay('bracket-live-coords', false);
                 setDisplay('bracket-title-coords', false);
@@ -1257,6 +1263,7 @@
             document.getElementById('toggle-bracket-live-font-group').style.display = 'none';
             document.getElementById('toggle-bracket-live-opacity-group').style.display = 'none';
             document.getElementById('toggle-blind-totals-font-group').style.display = isInitialCrewart ? 'none' : '';
+            document.getElementById('toggle-blind-totals-opacity-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('bracket-coords').style.display = isInitialCrewart ? '' : 'none';
             document.getElementById('bracket-live-coords').style.display = 'none';
             document.getElementById('bracket-title-coords').style.display = 'none'; // Hidden per user request
@@ -1384,6 +1391,17 @@
 
         function updateBracketOpacity(val) {
             previewBracketOpacity(val);
+            saveCoordinates(false);
+        }
+
+        function previewBlindTotalsOpacity(val) {
+            const opacity = Math.max(0, Math.min(100, parseInt(val) || 45));
+            const valueEl = document.getElementById('blind-totals-opacity-value');
+            if (valueEl) valueEl.textContent = opacity + '%';
+        }
+
+        function updateBlindTotalsOpacity(val) {
+            previewBlindTotalsOpacity(val);
             saveCoordinates(false);
         }
 
@@ -1549,9 +1567,12 @@
                     elements.blind_totals.width = cfg.blind_totals_width || '42%';
                     elements.blind_totals.height = cfg.blind_totals_height || '24%';
                     elements.blind_totals.fontSize = cfg.blind_totals_font_size || '14';
+                    elements.blind_totals.opacity = cfg.blind_totals_opacity || '45';
 
                     const blindFontInput = document.getElementById('blind-totals-font-input');
                     if (blindFontInput) blindFontInput.value = elements.blind_totals.fontSize;
+                    const blindOpacityInput = document.getElementById('blind-totals-opacity-input');
+                    if (blindOpacityInput) { blindOpacityInput.value = elements.blind_totals.opacity; previewBlindTotalsOpacity(elements.blind_totals.opacity); }
                 }
 
                 // Apply states visually
@@ -2224,6 +2245,7 @@
                     configMap['blind_totals_height'] = elements.blind_totals.height;
                     configMap['blind_totals_show'] = elements.blind_totals.show;
                     configMap['blind_totals_font_size'] = elements.blind_totals.fontSize || '14';
+                    configMap['blind_totals_opacity'] = elements.blind_totals.opacity || '45';
                     configMap['active_tournament'] = 'none';
                     configMap['bracket_full_show'] = '0';
                     configMap['bracket_live_show'] = '0';

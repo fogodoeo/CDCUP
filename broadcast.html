@@ -2587,6 +2587,7 @@
 
         #blind-team-total-overlay {
             --blind-total-fs: 14px;
+            --blind-total-opacity: 0.45;
             display: none;
             position: absolute;
             top: 10%;
@@ -2599,7 +2600,7 @@
             padding: calc(var(--blind-total-fs) * 0.58);
             border: 1px solid rgba(217, 176, 92, 0.22);
             border-radius: 10px;
-            background: rgba(8, 13, 24, 0.45);
+            background: rgba(8, 13, 24, var(--blind-total-opacity));
             backdrop-filter: blur(18px) saturate(1.3);
             -webkit-backdrop-filter: blur(18px) saturate(1.3);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.08);
@@ -2707,7 +2708,7 @@
             margin-bottom: calc(var(--blind-total-fs) * 0.36);
             font-size: calc(var(--blind-total-fs) * 0.72);
             font-weight: 840;
-            color: rgba(255, 247, 223, 0.85);
+            color: #fff7df;
             letter-spacing: 0.04em;
         }
         .blind-total-counter-num {
@@ -2715,60 +2716,91 @@
             color: #d9b05c;
         }
         .blind-total-counter-sep {
-            color: rgba(148, 163, 184, 0.5);
+            color: #94a3b8;
             font-weight: 600;
         }
-        /* ── 낙찰 알림 카드 ── */
-        .blind-total-sold-alert {
-            margin-top: calc(var(--blind-total-fs) * 0.42);
-            padding: calc(var(--blind-total-fs) * 0.4) calc(var(--blind-total-fs) * 0.5);
-            border: 1px solid rgba(217, 176, 92, 0.45);
-            border-radius: 6px;
-            background: linear-gradient(135deg, rgba(217, 176, 92, 0.15), rgba(217, 176, 92, 0.06));
-            animation: blind-sold-slide-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+        /* ── 낙찰 풀스크린 팝업 오버레이 ── */
+        .blind-sold-popup-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 30000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(circle at 50% 46%, rgba(217, 176, 92, 0.18), transparent 42%),
+                rgba(2, 6, 23, 0.78);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: blind-sold-overlay-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+            font-family: 'Pretendard', sans-serif;
         }
-        .blind-total-sold-alert-label {
-            display: block;
-            font-size: calc(var(--blind-total-fs) * 0.48);
+        .blind-sold-popup-overlay.fade-out {
+            animation: blind-sold-overlay-out 0.5s ease-out both;
+        }
+        .blind-sold-popup-card {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            width: min(420px, calc(100vw - 48px));
+            padding: 36px 32px 32px;
+            border: 1.5px solid rgba(217, 176, 92, 0.5);
+            border-radius: 18px;
+            background: linear-gradient(145deg, rgba(8, 16, 32, 0.96), rgba(18, 28, 48, 0.94));
+            box-shadow:
+                0 0 60px rgba(217, 176, 92, 0.15),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            text-align: center;
+            animation: blind-sold-card-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.08s both;
+        }
+        .blind-sold-popup-eyebrow {
+            font-size: 11px;
             font-weight: 900;
             color: #d9b05c;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            margin-bottom: calc(var(--blind-total-fs) * 0.18);
         }
-        .blind-total-sold-alert-row {
-            display: flex;
-            align-items: baseline;
-            gap: calc(var(--blind-total-fs) * 0.32);
-            flex-wrap: wrap;
-        }
-        .blind-total-sold-winner {
-            font-size: calc(var(--blind-total-fs) * 0.76);
+        .blind-sold-popup-winner {
+            font-size: 28px;
             font-weight: 950;
             color: #fff;
+            line-height: 1.2;
+            word-break: keep-all;
         }
-        .blind-total-sold-price {
-            font-size: calc(var(--blind-total-fs) * 0.72);
-            font-weight: 860;
+        .blind-sold-popup-price {
+            font-size: 32px;
+            font-weight: 950;
             color: #fbbf24;
             font-variant-numeric: tabular-nums;
+            line-height: 1;
         }
-        .blind-total-sold-team {
-            font-size: calc(var(--blind-total-fs) * 0.6);
-            font-weight: 780;
-            color: rgba(217, 176, 92, 0.8);
-            white-space: nowrap;
+        .blind-sold-popup-team {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 20px;
+            background: rgba(217, 176, 92, 0.14);
+            border: 1px solid rgba(217, 176, 92, 0.3);
+            font-size: 14px;
+            font-weight: 820;
+            color: #d9b05c;
         }
-        .blind-total-sold-alert.fade-out {
-            animation: blind-sold-fade-out 0.6s ease-out both;
+        @keyframes blind-sold-overlay-in {
+            from { opacity: 0; }
+            to   { opacity: 1; }
         }
-        @keyframes blind-sold-slide-in {
-            from { opacity: 0; transform: translateY(8px) scale(0.96); }
+        @keyframes blind-sold-overlay-out {
+            from { opacity: 1; }
+            to   { opacity: 0; }
+        }
+        @keyframes blind-sold-card-in {
+            from { opacity: 0; transform: translateY(24px) scale(0.92); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes blind-sold-fade-out {
-            from { opacity: 1; transform: translateY(0); }
-            to   { opacity: 0; transform: translateY(-6px); }
         }
     </style>
 </head>
@@ -4745,36 +4777,36 @@
             return companyName || (letter + '팀');
         }
 
-        function showBlindSoldAlert(panel, item, map) {
+        function showBlindSoldAlert(item, map) {
             const state = _blindSoldState;
             if (state.timer) { clearTimeout(state.timer); state.timer = null; }
-            // 기존 알림 제거
-            const oldAlert = panel.querySelector('.blind-total-sold-alert');
-            if (oldAlert) oldAlert.remove();
+            // 기존 팝업 제거
+            const old = document.querySelector('.blind-sold-popup-overlay');
+            if (old) old.remove();
 
             const winner = String(item?.winner || '').trim() || '알 수 없음';
             const rawPrice = Number(String(item?.sold_price ?? item?.soldPrice ?? 0).replace(/[^0-9.-]/g, '')) || 0;
             const price = rawPrice.toLocaleString('ko-KR');
             const teamLabel = resolveBlindSoldTeamLabel(item, map);
 
-            const alertEl = document.createElement('div');
-            alertEl.className = 'blind-total-sold-alert';
-            alertEl.innerHTML = `
-                <span class="blind-total-sold-alert-label">SOLD</span>
-                <div class="blind-total-sold-alert-row">
-                    <span class="blind-total-sold-winner">${winner}</span>
-                    <span class="blind-total-sold-price">${price}</span>
-                    <span class="blind-total-sold-team">${teamLabel}</span>
+            const overlay = document.createElement('div');
+            overlay.className = 'blind-sold-popup-overlay';
+            overlay.innerHTML = `
+                <div class="blind-sold-popup-card">
+                    <span class="blind-sold-popup-eyebrow">SOLD</span>
+                    <div class="blind-sold-popup-winner">${winner}</div>
+                    <div class="blind-sold-popup-price">${price}</div>
+                    <span class="blind-sold-popup-team">${teamLabel}</span>
                 </div>
             `;
-            panel.appendChild(alertEl);
+            document.body.appendChild(overlay);
 
-            state.currentAlert = alertEl;
+            state.currentAlert = overlay;
             state.timer = setTimeout(() => {
-                alertEl.classList.add('fade-out');
-                setTimeout(() => { alertEl.remove(); state.currentAlert = null; }, 600);
+                overlay.classList.add('fade-out');
+                setTimeout(() => { overlay.remove(); state.currentAlert = null; }, 500);
                 state.timer = null;
-            }, 4000);
+            }, 3500);
         }
 
         function renderBlindTeamTotals(map, items) {
@@ -4793,6 +4825,7 @@
             const width = map.blind_totals_width || '42%';
             const height = map.blind_totals_height || '24%';
             const fontSize = Math.max(9, Math.min(32, parseInt(map.blind_totals_font_size || '14', 10) || 14));
+            const opacity = Math.max(0, Math.min(100, parseInt(map.blind_totals_opacity || '45', 10) || 45)) / 100;
             panel.style.removeProperty('top');
             panel.style.removeProperty('left');
             panel.style.removeProperty('right');
@@ -4805,6 +4838,7 @@
             panel.style.minHeight = '0';
             panel.style.height = height;
             panel.style.setProperty('--blind-total-fs', fontSize + 'px');
+            panel.style.setProperty('--blind-total-opacity', String(opacity));
 
             const rows = getBlindTotalRows(items, map);
             const totalDone = rows.reduce((sum, row) => sum + row.soldCount, 0);
@@ -4812,10 +4846,6 @@
 
             // 낙찰 감지
             const soldItem = detectBlindSoldItem(items);
-
-            // 기존 알림 보존 (DOM 갱신 시 유지)
-            const existingAlert = panel.querySelector('.blind-total-sold-alert');
-            const savedAlert = existingAlert ? existingAlert.cloneNode(true) : null;
 
             panel.innerHTML = `
                 <div class="blind-total-counter">
@@ -4826,7 +4856,7 @@
                 ${rows.length ? `
                     <div class="blind-total-list">
                         ${rows.map(row => `
-                            <div class="blind-total-row${row.active ? ' is-active' : ''}">
+                            <div class="blind-total-row">
                                 <strong class="blind-total-team">${row.team}팀</strong>
                                 <div class="blind-total-progress">
                                     <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
@@ -4838,17 +4868,11 @@
                 ` : '<div class="blind-total-empty">토너먼트 개체 대기 중</div>'}
             `;
 
-            // 기존 알림 복원 (새 낙찰이 아니면)
-            if (!soldItem && savedAlert && _blindSoldState.currentAlert) {
-                panel.appendChild(savedAlert);
-                _blindSoldState.currentAlert = savedAlert;
-            }
-
             panel.classList.add('visible');
 
-            // 새 낙찰 발생 시 알림 표시
+            // 새 낙찰 발생 시 풀스크린 팝업 표시
             if (soldItem) {
-                showBlindSoldAlert(panel, soldItem, map);
+                showBlindSoldAlert(soldItem, map);
             }
         }
 
