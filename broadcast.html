@@ -4164,7 +4164,7 @@
                 if (cl.feed) addPill(track, '먹이:' + (GRADE[cl.feed] || cl.feed), '');
                 if (cl.structure) addPill(track, '체형:' + (GRADE[cl.structure] || cl.structure), '');
                 if (cl.memo) addPill(track, cl.memo, '');
-                if (item.note) {
+                if (item.note && item.note !== cl.memo) {
                     addPill(track, item.note, '');
                 }
 

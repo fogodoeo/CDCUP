@@ -1398,6 +1398,7 @@
             const opacity = Math.max(0, Math.min(100, parseInt(val) || 45));
             const valueEl = document.getElementById('blind-totals-opacity-value');
             if (valueEl) valueEl.textContent = opacity + '%';
+            if (elements.blind_totals) elements.blind_totals.opacity = String(opacity);
         }
 
         function updateBlindTotalsOpacity(val) {
