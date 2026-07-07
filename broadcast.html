@@ -4086,7 +4086,7 @@
                 }
             }
             // 공개 화면은 팀 슬롯과 분리된 숫자 라벨만 사용한다.
-            document.getElementById("info-name").textContent = auctionItemLabel(item);
+            document.getElementById("info-name").textContent = getItemAuctionMeta(item).publicName || item.name || '';
             // 토너먼트 외 경매만 구분을 표시하고 업체명은 낙찰 전까지 노출하지 않는다.
             document.getElementById("info-sub").textContent = item.auctionType === 'tournament' ? '' : auctionTypeLabel(item);
 
@@ -4869,8 +4869,8 @@
             const sorted = [...rows].sort((a, b) => b.total - a.total);
             const newOrder = sorted.map(r => r.team);
             const prevOrder = _blindRankState.prevOrder;
-            const rankChanged = prevOrder.length > 0 && JSON.stringify(newOrder) !== JSON.stringify(prevOrder);
-            _blindRankState.prevOrder = newOrder;
+            const orderChanged = prevOrder.length > 0 && JSON.stringify(newOrder) !== JSON.stringify(prevOrder);
+            _blindRankState.prevOrder = [...newOrder];
 
             // 낙찰 감지
             const soldItem = detectBlindSoldItem(items);
@@ -4902,14 +4902,23 @@
                 return;
             }
 
-            // 기존 행 DOM 맵 구축
+            // ── FLIP Step 1: FIRST — 기존 위치 기록 ──
+            const oldPositions = {};
+            listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
+                oldPositions[el.dataset.team] = el.getBoundingClientRect().top;
+            });
+
+            // 기존 행 DOM 맵
             const existingRows = {};
             listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
                 existingRows[el.dataset.team] = el;
             });
 
-            // 각 팀 행 업데이트 또는 생성
-            const fragment = document.createDocumentFragment();
+            // 기존 empty 제거
+            const emptyEl = listEl.querySelector('.blind-total-empty');
+            if (emptyEl) emptyEl.remove();
+
+            // 각 팀 행 업데이트/생성 + DOM 순서 정렬
             sorted.forEach((row, idx) => {
                 const rank = idx + 1;
                 let rowEl = existingRows[row.team];
@@ -4920,10 +4929,6 @@
                     rowEl.dataset.team = row.team;
                 }
 
-                // 이전 순위에서 위치 변동 여부 확인
-                const prevIdx = prevOrder.indexOf(row.team);
-                const didRankChange = rankChanged && prevIdx >= 0 && prevIdx !== idx;
-
                 rowEl.innerHTML = `
                     <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
                     <strong class="blind-total-team">${row.team}팀</strong>
@@ -4933,25 +4938,46 @@
                     <strong class="blind-total-amount">${formatBlindTotalAmount(row.total)}</strong>
                 `;
 
-                if (didRankChange) {
-                    rowEl.classList.add('rank-changed');
-                    setTimeout(() => rowEl.classList.remove('rank-changed'), 1200);
-                }
-
-                fragment.appendChild(rowEl);
+                // DOM 순서 정렬 (appendChild는 이미 있는 노드를 이동시킴)
+                listEl.appendChild(rowEl);
                 delete existingRows[row.team];
             });
 
             // 제거된 팀 삭제
             Object.values(existingRows).forEach(el => el.remove());
 
-            // 기존 empty 제거
-            const emptyEl = listEl.querySelector('.blind-total-empty');
-            if (emptyEl) emptyEl.remove();
-
-            listEl.appendChild(fragment);
-
             panel.classList.add('visible');
+
+            // ── FLIP Step 2,3,4: LAST → INVERT → PLAY ──
+            if (orderChanged) {
+                listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
+                    const team = el.dataset.team;
+                    const oldTop = oldPositions[team];
+                    if (oldTop === undefined) return; // 새로 생긴 팀은 스킵
+
+                    const newTop = el.getBoundingClientRect().top;
+                    const delta = oldTop - newTop;
+
+                    if (Math.abs(delta) < 1) return; // 이동 없음
+
+                    // INVERT: 원래 위치에 있는 것처럼 보이게
+                    el.style.transition = 'none';
+                    el.style.transform = `translateY(${delta}px)`;
+                    el.classList.add('rank-changed');
+
+                    // PLAY: 새 위치로 애니메이션
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            el.style.transition = 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease';
+                            el.style.transform = '';
+                            setTimeout(() => {
+                                el.classList.remove('rank-changed');
+                                el.style.transition = '';
+                            }, 1200);
+                        });
+                    });
+                });
+            }
 
             // 새 낙찰 발생 시 풀스크린 팝업 표시
             if (soldItem) {
