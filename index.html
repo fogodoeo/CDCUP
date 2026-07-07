@@ -224,7 +224,7 @@
 
         .module-card:hover .module-options,
         .module-card:focus-within .module-options {
-            max-height: 42px;
+            max-height: 92px;
             margin-top: 12px;
             opacity: 1;
             pointer-events: auto;
@@ -341,20 +341,36 @@
                     </div>
                     <span class="arrow">▼</span>
                 </div>
-                <a class="link-card" href="preview.html?page=1">
+                <div class="link-card module-card">
                     <div>
                         <strong>방송 미리보기</strong>
-                        <span>현재 선택된 모듈 기준으로 송출 화면을 확인하고 배치합니다.</span>
+                        <span>6개 송출 슬롯을 각각 확인하고 배치합니다.</span>
+                        <div class="module-options" aria-label="방송 미리보기 슬롯 선택">
+                            <a class="module-option" href="preview.html?module=cdcup&amp;page=1">CDCUP 1P</a>
+                            <a class="module-option" href="preview.html?module=cdcup&amp;page=2">CDCUP 2P</a>
+                            <a class="module-option" href="preview.html?module=cdcup&amp;page=3">CDCUP 3P</a>
+                            <a class="module-option" href="preview.html?module=crewart&amp;page=1">크레와트 1P</a>
+                            <a class="module-option" href="preview.html?module=crewart&amp;page=2">크레와트 2P</a>
+                            <a class="module-option" href="preview.html?module=crewart&amp;page=3">크레와트 3P</a>
+                        </div>
                     </div>
-                    <span class="arrow">›</span>
-                </a>
-                <a class="link-card wide" href="broadcast-router.html" target="_blank" rel="noopener">
+                    <span class="arrow">▼</span>
+                </div>
+                <div class="link-card wide module-card">
                     <div>
                         <strong>송출 화면</strong>
-                        <span>OBS에는 이 공통 주소를 연결하고, 방송 화면 제어에서 CDCUP 또는 크레와트를 선택합니다.</span>
+                        <span>OBS에는 필요한 슬롯 주소를 연결합니다. CDCUP 3개, 크레와트 3개로 분리됩니다.</span>
+                        <div class="module-options" aria-label="송출 화면 슬롯 선택">
+                            <a class="module-option" href="broadcast-router.html?event=cdcup&amp;page=1" target="_blank" rel="noopener">CDCUP 1P 송출</a>
+                            <a class="module-option" href="broadcast-router.html?event=cdcup&amp;page=2" target="_blank" rel="noopener">CDCUP 2P 송출</a>
+                            <a class="module-option" href="broadcast-router.html?event=cdcup&amp;page=3" target="_blank" rel="noopener">CDCUP 3P 송출</a>
+                            <a class="module-option" href="broadcast-router.html?event=crewart&amp;page=1" target="_blank" rel="noopener">크레와트 1P 송출</a>
+                            <a class="module-option" href="broadcast-router.html?event=crewart&amp;page=2" target="_blank" rel="noopener">크레와트 2P 송출</a>
+                            <a class="module-option" href="broadcast-router.html?event=crewart&amp;page=3" target="_blank" rel="noopener">크레와트 3P 송출</a>
+                        </div>
                     </div>
-                    <span class="arrow">›</span>
-                </a>
+                    <span class="arrow">▼</span>
+                </div>
             </div>
         </section>
 

@@ -75,7 +75,9 @@
 
         function currentPageMode() {
             const mode = explicitPageMode || String(config.crewart_broadcast_mode || 'score').toLowerCase();
-            return ['score', 'auction', 'host', '1', '2'].includes(mode) ? mode : 'score';
+            if (mode === '1' || mode === 'host') return 'host';
+            if (mode === '2' || mode === 'auction') return 'auction';
+            return 'score';
         }
 
         function renderMiniScore(items) {
@@ -159,9 +161,9 @@
                 applyTicker(config);
                 detectNewSold(items || []);
                 const pageMode = currentPageMode();
-                if (pageMode === 'auction' || pageMode === '2') {
+                if (pageMode === 'auction') {
                     renderAuction(active, items || []);
-                } else if (pageMode === 'host' || pageMode === '1') {
+                } else if (pageMode === 'host') {
                     renderAuction(null, items || []);
                 } else {
                     renderScore(items || []);

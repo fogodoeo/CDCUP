@@ -248,8 +248,18 @@
                     <a href="settings.html?module=crewart" class="cdcup-nav__dropdown-item" onclick="return handleAuctionEventModuleLink(event,'crewart',this.href)">크레와트 방송 제어</a>
                 </div>
             </div>
-            <a href="preview.html?page=1" class="cdcup-nav__link">방송 미리보기</a>
-            <a href="broadcast-router.html" class="cdcup-nav__link" target="_blank" rel="noopener">송출 화면</a>
+            <a href="preview.html?page=1" id="nav-preview-link" class="cdcup-nav__link">방송 미리보기</a>
+            <div class="cdcup-nav__dropdown cdcup-nav__module">
+                <button class="cdcup-nav__link" type="button">송출 화면 <span class="caret">▼</span></button>
+                <div class="cdcup-nav__dropdown-menu">
+                    <a href="broadcast-router.html?event=cdcup&amp;page=1" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">CDCUP 1P 송출</a>
+                    <a href="broadcast-router.html?event=cdcup&amp;page=2" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">CDCUP 2P 송출</a>
+                    <a href="broadcast-router.html?event=cdcup&amp;page=3" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">CDCUP 3P 송출</a>
+                    <a href="broadcast-router.html?event=crewart&amp;page=1" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">크레와트 1P 송출</a>
+                    <a href="broadcast-router.html?event=crewart&amp;page=2" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">크레와트 2P 송출</a>
+                    <a href="broadcast-router.html?event=crewart&amp;page=3" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">크레와트 3P 송출</a>
+                </div>
+            </div>
             <a href="cdcup/" class="cdcup-nav__link">CDCUP</a>
             <a href="crewarts/" class="cdcup-nav__link">크레와트</a>
         </div>
@@ -258,9 +268,9 @@
     <div class="container">
         <!-- 세부 서브 탭 바 -->
         <div class="cdcup-tabs" style="margin-bottom: 24px; grid-column: span 2;">
-            <a href="preview.html?page=1" class="cdcup-tab" style="text-decoration: none;">1P 배치기</a>
-            <a href="preview.html?page=2" class="cdcup-tab" style="text-decoration: none;">2P 배치기</a>
-            <a href="preview.html?page=3" class="cdcup-tab" style="text-decoration: none;">3P 배치기</a>
+            <a href="preview.html?page=1" class="cdcup-tab" data-preview-page="1" style="text-decoration: none;">1P 배치기</a>
+            <a href="preview.html?page=2" class="cdcup-tab" data-preview-page="2" style="text-decoration: none;">2P 배치기</a>
+            <a href="preview.html?page=3" class="cdcup-tab" data-preview-page="3" style="text-decoration: none;">3P 배치기</a>
             <a href="settings.html" class="cdcup-tab active" style="text-decoration: none;">방송 화면 제어</a>
         </div>
 
@@ -312,6 +322,7 @@
             <div class="preview-tabs">
                 <button class="active" onclick="switchPreview(1,this)">1P 진행용</button>
                 <button onclick="switchPreview(2,this)">2P 개체용</button>
+                <button onclick="switchPreview(3,this)">3P 종합용</button>
             </div>
             <div class="preview-wrap"><iframe id="preview-frame" src="broadcast.html?page=1&amp;v=20260701-status-ui"></iframe></div>
         </div>
@@ -461,11 +472,34 @@
             setTimeout(() => t.classList.remove('show'), 3000);
         }
 
+        function activeModuleId(map) {
+            return getActiveAuctionEventModule(map || _cfg || {}).id;
+        }
+
+        function broadcastPreviewSrc(page, moduleId) {
+            const p = ['1', '2', '3'].includes(String(page)) ? String(page) : '1';
+            return moduleId === 'crewart'
+                ? `crewart-broadcast.html?page=${p}`
+                : `broadcast.html?page=${p}&v=20260701-status-ui`;
+        }
+
+        function updatePreviewPageLinks(moduleId) {
+            const id = moduleId || activeModuleId();
+            const label = id === 'crewart' ? '크레와트' : 'CDCUP';
+            document.querySelectorAll('[data-preview-page]').forEach(link => {
+                const page = link.getAttribute('data-preview-page') || '1';
+                link.href = `preview.html?module=${id}&page=${page}`;
+                link.textContent = `${label} ${page}P 배치기`;
+            });
+            const navPreview = document.getElementById('nav-preview-link');
+            if (navPreview) navPreview.href = `preview.html?module=${id}&page=1`;
+        }
+
         // ── Preview ──
         function switchPreview(page, btn) {
             document.querySelectorAll('.preview-tabs button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('preview-frame').src = page === 1 ? 'broadcast.html?page=1&v=20260701-status-ui' : 'broadcast.html?v=20260701-status-ui';
+            document.getElementById('preview-frame').src = broadcastPreviewSrc(page, activeModuleId());
         }
 
         function pushToPreview() {
@@ -480,14 +514,16 @@
         async function onEventModuleChanged(value) {
             const next = value || 'cdcup';
             const currentMap = { ...(_cfg || {}), active_event_module: next };
+            _cfg = currentMap;
             applyAuctionEventModule(currentMap);
+            updatePreviewPageLinks(next);
             if (next === 'crewart' && !document.getElementById('cfg-crewart-houses').value.trim()) {
                 document.getElementById('cfg-crewart-houses').value = serializeCrewartHouses(parseCrewartHouses(''));
             }
             try {
                 await updateConfigs({ active_event_module: next });
                 const frame = document.getElementById('preview-frame');
-                if (frame) frame.contentWindow.location.reload();
+                if (frame) frame.src = broadcastPreviewSrc(1, next);
                 toast(getActiveAuctionEventModule(currentMap).title + ' 모듈로 전환했습니다.');
             } catch (e) {
                 toast('모듈 전환 저장 실패: ' + e.message, true);
@@ -1043,6 +1079,9 @@
                 document.getElementById('cfg-crewart-sold-bonus').value = cfg.crewart_sold_bonus || '0';
                 document.getElementById('cfg-crewart-score-scope').value = cfg.crewart_score_scope || 'crewart';
                 applyAuctionEventModule(_cfg);
+                updatePreviewPageLinks(activeModuleId(_cfg));
+                const previewFrame = document.getElementById('preview-frame');
+                if (previewFrame) previewFrame.src = broadcastPreviewSrc(1, activeModuleId(_cfg));
                 document.getElementById('cfg-ticker').value = cfg.ticker || '';
                 document.getElementById('cfg-badge-text').value = cfg.badge_text || 'LIVE';
                 document.getElementById('cfg-ticker-interval').value = cfg.ticker_interval || '4200';

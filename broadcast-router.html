@@ -62,15 +62,26 @@
             return value === 'crewart' || value === 'crewarts' ? 'crewart' : 'cdcup';
         }
 
+        function normalizePage(value, fallback) {
+            const page = String(value || fallback || '1').trim();
+            return ['1', '2', '3'].includes(page) ? page : String(fallback || '1');
+        }
+
+        function normalizeCrewartPage(value) {
+            const mode = String(value || '').trim().toLowerCase();
+            if (mode === 'host') return '1';
+            if (mode === 'auction') return '2';
+            if (mode === 'score') return '3';
+            return normalizePage(mode, '3');
+        }
+
         function targetFor(config) {
             const eventId = normalizeEvent(params.get('event') || config.active_event_module || 'cdcup');
             if (eventId === 'crewart') {
-                const page = params.get('page') || params.get('mode') || config.crewart_broadcast_mode || '';
-                return page
-                    ? 'crewart-broadcast.html?page=' + encodeURIComponent(page)
-                    : 'crewart-broadcast.html';
+                const page = normalizeCrewartPage(params.get('page') || params.get('mode') || config.crewart_broadcast_page || config.crewart_broadcast_mode || '3');
+                return 'crewart-broadcast.html?page=' + encodeURIComponent(page);
             }
-            const page = params.get('page') || config.cdcup_broadcast_page || '1';
+            const page = normalizePage(params.get('page') || config.cdcup_broadcast_page || '1', '1');
             return 'broadcast.html?page=' + encodeURIComponent(page) + '&v=' + encodeURIComponent(assetVersion);
         }
 
@@ -83,9 +94,13 @@
                     lastSrc = src;
                 }
                 const mode = normalizeEvent(params.get('event') || config.active_event_module || 'cdcup');
-                if (mode !== lastMode || statusEl.textContent.indexOf('연결 중') >= 0) {
-                    statusEl.textContent = (mode === 'crewart' ? '크레와트' : 'CDCUP') + ' 송출 중';
-                    lastMode = mode;
+                const page = mode === 'crewart'
+                    ? normalizeCrewartPage(params.get('page') || params.get('mode') || config.crewart_broadcast_page || config.crewart_broadcast_mode || '3')
+                    : normalizePage(params.get('page') || config.cdcup_broadcast_page || '1', '1');
+                const statusKey = mode + ':' + page;
+                if (statusKey !== lastMode || statusEl.textContent.indexOf('연결 중') >= 0) {
+                    statusEl.textContent = (mode === 'crewart' ? '크레와트' : 'CDCUP') + ' ' + page + 'P 송출 중';
+                    lastMode = statusKey;
                 }
             } catch (error) {
                 statusEl.textContent = '송출 설정 오류: ' + (error.message || error);

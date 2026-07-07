@@ -719,7 +719,17 @@
                 </div>
             </div>
             <a href="preview.html?page=1" class="cdcup-nav__link active">방송 미리보기</a>
-            <a href="broadcast-router.html" class="cdcup-nav__link" target="_blank" rel="noopener">송출 화면</a>
+            <div class="cdcup-nav__dropdown cdcup-nav__module">
+                <button class="cdcup-nav__link" type="button">송출 화면 <span class="caret">▼</span></button>
+                <div class="cdcup-nav__dropdown-menu">
+                    <a href="broadcast-router.html?event=cdcup&amp;page=1" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">CDCUP 1P 송출</a>
+                    <a href="broadcast-router.html?event=cdcup&amp;page=2" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">CDCUP 2P 송출</a>
+                    <a href="broadcast-router.html?event=cdcup&amp;page=3" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">CDCUP 3P 송출</a>
+                    <a href="broadcast-router.html?event=crewart&amp;page=1" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">크레와트 1P 송출</a>
+                    <a href="broadcast-router.html?event=crewart&amp;page=2" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">크레와트 2P 송출</a>
+                    <a href="broadcast-router.html?event=crewart&amp;page=3" class="cdcup-nav__dropdown-item" target="_blank" rel="noopener">크레와트 3P 송출</a>
+                </div>
+            </div>
             <a href="cdcup/" class="cdcup-nav__link">CDCUP</a>
             <a href="crewarts/" class="cdcup-nav__link">크레와트</a>
         </div>
@@ -728,9 +738,9 @@
     <div class="workspace">
         <!-- 세부 서브 탭 바 -->
         <div class="cdcup-tabs" style="margin-bottom: 24px; width: 100%;">
-            <a href="preview.html?page=1" id="btn-tab-p1" class="cdcup-tab" style="text-decoration: none;">1P 배치기</a>
-            <a href="preview.html?page=2" id="btn-tab-p2" class="cdcup-tab" style="text-decoration: none;">2P 배치기</a>
-            <a href="preview.html?page=3" id="btn-tab-p3" class="cdcup-tab" style="text-decoration: none;">3P 배치기</a>
+            <a href="preview.html?page=1" id="btn-tab-p1" class="cdcup-tab" data-preview-page="1" style="text-decoration: none;">1P 배치기</a>
+            <a href="preview.html?page=2" id="btn-tab-p2" class="cdcup-tab" data-preview-page="2" style="text-decoration: none;">2P 배치기</a>
+            <a href="preview.html?page=3" id="btn-tab-p3" class="cdcup-tab" data-preview-page="3" style="text-decoration: none;">3P 배치기</a>
             <a href="settings.html" class="cdcup-tab" style="text-decoration: none;">방송 화면 제어</a>
         </div>
         <div class="event-module-panel" id="preview-event-module-panel">
@@ -1023,21 +1033,62 @@
     <script>
         // URL Parameter Parsing (page=1, page=2 or page=3)
         const params = new URLSearchParams(window.location.search);
-        const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
+        function normalizePreviewPage(value) {
+            const page = String(value || '2').trim();
+            return ['1', '2', '3'].includes(page) ? page : '2';
+        }
+
+        const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
         const broadcastAssetVersion = '20260701-status-ui';
         let previewConfigMap = {};
+
+        function requestedModuleId() {
+            const requestedRaw = params.get('module') || params.get('event');
+            return requestedRaw ? getActiveAuctionEventModule({ active_event_module: requestedRaw }).id : '';
+        }
+
+        function broadcastPreviewSrc(page, moduleId) {
+            const p = normalizePreviewPage(page);
+            return moduleId === 'crewart'
+                ? `crewart-broadcast.html?page=${p}`
+                : `broadcast.html?page=${p}&v=${broadcastAssetVersion}`;
+        }
+
+        function updatePreviewTabs(moduleId) {
+            const id = moduleId || getActiveAuctionEventModule(previewConfigMap).id;
+            const label = id === 'crewart' ? '크레와트' : 'CDCUP';
+            document.querySelectorAll('[data-preview-page]').forEach(link => {
+                const page = normalizePreviewPage(link.getAttribute('data-preview-page'));
+                link.href = `preview.html?module=${id}&page=${page}`;
+                link.textContent = `${label} ${page}P 배치기`;
+            });
+            const settingsLink = document.querySelector('.cdcup-tabs a[href^="settings.html"]');
+            if (settingsLink) settingsLink.href = `settings.html?module=${id}`;
+        }
+
+        function updatePreviewUrlModule(moduleId) {
+            const nextParams = new URLSearchParams(location.search);
+            nextParams.set('module', moduleId);
+            nextParams.set('page', pageNum);
+            history.replaceState(null, '', `${location.pathname}?${nextParams.toString()}`);
+        }
 
         function applyPreviewEventModule(cfg) {
             previewConfigMap = cfg || {};
             const module = applyAuctionEventModule(previewConfigMap);
+            updatePreviewTabs(module.id);
+            const previewFrame = document.getElementById('broadcast-frame');
+            if (previewFrame) {
+                previewFrame.src = broadcastPreviewSrc(pageNum, module.id);
+            }
             const select = document.getElementById('preview-event-module-select');
             if (select) select.value = module.id;
             const title = document.getElementById('preview-event-module-title');
             const desc = document.getElementById('preview-event-module-desc');
             if (title) title.textContent = module.title + ' 화면 모듈';
             if (desc) desc.textContent = module.id === 'crewart'
-                ? '3P는 기숙사 점수판으로 송출되고, 낙찰자 배정표 기준으로 점수가 계산됩니다.'
-                : '3P는 토너먼트 대진표와 실시간 경기 현황으로 송출됩니다.';
+                ? '1P 대기, 2P 현재 경매, 3P 기숙사 점수판으로 송출합니다.'
+                : '1P 진행, 2P 개체, 3P 토너먼트 대진표로 송출합니다.';
 
             const isCrewart = module.id === 'crewart';
             document.body.classList.toggle('event-crewart-preview', isCrewart);
@@ -1074,9 +1125,10 @@
             const active_event_module = value || 'cdcup';
             const next = { ...previewConfigMap, active_event_module };
             applyPreviewEventModule(next);
+            updatePreviewUrlModule(active_event_module);
             try {
                 await updateConfigs({ active_event_module });
-                frame.contentWindow.location.reload();
+                frame.src = broadcastPreviewSrc(pageNum, active_event_module);
                 toast(getActiveAuctionEventModule(next).title + ' 모듈로 전환했습니다.');
             } catch (err) {
                 toast('모듈 전환 실패: ' + err.message);
@@ -1098,22 +1150,24 @@
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
         const pageTitle = document.getElementById('page-title');
+        const initialModuleId = requestedModuleId() || 'cdcup';
+        updatePreviewTabs(initialModuleId);
         if (pageNum === '1') {
             document.getElementById('btn-tab-p1')?.classList.add('active');
-            if (pageTitle) pageTitle.textContent = "진행용 (1P) 실시간 레이아웃 배치기";
-            frame.src = `broadcast.html?page=1&v=${broadcastAssetVersion}`;
+            if (pageTitle) pageTitle.textContent = (initialModuleId === 'crewart' ? '크레와트 대기용' : '진행용') + " (1P) 실시간 레이아웃 배치기";
+            frame.src = broadcastPreviewSrc('1', initialModuleId);
         } else if (pageNum === '3') {
             document.getElementById('btn-tab-p3')?.classList.add('active');
-            if (pageTitle) pageTitle.textContent = "대진용 (3P) 실시간 레이아웃 배치기";
-            frame.src = `broadcast.html?page=3&v=${broadcastAssetVersion}`;
+            if (pageTitle) pageTitle.textContent = (initialModuleId === 'crewart' ? '기숙사 점수판' : '대진용') + " (3P) 실시간 레이아웃 배치기";
+            frame.src = broadcastPreviewSrc('3', initialModuleId);
             // 3P: 레이아웃 미리보기 + 대진표 관리 대시보드 함께 표시
             const bgSel = document.getElementById('bracket-bg-selector-group');
             if (bgSel) bgSel.style.display = 'none';
-            document.getElementById('tournament-dashboard')?.classList.add('active');
+            if (initialModuleId !== 'crewart') document.getElementById('tournament-dashboard')?.classList.add('active');
         } else {
             document.getElementById('btn-tab-p2')?.classList.add('active');
-            if (pageTitle) pageTitle.textContent = "개체용 (2P) 실시간 레이아웃 배치기";
-            frame.src = `broadcast.html?page=2&v=${broadcastAssetVersion}`; // Default page2 layout
+            if (pageTitle) pageTitle.textContent = (initialModuleId === 'crewart' ? '현재 경매용' : '개체용') + " (2P) 실시간 레이아웃 배치기";
+            frame.src = broadcastPreviewSrc('2', initialModuleId); // Default page2 layout
         }
 
         // PAGE1 전용 요소 표시
