@@ -1135,7 +1135,7 @@
             if (p3Tab) p3Tab.textContent = isCrewart ? '3P 점수판 배치기' : '3P 배치기';
 
             if (pageNum === '3') {
-                document.getElementById('tournament-dashboard')?.classList.remove('active');
+                document.getElementById('tournament-dashboard')?.classList.toggle('active', !isCrewart);
                 document.getElementById('crewart-dashboard')?.classList.toggle('active', isCrewart);
                 const setDisplay = (id, visible) => {
                     const el = document.getElementById(id);
@@ -1219,7 +1219,7 @@
             // 3P: 레이아웃 미리보기 + 대진표 관리 대시보드 함께 표시
             const bgSel = document.getElementById('bracket-bg-selector-group');
             if (bgSel) bgSel.style.display = 'none';
-            document.getElementById('tournament-dashboard')?.classList.remove('active');
+            document.getElementById('tournament-dashboard')?.classList.toggle('active', initialModuleId !== 'crewart');
             document.getElementById('crewart-dashboard')?.classList.toggle('active', initialModuleId === 'crewart');
         } else {
             document.getElementById('btn-tab-p2')?.classList.add('active');

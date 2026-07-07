@@ -5205,7 +5205,10 @@
             if (isCdcupBlindTotalsMode(map)) {
                 renderBlindTeamTotals(map, window.latestItemsList || []);
                 // treeFull (전체 결과표) 렌더링 — bracket_full_blind가 업체명 마스킹 처리
-                if (treeFull && masterShow && fullShow) {
+                if (treeFull && fullShow) {
+                    // 컨테이너도 보이게
+                    if (containerEl) containerEl.classList.add('visible');
+                    treeFull.style.display = 'flex';
                     if (active === 'none') {
                         treeFull.innerHTML = `
                             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:16px;">
