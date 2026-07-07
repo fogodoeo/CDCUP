@@ -5204,7 +5204,27 @@
 
             if (isCdcupBlindTotalsMode(map)) {
                 renderBlindTeamTotals(map, window.latestItemsList || []);
-                // treeFull (전체 결과표)는 유지 — bracket_full_blind가 업체명 마스킹 처리
+                // treeFull (전체 결과표) 렌더링 — bracket_full_blind가 업체명 마스킹 처리
+                if (treeFull && masterShow && fullShow) {
+                    if (active === 'none') {
+                        treeFull.innerHTML = `
+                            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:16px;">
+                                <div style="font-size:32px;font-weight:900;color:#3b82f6;letter-spacing:0.05em;margin-bottom:8px;">TOURNAMENT</div>
+                                <div style="font-size:24px;font-weight:900;color:#fff;">토너먼트 대기 중</div>
+                            </div>
+                        `;
+                        treeFull.classList.add('visible');
+                    } else {
+                        const bracketKey = 'tournament_bracket_' + active;
+                        if (map[bracketKey]) {
+                            let bracket = { matches: {} };
+                            try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
+                            renderBracketPageTree(parseInt(active), bracket, map);
+                        }
+                    }
+                } else if (treeFull) {
+                    treeFull.classList.remove('visible');
+                }
                 if (treeLive) {
                     treeLive.classList.remove('visible');
                     treeLive.style.display = 'none';
