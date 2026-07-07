@@ -2494,8 +2494,11 @@
             <span class="js-event-admin-title">CDCUP 관리자</span>
         </a>
         <div class="cdcup-nav__links">
-            <a href="cdcup-index.html" class="cdcup-nav__link active">개체/경매 관리</a>
-            <a href="preview.html?page=1" class="cdcup-nav__link">방송 화면 제어</a>
+            <a href="index.html" class="cdcup-nav__link">허브</a>
+            <a href="cdcup-index.html" class="cdcup-nav__link active">CDCUP 관리</a>
+            <a href="summary.html" class="cdcup-nav__link">경기결과표</a>
+            <a href="settings.html" class="cdcup-nav__link">방송 화면 제어</a>
+            <a href="preview.html?page=1" class="cdcup-nav__link">방송 미리보기</a>
             <a href="ranking.html" class="cdcup-nav__link">종합 순위표</a>
             <a href="crewart-settings.html" class="cdcup-nav__link">크레와트</a>
         </div>
@@ -2894,9 +2897,14 @@
         }
 
         function showTab(tab, btn) {
+            if (!btn) {
+                btn = Array.from(document.querySelectorAll('.tab-btn')).find(function (button) {
+                    return (button.getAttribute('onclick') || '').indexOf("'" + tab + "'") >= 0;
+                });
+            }
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            btn.classList.add('active');
+            if (btn) btn.classList.add('active');
             document.getElementById('tab-' + tab).classList.add('active');
             // 헤더 타이틀 갱신
             const titles = { register: '개체 등록', list: '개체 목록', print: '인쇄', archive: '회차 기록' };
@@ -2908,6 +2916,15 @@
             if (tab === 'list') loadList();
             if (tab === 'print') loadPrint();
             if (tab === 'archive') loadArchiveList();
+        }
+
+        function openInitialTabFromUrl() {
+            const params = new URLSearchParams(location.search);
+            const requested = (params.get('tab') || location.hash.replace(/^#/, '') || '').toLowerCase();
+            const allowed = ['register', 'list', 'print', 'archive'];
+            if (allowed.indexOf(requested) < 0) return false;
+            showTab(requested);
+            return true;
         }
 
         let activeArchiveId = '';
@@ -5330,7 +5347,7 @@
             loadEventModuleContext();
             loadParents();
             addEntry();
-            loadList();
+            if (!openInitialTabFromUrl()) loadList();
         } catch (initErr) {
             document.getElementById('item-list').innerHTML = '<div style="color:red;padding:20px;">초기화 오류: ' + initErr.message + '</div>';
         }

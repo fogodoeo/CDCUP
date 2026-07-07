@@ -24,7 +24,7 @@
 
     <script>
         const params = new URLSearchParams(location.search);
-        const pageMode = String(params.get('page') || 'score').toLowerCase();
+        const explicitPageMode = params.has('page') ? String(params.get('page') || 'score').toLowerCase() : '';
         const root = document.getElementById('root');
         const stage = document.getElementById('stage');
         const mini = document.getElementById('mini-score');
@@ -71,6 +71,11 @@
                 return `<span style="color:${esc(color || '#D6B25E')};font-weight:950;">${esc(label)}</span>`;
             });
             tickerIndex += 1;
+        }
+
+        function currentPageMode() {
+            const mode = explicitPageMode || String(config.crewart_broadcast_mode || 'score').toLowerCase();
+            return ['score', 'auction', 'host', '1', '2'].includes(mode) ? mode : 'score';
         }
 
         function renderMiniScore(items) {
@@ -153,6 +158,7 @@
                 applyAuctionEventModule(config);
                 applyTicker(config);
                 detectNewSold(items || []);
+                const pageMode = currentPageMode();
                 if (pageMode === 'auction' || pageMode === '2') {
                     renderAuction(active, items || []);
                 } else if (pageMode === 'host' || pageMode === '1') {

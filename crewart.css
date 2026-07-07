@@ -162,6 +162,32 @@ body.crewart-page {
     font-weight: 900;
 }
 
+.cw-mode-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 182px;
+}
+
+.cw-mode-card .cw-btn {
+    margin-top: auto;
+}
+
+.cw-mode-card.is-active {
+    border-color: var(--cw-gold);
+    background: linear-gradient(145deg, rgba(214,178,94,.18), var(--cw-panel) 58%);
+}
+
+.cw-mode-card.is-active h2::after {
+    content: 'ON';
+    margin-left: 8px;
+    padding: 2px 6px;
+    border: 1px solid var(--cw-gold);
+    color: var(--cw-gold);
+    font-size: 9px;
+    font-weight: 950;
+}
+
 .cw-field { margin-bottom: 12px; }
 .cw-field label {
     display: block;
