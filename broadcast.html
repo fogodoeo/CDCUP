@@ -2737,6 +2737,37 @@
             color: #94a3b8;
             font-weight: 600;
         }
+        /* ── 점수 델타 뱃지 (+100,000) ── */
+        .blind-total-delta {
+            position: absolute;
+            right: calc(var(--blind-total-fs) * 0.4);
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: rgba(217, 176, 92, 0.22);
+            color: #fbbf24;
+            font-size: calc(var(--blind-total-fs) * 0.58);
+            font-weight: 900;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            animation: blind-delta-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+            pointer-events: none;
+        }
+        .blind-total-delta.fade-out {
+            animation: blind-delta-out 0.5s ease-out both;
+        }
+        @keyframes blind-delta-in {
+            from { opacity: 0; transform: translateY(-50%) translateX(10px) scale(0.8); }
+            to   { opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
+        }
+        @keyframes blind-delta-out {
+            from { opacity: 1; }
+            to   { opacity: 0; transform: translateY(-50%) translateY(-6px); }
+        }
+        .blind-total-row {
+            position: relative;
+        }
         /* ── 낙찰 풀스크린 팝업 오버레이 ── */
         .blind-sold-popup-overlay {
             position: fixed;
@@ -4827,8 +4858,136 @@
             }, 3500);
         }
 
-        // 이전 순위 추적 (애니메이션용)
-        const _blindRankState = { prevOrder: [] };
+        // ── 리더보드 상태 관리 ──
+        const _blindRankState = {
+            prevOrder: [],
+            prevTotals: {},     // team → 이전 총합
+            frozen: false,      // 팝업 표시 중 리더보드 동결
+            pendingData: null,  // 동결 중 대기 데이터
+            pendingMap: null
+        };
+
+        // 델타 뱃지 표시
+        function showDeltaBadge(rowEl, delta) {
+            if (delta <= 0) return;
+            const badge = document.createElement('span');
+            badge.className = 'blind-total-delta';
+            badge.textContent = '+' + delta.toLocaleString('ko-KR');
+            rowEl.appendChild(badge);
+            setTimeout(() => {
+                badge.classList.add('fade-out');
+                setTimeout(() => badge.remove(), 500);
+            }, 2500);
+        }
+
+        // 리더보드 DOM 업데이트 (FLIP 애니메이션 포함)
+        function applyLeaderboardUpdate(panel, sorted, map, animate) {
+            let listEl = panel.querySelector('.blind-total-list');
+            if (!listEl) {
+                listEl = document.createElement('div');
+                listEl.className = 'blind-total-list';
+                panel.appendChild(listEl);
+            }
+
+            if (!sorted.length) {
+                listEl.innerHTML = '<div class="blind-total-empty">토너먼트 개체 대기 중</div>';
+                return;
+            }
+
+            // FLIP Step 1: FIRST — 기존 위치 기록
+            const oldPositions = {};
+            listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
+                oldPositions[el.dataset.team] = el.getBoundingClientRect().top;
+            });
+
+            // 기존 행 DOM 맵
+            const existingRows = {};
+            listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
+                existingRows[el.dataset.team] = el;
+            });
+
+            // empty 제거
+            const emptyEl = listEl.querySelector('.blind-total-empty');
+            if (emptyEl) emptyEl.remove();
+
+            // 델타 계산용 이전 총합
+            const prevTotals = _blindRankState.prevTotals;
+
+            // 행 업데이트/생성 + DOM 순서 정렬
+            sorted.forEach((row, idx) => {
+                const rank = idx + 1;
+                let rowEl = existingRows[row.team];
+                const isNew = !rowEl;
+                if (isNew) {
+                    rowEl = document.createElement('div');
+                    rowEl.className = 'blind-total-row';
+                    rowEl.dataset.team = row.team;
+                }
+
+                // 기존 델타 뱃지 제거
+                rowEl.querySelectorAll('.blind-total-delta').forEach(d => d.remove());
+
+                rowEl.innerHTML = `
+                    <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
+                    <strong class="blind-total-team">${row.team}팀</strong>
+                    <div class="blind-total-progress">
+                        <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
+                    </div>
+                    <strong class="blind-total-amount">${formatBlindTotalAmount(row.total)}</strong>
+                `;
+
+                // 델타 뱃지
+                if (animate) {
+                    const prev = prevTotals[row.team] || 0;
+                    const diff = row.total - prev;
+                    if (diff > 0) showDeltaBadge(rowEl, diff);
+                }
+
+                listEl.appendChild(rowEl);
+                delete existingRows[row.team];
+            });
+
+            // 제거된 팀 삭제
+            Object.values(existingRows).forEach(el => el.remove());
+
+            // 이전 총합 업데이트
+            sorted.forEach(row => { _blindRankState.prevTotals[row.team] = row.total; });
+
+            // FLIP Step 2,3,4: LAST → INVERT → PLAY
+            if (animate && Object.keys(oldPositions).length > 0) {
+                listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
+                    const team = el.dataset.team;
+                    const oldTop = oldPositions[team];
+                    if (oldTop === undefined) return;
+
+                    const newTop = el.getBoundingClientRect().top;
+                    const delta = oldTop - newTop;
+
+                    if (Math.abs(delta) < 1) return;
+
+                    el.style.transition = 'none';
+                    el.style.transform = `translateY(${delta}px)`;
+                    el.classList.add('rank-changed');
+
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            el.style.transition = 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease';
+                            el.style.transform = '';
+                            setTimeout(() => {
+                                el.classList.remove('rank-changed');
+                                el.style.transition = '';
+                            }, 1500);
+                        });
+                    });
+                });
+            } else if (!animate) {
+                // 초기 렌더 시 prevTotals 세팅
+                sorted.forEach(row => { _blindRankState.prevTotals[row.team] = row.total; });
+            }
+
+            // 순서 기록
+            _blindRankState.prevOrder = sorted.map(r => r.team);
+        }
 
         function renderBlindTeamTotals(map, items) {
             const panel = document.getElementById('blind-team-total-overlay');
@@ -4836,6 +4995,13 @@
             const show = String(map?.blind_totals_show ?? '1') !== '0';
             if (!show) {
                 panel.classList.remove('visible');
+                return;
+            }
+
+            // 팝업 중이면 데이터만 저장하고 DOM 업데이트 스킵
+            if (_blindRankState.frozen) {
+                _blindRankState.pendingData = items;
+                _blindRankState.pendingMap = map;
                 return;
             }
 
@@ -4864,18 +5030,12 @@
             const rows = getBlindTotalRows(items, map);
             const totalDone = rows.reduce((sum, row) => sum + row.soldCount, 0);
             const totalItems = rows.reduce((sum, row) => sum + row.itemCount, 0);
-
-            // 금액 내림차순 정렬 (1위가 최상단)
             const sorted = [...rows].sort((a, b) => b.total - a.total);
-            const newOrder = sorted.map(r => r.team);
-            const prevOrder = _blindRankState.prevOrder;
-            const orderChanged = prevOrder.length > 0 && JSON.stringify(newOrder) !== JSON.stringify(prevOrder);
-            _blindRankState.prevOrder = [...newOrder];
 
             // 낙찰 감지
             const soldItem = detectBlindSoldItem(items);
 
-            // 카운터 업데이트 (DOM 재사용)
+            // 카운터 업데이트
             let counterEl = panel.querySelector('.blind-total-counter');
             if (!counterEl) {
                 counterEl = document.createElement('div');
@@ -4888,100 +5048,42 @@
                 <span class="blind-total-counter-num">${totalItems}</span>
             `;
 
-            // 리스트 컨테이너
-            let listEl = panel.querySelector('.blind-total-list');
-            if (!listEl) {
-                listEl = document.createElement('div');
-                listEl.className = 'blind-total-list';
-                panel.appendChild(listEl);
-            }
-
-            if (!sorted.length) {
-                listEl.innerHTML = '<div class="blind-total-empty">토너먼트 개체 대기 중</div>';
-                panel.classList.add('visible');
-                return;
-            }
-
-            // ── FLIP Step 1: FIRST — 기존 위치 기록 ──
-            const oldPositions = {};
-            listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
-                oldPositions[el.dataset.team] = el.getBoundingClientRect().top;
-            });
-
-            // 기존 행 DOM 맵
-            const existingRows = {};
-            listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
-                existingRows[el.dataset.team] = el;
-            });
-
-            // 기존 empty 제거
-            const emptyEl = listEl.querySelector('.blind-total-empty');
-            if (emptyEl) emptyEl.remove();
-
-            // 각 팀 행 업데이트/생성 + DOM 순서 정렬
-            sorted.forEach((row, idx) => {
-                const rank = idx + 1;
-                let rowEl = existingRows[row.team];
-                const isNew = !rowEl;
-                if (isNew) {
-                    rowEl = document.createElement('div');
-                    rowEl.className = 'blind-total-row';
-                    rowEl.dataset.team = row.team;
-                }
-
-                rowEl.innerHTML = `
-                    <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
-                    <strong class="blind-total-team">${row.team}팀</strong>
-                    <div class="blind-total-progress">
-                        <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
-                    </div>
-                    <strong class="blind-total-amount">${formatBlindTotalAmount(row.total)}</strong>
-                `;
-
-                // DOM 순서 정렬 (appendChild는 이미 있는 노드를 이동시킴)
-                listEl.appendChild(rowEl);
-                delete existingRows[row.team];
-            });
-
-            // 제거된 팀 삭제
-            Object.values(existingRows).forEach(el => el.remove());
-
             panel.classList.add('visible');
 
-            // ── FLIP Step 2,3,4: LAST → INVERT → PLAY ──
-            if (orderChanged) {
-                listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
-                    const team = el.dataset.team;
-                    const oldTop = oldPositions[team];
-                    if (oldTop === undefined) return; // 새로 생긴 팀은 스킵
-
-                    const newTop = el.getBoundingClientRect().top;
-                    const delta = oldTop - newTop;
-
-                    if (Math.abs(delta) < 1) return; // 이동 없음
-
-                    // INVERT: 원래 위치에 있는 것처럼 보이게
-                    el.style.transition = 'none';
-                    el.style.transform = `translateY(${delta}px)`;
-                    el.classList.add('rank-changed');
-
-                    // PLAY: 새 위치로 애니메이션
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            el.style.transition = 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease';
-                            el.style.transform = '';
-                            setTimeout(() => {
-                                el.classList.remove('rank-changed');
-                                el.style.transition = '';
-                            }, 1200);
-                        });
-                    });
-                });
-            }
-
-            // 새 낙찰 발생 시 풀스크린 팝업 표시
             if (soldItem) {
+                // ── 낙찰 발생: 리더보드 동결 → 팝업 → 해제 후 애니메이션 ──
+                _blindRankState.frozen = true;
+                _blindRankState.pendingData = items;
+                _blindRankState.pendingMap = map;
+
                 showBlindSoldAlert(soldItem, map);
+
+                // 팝업 끝난 후 (3.5s 표시 + 0.5s 페이드 + 0.3s 여유)
+                setTimeout(() => {
+                    _blindRankState.frozen = false;
+                    const latestItems = _blindRankState.pendingData || items;
+                    const latestMap = _blindRankState.pendingMap || map;
+                    const latestRows = getBlindTotalRows(latestItems, latestMap);
+                    const latestSorted = [...latestRows].sort((a, b) => b.total - a.total);
+
+                    // 카운터도 최신으로
+                    const latestDone = latestRows.reduce((s, r) => s + r.soldCount, 0);
+                    const latestTotal = latestRows.reduce((s, r) => s + r.itemCount, 0);
+                    counterEl.innerHTML = `
+                        <span class="blind-total-counter-num">${latestDone}</span>
+                        <span class="blind-total-counter-sep">/</span>
+                        <span class="blind-total-counter-num">${latestTotal}</span>
+                    `;
+
+                    applyLeaderboardUpdate(panel, latestSorted, latestMap, true);
+                    _blindRankState.pendingData = null;
+                    _blindRankState.pendingMap = null;
+                }, 4300);
+            } else {
+                // 일반 업데이트 (낙찰 없음)
+                const hasPrev = _blindRankState.prevOrder.length > 0;
+                const orderChanged = hasPrev && JSON.stringify(sorted.map(r => r.team)) !== JSON.stringify(_blindRankState.prevOrder);
+                applyLeaderboardUpdate(panel, sorted, map, orderChanged);
             }
         }
 
