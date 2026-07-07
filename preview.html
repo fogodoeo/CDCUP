@@ -1141,12 +1141,12 @@
                     const el = document.getElementById(id);
                     if (el) el.style.display = visible ? '' : 'none';
                 };
-                setDisplay('draggable-bracket-full', isCrewart);
+                setDisplay('draggable-bracket-full', true);
                 setDisplay('draggable-bracket-live', false);
                 setDisplay('draggable-bracket-title', false);
                 setDisplay('draggable-battle-ann', false);
                 setDisplay('draggable-blind-totals', !isCrewart);
-                setDisplay('toggle-bracket-full-show-group', isCrewart);
+                setDisplay('toggle-bracket-full-show-group', true);
                 [
                     'toggle-bracket-live-show-group',
                     'toggle-bracket-full-blind-group',
@@ -1159,11 +1159,12 @@
                 ].forEach(id => {
                     setDisplay(id, false);
                 });
+                setDisplay('toggle-bracket-full-blind-group', !isCrewart);
                 setDisplay('toggle-bracket-full-font-group', isCrewart);
                 setDisplay('toggle-blind-totals-show-group', !isCrewart);
                 setDisplay('toggle-blind-totals-font-group', !isCrewart);
                 setDisplay('toggle-blind-totals-opacity-group', !isCrewart);
-                setDisplay('bracket-coords', isCrewart);
+                setDisplay('bracket-coords', true);
                 setDisplay('bracket-live-coords', false);
                 setDisplay('bracket-title-coords', false);
                 setDisplay('battle-ann-coords', false);
@@ -1251,9 +1252,9 @@
             document.getElementById('draggable-bracket-title').style.display = 'none'; // Hidden per user request
             document.getElementById('draggable-battle-ann').style.display = 'none';
             document.getElementById('draggable-blind-totals').style.display = isInitialCrewart ? 'none' : '';
-            document.getElementById('toggle-bracket-full-show-group').style.display = isInitialCrewart ? '' : 'none';
+            document.getElementById('toggle-bracket-full-show-group').style.display = '';
             document.getElementById('toggle-bracket-live-show-group').style.display = 'none';
-            document.getElementById('toggle-bracket-full-blind-group').style.display = 'none';
+            document.getElementById('toggle-bracket-full-blind-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-bracket-title-show-group').style.display = 'none'; // Hidden per user request
             document.getElementById('toggle-battle-ann-show-group').style.display = 'none';
             document.getElementById('toggle-blind-totals-show-group').style.display = isInitialCrewart ? 'none' : '';
@@ -1264,7 +1265,7 @@
             document.getElementById('toggle-bracket-live-opacity-group').style.display = 'none';
             document.getElementById('toggle-blind-totals-font-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-blind-totals-opacity-group').style.display = isInitialCrewart ? 'none' : '';
-            document.getElementById('bracket-coords').style.display = isInitialCrewart ? '' : 'none';
+            document.getElementById('bracket-coords').style.display = '';
             document.getElementById('bracket-live-coords').style.display = 'none';
             document.getElementById('bracket-title-coords').style.display = 'none'; // Hidden per user request
             document.getElementById('battle-ann-coords').style.display = 'none';
@@ -2248,7 +2249,6 @@
                     configMap['blind_totals_font_size'] = elements.blind_totals.fontSize || '14';
                     configMap['blind_totals_opacity'] = elements.blind_totals.opacity || '45';
                     configMap['active_tournament'] = 'none';
-                    configMap['bracket_full_show'] = '0';
                     configMap['bracket_live_show'] = '0';
                     configMap['battle_ann_show'] = '0';
                 }

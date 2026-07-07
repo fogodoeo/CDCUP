@@ -5204,12 +5204,7 @@
 
             if (isCdcupBlindTotalsMode(map)) {
                 renderBlindTeamTotals(map, window.latestItemsList || []);
-                if (containerEl) containerEl.classList.remove('visible');
-                if (treeFull) {
-                    treeFull.classList.remove('visible');
-                    treeFull.style.display = 'none';
-                    treeFull.innerHTML = '';
-                }
+                // treeFull (전체 결과표)는 유지 — bracket_full_blind가 업체명 마스킹 처리
                 if (treeLive) {
                     treeLive.classList.remove('visible');
                     treeLive.style.display = 'none';
