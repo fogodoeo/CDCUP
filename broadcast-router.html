@@ -51,7 +51,7 @@
         const params = new URLSearchParams(location.search);
         const frame = document.getElementById('broadcast-frame');
         const statusEl = document.getElementById('status');
-        const assetVersion = '20260701-status-ui';
+        const assetVersion = '20260708-blind-totals';
         let lastSrc = '';
         let lastMode = '';
 
@@ -82,7 +82,7 @@
                 return 'crewart-broadcast.html?page=' + encodeURIComponent(page);
             }
             const page = normalizePage(params.get('page') || config.cdcup_broadcast_page || '1', '1');
-            return 'broadcast.html?page=' + encodeURIComponent(page) + '&v=' + encodeURIComponent(assetVersion);
+            return 'broadcast.html?page=' + encodeURIComponent(page) + '&module=cdcup&v=' + encodeURIComponent(assetVersion);
         }
 
         async function refreshRoute() {

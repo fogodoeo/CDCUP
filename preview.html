@@ -201,6 +201,19 @@
             background: rgba(244, 63, 94, 0.25);
         }
 
+        .draggable-blind-totals {
+            width: 30%;
+            height: 46%;
+            background: rgba(217, 176, 92, 0.14);
+            border: 2px dashed #d9b05c;
+            border-radius: 8px;
+            box-shadow: 0 0 16px rgba(217, 176, 92, 0.34);
+        }
+        .draggable-blind-totals:hover {
+            border-color: #f8d77c;
+            background: rgba(217, 176, 92, 0.24);
+        }
+
         /* Draggable Banner */
         .draggable-banner {
             width: auto;
@@ -767,7 +780,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;v=20260701-status-ui"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260708-blind-totals"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -825,6 +838,12 @@
                     <div class="element-label">경기 안내 자막</div>
                     <div class="resize-handle resize-handle-se" id="resize-battle-ann" title="크기 조절" style="border-color: #f43f5e;"></div>
                 </div>
+
+                <!-- 8. Draggable Blind Team Totals (PAGE3 only) -->
+                <div class="draggable-element draggable-blind-totals" id="draggable-blind-totals" data-type="blind_totals" style="display:none; z-index:22;">
+                    <div class="element-label">블라인드 팀 합산</div>
+                    <div class="resize-handle resize-handle-se" id="resize-blind-totals" title="크기 조절" style="border-color: #d9b05c;"></div>
+                </div>
             </div>
         </div>
 
@@ -870,6 +889,11 @@
                         <span>경기 안내</span>
                         <input type="checkbox" id="toggle-battle-ann-show" class="switch-input" checked onchange="toggleShowState('battle_ann')">
                     </div>
+                    <div class="switch-container" id="toggle-blind-totals-show-group" style="display:none;" onclick="focusBracketLayer('blind_totals')" title="클릭하면 블라인드 합산 배치 박스가 선택됩니다">
+                        <span>팀 합산</span>
+                        <small class="layout-target-badge">배치 선택됨</small>
+                        <input type="checkbox" id="toggle-blind-totals-show" class="switch-input" checked onchange="toggleShowState('blind_totals')">
+                    </div>
                     <div class="switch-container" id="toggle-bracket-scale-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">대진표 크기:</span>
                         <select id="bracket-scale-select" onchange="changeBracketScale(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
@@ -893,6 +917,11 @@
                         <span style="font-weight: 700;">실시간 투명도:</span>
                         <input type="range" id="bracket-live-opacity-input" min="35" max="100" step="1" value="94" oninput="previewBracketOpacity(this.value)" onchange="updateBracketOpacity(this.value)" style="width:86px; accent-color:#2563eb;">
                         <strong id="bracket-live-opacity-value" style="min-width:32px; font-size:11px; color:var(--text-muted);">94%</strong>
+                    </div>
+                    <div class="switch-container" id="toggle-blind-totals-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">팀합산 폰트:</span>
+                        <input type="number" id="blind-totals-font-input" onchange="updateBracketFontSize('blind_totals', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="10" max="48" value="18">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
                     </div>
                     <div class="switch-container" id="toggle-bracket-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">송출 모드:</span>
@@ -922,6 +951,7 @@
                     <span id="bracket-live-coords" style="display:none;"> | 실시간대진: Top <strong id="bracket-live-val-top">0%</strong>, Left <strong id="bracket-live-val-left">0%</strong></span>
                     <span id="bracket-title-coords" style="display:none;"> | 타이틀: <strong id="bracket-title-val-top">0%</strong>, <strong id="bracket-title-val-left">0%</strong></span>
                     <span id="battle-ann-coords" style="display:none;"> | 경기자막: <strong id="battle-ann-val-top">0%</strong>, <strong id="battle-ann-val-left">0%</strong></span>
+                    <span id="blind-totals-coords" style="display:none;">팀합산: <strong id="blind-totals-val-top">0%</strong>, <strong id="blind-totals-val-left">0%</strong></span>
                     <span id="save-status" style="margin-left: 10px; color: var(--green); display: none;">✓ 저장 완료</span>
                 </div>
             </div>
@@ -1037,7 +1067,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260701-status-ui';
+        const broadcastAssetVersion = '20260708-blind-totals';
         let previewConfigMap = {};
 
         function requestedModuleId() {
@@ -1049,7 +1079,7 @@
             const p = normalizePreviewPage(page);
             return moduleId === 'crewart'
                 ? `crewart-broadcast.html?page=${p}`
-                : `broadcast.html?page=${p}&v=${broadcastAssetVersion}`;
+                : `broadcast.html?page=${p}&module=${encodeURIComponent(moduleId || 'cdcup')}&v=${broadcastAssetVersion}`;
         }
 
         function updatePreviewTabs(moduleId) {
@@ -1088,7 +1118,7 @@
             if (title) title.textContent = module.title + ' 화면 모듈';
             if (desc) desc.textContent = module.id === 'crewart'
                 ? '1P 대기, 2P 현재 경매, 3P 기숙사 점수판으로 송출합니다.'
-                : '1P 진행, 2P 개체, 3P 토너먼트 대진표로 송출합니다.';
+                : '1P 진행, 2P 개체, 3P 블라인드 팀합산으로 송출합니다.';
 
             const isCrewart = module.id === 'crewart';
             document.body.classList.toggle('event-crewart-preview', isCrewart);
@@ -1100,24 +1130,44 @@
             if (p3Tab) p3Tab.textContent = isCrewart ? '3P 점수판 배치기' : '3P 배치기';
 
             if (pageNum === '3') {
-                document.getElementById('tournament-dashboard')?.classList.toggle('active', !isCrewart);
+                document.getElementById('tournament-dashboard')?.classList.remove('active');
                 document.getElementById('crewart-dashboard')?.classList.toggle('active', isCrewart);
+                const setDisplay = (id, visible) => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = visible ? '' : 'none';
+                };
+                setDisplay('draggable-bracket-full', isCrewart);
+                setDisplay('draggable-bracket-live', false);
+                setDisplay('draggable-bracket-title', false);
+                setDisplay('draggable-battle-ann', false);
+                setDisplay('draggable-blind-totals', !isCrewart);
+                setDisplay('toggle-bracket-full-show-group', isCrewart);
                 [
                     'toggle-bracket-live-show-group',
                     'toggle-bracket-full-blind-group',
                     'toggle-bracket-scale-group',
                     'toggle-bracket-mode-group',
                     'toggle-bracket-live-font-group',
-                    'toggle-bracket-live-opacity-group'
+                    'toggle-bracket-live-opacity-group',
+                    'toggle-bracket-title-show-group',
+                    'toggle-battle-ann-show-group'
                 ].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.display = isCrewart ? 'none' : '';
+                    setDisplay(id, false);
                 });
+                setDisplay('toggle-bracket-full-font-group', isCrewart);
+                setDisplay('toggle-blind-totals-show-group', !isCrewart);
+                setDisplay('toggle-blind-totals-font-group', !isCrewart);
+                setDisplay('bracket-coords', isCrewart);
+                setDisplay('bracket-live-coords', false);
+                setDisplay('bracket-title-coords', false);
+                setDisplay('battle-ann-coords', false);
+                setDisplay('blind-totals-coords', !isCrewart);
                 const fullToggleLabel = document.querySelector('#toggle-bracket-full-show-group span');
                 if (fullToggleLabel) fullToggleLabel.textContent = isCrewart ? '점수판' : '전체 결과';
                 const coords = document.getElementById('bracket-coords');
                 if (coords && coords.firstChild) coords.firstChild.textContent = isCrewart ? '점수판: Top ' : '전체결과: Top ';
                 if (isCrewart) refreshCrewartPreview();
+                try { focusBracketLayer(isCrewart ? 'bracket_full' : 'blind_totals'); } catch (e) {}
             }
         }
 
@@ -1158,12 +1208,13 @@
             frame.src = broadcastPreviewSrc('1', initialModuleId);
         } else if (pageNum === '3') {
             document.getElementById('btn-tab-p3')?.classList.add('active');
-            if (pageTitle) pageTitle.textContent = (initialModuleId === 'crewart' ? '기숙사 점수판' : '대진용') + " (3P) 실시간 레이아웃 배치기";
+            if (pageTitle) pageTitle.textContent = (initialModuleId === 'crewart' ? '기숙사 점수판' : '팀합산') + " (3P) 실시간 레이아웃 배치기";
             frame.src = broadcastPreviewSrc('3', initialModuleId);
             // 3P: 레이아웃 미리보기 + 대진표 관리 대시보드 함께 표시
             const bgSel = document.getElementById('bracket-bg-selector-group');
             if (bgSel) bgSel.style.display = 'none';
-            if (initialModuleId !== 'crewart') document.getElementById('tournament-dashboard')?.classList.add('active');
+            document.getElementById('tournament-dashboard')?.classList.remove('active');
+            document.getElementById('crewart-dashboard')?.classList.toggle('active', initialModuleId === 'crewart');
         } else {
             document.getElementById('btn-tab-p2')?.classList.add('active');
             if (pageTitle) pageTitle.textContent = (initialModuleId === 'crewart' ? '현재 경매용' : '개체용') + " (2P) 실시간 레이아웃 배치기";
@@ -1187,25 +1238,30 @@
 
         // PAGE3 전용 요소 표시 + 배너/자막 숨김 (3P는 오버레이 전용)
         if (pageNum === '3') {
-            // 3P 전용 드래그 요소 표시
-            document.getElementById('draggable-bracket-full').style.display = '';
-            document.getElementById('draggable-bracket-live').style.display = '';
+            const isInitialCrewart = initialModuleId === 'crewart';
+            // P3 is the blind team totals overlay editor. Legacy round/bracket layers stay hidden.
+            document.getElementById('draggable-bracket-full').style.display = isInitialCrewart ? '' : 'none';
+            document.getElementById('draggable-bracket-live').style.display = 'none';
             document.getElementById('draggable-bracket-title').style.display = 'none'; // Hidden per user request
             document.getElementById('draggable-battle-ann').style.display = 'none';
-            document.getElementById('toggle-bracket-full-show-group').style.display = '';
-            document.getElementById('toggle-bracket-live-show-group').style.display = '';
-            document.getElementById('toggle-bracket-full-blind-group').style.display = '';
+            document.getElementById('draggable-blind-totals').style.display = isInitialCrewart ? 'none' : '';
+            document.getElementById('toggle-bracket-full-show-group').style.display = isInitialCrewart ? '' : 'none';
+            document.getElementById('toggle-bracket-live-show-group').style.display = 'none';
+            document.getElementById('toggle-bracket-full-blind-group').style.display = 'none';
             document.getElementById('toggle-bracket-title-show-group').style.display = 'none'; // Hidden per user request
             document.getElementById('toggle-battle-ann-show-group').style.display = 'none';
-            document.getElementById('toggle-bracket-scale-group').style.display = '';
-            document.getElementById('toggle-bracket-mode-group').style.display = '';
-            document.getElementById('toggle-bracket-full-font-group').style.display = '';
-            document.getElementById('toggle-bracket-live-font-group').style.display = '';
-            document.getElementById('toggle-bracket-live-opacity-group').style.display = '';
-            document.getElementById('bracket-coords').style.display = '';
-            document.getElementById('bracket-live-coords').style.display = '';
+            document.getElementById('toggle-blind-totals-show-group').style.display = isInitialCrewart ? 'none' : '';
+            document.getElementById('toggle-bracket-scale-group').style.display = 'none';
+            document.getElementById('toggle-bracket-mode-group').style.display = 'none';
+            document.getElementById('toggle-bracket-full-font-group').style.display = isInitialCrewart ? '' : 'none';
+            document.getElementById('toggle-bracket-live-font-group').style.display = 'none';
+            document.getElementById('toggle-bracket-live-opacity-group').style.display = 'none';
+            document.getElementById('toggle-blind-totals-font-group').style.display = isInitialCrewart ? 'none' : '';
+            document.getElementById('bracket-coords').style.display = isInitialCrewart ? '' : 'none';
+            document.getElementById('bracket-live-coords').style.display = 'none';
             document.getElementById('bracket-title-coords').style.display = 'none'; // Hidden per user request
             document.getElementById('battle-ann-coords').style.display = 'none';
+            document.getElementById('blind-totals-coords').style.display = isInitialCrewart ? 'none' : '';
             // 배너/자막 완전 숨김 (3P 오버레이에 불필요)
             document.getElementById('draggable-banner').style.display = 'none';
             document.getElementById('draggable-ticker').style.display = 'none';
@@ -1273,6 +1329,11 @@
                 top: "40px", left: "25%", right: "auto", bottom: "auto",
                 show: "1", width: "50%", height: "10%"
             };
+            elements.blind_totals = {
+                el: document.getElementById('draggable-blind-totals'),
+                top: "14%", left: "4%", right: "auto", bottom: "auto",
+                show: "1", width: "30%", height: "46%", fontSize: "18"
+            };
         }
 
         let activeDragKey = null;
@@ -1287,12 +1348,12 @@
 
         function focusBracketLayer(key) {
             if (pageNum !== '3' || !elements[key]) return;
-            ['bracket_full', 'bracket_live'].forEach(layerKey => {
+            ['bracket_full', 'bracket_live', 'blind_totals'].forEach(layerKey => {
                 if (!elements[layerKey]) return;
                 const isTarget = layerKey === key;
                 elements[layerKey].el.classList.toggle('layout-active', isTarget);
                 elements[layerKey].el.style.zIndex = isTarget ? '40' : '10';
-                const group = document.getElementById(`toggle-${layerKey.replace('_', '-')}-show-group`);
+                const group = document.getElementById(`toggle-${layerKey.replace(/_/g, '-')}-show-group`);
                 if (group) group.classList.toggle('layout-target', isTarget);
             });
         }
@@ -1479,6 +1540,19 @@
                     elements.battle_ann.width = cfg.battle_ann_width || '80%';
                     elements.battle_ann.height = cfg.battle_ann_height || '25%';
                 }
+                if (elements.blind_totals) {
+                    elements.blind_totals.top = cfg.blind_totals_top || '14%';
+                    elements.blind_totals.left = cfg.blind_totals_left || '4%';
+                    elements.blind_totals.right = cfg.blind_totals_right || 'auto';
+                    elements.blind_totals.bottom = cfg.blind_totals_bottom || 'auto';
+                    elements.blind_totals.show = cfg.blind_totals_show !== undefined ? String(cfg.blind_totals_show) : '1';
+                    elements.blind_totals.width = cfg.blind_totals_width || '30%';
+                    elements.blind_totals.height = cfg.blind_totals_height || '46%';
+                    elements.blind_totals.fontSize = cfg.blind_totals_font_size || '18';
+
+                    const blindFontInput = document.getElementById('blind-totals-font-input');
+                    if (blindFontInput) blindFontInput.value = elements.blind_totals.fontSize;
+                }
 
                 // Apply states visually
                 applyVisualState('banner');
@@ -1490,6 +1564,7 @@
                 if (elements.bracket_live) applyVisualState('bracket_live');
                 if (elements.bracket_title) applyVisualState('bracket_title');
                 if (elements.battle_ann) applyVisualState('battle_ann');
+                if (elements.blind_totals) applyVisualState('blind_totals');
 
                 // Update switch checkboxes
                 document.getElementById('toggle-banner-show').checked = elements.banner.show === "1";
@@ -1502,10 +1577,12 @@
                 if (fullBlindToggle) fullBlindToggle.checked = String(cfg.bracket_full_blind ?? '1') !== '0';
                 if (elements.bracket_title) document.getElementById('toggle-bracket-title-show').checked = elements.bracket_title.show === "1";
                 if (elements.battle_ann) document.getElementById('toggle-battle-ann-show').checked = elements.battle_ann.show === "1";
+                if (elements.blind_totals) document.getElementById('toggle-blind-totals-show').checked = elements.blind_totals.show === "1";
                 if (pageNum === '3') {
-                    const initialLayer = elements.bracket_live.show === '1' && elements.bracket_full.show !== '1'
-                        ? 'bracket_live'
-                        : 'bracket_full';
+                    const activePreviewModule = getActiveAuctionEventModule(cfg).id;
+                    const initialLayer = activePreviewModule === 'crewart'
+                        ? 'bracket_full'
+                        : (elements.blind_totals ? 'blind_totals' : 'bracket_full');
                     focusBracketLayer(initialLayer);
                 }
 
@@ -1542,6 +1619,10 @@
                 if (elements.battle_ann) {
                     elements.battle_ann.el.style.width = convertToPercent(elements.battle_ann.width);
                     elements.battle_ann.el.style.height = convertToPercent(elements.battle_ann.height);
+                }
+                if (elements.blind_totals) {
+                    elements.blind_totals.el.style.width = convertToPercent(elements.blind_totals.width);
+                    elements.blind_totals.el.style.height = convertToPercent(elements.blind_totals.height);
                 }
 
                 // Load first banner image as preview inside drag box
@@ -1592,11 +1673,11 @@
             const frame = document.getElementById('broadcast-frame');
             if (!frame) return;
             if (bgType === 1) {
-                frame.src = `broadcast.html?page=1&v=${broadcastAssetVersion}`;
+                frame.src = `broadcast.html?page=1&module=cdcup&v=${broadcastAssetVersion}`;
             } else if (bgType === 2) {
-                frame.src = `broadcast.html?page=2&v=${broadcastAssetVersion}`;
+                frame.src = `broadcast.html?page=2&module=cdcup&v=${broadcastAssetVersion}`;
             } else if (bgType === 'bracket') {
-                frame.src = `broadcast.html?page=3&v=${broadcastAssetVersion}`;
+                frame.src = `broadcast.html?page=3&module=cdcup&v=${broadcastAssetVersion}`;
             }
         }
 
@@ -1707,6 +1788,13 @@
                     document.getElementById('battle-ann-val-top').textContent = baYStr;
                     document.getElementById('battle-ann-val-left').textContent = `${baXStr} (${ba.width})`;
                 }
+                if (elements.blind_totals) {
+                    const bt = elements.blind_totals;
+                    const btXStr = bt.left !== 'auto' ? `Left ${bt.left}` : `Right ${bt.right}`;
+                    const btYStr = bt.top !== 'auto' ? `Top ${bt.top}` : `Bottom ${bt.bottom}`;
+                    document.getElementById('blind-totals-val-top').textContent = btYStr;
+                    document.getElementById('blind-totals-val-left').textContent = `${btXStr} (${bt.width}x${bt.height})`;
+                }
             }
         }
 
@@ -1775,6 +1863,11 @@
                 resizeBattleAnn.addEventListener('mousedown', (e) => startResize(e, 'battle_ann'));
                 resizeBattleAnn.addEventListener('touchstart', (e) => startResize(e, 'battle_ann'), { passive: false });
             }
+            const resizeBlindTotals = document.getElementById('resize-blind-totals');
+            if (resizeBlindTotals) {
+                resizeBlindTotals.addEventListener('mousedown', (e) => startResize(e, 'blind_totals'));
+                resizeBlindTotals.addEventListener('touchstart', (e) => startResize(e, 'blind_totals'), { passive: false });
+            }
         }
 
         window.addEventListener('mousemove', drag);
@@ -1786,7 +1879,7 @@
         function startDrag(e, key) {
             isDragging = true;
             activeDragKey = key;
-            if (key === 'bracket_full' || key === 'bracket_live') {
+            if (key === 'bracket_full' || key === 'bracket_live' || key === 'blind_totals') {
                 focusBracketLayer(key);
             }
 
@@ -1861,6 +1954,13 @@
                     elements.battle_ann.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
                     elements.battle_ann.el.style.width = convertToPercent(elements.battle_ann.width);
                     elements.battle_ann.el.style.height = convertToPercent(elements.battle_ann.height);
+                } else if (resizeTarget === 'blind_totals' && elements.blind_totals) {
+                    const newW = Math.max(120, resizeStartW + dx);
+                    const newH = Math.max(80, resizeStartH + dy);
+                    elements.blind_totals.width = ((newW / containerRect.width) * 100).toFixed(1) + '%';
+                    elements.blind_totals.height = ((newH / containerRect.height) * 100).toFixed(1) + '%';
+                    elements.blind_totals.el.style.width = convertToPercent(elements.blind_totals.width);
+                    elements.blind_totals.el.style.height = convertToPercent(elements.blind_totals.height);
                 }
                 updateLabelReadouts();
                 return;
@@ -1960,6 +2060,12 @@
                 elements.battle_ann.right = 'auto';
                 elements.battle_ann.bottom = 'auto';
                 applyVisualState('battle_ann');
+            } else if (activeDragKey === 'blind_totals' && elements.blind_totals) {
+                elements.blind_totals.left = ((x / containerRect.width) * 100).toFixed(1) + "%";
+                elements.blind_totals.top = ((y / containerRect.height) * 100).toFixed(1) + "%";
+                elements.blind_totals.right = 'auto';
+                elements.blind_totals.bottom = 'auto';
+                applyVisualState('blind_totals');
             } else {
                 if (centerX > containerRect.width / 2) {
                     const rightPx = containerRect.width - (x + el.offsetWidth);
@@ -2001,14 +2107,14 @@
         function toggleShowState(key) {
             const checkbox = document.getElementById(`toggle-${key.replace(/_/g, '-')}-show`);
             if (!checkbox || !elements[key]) return;
-            if (key === 'bracket_full' || key === 'bracket_live') focusBracketLayer(key);
+            if (key === 'bracket_full' || key === 'bracket_live' || key === 'blind_totals') focusBracketLayer(key);
 
             const previousShow = elements[key].show;
             const requestedShow = checkbox.checked ? "1" : "0";
             elements[key].show = requestedShow;
             applyVisualState(key);
 
-            const page3StandaloneKeys = ['bracket_full', 'bracket_live', 'bracket_title', 'battle_ann'];
+            const page3StandaloneKeys = ['bracket_full', 'bracket_live', 'bracket_title', 'battle_ann', 'blind_totals'];
             const configKey = pageNum === '3' && page3StandaloneKeys.includes(key)
                 ? `${key}_show`
                 : `${cfgPrefix}${key}_show`;
@@ -2028,7 +2134,7 @@
                             frame.contentWindow.postMessage({ type: 'forceRefresh' }, '*');
                         }
                     }
-                    toast(`${key === 'bracket_full' ? '전체결과' : key === 'bracket_live' ? '실시간대진' : '노출 설정'} ${requestedShow === '1' ? 'ON' : 'OFF'} 저장 완료`);
+                    toast(`${key === 'bracket_full' ? '전체결과' : key === 'bracket_live' ? '실시간대진' : key === 'blind_totals' ? '팀합산' : '노출 설정'} ${requestedShow === '1' ? 'ON' : 'OFF'} 저장 완료`);
                 } catch (err) {
                     if (elements[key].show === requestedShow) {
                         elements[key].show = previousShow;
@@ -2106,6 +2212,22 @@
                     configMap['battle_ann_width'] = elements.battle_ann.width;
                     configMap['battle_ann_height'] = elements.battle_ann.height;
                     configMap['battle_ann_show'] = elements.battle_ann.show;
+                }
+                const currentPreviewModule = document.getElementById('preview-event-module-select')?.value || initialModuleId;
+                if (currentPreviewModule !== 'crewart' && elements.blind_totals) {
+                    configMap['blind_totals_mode'] = '1';
+                    configMap['blind_totals_top'] = elements.blind_totals.top;
+                    configMap['blind_totals_left'] = elements.blind_totals.left;
+                    configMap['blind_totals_right'] = elements.blind_totals.right;
+                    configMap['blind_totals_bottom'] = elements.blind_totals.bottom;
+                    configMap['blind_totals_width'] = elements.blind_totals.width;
+                    configMap['blind_totals_height'] = elements.blind_totals.height;
+                    configMap['blind_totals_show'] = elements.blind_totals.show;
+                    configMap['blind_totals_font_size'] = elements.blind_totals.fontSize || '18';
+                    configMap['active_tournament'] = 'none';
+                    configMap['bracket_full_show'] = '0';
+                    configMap['bracket_live_show'] = '0';
+                    configMap['battle_ann_show'] = '0';
                 }
             }
 
@@ -2206,17 +2328,19 @@
             }
 
             if (pageNum === '3') {
+                const resetPreviewModule = document.getElementById('preview-event-module-select')?.value || initialModuleId;
+                const resetIsCrewart = resetPreviewModule === 'crewart';
                 if (elements.bracket_full) {
                     elements.bracket_full.top = "120px";
                     elements.bracket_full.left = "0px";
                     elements.bracket_full.right = "auto";
                     elements.bracket_full.bottom = "auto";
-                    elements.bracket_full.show = "1";
+                    elements.bracket_full.show = resetIsCrewart ? "1" : "0";
                     elements.bracket_full.width = "100%";
                     elements.bracket_full.height = "calc(100% - 120px)";
                     elements.bracket_full.el.style.width = '100%';
                     elements.bracket_full.el.style.height = 'calc(100% - 120px)';
-                    document.getElementById('toggle-bracket-full-show').checked = true;
+                    document.getElementById('toggle-bracket-full-show').checked = resetIsCrewart;
                     applyVisualState('bracket_full');
                 }
                 if (elements.bracket_live) {
@@ -2255,13 +2379,31 @@
                     elements.battle_ann.left = "10%";
                     elements.battle_ann.right = "auto";
                     elements.battle_ann.bottom = "auto";
-                    elements.battle_ann.show = "1";
+                    elements.battle_ann.show = "0";
                     elements.battle_ann.width = "80%";
                     elements.battle_ann.height = "25%";
                     elements.battle_ann.el.style.width = '80%';
                     elements.battle_ann.el.style.height = '25%';
-                    document.getElementById('toggle-battle-ann-show').checked = true;
+                    document.getElementById('toggle-battle-ann-show').checked = false;
                     applyVisualState('battle_ann');
+                }
+                if (elements.blind_totals) {
+                    elements.blind_totals.top = "14%";
+                    elements.blind_totals.left = "4%";
+                    elements.blind_totals.right = "auto";
+                    elements.blind_totals.bottom = "auto";
+                    elements.blind_totals.show = resetIsCrewart ? "0" : "1";
+                    elements.blind_totals.width = "30%";
+                    elements.blind_totals.height = "46%";
+                    elements.blind_totals.fontSize = "18";
+                    elements.blind_totals.el.style.width = '30%';
+                    elements.blind_totals.el.style.height = '46%';
+                    const blindShowToggle = document.getElementById('toggle-blind-totals-show');
+                    if (blindShowToggle) blindShowToggle.checked = !resetIsCrewart;
+                    const blindFontInput = document.getElementById('blind-totals-font-input');
+                    if (blindFontInput) blindFontInput.value = '18';
+                    applyVisualState('blind_totals');
+                    focusBracketLayer(resetIsCrewart ? 'bracket_full' : 'blind_totals');
                 }
             }
 
@@ -2857,7 +2999,7 @@
         // Initial Initialization
         window.addEventListener('DOMContentLoaded', () => {
             loadConfigurations();
-            if (pageNum === '3') {
+            if (pageNum === '3' && document.getElementById('tournament-dashboard')?.classList.contains('active')) {
                 tInit();
             }
         });

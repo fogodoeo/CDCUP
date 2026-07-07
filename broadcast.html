@@ -2584,6 +2584,128 @@
             opacity: 1 !important;
             pointer-events: auto !important;
         }
+
+        #blind-team-total-overlay {
+            --blind-total-fs: 18px;
+            display: none;
+            position: absolute;
+            top: 14%;
+            left: 4%;
+            z-index: 10008;
+            width: 30%;
+            min-width: 300px;
+            max-width: 560px;
+            min-height: 220px;
+            padding: calc(var(--blind-total-fs) * 0.9);
+            border: 1px solid rgba(217, 176, 92, 0.46);
+            border-radius: 8px;
+            background:
+                linear-gradient(135deg, rgba(8, 13, 24, 0.94), rgba(21, 26, 35, 0.9)),
+                radial-gradient(circle at 100% 0%, rgba(217, 176, 92, 0.14), transparent 42%);
+            box-shadow: 0 18px 46px rgba(0, 0, 0, 0.46), inset 0 1px 0 rgba(255,255,255,0.07);
+            color: #f8fafc;
+            font-family: 'Pretendard', sans-serif;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+        #blind-team-total-overlay.visible {
+            display: block;
+        }
+        .blind-total-head {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: calc(var(--blind-total-fs) * 0.58);
+            border-bottom: 1px solid rgba(217, 176, 92, 0.26);
+        }
+        .blind-total-kicker {
+            display: block;
+            color: #d9b05c;
+            font-size: calc(var(--blind-total-fs) * 0.54);
+            font-weight: 920;
+            letter-spacing: 0.16em;
+        }
+        .blind-total-title {
+            display: block;
+            margin-top: 4px;
+            color: #fff7df;
+            font-size: calc(var(--blind-total-fs) * 1.02);
+            font-weight: 940;
+            letter-spacing: 0;
+        }
+        .blind-total-meta {
+            color: #94a3b8;
+            font-size: calc(var(--blind-total-fs) * 0.58);
+            font-weight: 820;
+            white-space: nowrap;
+        }
+        .blind-total-list {
+            display: grid;
+            gap: calc(var(--blind-total-fs) * 0.42);
+            margin-top: calc(var(--blind-total-fs) * 0.72);
+        }
+        .blind-total-row {
+            display: grid;
+            grid-template-columns: minmax(72px, 0.56fr) minmax(0, 1fr) auto;
+            align-items: center;
+            gap: calc(var(--blind-total-fs) * 0.56);
+            min-height: calc(var(--blind-total-fs) * 2.5);
+            padding: 0 calc(var(--blind-total-fs) * 0.58);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 5px;
+            background: rgba(255,255,255,0.036);
+        }
+        .blind-total-row.is-active {
+            border-color: rgba(217, 176, 92, 0.62);
+            background: rgba(217, 176, 92, 0.12);
+            box-shadow: inset 3px 0 0 #d9b05c;
+        }
+        .blind-total-team {
+            color: #d9b05c;
+            font-size: calc(var(--blind-total-fs) * 0.82);
+            font-weight: 950;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        .blind-total-progress {
+            min-width: 0;
+        }
+        .blind-total-bar {
+            position: relative;
+            height: 7px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.18);
+        }
+        .blind-total-bar span {
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: var(--total-ratio, 0%);
+            border-radius: inherit;
+            background: linear-gradient(90deg, #d9b05c, #fff1b8);
+        }
+        .blind-total-count {
+            display: block;
+            margin-top: 4px;
+            color: #64748b;
+            font-size: calc(var(--blind-total-fs) * 0.52);
+            font-weight: 760;
+        }
+        .blind-total-amount {
+            color: #fff7df;
+            font-size: calc(var(--blind-total-fs) * 0.9);
+            font-weight: 950;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .blind-total-empty {
+            padding: 26px 12px;
+            color: #94a3b8;
+            text-align: center;
+            font-size: calc(var(--blind-total-fs) * 0.72);
+            font-weight: 780;
+        }
     </style>
 </head>
 
@@ -2686,6 +2808,7 @@
         <!-- 실시간 경기 스코어보드 (Live Match) -->
         <div id="bracket-page-tree-live" class="bracket-tree-view" style="display:flex; justify-content:center; align-items:center; gap:60px; padding:20px; box-sizing:border-box;"></div>
     </div>
+    <div id="blind-team-total-overlay" aria-live="polite"></div>
     <div id="auction-motion-portal" aria-live="polite"></div>
 
     <!-- 배틀 안내 자막 레이어 (z-index를 10000으로 높여 대진표 컨테이너 위에 오버레이되도록 처리) -->
@@ -4381,6 +4504,127 @@
         // 전역 개체 캐시 fallback 확보
         window.latestItemsList = window.latestItemsList || [];
 
+        function isCdcupBlindTotalsMode(map) {
+            const moduleId = getActiveAuctionEventModule(map || {}).id;
+            return isBracketPage && moduleId === 'cdcup' && String(map?.blind_totals_mode ?? '1') !== '0';
+        }
+
+        function readSoldAmount(item) {
+            const raw = String(item?.sold_price ?? item?.soldPrice ?? '').trim();
+            const numeric = Number(raw.replace(/[^0-9.-]/g, ''));
+            return Number.isFinite(numeric) ? numeric : 0;
+        }
+
+        function isSoldForTotals(item) {
+            return ['낙찰', '완료', 'sold'].includes(String(item?.status || '').trim());
+        }
+
+        function isActiveForTotals(item) {
+            return ['진행', '진행중', 'active'].includes(String(item?.status || '').trim());
+        }
+
+        function formatBlindTotalAmount(value) {
+            const amount = Number(value) || 0;
+            return amount.toLocaleString('ko-KR') + '원';
+        }
+
+        function getBlindTotalRows(items) {
+            const tournamentItems = (items || [])
+                .filter(item => getItemAuctionMeta(item).auctionType === AUCTION_TYPES.TOURNAMENT)
+                .sort((a, b) => Number(a.num || 0) - Number(b.num || 0));
+            const groups = [];
+            const byCompany = {};
+            tournamentItems.forEach(item => {
+                const company = String(item.company || '').trim() || '미지정';
+                if (!byCompany[company]) {
+                    byCompany[company] = {
+                        company,
+                        team: String.fromCharCode(65 + groups.length),
+                        total: 0,
+                        soldCount: 0,
+                        itemCount: 0,
+                        active: false
+                    };
+                    groups.push(byCompany[company]);
+                }
+                const group = byCompany[company];
+                group.itemCount += 1;
+                if (isSoldForTotals(item)) {
+                    group.total += readSoldAmount(item);
+                    group.soldCount += 1;
+                }
+                if (isActiveForTotals(item)) group.active = true;
+            });
+            return groups;
+        }
+
+        function renderBlindTeamTotals(map, items) {
+            const panel = document.getElementById('blind-team-total-overlay');
+            if (!panel) return;
+            const show = String(map?.blind_totals_show ?? '1') !== '0';
+            if (!show) {
+                panel.classList.remove('visible');
+                return;
+            }
+
+            const top = map.blind_totals_top || '14%';
+            const left = map.blind_totals_left || '4%';
+            const right = map.blind_totals_right || 'auto';
+            const bottom = map.blind_totals_bottom || 'auto';
+            const width = map.blind_totals_width || '30%';
+            const height = map.blind_totals_height || '46%';
+            const fontSize = Math.max(10, Math.min(48, parseInt(map.blind_totals_font_size || '18', 10) || 18));
+            panel.style.removeProperty('top');
+            panel.style.removeProperty('left');
+            panel.style.removeProperty('right');
+            panel.style.removeProperty('bottom');
+            panel.style.top = top !== 'auto' ? top : '';
+            panel.style.left = left !== 'auto' ? left : '';
+            panel.style.right = right !== 'auto' ? right : '';
+            panel.style.bottom = bottom !== 'auto' ? bottom : '';
+            panel.style.width = width;
+            panel.style.minHeight = '0';
+            panel.style.height = height;
+            panel.style.setProperty('--blind-total-fs', fontSize + 'px');
+
+            const rows = getBlindTotalRows(items);
+            const maxTotal = Math.max(1, ...rows.map(row => row.total));
+            const totalSold = rows.reduce((sum, row) => sum + row.total, 0);
+            const totalDone = rows.reduce((sum, row) => sum + row.soldCount, 0);
+            const totalItems = rows.reduce((sum, row) => sum + row.itemCount, 0);
+
+            panel.innerHTML = `
+                <header class="blind-total-head">
+                    <div>
+                        <span class="blind-total-kicker">BLIND TEAM TOTAL</span>
+                        <strong class="blind-total-title">실시간 누적 낙찰금액</strong>
+                    </div>
+                    <span class="blind-total-meta">${totalDone}/${totalItems} SOLD</span>
+                </header>
+                ${rows.length ? `
+                    <div class="blind-total-list">
+                        ${rows.map(row => `
+                            <div class="blind-total-row${row.active ? ' is-active' : ''}">
+                                <strong class="blind-total-team">${row.team}팀</strong>
+                                <div class="blind-total-progress">
+                                    <div class="blind-total-bar"><span style="--total-ratio:${Math.round((row.total / maxTotal) * 100)}%;"></span></div>
+                                    <span class="blind-total-count">${row.soldCount}/${row.itemCount} 개체 낙찰</span>
+                                </div>
+                                <strong class="blind-total-amount">${formatBlindTotalAmount(row.total)}</strong>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="blind-total-meta" style="margin-top:12px;text-align:right;">TOTAL ${formatBlindTotalAmount(totalSold)}</div>
+                ` : '<div class="blind-total-empty">토너먼트 개체 대기 중</div>'}
+            `;
+            panel.classList.add('visible');
+        }
+
+        function hideBlindTeamTotals() {
+            const panel = document.getElementById('blind-team-total-overlay');
+            if (panel) panel.classList.remove('visible');
+        }
+
         function applyBracketPageMap(map, items) {
             if (!map) return;
             window.latestConfigMap = map;
@@ -4473,6 +4717,7 @@
             }
 
             if (eventModule.id === 'crewart') {
+                hideBlindTeamTotals();
                 if (treeLive) {
                     treeLive.classList.remove('visible');
                     treeLive.innerHTML = '';
@@ -4488,6 +4733,30 @@
                 }
                 return;
             }
+
+            if (isCdcupBlindTotalsMode(map)) {
+                renderBlindTeamTotals(map, window.latestItemsList || []);
+                if (containerEl) containerEl.classList.remove('visible');
+                if (treeFull) {
+                    treeFull.classList.remove('visible');
+                    treeFull.style.display = 'none';
+                    treeFull.innerHTML = '';
+                }
+                if (treeLive) {
+                    treeLive.classList.remove('visible');
+                    treeLive.style.display = 'none';
+                    treeLive.innerHTML = '';
+                }
+                const ann = document.getElementById('battle-announcement-overlay');
+                if (ann) ann.style.setProperty('display', 'none', 'important');
+                const matchupCard = document.getElementById('battle-matchup-card');
+                if (matchupCard) matchupCard.style.setProperty('display', 'none', 'important');
+                document.body.classList.remove('battle-hide-prices');
+                clearAuctionMotionPortal();
+                return;
+            }
+
+            hideBlindTeamTotals();
 
             if (active === 'none') {
                 if (treeFull) {
@@ -5212,6 +5481,14 @@
                 const map = prefetchedMap || await getBroadcastConfigCached(false);
                 if (!map) return;
                 window.latestConfigMap = map;
+                if (isCdcupBlindTotalsMode(map)) {
+                    const ann = document.getElementById('battle-announcement-overlay');
+                    if (ann) ann.style.setProperty('display', 'none', 'important');
+                    const matchupCard = document.getElementById('battle-matchup-card');
+                    if (matchupCard) matchupCard.style.setProperty('display', 'none', 'important');
+                    document.body.classList.remove('battle-hide-prices');
+                    return;
+                }
                 
                 const active = map.active_tournament || 'none';
                 if (active === 'none') {
