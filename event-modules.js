@@ -452,7 +452,10 @@
             const key = el.dataset.eventPlaceholder;
             if (module[key] !== undefined) el.setAttribute('placeholder', module[key]);
         });
-        document.querySelectorAll('.js-event-admin-title').forEach(el => { el.textContent = module.adminTitle; });
+        document.querySelectorAll('.js-event-admin-title').forEach(el => {
+            if (!el.dataset.defaultTitle) el.dataset.defaultTitle = el.textContent || '';
+            el.textContent = el.dataset.eventAdminScope === 'module' ? module.adminTitle : el.dataset.defaultTitle;
+        });
         document.querySelectorAll('.js-event-nav-icon').forEach(el => { el.textContent = module.navIcon; });
         return module;
     }
