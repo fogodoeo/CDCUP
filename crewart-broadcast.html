@@ -6,18 +6,18 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>크레와트 송출</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
-    <script src="event-modules.js?v=20260707-modules"></script>
+    <script src="event-modules.js?v=20260707-magic2"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260707-split">
+    <link rel="stylesheet" href="crewart.css?v=20260707-magic2">
 </head>
 <body class="crewart-page crewart-broadcast">
     <div class="cw-broadcast-root" id="root">
         <main id="stage"></main>
         <aside class="cw-mini-score" id="mini-score"></aside>
         <div class="cw-ticker" id="ticker">
-            <span class="cw-ticker-badge" id="ticker-badge">LIVE</span>
-            <div class="cw-ticker-text" id="ticker-text">크레와트 경매 대기 중</div>
+            <span class="cw-ticker-badge" id="ticker-badge">OWL POST</span>
+            <div class="cw-ticker-text" id="ticker-text">크레와트 기숙사 컵 대기 중</div>
         </div>
         <div id="burst-portal"></div>
     </div>
@@ -55,13 +55,13 @@
         }
 
         function applyTicker(cfg) {
-            tickerBadge.textContent = cfg.badge_text || 'LIVE';
-            const raw = cfg.ticker || '[입찰 안내:#D6B25E] 채팅 닉네임과 설문 닉네임을 맞춰주세요\n[기숙사 점수:#93C5FD] 낙찰가가 기숙사 점수로 반영됩니다';
+            tickerBadge.textContent = cfg.badge_text || 'OWL POST';
+            const raw = cfg.ticker || '[부엉이 안내:#7B3F1D] 채팅 닉네임과 설문 닉네임을 맞춰주세요\n[기숙사 점수:#234F8F] 낙찰 금액이 기숙사 컵 점수로 반영됩니다';
             if (raw === lastTickerRaw && tickerLines.length) return;
             lastTickerRaw = raw;
             tickerIndex = 0;
             tickerLines = raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-            if (!tickerLines.length) tickerLines = ['크레와트 경매 진행 중'];
+            if (!tickerLines.length) tickerLines = ['크레와트 기숙사 컵 진행 중'];
             renderTickerLine();
         }
 
@@ -100,7 +100,7 @@
             root.classList.remove('score-only');
             renderMiniScore(items);
             if (!item) {
-                stage.innerHTML = '<div class="cw-current-auction"><div></div><div class="cw-current-copy"><div class="eyebrow">CREWART AUCTION</div><h1>경매 대기중</h1><div class="cw-current-meta"><span>기숙사 점수 집계 준비</span></div></div></div>';
+                stage.innerHTML = '<section class="cw-current-auction cw-current-auction--waiting"><div class="cw-current-copy is-waiting"><div class="eyebrow">CREWART GREAT HALL</div><h1>마법 경매 대기중</h1><div class="cw-current-meta"><span>기숙사 점수 집계 준비</span><span>낙찰 시 기숙사 컵에 즉시 반영</span></div></div></section>';
                 return;
             }
             const photo = item.photoItem ? `<img class="cw-current-photo" src="${esc(item.photoItem)}" alt="">` : '<div class="cw-current-photo"></div>';
@@ -108,11 +108,11 @@
                 <section class="cw-current-auction">
                     ${photo}
                     <div class="cw-current-copy">
-                        <div class="eyebrow">CREWART AUCTION</div>
-                        <h1>${esc(item.name || item.displayName || '마법 생물')}</h1>
+                        <div class="eyebrow">MAGICAL LOT</div>
+                        <h1>${esc(item.name || item.displayName || '마법 개체')}</h1>
                         <div class="cw-current-meta">
-                            <span>번호 ${esc(auctionNumber(item))}</span>
-                            <span>시작가 ${amountText(item.startPrice || item.price)}</span>
+                            <span>개체 번호 ${esc(auctionNumber(item))}</span>
+                            <span>시작 주문가 ${amountText(item.startPrice || item.price)}</span>
                             <span>${esc(item.status || '대기')}</span>
                         </div>
                     </div>
@@ -127,9 +127,9 @@
             const points = Math.round(result.points).toLocaleString('ko-KR');
             portal.innerHTML = `
                 <div class="cw-house-burst" style="--house-accent:${esc(result.house.accent || result.house.color)};">
-                    <small>SCORE AWARDED</small>
+                    <small>HOUSE POINTS AWARDED</small>
                     <strong>${esc(result.house.name)} +${points}점</strong>
-                    <span>${esc(result.winner || '낙찰자')} · ${amountText(result.amount)}</span>
+                    <span>${esc(result.winner || '낙찰자')} · ${amountText(result.amount)} · 기숙사 컵 반영</span>
                 </div>
             `;
             setTimeout(() => { portal.innerHTML = ''; }, 4400);
@@ -161,6 +161,7 @@
                 applyTicker(config);
                 detectNewSold(items || []);
                 const pageMode = currentPageMode();
+                root.dataset.mode = pageMode;
                 if (pageMode === 'auction') {
                     renderAuction(active, items || []);
                 } else if (pageMode === 'host') {
