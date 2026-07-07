@@ -1149,9 +1149,7 @@
                 setDisplay('toggle-bracket-full-show-group', true);
                 [
                     'toggle-bracket-live-show-group',
-                    'toggle-bracket-full-blind-group',
                     'toggle-bracket-scale-group',
-                    'toggle-bracket-mode-group',
                     'toggle-bracket-live-font-group',
                     'toggle-bracket-live-opacity-group',
                     'toggle-bracket-title-show-group',
@@ -1160,6 +1158,7 @@
                     setDisplay(id, false);
                 });
                 setDisplay('toggle-bracket-full-blind-group', !isCrewart);
+                setDisplay('toggle-bracket-mode-group', !isCrewart);
                 setDisplay('toggle-bracket-full-font-group', isCrewart);
                 setDisplay('toggle-blind-totals-show-group', !isCrewart);
                 setDisplay('toggle-blind-totals-font-group', !isCrewart);
@@ -1259,7 +1258,7 @@
             document.getElementById('toggle-battle-ann-show-group').style.display = 'none';
             document.getElementById('toggle-blind-totals-show-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-bracket-scale-group').style.display = 'none';
-            document.getElementById('toggle-bracket-mode-group').style.display = 'none';
+            document.getElementById('toggle-bracket-mode-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-bracket-full-font-group').style.display = isInitialCrewart ? '' : 'none';
             document.getElementById('toggle-bracket-live-font-group').style.display = 'none';
             document.getElementById('toggle-bracket-live-opacity-group').style.display = 'none';
@@ -2248,7 +2247,6 @@
                     configMap['blind_totals_show'] = elements.blind_totals.show;
                     configMap['blind_totals_font_size'] = elements.blind_totals.fontSize || '14';
                     configMap['blind_totals_opacity'] = elements.blind_totals.opacity || '45';
-                    configMap['active_tournament'] = 'none';
                     configMap['bracket_live_show'] = '0';
                     configMap['battle_ann_show'] = '0';
                 }
