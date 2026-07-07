@@ -2562,23 +2562,17 @@
 
         function buildVendorPaymentMessage(options) {
             const {
-                winnerName, selectedCompany, selectedItems, allItems, shippingType,
+                selectedCompany, selectedItems, allItems, shippingType,
                 shippingCompany, shippingInfo, shippingShare, totalShipping
             } = options;
             const sellerCompanies = [...new Set((allItems || []).map(item => String(item.company || '').trim()).filter(Boolean))];
-            const otherCompanies = sellerCompanies.filter(company => company !== selectedCompany);
             const bid = (selectedItems || []).reduce((sum, item) => sum + auctionItemWon(item), 0);
             const itemLines = (selectedItems || []).map(paymentSmsItemLine).join('\n');
             const others = otherCompanyPaymentText(allItems, selectedCompany);
+            const wrapangDuplicateNote = '※ 랩팡 합배송비는 1회만 입금합니다. 다른 업체 안내로 이미 입금하셨다면 중복 입금하지 않으셔도 됩니다.';
 
             if (shippingType === '배송' && shippingCompany === '랩팡') {
-                const duplicateNote=otherCompanies.length
-                    ? `\n\n${otherCompanies.length===1?otherCompanies[0]+'의 안내로':otherCompanies.join('·')+' 중 한 업체의 안내로'} 이미 랩팡 배송비를 입금하셨다면 중복 입금하지 마세요.`
-                    : '';
-                return `[CREO | ${selectedCompany}]
-${winnerName}님, ${selectedCompany}입니다.
-
-[${selectedCompany} 낙찰]
+                return `[${selectedCompany} 낙찰]
 ${itemLines}
 
 ${selectedCompany} 결제금액: ${bid.toLocaleString()}원
@@ -2590,7 +2584,9 @@ ${selectedCompany} 결제금액: ${bid.toLocaleString()}원
 
 [랩팡 배송비 입금계좌]
 ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
-예금주 ${WRAPANG_PAYMENT_ACCOUNT.holder}${duplicateNote}`;
+예금주 ${WRAPANG_PAYMENT_ACCOUNT.holder}
+
+${wrapangDuplicateNote}`;
             }
 
             const splitShipping = shippingType === '배송' && ['도도시', '파르게'].includes(shippingCompany);
@@ -2611,7 +2607,6 @@ ${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
             paymentLines.push(`합계: ${(bid + shippingShare).toLocaleString()}원`);
 
             const messageSections = [
-                `[CREO | ${selectedCompany}]\n${winnerName}님, ${selectedCompany}입니다.`,
                 `[${selectedCompany} 낙찰]\n${itemLines}`
             ];
             if (deliverySection) messageSections.push(deliverySection);

@@ -197,6 +197,57 @@
             align-self: center;
         }
 
+        .module-card {
+            position: relative;
+        }
+
+        .module-card .arrow {
+            transition: transform .16s ease;
+        }
+
+        .module-card:hover .arrow,
+        .module-card:focus-within .arrow {
+            transform: rotate(180deg);
+        }
+
+        .module-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 0;
+            margin-top: 0;
+            overflow: hidden;
+            opacity: 0;
+            pointer-events: none;
+            transition: max-height .18s ease, margin-top .18s ease, opacity .16s ease;
+        }
+
+        .module-card:hover .module-options,
+        .module-card:focus-within .module-options {
+            max-height: 42px;
+            margin-top: 12px;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .module-option {
+            display: inline-flex;
+            align-items: center;
+            min-height: 30px;
+            padding: 0 10px;
+            border: 1px solid rgba(255,255,255,.14);
+            color: var(--text);
+            background: rgba(255,255,255,.055);
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 850;
+        }
+
+        .module-option:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
         .wide { grid-column: span 2; }
 
         .quick-row {
@@ -230,6 +281,12 @@
             .section-head { align-items: flex-start; flex-direction: column; }
             .link-grid { grid-template-columns: 1fr; }
             .wide { grid-column: span 1; }
+            .module-options {
+                max-height: none;
+                margin-top: 12px;
+                opacity: 1;
+                pointer-events: auto;
+            }
         }
     </style>
 </head>
@@ -273,13 +330,17 @@
                     </div>
                     <span class="arrow">›</span>
                 </a>
-                <a class="link-card" href="settings.html">
+                <div class="link-card module-card">
                     <div>
                         <strong>방송 화면 제어</strong>
-                        <span>자막, 배너, 사진 노출, 방송 모듈을 한 곳에서 제어합니다.</span>
+                        <span>방송 모듈을 선택하면 제어, 미리보기, 송출 라우터가 같은 설정을 사용합니다.</span>
+                        <div class="module-options" aria-label="방송 모듈 선택">
+                            <a class="module-option" href="settings.html?module=cdcup">CDCUP 방송 제어</a>
+                            <a class="module-option" href="settings.html?module=crewart">크레와트 방송 제어</a>
+                        </div>
                     </div>
-                    <span class="arrow">›</span>
-                </a>
+                    <span class="arrow">▼</span>
+                </div>
                 <a class="link-card" href="preview.html?page=1">
                     <div>
                         <strong>방송 미리보기</strong>

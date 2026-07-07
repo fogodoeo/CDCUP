@@ -263,6 +263,29 @@ body {
     display: block;
 }
 
+.cdcup-nav__module {
+    flex: 0 0 auto;
+}
+
+.cdcup-nav__module .cdcup-nav__dropdown-menu {
+    left: 0;
+    right: auto;
+    top: var(--nav-height);
+    min-width: 206px;
+}
+
+.cdcup-nav__module .caret {
+    margin-left: 3px;
+    font-size: 8px;
+    opacity: .55;
+    transition: transform .2s;
+}
+
+.cdcup-nav__module:hover .caret,
+.cdcup-nav__module:focus-within .caret {
+    transform: rotate(180deg);
+}
+
 .cdcup-nav__dropdown-item {
     display: flex;
     align-items: center;

@@ -711,27 +711,17 @@
         </a>
         <div class="cdcup-nav__links">
             <a href="index.html" class="cdcup-nav__link">허브</a>
-            <a href="settings.html" class="cdcup-nav__link">방송 화면 제어</a>
+            <div class="cdcup-nav__dropdown cdcup-nav__module">
+                <button class="cdcup-nav__link" type="button">방송 화면 제어 <span class="caret">▼</span></button>
+                <div class="cdcup-nav__dropdown-menu">
+                    <a href="settings.html?module=cdcup" class="cdcup-nav__dropdown-item" onclick="return handleAuctionEventModuleLink(event,'cdcup',this.href)">CDCUP 방송 제어</a>
+                    <a href="settings.html?module=crewart" class="cdcup-nav__dropdown-item" onclick="return handleAuctionEventModuleLink(event,'crewart',this.href)">크레와트 방송 제어</a>
+                </div>
+            </div>
             <a href="preview.html?page=1" class="cdcup-nav__link active">방송 미리보기</a>
             <a href="broadcast-router.html" class="cdcup-nav__link" target="_blank" rel="noopener">송출 화면</a>
             <a href="cdcup/" class="cdcup-nav__link">CDCUP</a>
             <a href="crewarts/" class="cdcup-nav__link">크레와트</a>
-        </div>
-        <div class="cdcup-nav__utils">
-            <!-- 방송 송출 드롭다운 메뉴 -->
-            <div class="cdcup-nav__dropdown">
-                <button class="cdcup-nav__util-btn cdcup-nav__util-btn--broadcast">
-                    <span>송출 화면</span>
-                    <span class="caret">▼</span>
-                </button>
-                <div class="cdcup-nav__dropdown-menu">
-                    <a href="broadcast-router.html" target="_blank" rel="noopener" class="cdcup-nav__dropdown-item">공통 송출</a>
-                    <a href="broadcast.html?page=1&amp;v=20260701-status-ui" target="_blank" class="cdcup-nav__dropdown-item">1P 송출화면</a>
-                    <a href="broadcast.html?page=2&amp;v=20260701-status-ui" target="_blank" class="cdcup-nav__dropdown-item">2P 송출화면</a>
-                    <a href="broadcast.html?page=3&amp;v=20260701-status-ui" target="_blank" class="cdcup-nav__dropdown-item">3P 송출화면</a>
-                    <a href="crewart-broadcast.html" target="_blank" rel="noopener" class="cdcup-nav__dropdown-item">크레와트 송출</a>
-                </div>
-            </div>
         </div>
     </nav>
 
@@ -1316,12 +1306,20 @@
         // Load configuration from database
         async function loadConfigurations() {
             try {
-            const cfg = await getConfigMap();
-            if (cfg) {
-                const requestedRaw = params.get('module') || params.get('event');
-                const requestedModule = String(requestedRaw || '').toLowerCase() === 'crewarts' ? 'crewart' : requestedRaw;
-                const displayCfg = requestedModule ? { ...cfg, active_event_module: requestedModule } : cfg;
-                applyPreviewEventModule(displayCfg);
+                const cfg = await getConfigMap();
+                if (cfg) {
+                    const requestedRaw = params.get('module') || params.get('event');
+                    const requestedModule = requestedRaw ? getActiveAuctionEventModule({ active_event_module: requestedRaw }).id : '';
+                    if (requestedModule && requestedModule !== cfg.active_event_module) {
+                        try {
+                            await updateConfigs({ active_event_module: requestedModule });
+                            cfg.active_event_module = requestedModule;
+                        } catch (e) {
+                            console.warn('active_event_module query sync failed', e);
+                        }
+                    }
+                    const displayCfg = requestedModule ? { ...cfg, active_event_module: requestedModule } : cfg;
+                    applyPreviewEventModule(displayCfg);
 
                 // Load Banner values (페이지별 접두사 적용)
                 elements.banner.top = cfg[cfgPrefix+'banner_top'] || 'auto';

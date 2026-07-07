@@ -61,7 +61,8 @@
     ]);
 
     function normalizeModuleId(value) {
-        const id = String(value || '').trim().toLowerCase();
+        const raw = String(value || '').trim().toLowerCase();
+        const id = raw === 'crewarts' ? 'crewart' : raw;
         return MODULES[id] ? id : 'cdcup';
     }
 
@@ -401,10 +402,28 @@
         return module;
     }
 
+    async function setActiveEventModule(moduleId, href) {
+        const next = normalizeModuleId(moduleId);
+        if (global.updateConfigs) await global.updateConfigs({ active_event_module: next });
+        if (href) global.location.href = href;
+        return next;
+    }
+
+    function handleEventModuleLink(event, moduleId, href) {
+        if (event && event.preventDefault) event.preventDefault();
+        setActiveEventModule(moduleId, href).catch(error => {
+            if (global.alert) global.alert('방송 모듈 전환 실패: ' + (error.message || error));
+            else throw error;
+        });
+        return false;
+    }
+
     global.AUCTION_EVENT_MODULES = MODULES;
     global.getAuctionEventModule = getEventModule;
     global.getActiveAuctionEventModule = getActiveEventModule;
     global.applyAuctionEventModule = applyEventModule;
+    global.setActiveAuctionEventModule = setActiveEventModule;
+    global.handleAuctionEventModuleLink = handleEventModuleLink;
     global.parseCrewartHouses = parseHouseConfig;
     global.serializeCrewartHouses = serializeHouseConfig;
     global.parseCrewartParticipants = parseParticipantMap;
