@@ -15,6 +15,7 @@
     <meta http-equiv="Expires" content="0">
     <title>방송 화면 실시간 미리보기 및 배치기 - CDCUP</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     <link rel="stylesheet" href="common.css?v=20260629-logic-fix">
@@ -704,14 +705,15 @@
 
 <body>
     <nav class="cdcup-nav">
-        <a href="index.html" class="cdcup-nav__brand">
-            <span class="cdcup-nav__brand-icon">C</span>
-            <span>CDCUP 관리자</span>
+        <a href="cdcup-index.html" class="cdcup-nav__brand">
+            <span class="cdcup-nav__brand-icon js-event-nav-icon">C</span>
+            <span class="js-event-admin-title">CDCUP 관리자</span>
         </a>
         <div class="cdcup-nav__links">
-            <a href="index.html" class="cdcup-nav__link">개체/경매 관리</a>
+            <a href="cdcup-index.html" class="cdcup-nav__link">개체/경매 관리</a>
             <a href="preview.html?page=1" class="cdcup-nav__link active">방송 화면 제어</a>
             <a href="ranking.html" class="cdcup-nav__link">종합 순위표</a>
+            <a href="crewart-settings.html" class="cdcup-nav__link">크레와트</a>
         </div>
         <div class="cdcup-nav__utils">
             <!-- 방송 송출 드롭다운 메뉴 -->
@@ -736,6 +738,16 @@
             <a href="preview.html?page=2" id="btn-tab-p2" class="cdcup-tab" style="text-decoration: none;">2P 배치기</a>
             <a href="preview.html?page=3" id="btn-tab-p3" class="cdcup-tab" style="text-decoration: none;">3P 배치기</a>
             <a href="settings.html" class="cdcup-tab" style="text-decoration: none;">방송 시스템 설정</a>
+        </div>
+        <div class="event-module-panel" id="preview-event-module-panel">
+            <div>
+                <strong id="preview-event-module-title">CDCUP 화면 모듈</strong>
+                <span id="preview-event-module-desc">송출 화면의 규칙과 3P 구성을 선택합니다.</span>
+            </div>
+            <select id="preview-event-module-select" onchange="changeEventModule(this.value)">
+                <option value="cdcup">CDCUP · 토너먼트</option>
+                <option value="crewart">크레와트 · 기숙사 점수전</option>
+            </select>
         </div>
         <!-- 대진용 배치기 배경 미리보기 선택 옵션 -->
         <div id="bracket-bg-selector-group" class="control-row" style="margin-bottom: 16px; display: none; align-items: center; gap: 16px; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 8px;">
@@ -993,6 +1005,23 @@
 
 
         </div>
+
+        <div class="tournament-dashboard" id="crewart-dashboard">
+            <div class="t-header">
+                <div class="t-controls">
+                    <span class="t-label">크레와트 3P</span>
+                    <button class="t-btn save" type="button" onclick="refreshCrewartPreview()">점수판 새로고침</button>
+                    <a class="t-btn" href="settings.html" style="text-decoration:none;">기숙사 설정</a>
+                </div>
+                <div class="t-controls">
+                    <span class="t-label">송출 화면:</span>
+                    <span class="event-module-chip">기숙사 점수판</span>
+                </div>
+            </div>
+            <div id="crewart-score-preview" style="min-height:220px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.03);">
+                <div style="padding:28px;color:var(--text2);font-weight:700;">점수 데이터를 불러오는 중...</div>
+            </div>
+        </div>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -1002,6 +1031,75 @@
         const params = new URLSearchParams(window.location.search);
         const pageNum = params.get('page') || '2'; // Default: page=2 (개체용)
         const broadcastAssetVersion = '20260701-status-ui';
+        let previewConfigMap = {};
+
+        function applyPreviewEventModule(cfg) {
+            previewConfigMap = cfg || {};
+            const module = applyAuctionEventModule(previewConfigMap);
+            const select = document.getElementById('preview-event-module-select');
+            if (select) select.value = module.id;
+            const title = document.getElementById('preview-event-module-title');
+            const desc = document.getElementById('preview-event-module-desc');
+            if (title) title.textContent = module.title + ' 화면 모듈';
+            if (desc) desc.textContent = module.id === 'crewart'
+                ? '3P는 기숙사 점수판으로 송출되고, 낙찰자 배정표 기준으로 점수가 계산됩니다.'
+                : '3P는 토너먼트 대진표와 실시간 경기 현황으로 송출됩니다.';
+
+            const isCrewart = module.id === 'crewart';
+            document.body.classList.toggle('event-crewart-preview', isCrewart);
+            const fullLabel = document.querySelector('#draggable-bracket-full .element-label');
+            if (fullLabel) fullLabel.textContent = isCrewart ? '기숙사 점수판' : '전체 결과';
+            const liveLabel = document.querySelector('#draggable-bracket-live .element-label');
+            if (liveLabel) liveLabel.textContent = isCrewart ? '보조 점수판' : '실시간 대진';
+            const p3Tab = document.getElementById('btn-tab-p3');
+            if (p3Tab) p3Tab.textContent = isCrewart ? '3P 점수판 배치기' : '3P 배치기';
+
+            if (pageNum === '3') {
+                document.getElementById('tournament-dashboard')?.classList.toggle('active', !isCrewart);
+                document.getElementById('crewart-dashboard')?.classList.toggle('active', isCrewart);
+                [
+                    'toggle-bracket-live-show-group',
+                    'toggle-bracket-full-blind-group',
+                    'toggle-bracket-scale-group',
+                    'toggle-bracket-mode-group',
+                    'toggle-bracket-live-font-group',
+                    'toggle-bracket-live-opacity-group'
+                ].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = isCrewart ? 'none' : '';
+                });
+                const fullToggleLabel = document.querySelector('#toggle-bracket-full-show-group span');
+                if (fullToggleLabel) fullToggleLabel.textContent = isCrewart ? '점수판' : '전체 결과';
+                const coords = document.getElementById('bracket-coords');
+                if (coords && coords.firstChild) coords.firstChild.textContent = isCrewart ? '점수판: Top ' : '전체결과: Top ';
+                if (isCrewart) refreshCrewartPreview();
+            }
+        }
+
+        async function changeEventModule(value) {
+            const active_event_module = value || 'cdcup';
+            const next = { ...previewConfigMap, active_event_module };
+            applyPreviewEventModule(next);
+            try {
+                await updateConfigs({ active_event_module });
+                frame.contentWindow.location.reload();
+                toast(getActiveAuctionEventModule(next).title + ' 모듈로 전환했습니다.');
+            } catch (err) {
+                toast('모듈 전환 실패: ' + err.message);
+            }
+        }
+
+        async function refreshCrewartPreview() {
+            const target = document.getElementById('crewart-score-preview');
+            if (!target) return;
+            try {
+                const [cfg, items] = await Promise.all([getConfigMap(), getBroadcastItems()]);
+                previewConfigMap = cfg || previewConfigMap;
+                target.innerHTML = renderCrewartHouseBoardHTML(items || [], previewConfigMap, { compact: true });
+            } catch (err) {
+                target.innerHTML = '<div style="padding:28px;color:#fca5a5;font-weight:800;">점수판을 불러오지 못했습니다: ' + String(err.message || err) + '</div>';
+            }
+        }
 
         // Set Nav Active and iframe source
         const frame = document.getElementById('broadcast-frame');
@@ -1216,6 +1314,7 @@
             try {
             const cfg = await getConfigMap();
             if (cfg) {
+                applyPreviewEventModule(cfg);
 
                 // Load Banner values (페이지별 접두사 적용)
                 elements.banner.top = cfg[cfgPrefix+'banner_top'] || 'auto';

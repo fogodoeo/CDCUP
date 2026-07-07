@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>크레와트 점수표</title>
+    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="crewart.css?v=20260707-split">
+    <style>
+        .cw-rank-table { width:100%; border-collapse:collapse; }
+        .cw-rank-table th, .cw-rank-table td { padding:12px 10px; border-bottom:1px solid var(--cw-line); text-align:left; font-size:13px; }
+        .cw-rank-table th { color:var(--cw-gold); font-size:11px; letter-spacing:.12em; }
+        .cw-rank-table td.amount { text-align:right; font-variant-numeric:tabular-nums; font-weight:850; }
+    </style>
+</head>
+<body class="crewart-page">
+    <nav class="cw-nav">
+        <a class="cw-brand" href="crewart-ranking.html"><span class="cw-brand-mark">W</span><span>크레와트</span></a>
+        <div class="cw-nav-links">
+            <a href="crewart-settings.html">설정</a>
+            <a href="crewart-survey.html">설문</a>
+            <a href="crewart-preview.html">방송 미리보기</a>
+            <a class="active" href="crewart-ranking.html">점수표</a>
+            <a href="crewart-broadcast.html?page=score" target="_blank">송출</a>
+        </div>
+    </nav>
+
+    <main class="cw-shell">
+        <header class="cw-page-head">
+            <div>
+                <div class="cw-kicker">CREWART HOUSE STANDINGS</div>
+                <h1>기숙사 점수표</h1>
+                <p>설문 배정표와 낙찰 내역을 기준으로 자동 집계합니다.</p>
+            </div>
+            <div class="cw-actions">
+                <button class="cw-btn" type="button" onclick="loadRanking()">새로고침</button>
+                <a class="cw-btn primary" href="crewart-broadcast.html?page=score" target="_blank">점수판 송출</a>
+            </div>
+        </header>
+
+        <section id="scoreboard-wrap" style="min-height:520px;border:1px solid var(--cw-line);overflow:hidden;"></section>
+
+        <section class="cw-grid" style="margin-top:14px;">
+            <article class="cw-panel">
+                <h2>기숙사별 집계</h2>
+                <div id="house-table"></div>
+            </article>
+            <article class="cw-panel">
+                <h2>미배정 낙찰</h2>
+                <div id="unassigned-list" class="cw-note">확인 중...</div>
+            </article>
+        </section>
+    </main>
+
+    <script>
+        function money(value) {
+            return Number(value || 0).toLocaleString('ko-KR');
+        }
+
+        async function loadRanking() {
+            const [cfg, items] = await Promise.all([getConfigMap(), getBroadcastItems()]);
+            const config = { ...(cfg || {}), active_event_module: 'crewart' };
+            applyAuctionEventModule(config);
+            document.getElementById('scoreboard-wrap').innerHTML = renderCrewartHouseBoardHTML(items || [], config);
+            const result = buildCrewartHouseScores(items || [], config);
+            document.getElementById('house-table').innerHTML = `<table class="cw-rank-table">
+                <thead><tr><th>RANK</th><th>기숙사</th><th class="amount">점수</th><th class="amount">낙찰</th><th class="amount">낙찰금</th></tr></thead>
+                <tbody>${result.houses.map(row => `<tr>
+                    <td>${String(row.rank).padStart(2, '0')}</td>
+                    <td style="color:${row.accent};font-weight:900;">${row.name}</td>
+                    <td class="amount">${money(Math.round(row.points))}점</td>
+                    <td class="amount">${row.soldCount}건</td>
+                    <td class="amount">${money(row.amount)}만원</td>
+                </tr>`).join('')}</tbody>
+            </table>`;
+            document.getElementById('unassigned-list').innerHTML = result.unassigned.length
+                ? result.unassigned.map(entry => `<div style="padding:8px 0;border-bottom:1px solid var(--cw-line);">${entry.item.winner || '낙찰자 미기록'} · ${entry.item.name || ''} · ${money(entry.amount)}만원</div>`).join('')
+                : '미배정 낙찰이 없습니다.';
+        }
+
+        loadRanking();
+        setInterval(loadRanking, 10000);
+    </script>
+</body>
+</html>

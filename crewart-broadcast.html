@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>크레와트 송출</title>
+    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="crewart.css?v=20260707-split">
+</head>
+<body class="crewart-page crewart-broadcast">
+    <div class="cw-broadcast-root" id="root">
+        <main id="stage"></main>
+        <aside class="cw-mini-score" id="mini-score"></aside>
+        <div class="cw-ticker" id="ticker">
+            <span class="cw-ticker-badge" id="ticker-badge">LIVE</span>
+            <div class="cw-ticker-text" id="ticker-text">크레와트 경매 대기 중</div>
+        </div>
+        <div id="burst-portal"></div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(location.search);
+        const pageMode = String(params.get('page') || 'score').toLowerCase();
+        const root = document.getElementById('root');
+        const stage = document.getElementById('stage');
+        const mini = document.getElementById('mini-score');
+        const tickerText = document.getElementById('ticker-text');
+        const tickerBadge = document.getElementById('ticker-badge');
+        let config = {};
+        let soldKeys = null;
+        let tickerIndex = 0;
+        let tickerLines = [];
+        let lastTickerRaw = '';
+
+        function esc(value) {
+            return String(value == null ? '' : value).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+        }
+
+        function isSold(item) {
+            const status = String(item && item.status || '');
+            return status.includes('낙찰') || ['완료', 'sold'].includes(status.trim());
+        }
+
+        function soldKey(item) {
+            return [item.row || item.id || item.num, item.status || '', item.soldPrice || item.sold_price || '', item.winner || ''].join('|');
+        }
+
+        function amountText(value) {
+            const n = Number.parseFloat(String(value || '').replace(/,/g, '')) || 0;
+            return n ? n.toLocaleString('ko-KR') + '만원' : '-';
+        }
+
+        function applyTicker(cfg) {
+            tickerBadge.textContent = cfg.badge_text || 'LIVE';
+            const raw = cfg.ticker || '[입찰 안내:#D6B25E] 채팅 닉네임과 설문 닉네임을 맞춰주세요\n[기숙사 점수:#93C5FD] 낙찰가가 기숙사 점수로 반영됩니다';
+            if (raw === lastTickerRaw && tickerLines.length) return;
+            lastTickerRaw = raw;
+            tickerIndex = 0;
+            tickerLines = raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+            if (!tickerLines.length) tickerLines = ['크레와트 경매 진행 중'];
+            renderTickerLine();
+        }
+
+        function renderTickerLine() {
+            const line = tickerLines[tickerIndex % tickerLines.length] || '';
+            tickerText.innerHTML = line.replace(/\[([^\]:]+)(?::([^\]]+))?\]/g, (_, label, color) => {
+                return `<span style="color:${esc(color || '#D6B25E')};font-weight:950;">${esc(label)}</span>`;
+            });
+            tickerIndex += 1;
+        }
+
+        function renderMiniScore(items) {
+            const result = buildCrewartHouseScores(items || [], config);
+            mini.innerHTML = result.houses.slice(0, 4).map(row => `
+                <div class="cw-mini-row" style="--house:${esc(row.color)};">
+                    <span>${esc(row.name)}</span>
+                    <strong>${Math.round(row.points).toLocaleString('ko-KR')}점</strong>
+                </div>
+            `).join('');
+        }
+
+        function renderScore(items) {
+            root.classList.add('score-only');
+            mini.innerHTML = '';
+            stage.innerHTML = renderCrewartHouseBoardHTML(items || [], config);
+        }
+
+        function renderAuction(item, items) {
+            root.classList.remove('score-only');
+            renderMiniScore(items);
+            if (!item) {
+                stage.innerHTML = '<div class="cw-current-auction"><div></div><div class="cw-current-copy"><div class="eyebrow">CREWART AUCTION</div><h1>경매 대기중</h1><div class="cw-current-meta"><span>기숙사 점수 집계 준비</span></div></div></div>';
+                return;
+            }
+            const photo = item.photoItem ? `<img class="cw-current-photo" src="${esc(item.photoItem)}" alt="">` : '<div class="cw-current-photo"></div>';
+            stage.innerHTML = `
+                <section class="cw-current-auction">
+                    ${photo}
+                    <div class="cw-current-copy">
+                        <div class="eyebrow">CREWART AUCTION</div>
+                        <h1>${esc(item.name || item.displayName || '마법 생물')}</h1>
+                        <div class="cw-current-meta">
+                            <span>번호 ${esc(auctionNumber(item))}</span>
+                            <span>시작가 ${amountText(item.startPrice || item.price)}</span>
+                            <span>${esc(item.status || '대기')}</span>
+                        </div>
+                    </div>
+                </section>
+            `;
+        }
+
+        function showHouseBurst(item) {
+            const result = resolveCrewartItemResult(item, config);
+            if (!result || !result.house) return;
+            const portal = document.getElementById('burst-portal');
+            const points = Math.round(result.points).toLocaleString('ko-KR');
+            portal.innerHTML = `
+                <div class="cw-house-burst" style="--house-accent:${esc(result.house.accent || result.house.color)};">
+                    <small>SCORE AWARDED</small>
+                    <strong>${esc(result.house.name)} +${points}점</strong>
+                    <span>${esc(result.winner || '낙찰자')} · ${amountText(result.amount)}</span>
+                </div>
+            `;
+            setTimeout(() => { portal.innerHTML = ''; }, 4400);
+        }
+
+        function detectNewSold(items) {
+            const sold = (items || []).filter(isSold);
+            const keys = new Set(sold.map(soldKey));
+            if (soldKeys === null) {
+                soldKeys = keys;
+                return;
+            }
+            const fresh = sold.filter(item => !soldKeys.has(soldKey(item)));
+            soldKeys = keys;
+            if (!fresh.length) return;
+            fresh.sort((a, b) => String(a.updatedAt || a.updated_at || '').localeCompare(String(b.updatedAt || b.updated_at || '')));
+            showHouseBurst(fresh[fresh.length - 1]);
+        }
+
+        async function loadFrame() {
+            try {
+                const [cfg, items, active] = await Promise.all([
+                    getConfigMap(),
+                    getBroadcastItems(),
+                    getActiveItem().catch(() => null)
+                ]);
+                config = { ...(cfg || {}), active_event_module: 'crewart' };
+                applyAuctionEventModule(config);
+                applyTicker(config);
+                detectNewSold(items || []);
+                if (pageMode === 'auction' || pageMode === '2') {
+                    renderAuction(active, items || []);
+                } else if (pageMode === 'host' || pageMode === '1') {
+                    renderAuction(null, items || []);
+                } else {
+                    renderScore(items || []);
+                }
+            } catch (error) {
+                stage.innerHTML = '<div class="cw-current-auction"><div></div><div class="cw-current-copy"><div class="eyebrow">ERROR</div><h1>송출 데이터 오류</h1><div class="cw-current-meta"><span>' + esc(error.message || error) + '</span></div></div></div>';
+            }
+        }
+
+        loadFrame();
+        setInterval(loadFrame, 1800);
+        setInterval(renderTickerLine, 4200);
+    </script>
+</body>
+</html>

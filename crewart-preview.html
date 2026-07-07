@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>크레와트 방송 미리보기</title>
+    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="crewart.css?v=20260707-split">
+</head>
+<body class="crewart-page">
+    <nav class="cw-nav">
+        <a class="cw-brand" href="crewart-preview.html"><span class="cw-brand-mark">W</span><span>크레와트</span></a>
+        <div class="cw-nav-links">
+            <a href="crewart-settings.html">설정</a>
+            <a href="crewart-survey.html">설문</a>
+            <a class="active" href="crewart-preview.html">방송 미리보기</a>
+            <a href="crewart-ranking.html">점수표</a>
+            <a href="cdcup-index.html">CDCUP 관리</a>
+        </div>
+    </nav>
+
+    <main class="cw-shell">
+        <header class="cw-page-head">
+            <div>
+                <div class="cw-kicker">CREWART BROADCAST PREVIEW</div>
+                <h1>방송 미리보기</h1>
+                <p>크레와트 전용 송출 화면을 페이지별로 확인합니다.</p>
+            </div>
+            <div class="cw-actions">
+                <a class="cw-btn" id="open-current" href="crewart-broadcast.html?page=score" target="_blank">새 창으로 열기</a>
+                <a class="cw-btn primary" href="crewart-settings.html">설정</a>
+            </div>
+        </header>
+
+        <div class="cw-tabs">
+            <button class="active" type="button" onclick="switchMode('score', this)">기숙사 점수판</button>
+            <button type="button" onclick="switchMode('auction', this)">현재 경매</button>
+            <button type="button" onclick="switchMode('host', this)">대기/진행</button>
+        </div>
+        <div class="cw-preview-frame">
+            <iframe id="preview-frame" src="crewart-broadcast.html?page=score"></iframe>
+        </div>
+
+        <section class="cw-grid three" style="margin-top:14px;">
+            <article class="cw-panel">
+                <h2>OBS URL</h2>
+                <div class="cw-note" id="obs-url">crewart-broadcast.html?page=score</div>
+            </article>
+            <article class="cw-panel">
+                <h2>낙찰 연출</h2>
+                <div class="cw-note">새 낙찰이 저장되면 기숙사 점수 획득 연출이 자동으로 표시됩니다.</div>
+            </article>
+            <article class="cw-panel">
+                <h2>자막</h2>
+                <div class="cw-note">기존 설정의 공지사항 자막을 크레와트 스타일로 표시합니다.</div>
+            </article>
+        </section>
+    </main>
+
+    <script>
+        function switchMode(mode, button) {
+            document.querySelectorAll('.cw-tabs button').forEach(btn => btn.classList.toggle('active', btn === button));
+            const url = 'crewart-broadcast.html?page=' + mode;
+            document.getElementById('preview-frame').src = url;
+            document.getElementById('open-current').href = url;
+            document.getElementById('obs-url').textContent = url;
+        }
+
+        getConfigMap().then(cfg => applyAuctionEventModule({ ...(cfg || {}), active_event_module: 'crewart' })).catch(() => {});
+    </script>
+</body>
+</html>

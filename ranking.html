@@ -6,6 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>종합 순위표 | CDCUP</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
@@ -781,10 +782,73 @@
             }));
         }
 
+        function renderCrewartRanking(map, items) {
+            const module = getActiveAuctionEventModule(map || {});
+            const now = new Date();
+            const result = buildCrewartHouseScores(items || [], map || {});
+            const totalPoints = result.houses.reduce((sum, row) => sum + row.points, 0);
+            const totalAmount = result.houses.reduce((sum, row) => sum + row.amount, 0);
+            const totalSold = result.houses.reduce((sum, row) => sum + row.soldCount, 0);
+
+            document.querySelector('.hero-kicker').textContent = 'CREWART HOUSE STANDINGS';
+            document.querySelector('.hero h1').textContent = '기숙사 점수표';
+            document.getElementById('season-year').textContent = now.getFullYear() + ' ' + module.title;
+            document.querySelector('.season-mark span').textContent = 'HOUSE CUP SEASON';
+            document.querySelector('.hero-emblem').style.display = 'none';
+
+            const labels = document.querySelectorAll('.stat-label');
+            if (labels[0]) labels[0].textContent = '기숙사';
+            if (labels[1]) labels[1].textContent = '총 점수';
+            if (labels[2]) labels[2].textContent = '낙찰 건수';
+            if (labels[3]) labels[3].textContent = '최종 업데이트';
+            document.getElementById('stat-teams').innerHTML = `${result.houses.length}<span class="stat-unit">개</span>`;
+            document.getElementById('stat-amount').innerHTML = `${Math.round(totalPoints).toLocaleString('ko-KR')}<span class="stat-unit">점</span>`;
+            document.getElementById('stat-events').innerHTML = `${totalSold}<span class="stat-unit">건</span>`;
+            document.getElementById('stat-updated').textContent = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+            document.querySelector('.round-nav').style.display = 'none';
+            document.querySelectorAll('.main-view').forEach(panel => panel.classList.toggle('active', panel.id === 'summary-view'));
+            document.querySelector('.survivors-panel').style.display = 'none';
+            document.getElementById('side-auction-panel').classList.remove('active');
+
+            const podium = document.getElementById('podium');
+            podium.innerHTML = result.houses.slice(0, 3).map((row, index) => `
+                <article class="podium-card ${index === 0 ? 'first' : ''}">
+                    <div class="podium-rank">${index === 0 ? 'HOUSE LEADER' : 'RANK ' + (index + 1)}</div>
+                    <div class="podium-team"><span class="team-logo logo-fallback" style="color:${escapeHtml(row.accent)}">${escapeHtml(String(row.name).slice(0, 2))}</span><div class="podium-team-name"><strong>${escapeHtml(row.name)}</strong><span>${row.soldCount}건 낙찰</span><small>${Number(row.amount || 0).toLocaleString('ko-KR')}만원</small></div></div>
+                    <div class="podium-amount">${Math.round(row.points).toLocaleString('ko-KR')}<small>점</small></div>
+                </article>
+            `).join('');
+
+            document.querySelector('.board-title strong').textContent = 'CREWART HOUSE RANKING';
+            document.querySelector('.board-title span').textContent = '낙찰자 기숙사 배정표 기준으로 점수를 집계합니다.';
+            document.getElementById('board-content').innerHTML = renderCrewartHouseBoardHTML(items || [], map || {}, { compact: true });
+            document.querySelector('.board-foot').innerHTML = `<span>※ 낙찰가 ${escapeHtml(String(result.scorePerMan))}점/만원 · 건당 보너스 ${escapeHtml(String(result.soldBonus))}점</span><span>${Math.round(totalAmount).toLocaleString('ko-KR')}만원 집계</span>`;
+        }
+
         async function loadRanking() {
             try {
                 const [map, items] = await Promise.all([getConfigMap(), getBroadcastItems()]);
                 latestRankingMap = map || {};
+                const eventModule = applyAuctionEventModule(map || {});
+                if (eventModule.id === 'crewart') {
+                    renderCrewartRanking(map || {}, items || []);
+                    return;
+                }
+                document.querySelector('.round-nav').style.display = '';
+                document.querySelector('.survivors-panel').style.display = '';
+                document.querySelector('.hero-emblem').style.display = '';
+                document.querySelector('.hero-kicker').textContent = 'CDCUP OFFICIAL STANDINGS';
+                document.querySelector('.hero h1').textContent = '종합 순위표';
+                document.querySelector('.season-mark span').textContent = 'TOURNAMENT SEASON';
+                const statLabels = document.querySelectorAll('.stat-label');
+                if (statLabels[0]) statLabels[0].textContent = '참가 팀';
+                if (statLabels[1]) statLabels[1].textContent = '총 낙찰금';
+                if (statLabels[2]) statLabels[2].textContent = '진행 라운드';
+                if (statLabels[3]) statLabels[3].textContent = '최종 업데이트';
+                document.querySelector('.board-title strong').textContent = 'OFFICIAL TEAM RANKING';
+                document.querySelector('.board-title span').textContent = '업체를 선택하면 라운드별 경기 여정을 볼 수 있습니다.';
+                document.querySelector('.board-foot').innerHTML = '<span>※ 최종 도달 라운드 → 토너먼트 낙찰금 순 · 일반 경매는 순위 미반영</span><span>2026 CDCUP OFFICIAL STANDINGS</span>';
                 const logos = teamLogoMap(map || {});
                 const qualifiedTeams = new Set(QUARTERFINAL_MATCHUPS.map(match => winnerByOfficialPrice(match, 8)).filter(Boolean));
                 const sanitizeStage = scale => {

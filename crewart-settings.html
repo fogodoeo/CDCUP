@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>크레와트 설정</title>
+    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="crewart.css?v=20260707-split">
+</head>
+<body class="crewart-page">
+    <nav class="cw-nav">
+        <a class="cw-brand" href="crewart-settings.html"><span class="cw-brand-mark">W</span><span>크레와트</span></a>
+        <div class="cw-nav-links">
+            <a class="active" href="crewart-settings.html">설정</a>
+            <a href="crewart-survey.html">설문</a>
+            <a href="crewart-preview.html">방송 미리보기</a>
+            <a href="crewart-ranking.html">점수표</a>
+            <a href="cdcup-index.html">CDCUP 관리</a>
+        </div>
+    </nav>
+
+    <main class="cw-shell">
+        <header class="cw-page-head">
+            <div>
+                <div class="cw-kicker">CREWART CONTROL ROOM</div>
+                <h1>크레와트 설정</h1>
+                <p>기숙사, 설문 결과 매칭, 점수 환산을 크레와트 전용으로 관리합니다.</p>
+            </div>
+            <div class="cw-actions">
+                <a class="cw-btn" href="crewart-broadcast.html?page=score" target="_blank">점수판 송출</a>
+                <button class="cw-btn primary" type="button" onclick="saveCrewartSettings()">저장</button>
+            </div>
+        </header>
+
+        <section class="cw-grid">
+            <article class="cw-panel">
+                <h2>기숙사</h2>
+                <div class="cw-field">
+                    <label for="houses">기숙사 목록</label>
+                    <textarea class="cw-textarea" id="houses"></textarea>
+                    <div class="cw-note">기숙사명|대표색|보조색 순서로 한 줄씩 입력합니다.</div>
+                </div>
+                <button class="cw-btn" type="button" onclick="fillDefaultHouses()">기본 기숙사 채우기</button>
+            </article>
+
+            <article class="cw-panel">
+                <h2>점수</h2>
+                <div class="cw-grid">
+                    <div class="cw-field">
+                        <label for="score-per-man">만원당 점수</label>
+                        <input class="cw-input" id="score-per-man" type="number" step="0.1" placeholder="1">
+                    </div>
+                    <div class="cw-field">
+                        <label for="sold-bonus">낙찰 보너스</label>
+                        <input class="cw-input" id="sold-bonus" type="number" step="1" placeholder="0">
+                    </div>
+                </div>
+                <div class="cw-field">
+                    <label for="score-scope">집계 범위</label>
+                    <select class="cw-select" id="score-scope">
+                        <option value="crewart">크레와트 경매만</option>
+                        <option value="all">전체 낙찰 반영</option>
+                    </select>
+                </div>
+                <div class="cw-note">기본값은 낙찰가 1만원 = 1점입니다.</div>
+            </article>
+        </section>
+
+        <section class="cw-grid" style="margin-top:14px;">
+            <article class="cw-panel">
+                <h2>입찰자 기숙사 배정</h2>
+                <div class="cw-field">
+                    <label for="participants">배정표</label>
+                    <textarea class="cw-textarea" id="participants" style="min-height:220px;"></textarea>
+                    <div class="cw-note">낙찰자명,기숙사명,별칭 순서입니다. 별칭은 / 또는 ; 로 구분합니다.</div>
+                </div>
+            </article>
+
+            <article class="cw-panel">
+                <h2>현재 점수 미리보기</h2>
+                <div id="score-preview" style="min-height:260px;overflow:hidden;border:1px solid var(--cw-line);"></div>
+            </article>
+        </section>
+    </main>
+
+    <div class="cw-toast" id="toast"></div>
+
+    <script>
+        let latestConfig = {};
+
+        function toast(message, isError) {
+            const el = document.getElementById('toast');
+            el.textContent = message;
+            el.style.borderColor = isError ? '#fca5a5' : 'var(--cw-gold)';
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2600);
+        }
+
+        function formConfig() {
+            return {
+                active_event_module: 'crewart',
+                crewart_houses: document.getElementById('houses').value,
+                crewart_participants: document.getElementById('participants').value,
+                crewart_score_per_man: document.getElementById('score-per-man').value || '1',
+                crewart_sold_bonus: document.getElementById('sold-bonus').value || '0',
+                crewart_score_scope: document.getElementById('score-scope').value || 'crewart'
+            };
+        }
+
+        function fillDefaultHouses() {
+            document.getElementById('houses').value = serializeCrewartHouses(parseCrewartHouses(''));
+            refreshPreview();
+        }
+
+        async function refreshPreview() {
+            const target = document.getElementById('score-preview');
+            try {
+                const items = await getBroadcastItems();
+                const cfg = { ...latestConfig, ...formConfig() };
+                target.innerHTML = renderCrewartHouseBoardHTML(items || [], cfg, { compact: true });
+            } catch (error) {
+                target.innerHTML = '<div style="padding:20px;color:#fca5a5;font-weight:800;">점수 데이터를 불러오지 못했습니다.</div>';
+            }
+        }
+
+        async function saveCrewartSettings() {
+            try {
+                latestConfig = { ...latestConfig, ...formConfig() };
+                await updateConfigs(latestConfig);
+                applyAuctionEventModule(latestConfig);
+                await refreshPreview();
+                toast('크레와트 설정을 저장했습니다.');
+            } catch (error) {
+                toast('저장 실패: ' + error.message, true);
+            }
+        }
+
+        async function loadCrewartSettings() {
+            latestConfig = await getConfigMap() || {};
+            applyAuctionEventModule({ ...latestConfig, active_event_module: 'crewart' });
+            document.getElementById('houses').value = latestConfig.crewart_houses || serializeCrewartHouses(parseCrewartHouses(''));
+            document.getElementById('participants').value = latestConfig.crewart_participants || '';
+            document.getElementById('score-per-man').value = latestConfig.crewart_score_per_man || '1';
+            document.getElementById('sold-bonus').value = latestConfig.crewart_sold_bonus || '0';
+            document.getElementById('score-scope').value = latestConfig.crewart_score_scope || 'crewart';
+            refreshPreview();
+        }
+
+        ['houses', 'participants', 'score-per-man', 'sold-bonus', 'score-scope'].forEach(id => {
+            document.addEventListener('input', event => {
+                if (event.target && event.target.id === id) refreshPreview();
+            });
+            document.addEventListener('change', event => {
+                if (event.target && event.target.id === id) refreshPreview();
+            });
+        });
+
+        loadCrewartSettings();
+    </script>
+</body>
+</html>

@@ -9,6 +9,7 @@
     <meta http-equiv="Expires" content="0">
     <title>시스템 설정 - CDCUP</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     <link rel="stylesheet" href="common.css?v=20260629-logic-fix">
@@ -221,14 +222,15 @@
 
 <body>
     <nav class="cdcup-nav">
-        <a href="index.html" class="cdcup-nav__brand">
+        <a href="cdcup-index.html" class="cdcup-nav__brand">
             <span class="cdcup-nav__brand-icon">🏆</span>
-            <span>CDCUP 관리자</span>
+            <span class="js-event-admin-title">CDCUP 관리자</span>
         </a>
         <div class="cdcup-nav__links">
-            <a href="index.html" class="cdcup-nav__link">개체/경매 관리</a>
+            <a href="cdcup-index.html" class="cdcup-nav__link">개체/경매 관리</a>
             <a href="preview.html?page=1" class="cdcup-nav__link active">방송 화면 제어</a>
             <a href="ranking.html" class="cdcup-nav__link">종합 순위표</a>
+            <a href="crewart-settings.html" class="cdcup-nav__link">크레와트</a>
         </div>
         <div class="cdcup-nav__utils">
             <!-- 방송 송출 드롭다운 메뉴 -->
@@ -253,6 +255,48 @@
             <a href="preview.html?page=2" class="cdcup-tab" style="text-decoration: none;">2P 배치기</a>
             <a href="preview.html?page=3" class="cdcup-tab" style="text-decoration: none;">3P 배치기</a>
             <a href="settings.html" class="cdcup-tab active" style="text-decoration: none;">방송 시스템 설정</a>
+        </div>
+
+        <!-- ══ 이벤트 화면 모듈 ══ -->
+        <div class="card" style="grid-column: span 2;">
+            <div class="card-title">이벤트 화면 모듈</div>
+            <div class="section-desc">Band 모니터링 앱은 그대로 두고, 송출/배치/순위 화면의 세계관과 집계 방식을 전환합니다.</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>현재 모듈</label>
+                    <select id="cfg-active-event-module" onchange="onEventModuleChanged(this.value)">
+                        <option value="cdcup">CDCUP · 토너먼트</option>
+                        <option value="crewart">크레와트 · 기숙사 점수전</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>크레와트 점수 환산</label>
+                    <input type="number" id="cfg-crewart-score-per-man" placeholder="1" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>낙찰 건당 보너스</label>
+                    <input type="number" id="cfg-crewart-sold-bonus" placeholder="0" step="1">
+                </div>
+                <div class="form-group">
+                    <label>집계 범위</label>
+                    <select id="cfg-crewart-score-scope">
+                        <option value="crewart">크레와트 타입만</option>
+                        <option value="all">전체 낙찰</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>기숙사 목록</label>
+                    <textarea id="cfg-crewart-houses" rows="5" placeholder="용맹의 탑|#B91C1C|#FCA5A5&#10;지혜의 탑|#1D4ED8|#93C5FD"></textarea>
+                    <div class="section-desc">한 줄에 기숙사명|대표색|보조색 순서로 입력합니다.</div>
+                </div>
+                <div class="form-group">
+                    <label>입찰자 기숙사 배정</label>
+                    <textarea id="cfg-crewart-participants" rows="5" placeholder="닉네임,용맹의 탑&#10;채팅닉,지혜의 탑,별칭1/별칭2"></textarea>
+                    <div class="section-desc">한 줄에 낙찰자명,기숙사명,별칭 순서입니다. 별칭은 / 또는 ; 로 여러 개 입력할 수 있습니다.</div>
+                </div>
+            </div>
         </div>
 
         <!-- ══ 실시간 미리보기 ══ -->
@@ -424,6 +468,23 @@
                     frame.contentWindow.postMessage({ type: 'configUpdate', config: buildConfigMap() }, '*');
                 }
             } catch(e) {}
+        }
+
+        async function onEventModuleChanged(value) {
+            const next = value || 'cdcup';
+            const currentMap = { ...(_cfg || {}), active_event_module: next };
+            applyAuctionEventModule(currentMap);
+            if (next === 'crewart' && !document.getElementById('cfg-crewart-houses').value.trim()) {
+                document.getElementById('cfg-crewart-houses').value = serializeCrewartHouses(parseCrewartHouses(''));
+            }
+            try {
+                await updateConfigs({ active_event_module: next });
+                const frame = document.getElementById('preview-frame');
+                if (frame) frame.contentWindow.location.reload();
+                toast(getActiveAuctionEventModule(currentMap).title + ' 모듈로 전환했습니다.');
+            } catch (e) {
+                toast('모듈 전환 저장 실패: ' + e.message, true);
+            }
         }
 
         // ── Quick Toggles ──
@@ -880,6 +941,12 @@
                 ticker_show: _toggleStates.ticker,
                 banner_show: _toggleStates.banner,
                 rules_position: _rulesPos,
+                active_event_module: document.getElementById('cfg-active-event-module').value || 'cdcup',
+                crewart_houses: document.getElementById('cfg-crewart-houses').value,
+                crewart_participants: document.getElementById('cfg-crewart-participants').value,
+                crewart_score_per_man: document.getElementById('cfg-crewart-score-per-man').value,
+                crewart_sold_bonus: document.getElementById('cfg-crewart-sold-bonus').value,
+                crewart_score_scope: document.getElementById('cfg-crewart-score-scope').value,
                 scoreboard_name_fontsize: document.getElementById('cfg-scoreboard-name-fontsize').value,
                 scoreboard_pill_fontsize: document.getElementById('cfg-scoreboard-pill-fontsize').value,
                 scoreboard_label_fontsize: document.getElementById('cfg-scoreboard-label-fontsize').value,
@@ -952,6 +1019,13 @@
                 const cfg = await getConfigMap();
                 if (!cfg) return;
                 _cfg = cfg;
+                document.getElementById('cfg-active-event-module').value = cfg.active_event_module || 'cdcup';
+                document.getElementById('cfg-crewart-houses').value = cfg.crewart_houses || serializeCrewartHouses(parseCrewartHouses(''));
+                document.getElementById('cfg-crewart-participants').value = cfg.crewart_participants || '';
+                document.getElementById('cfg-crewart-score-per-man').value = cfg.crewart_score_per_man || '1';
+                document.getElementById('cfg-crewart-sold-bonus').value = cfg.crewart_sold_bonus || '0';
+                document.getElementById('cfg-crewart-score-scope').value = cfg.crewart_score_scope || 'crewart';
+                applyAuctionEventModule(cfg);
                 document.getElementById('cfg-ticker').value = cfg.ticker || '';
                 document.getElementById('cfg-badge-text').value = cfg.badge_text || 'LIVE';
                 document.getElementById('cfg-ticker-interval').value = cfg.ticker_interval || '4200';

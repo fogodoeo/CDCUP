@@ -9,6 +9,7 @@
     <meta http-equiv="Expires" content="0">
     <title>경매 결과 — CDCUP</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
     <link rel="stylesheet" href="common.css?v=20260629-logic-fix">
@@ -388,14 +389,15 @@
 
 <body>
     <nav class="cdcup-nav">
-        <a href="index.html" class="cdcup-nav__brand">
+        <a href="cdcup-index.html" class="cdcup-nav__brand">
             <span class="cdcup-nav__brand-icon">🏆</span>
             <span>CDCUP 관리자</span>
         </a>
         <div class="cdcup-nav__links">
-            <a href="index.html" class="cdcup-nav__link active">개체/경매 관리</a>
+            <a href="cdcup-index.html" class="cdcup-nav__link active">개체/경매 관리</a>
             <a href="preview.html?page=1" class="cdcup-nav__link">방송 화면 제어</a>
             <a href="ranking.html" class="cdcup-nav__link">종합 순위표</a>
+            <a href="crewart-settings.html" class="cdcup-nav__link">크레와트</a>
         </div>
         <div class="cdcup-nav__utils">
             <span class="cdcup-nav__live">
@@ -422,7 +424,7 @@
     <div class="main">
         <!-- 세부 서브 탭 바 -->
         <div class="cdcup-tabs" style="margin-bottom: 24px;">
-            <a href="index.html" class="cdcup-tab" style="text-decoration: none;">개체 목록/등록</a>
+            <a href="cdcup-index.html" class="cdcup-tab" style="text-decoration: none;">개체 목록/등록</a>
             <a href="summary.html" class="cdcup-tab active" style="text-decoration: none;">경매결과 조회</a>
             <a href="shipping.html" class="cdcup-tab" style="text-decoration: none; background: #2563EB; color: white; border-radius: 4px; padding: 6px 12px; font-weight: 700;">🚚 배송 정보 관리</a>
         </div>

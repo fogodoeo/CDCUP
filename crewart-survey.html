@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>크레와트 설문</title>
+    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="crewart.css?v=20260707-split">
+</head>
+<body class="crewart-page">
+    <nav class="cw-nav">
+        <a class="cw-brand" href="crewart-survey.html"><span class="cw-brand-mark">W</span><span>크레와트</span></a>
+        <div class="cw-nav-links">
+            <a href="crewart-settings.html">설정</a>
+            <a class="active" href="crewart-survey.html">설문</a>
+            <a href="crewart-preview.html">방송 미리보기</a>
+            <a href="crewart-ranking.html">점수표</a>
+        </div>
+    </nav>
+
+    <main class="cw-shell" style="max-width:920px;">
+        <header class="cw-page-head">
+            <div>
+                <div class="cw-kicker">SORTING BALANCE GAME</div>
+                <h1>기숙사 배정 설문</h1>
+                <p>답변을 고르면 크레와트 기숙사가 자동 배정됩니다.</p>
+            </div>
+        </header>
+
+        <section class="cw-panel" id="intro-panel">
+            <h2>입찰자 정보</h2>
+            <div class="cw-grid">
+                <div class="cw-field">
+                    <label for="nickname">낙찰/채팅 닉네임</label>
+                    <input class="cw-input" id="nickname" autocomplete="nickname" placeholder="예: 크레마법사">
+                </div>
+                <div class="cw-field">
+                    <label for="aliases">별칭</label>
+                    <input class="cw-input" id="aliases" placeholder="예: 밴드닉/오픈채팅닉">
+                </div>
+            </div>
+            <button class="cw-btn primary" type="button" onclick="startSurvey()">시작</button>
+        </section>
+
+        <section id="question-area" style="display:none;">
+            <div class="cw-note" id="progress" style="margin-bottom:10px;"></div>
+            <div id="questions"></div>
+            <div class="cw-actions" style="justify-content:space-between;margin-top:14px;">
+                <button class="cw-btn" type="button" onclick="prevQuestion()">이전</button>
+                <button class="cw-btn primary" type="button" onclick="nextQuestion()">다음</button>
+            </div>
+        </section>
+
+        <section class="cw-panel" id="result-panel" style="display:none;text-align:center;">
+            <div class="cw-kicker">SORTING COMPLETE</div>
+            <h1 id="result-house" style="margin:10px 0 6px;font-size:clamp(40px,7vw,88px);"></h1>
+            <p id="result-copy" style="color:var(--cw-muted);font-weight:800;"></p>
+            <div class="cw-actions" style="justify-content:center;margin-top:20px;">
+                <a class="cw-btn" href="crewart-ranking.html">점수표 보기</a>
+                <button class="cw-btn primary" type="button" onclick="submitSurvey()">배정 저장</button>
+            </div>
+        </section>
+    </main>
+
+    <div class="cw-toast" id="toast"></div>
+
+    <script>
+        let config = {};
+        let houses = [];
+        let current = 0;
+        let answers = [];
+        let finalHouse = null;
+
+        const QUESTIONS = [
+            { q: '낙찰 직전, 더 끌리는 선택은?', a: ['마지막 순간 과감하게 한 번 더', '가격선을 지키며 차분하게 판단'], h: [0, 1] },
+            { q: '새 개체를 고를 때 먼저 보는 것은?', a: ['한눈에 강한 인상', '오래 볼수록 드러나는 균형감'], h: [0, 2] },
+            { q: '경쟁자가 치고 들어왔다.', a: ['승부는 지금부터', '전체 판을 다시 계산한다'], h: [3, 1] },
+            { q: '가장 마음이 가는 개체 설명은?', a: ['희귀하고 존재감이 강하다', '건강하고 안정감이 좋다'], h: [3, 2] },
+            { q: '예상 밖의 변수가 생기면?', a: ['바로 새로운 길을 만든다', '근거를 모아 정확히 고른다'], h: [0, 1] },
+            { q: '기숙사에 더 필요한 사람은?', a: ['분위기를 끌어올리는 사람', '끝까지 챙기고 맞춰주는 사람'], h: [3, 2] }
+        ];
+
+        function toast(message, isError) {
+            const el = document.getElementById('toast');
+            el.textContent = message;
+            el.style.borderColor = isError ? '#fca5a5' : 'var(--cw-gold)';
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2400);
+        }
+
+        function normalizeName(value) {
+            return String(value || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^0-9a-z가-힣ㄱ-ㅎㅏ-ㅣ]/gi, '');
+        }
+
+        function startSurvey() {
+            const nickname = document.getElementById('nickname').value.trim();
+            if (!nickname) { toast('닉네임을 입력해주세요.', true); return; }
+            document.getElementById('intro-panel').style.display = 'none';
+            document.getElementById('question-area').style.display = '';
+            renderQuestions();
+        }
+
+        function renderQuestions() {
+            const wrap = document.getElementById('questions');
+            wrap.innerHTML = QUESTIONS.map((question, index) => `
+                <article class="cw-question ${index === current ? 'active' : ''}">
+                    <h2>${question.q}</h2>
+                    <div class="cw-choice-grid">
+                        ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice ${answers[index] === choiceIndex ? 'selected' : ''}" onclick="chooseAnswer(${index}, ${choiceIndex})">${label}</button>`).join('')}
+                    </div>
+                </article>
+            `).join('');
+            document.getElementById('progress').textContent = `${current + 1} / ${QUESTIONS.length}`;
+        }
+
+        function chooseAnswer(index, choiceIndex) {
+            answers[index] = choiceIndex;
+            renderQuestions();
+        }
+
+        function prevQuestion() {
+            current = Math.max(0, current - 1);
+            renderQuestions();
+        }
+
+        function nextQuestion() {
+            if (answers[current] === undefined) { toast('선택지를 골라주세요.', true); return; }
+            if (current < QUESTIONS.length - 1) {
+                current += 1;
+                renderQuestions();
+                return;
+            }
+            finishSurvey();
+        }
+
+        function finishSurvey() {
+            const scores = houses.map(() => 0);
+            answers.forEach((choice, index) => {
+                const houseIndex = QUESTIONS[index].h[choice] % houses.length;
+                scores[houseIndex] += 1;
+            });
+            const best = scores.map((score, index) => ({ score, index }))
+                .sort((a, b) => b.score - a.score || a.index - b.index)[0];
+            finalHouse = houses[best.index] || houses[0];
+            document.getElementById('question-area').style.display = 'none';
+            document.getElementById('result-panel').style.display = '';
+            document.getElementById('result-house').textContent = finalHouse.name;
+            document.getElementById('result-house').style.color = finalHouse.accent || finalHouse.color || 'var(--cw-gold)';
+            document.getElementById('result-copy').textContent = '낙찰 시 이 기숙사 점수로 자동 반영됩니다.';
+        }
+
+        function participantLine(name, house, aliases) {
+            return [name, house.name, aliases].filter(Boolean).join(',');
+        }
+
+        function upsertParticipantLine(existing, name, line) {
+            const key = normalizeName(name);
+            const lines = String(existing || '').split(/\r?\n/).filter(Boolean);
+            const filtered = lines.filter(row => normalizeName(row.split(/[,\t|]/)[0]) !== key);
+            filtered.push(line);
+            return filtered.join('\n');
+        }
+
+        async function submitSurvey() {
+            if (!finalHouse) return;
+            const name = document.getElementById('nickname').value.trim();
+            const aliases = document.getElementById('aliases').value.trim();
+            try {
+                const nextParticipants = upsertParticipantLine(
+                    config.crewart_participants || '',
+                    name,
+                    participantLine(name, finalHouse, aliases)
+                );
+                const responses = JSON.parse(config.crewart_survey_responses || '[]');
+                responses.push({
+                    name,
+                    aliases,
+                    house: finalHouse.name,
+                    answers,
+                    createdAt: new Date().toISOString()
+                });
+                await updateConfigs({
+                    active_event_module: 'crewart',
+                    crewart_participants: nextParticipants,
+                    crewart_survey_responses: JSON.stringify(responses.slice(-500))
+                });
+                toast('기숙사 배정을 저장했습니다.');
+            } catch (error) {
+                toast('저장 실패: ' + error.message, true);
+            }
+        }
+
+        async function load() {
+            config = await getConfigMap() || {};
+            applyAuctionEventModule({ ...config, active_event_module: 'crewart' });
+            houses = parseCrewartHouses(config.crewart_houses);
+        }
+
+        load();
+    </script>
+</body>
+</html>

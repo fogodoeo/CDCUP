@@ -14,6 +14,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="event-modules.js?v=20260707-modules"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
         href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
@@ -2724,7 +2725,7 @@
         function updateProgressText() {
             const labelEl = document.getElementById("auction-progress");
             if (!labelEl) return;
-            labelEl.style.setProperty('color', '#e4c887', 'important');
+            labelEl.style.setProperty('color', 'var(--event-broadcast-accent, #e4c887)', 'important');
             labelEl.style.setProperty('font-family', "'Pretendard', sans-serif", 'important');
             labelEl.style.setProperty('font-weight', '780', 'important');
             labelEl.style.setProperty('letter-spacing', '-0.025em', 'important');
@@ -3489,6 +3490,7 @@
         function applyLoadedHostConfig(cfg) {
             if (!cfg) return;
             window.latestConfigMap = cfg;
+            const eventModule = applyAuctionEventModule(cfg);
             const hadPage2PhotoConfig = page2PhotoConfigReady;
             applyPage2PhotoConfig(cfg);
             page2PhotoConfigReady = true;
@@ -3508,10 +3510,8 @@
                 const labelEl = document.getElementById('auction-progress');
                 if (labelEl) {
                     if (cfg.scoreboard_label_fontsize) labelEl.style.fontSize = cfg.scoreboard_label_fontsize + 'px';
-                    if (cfg.scoreboard_label !== undefined && cfg.scoreboard_label !== '') {
-                        window._baseScoreboardLabel = cfg.scoreboard_label;
-                        updateProgressText();
-                    }
+                    window._baseScoreboardLabel = cfg.scoreboard_label || eventModule.scoreboardLabel || window._baseScoreboardLabel;
+                    updateProgressText();
                 }
                 // 박스 투명도 (직접 background 스타일)
                 if (cfg.scoreboard_opacity) {
@@ -4146,6 +4146,7 @@
             if (e.data.type === 'configUpdate') {
                 // 전체 config 맵 갱신 → 티커/배너/룰 즉시 반영
                 const cfg = e.data.config || {};
+                applyAuctionEventModule(cfg);
                 const bottomBar = document.querySelector('.hc-bottom-bar');
                 const bannerContainer = document.querySelector('.hc-banner-float');
                 const lp = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket' ? 'p3_' : (document.body.classList.contains('host-mode') ? '' : 'p2_');
@@ -4383,6 +4384,7 @@
         function applyBracketPageMap(map, items) {
             if (!map) return;
             window.latestConfigMap = map;
+            const eventModule = applyAuctionEventModule(map);
             
             // 빈 목록도 반영해야 전체삭제 직후 이전 경기 결과가 남지 않는다.
             if (Array.isArray(items)) {
@@ -4468,6 +4470,23 @@
                     treeLive.classList.remove('visible');
                     clearAuctionMotionPortal();
                 }
+            }
+
+            if (eventModule.id === 'crewart') {
+                if (treeLive) {
+                    treeLive.classList.remove('visible');
+                    treeLive.innerHTML = '';
+                }
+                const ann = document.getElementById('battle-announcement-overlay');
+                if (ann) ann.style.display = 'none';
+                const matchupCard = document.getElementById('battle-matchup-card');
+                if (matchupCard) matchupCard.style.display = 'none';
+                document.body.classList.remove('battle-hide-prices');
+                if (treeFull) {
+                    treeFull.innerHTML = renderCrewartHouseBoardHTML(window.latestItemsList || [], map);
+                    treeFull.classList.toggle('visible', masterShow && fullShow);
+                }
+                return;
             }
 
             if (active === 'none') {

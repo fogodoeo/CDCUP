@@ -15,8 +15,8 @@ const _sbHeaders = {
 
 // ── 경매 개체 분류/블라인드 메타데이터 ──
 // DB 스키마를 바꾸지 않고 checklist의 숨김 키로 보관한다.
-// _auction: tournament | event | extra, _stage: 8, _slot: A1, _team: A, _label: 1
-const AUCTION_TYPES = Object.freeze({ TOURNAMENT: 'tournament', EVENT: 'event', EXTRA: 'extra' });
+// _auction: tournament | event | extra | crewart, _stage: 8, _slot: A1, _team: A, _label: 1
+const AUCTION_TYPES = Object.freeze({ TOURNAMENT: 'tournament', EVENT: 'event', EXTRA: 'extra', CREWART: 'crewart' });
 
 function _checklistPairs(raw) {
     const result = {};
@@ -34,7 +34,7 @@ function getItemAuctionMeta(itemOrChecklist, fallbackName) {
     const pairs = _checklistPairs(checklist);
     const storedType = String(pairs._auction || '').toLowerCase();
     // 일반 경매의 E2 같은 실제 개체명을 예전 팀 코드로 오인하지 않는다.
-    const legacy = [AUCTION_TYPES.EVENT, AUCTION_TYPES.EXTRA].includes(storedType)
+    const legacy = [AUCTION_TYPES.EVENT, AUCTION_TYPES.EXTRA, AUCTION_TYPES.CREWART].includes(storedType)
         ? null
         : name.toUpperCase().match(/^([A-P])\s*[-_]?\s*([1-9]\d*)(?=\s|[-·:]|$)/);
     const tournamentCode = String(pairs._slot || (legacy ? legacy[1] + legacy[2] : '')).toUpperCase();
@@ -78,12 +78,17 @@ function isTournamentAuctionItem(item) {
 
 function auctionTypeLabel(itemOrType) {
     const type = typeof itemOrType === 'string' ? itemOrType : getItemAuctionMeta(itemOrType).auctionType;
-    return type === AUCTION_TYPES.TOURNAMENT ? '토너먼트' : '일반 경매';
+    if (type === AUCTION_TYPES.TOURNAMENT) return '토너먼트';
+    if (type === AUCTION_TYPES.CREWART) return '크레와트';
+    if (type === AUCTION_TYPES.EVENT) return '이벤트 경매';
+    return '일반 경매';
 }
 
 function auctionStageLabel(item) {
     const meta = getItemAuctionMeta(item);
     if (meta.auctionType === AUCTION_TYPES.TOURNAMENT) return meta.tournamentStage ? meta.tournamentStage + '강' : '토너먼트';
+    if (meta.auctionType === AUCTION_TYPES.CREWART) return '크레와트';
+    if (meta.auctionType === AUCTION_TYPES.EVENT) return '이벤트 경매';
     return '일반 경매';
 }
 
