@@ -5780,7 +5780,7 @@
             const bottom = map.blind_totals_bottom || 'auto';
             const width = map.blind_totals_width || '42%';
             const height = map.blind_totals_height || '24%';
-            const fontSize = Math.max(9, Math.min(32, parseInt(map.blind_totals_font_size || '14', 10) || 14));
+            const fontSize = Math.max(9, Math.min(96, parseInt(map.blind_totals_font_size || '14', 10) || 14));
             const opacityRaw = parseInt(map.blind_totals_opacity ?? '0', 10);
             const opacity = Math.max(0, Math.min(100, Number.isFinite(opacityRaw) ? opacityRaw : 0)) / 100;
 

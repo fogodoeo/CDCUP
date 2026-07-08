@@ -780,7 +780,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260708-teamfont-live"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260708-teamfont-max96"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -940,7 +940,7 @@
                     </div>
                     <div class="switch-container" id="toggle-blind-totals-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">팀합산 폰트:</span>
-                        <input type="number" id="blind-totals-font-input" oninput="previewBracketFontSize('blind_totals', this.value)" onchange="updateBracketFontSize('blind_totals', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="9" max="32" value="14">
+                        <input type="number" id="blind-totals-font-input" oninput="previewBracketFontSize('blind_totals', this.value)" onchange="updateBracketFontSize('blind_totals', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="9" max="96" value="14">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
                     </div>
                     <div class="switch-container" id="toggle-blind-totals-opacity-group" style="display:none; gap: 7px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
@@ -1119,7 +1119,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260708-teamfont-live';
+        const broadcastAssetVersion = '20260708-teamfont-max96';
         let previewConfigMap = {};
 
         function requestedModuleId() {
