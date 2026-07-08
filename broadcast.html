@@ -13,7 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260708-event-live-total"></script>
+    <script src="supabase-bridge.js?v=20260708-event-fallback"></script>
     <script src="event-modules.js?v=20260707-nav3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
@@ -5102,9 +5102,31 @@
 
         // ── 이벤트 매치 업체별 합산 ──
         function getEventMatchRows(items) {
-            const eventItems = (items || []).filter(item => {
+            const sourceItems = items || [];
+            const taggedEventItems = sourceItems.filter(item => {
                 const meta = getItemAuctionMeta(item);
                 return meta.auctionType === AUCTION_TYPES.EVENT;
+            });
+            if (taggedEventItems.length === 0) return [];
+
+            const eventCompanies = new Set(taggedEventItems.map(item => String(item.company || '').trim()).filter(Boolean));
+            const eventNums = taggedEventItems
+                .map(item => Number(getItemAuctionMeta(item).publicNumber || item.num || 0))
+                .filter(num => Number.isFinite(num) && num > 0);
+            const minEventNum = Math.min(...eventNums);
+            const maxEventNum = Math.max(...eventNums);
+            const eventNumBuffer = Math.max(eventCompanies.size, 1);
+            const hasEventNumSpan = Number.isFinite(minEventNum) && Number.isFinite(maxEventNum) && minEventNum <= maxEventNum;
+            const eventItems = sourceItems.filter(item => {
+                const meta = getItemAuctionMeta(item);
+                if (meta.auctionType === AUCTION_TYPES.EVENT) return true;
+                const company = String(item.company || '').trim();
+                const num = Number(meta.publicNumber || item.num || 0);
+                return hasEventNumSpan
+                    && eventCompanies.has(company)
+                    && Number.isFinite(num)
+                    && num >= minEventNum - eventNumBuffer
+                    && num <= maxEventNum + eventNumBuffer;
             });
             if (eventItems.length === 0) return [];
             const groups = [];
