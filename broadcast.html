@@ -5504,19 +5504,22 @@
 
         function ensureP3PanelHeader(panel, title, metaHtml) {
             if (!panel) return;
-            Array.from(panel.children).forEach(child => {
-                if (child.classList && child.classList.contains('blind-total-counter')) child.remove();
-            });
             let head = panel.querySelector('.blind-total-head');
             if (!head) {
                 head = document.createElement('div');
                 head.className = 'blind-total-head';
                 panel.prepend(head);
             }
+            const cleanMeta = metaHtml || '';
+            if (head.dataset.lastTitle === title && head.dataset.lastMeta === cleanMeta) {
+                return;
+            }
+            head.dataset.lastTitle = title;
+            head.dataset.lastMeta = cleanMeta;
             head.innerHTML = `
                 <span class="blind-total-kicker">LIVE</span>
                 <strong class="blind-total-title">${esc(title)}</strong>
-                <span class="blind-total-meta">${metaHtml || ''}</span>
+                <span class="blind-total-meta">${cleanMeta}</span>
             `;
         }
 
@@ -5626,6 +5629,11 @@
             const nextPanel = panels[nextCard];
             if (!nextPanel) return;
             const currentPanel = panels[_p3ActiveCard];
+
+            if (_p3ActiveCard === nextCard) {
+                return;
+            }
+
             clearP3PanelEffects(totalsPanel, biddersPanel);
 
             if (!animate || !currentPanel || currentPanel === nextPanel || !currentPanel.classList.contains('active')) {
@@ -5636,12 +5644,13 @@
                 return;
             }
 
+            _p3ActiveCard = nextCard;
+
             currentPanel.classList.add('p3-wipe-out');
             nextPanel.classList.remove('active');
             _p3SwitchEffectTimer = setTimeout(() => {
                 currentPanel.classList.remove('active', 'p3-wipe-out');
                 nextPanel.classList.add('active', 'p3-wipe-in');
-                _p3ActiveCard = nextCard;
                 _p3SwitchEffectTimer = setTimeout(() => {
                     nextPanel.classList.remove('p3-wipe-in');
                     _p3SwitchEffectTimer = null;
