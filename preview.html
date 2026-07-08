@@ -894,6 +894,22 @@
                         <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-blind-totals-show" class="switch-input" checked onchange="toggleShowState('blind_totals')">
                     </div>
+                    <div class="switch-container" id="toggle-live-bidders-show-group" style="display:none;">
+                        <span>입찰자 팝업</span>
+                        <input type="checkbox" id="toggle-live-bidders-show" class="switch-input" onchange="toggleLiveBiddersShow()">
+                    </div>
+                    <div class="switch-container" id="toggle-live-bidders-switch-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">전환 주기:</span>
+                        <input type="number" id="live-bidders-switch-input" onchange="updateLiveBiddersSwitchSec(this.value)" class="cdcup-input" style="padding: 2px 6px; width: 48px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="2" max="60" value="5">
+                        <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">초</span>
+                    </div>
+                    <div class="switch-container" id="toggle-live-bidders-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">입찰자 노출:</span>
+                        <select id="live-bidders-mode-select" onchange="updateLiveBiddersMode(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
+                            <option value="top">최상위 금액만</option>
+                            <option value="all">모든 입찰 내역</option>
+                        </select>
+                    </div>
                     <div class="switch-container" id="toggle-bracket-scale-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">대진표 크기:</span>
                         <select id="bracket-scale-select" onchange="changeBracketScale(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
@@ -1163,6 +1179,9 @@
                 setDisplay('toggle-blind-totals-show-group', !isCrewart);
                 setDisplay('toggle-blind-totals-font-group', !isCrewart);
                 setDisplay('toggle-blind-totals-opacity-group', !isCrewart);
+                setDisplay('toggle-live-bidders-show-group', !isCrewart);
+                setDisplay('toggle-live-bidders-switch-group', !isCrewart);
+                setDisplay('toggle-live-bidders-mode-group', !isCrewart);
                 setDisplay('bracket-coords', true);
                 setDisplay('bracket-live-coords', false);
                 setDisplay('bracket-title-coords', false);
@@ -1257,6 +1276,9 @@
             document.getElementById('toggle-bracket-title-show-group').style.display = 'none'; // Hidden per user request
             document.getElementById('toggle-battle-ann-show-group').style.display = 'none';
             document.getElementById('toggle-blind-totals-show-group').style.display = isInitialCrewart ? 'none' : '';
+            document.getElementById('toggle-live-bidders-show-group').style.display = isInitialCrewart ? 'none' : '';
+            document.getElementById('toggle-live-bidders-switch-group').style.display = isInitialCrewart ? 'none' : '';
+            document.getElementById('toggle-live-bidders-mode-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-bracket-scale-group').style.display = 'none';
             document.getElementById('toggle-bracket-mode-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-bracket-full-font-group').style.display = isInitialCrewart ? '' : 'none';
@@ -1574,6 +1596,20 @@
                     if (blindFontInput) blindFontInput.value = elements.blind_totals.fontSize;
                     const blindOpacityInput = document.getElementById('blind-totals-opacity-input');
                     if (blindOpacityInput) { blindOpacityInput.value = elements.blind_totals.opacity; previewBlindTotalsOpacity(elements.blind_totals.opacity); }
+
+                    // 실시간 입찰자 설정 팝업 데이터 로딩
+                    const liveBiddersShow = cfg.live_bidders_show !== undefined ? String(cfg.live_bidders_show) : '0';
+                    const liveBiddersSwitchSec = cfg.live_bidders_switch_sec || '5';
+                    const liveBiddersMode = cfg.live_bidders_mode || 'top';
+
+                    const showInput = document.getElementById('toggle-live-bidders-show');
+                    if (showInput) showInput.checked = liveBiddersShow === '1';
+
+                    const switchInput = document.getElementById('live-bidders-switch-input');
+                    if (switchInput) switchInput.value = liveBiddersSwitchSec;
+
+                    const modeSelect = document.getElementById('live-bidders-mode-select');
+                    if (modeSelect) modeSelect.value = liveBiddersMode;
                 }
 
                 // Apply states visually
@@ -2249,6 +2285,11 @@
                     configMap['blind_totals_opacity'] = elements.blind_totals.opacity || '45';
                     configMap['bracket_live_show'] = '0';
                     configMap['battle_ann_show'] = '0';
+
+                    // 실시간 입찰자 설정값 저장
+                    configMap['live_bidders_show'] = document.getElementById('toggle-live-bidders-show')?.checked ? '1' : '0';
+                    configMap['live_bidders_switch_sec'] = document.getElementById('live-bidders-switch-input')?.value || '5';
+                    configMap['live_bidders_mode'] = document.getElementById('live-bidders-mode-select')?.value || 'top';
                 }
             }
 
@@ -3017,6 +3058,16 @@
         }
 
 
+
+        function toggleLiveBiddersShow() {
+            saveCoordinates(true);
+        }
+        function updateLiveBiddersSwitchSec(val) {
+            saveCoordinates(true);
+        }
+        function updateLiveBiddersMode(val) {
+            saveCoordinates(true);
+        }
 
         // Initial Initialization
         window.addEventListener('DOMContentLoaded', () => {
