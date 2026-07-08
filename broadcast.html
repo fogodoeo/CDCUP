@@ -5439,7 +5439,7 @@
             const soldItem = detectBlindSoldItem(items);
 
             const updateTeamHeader = () => ensureP3PanelHeader(panel, '팀 실시간 내역', '');
-            updateTeamHeader(totalDone, totalItems);
+            updateTeamHeader();
 
             panel.classList.add('visible');
 
@@ -5462,7 +5462,7 @@
                     // 카운터도 최신으로
                     const latestDone = latestRows.reduce((s, r) => s + r.soldCount, 0);
                     const latestTotal = latestRows.reduce((s, r) => s + r.itemCount, 0);
-                    updateTeamHeader(latestDone, latestTotal);
+                    updateTeamHeader();
 
                     applyLeaderboardUpdate(panel, latestSorted, latestMap, true);
                     renderEventMatchSection(panel, latestItems, latestMap);
