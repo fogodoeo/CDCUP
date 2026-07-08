@@ -5390,7 +5390,14 @@
             setTimeout(() => deltaEl.remove(), 1650);
         }
 
-        // 리더보드 DOM 업데이트 (상위 3개 및 FLIP 이동 애니메이션)
+        function teamRankTextOpacity(rank) {
+            if (rank <= 1) return '1';
+            if (rank === 2) return '0.78';
+            if (rank === 3) return '0.56';
+            return String(Math.max(0.34, 0.56 - ((rank - 3) * 0.12)));
+        }
+
+        // 팀 리더보드 DOM 업데이트 (전체 팀 및 FLIP 이동 애니메이션)
         function applyLeaderboardUpdate(panel, sorted, map, animate) {
             let listEl = panel.querySelector('.blind-total-list');
             if (!listEl) {
@@ -5399,7 +5406,7 @@
                 panel.appendChild(listEl);
             }
 
-            const visibleRows = sorted.slice(0, LEADERBOARD_VISIBLE_LIMIT);
+            const visibleRows = sorted;
             if (!visibleRows.length) {
                 listEl.innerHTML = '<div class="blind-total-empty">토너먼트 개체 대기 중</div>';
                 return;
@@ -5428,6 +5435,7 @@
                 }
 
                 rowEl.dataset.rank = String(rank);
+                rowEl.style.setProperty('--rank-text-opacity', teamRankTextOpacity(rank));
 
                 const formattedAmount = formatBlindTotalAmount(row.total);
                 const cacheKey = `${row.team}|${row.soldCount}/${row.itemCount}|${formattedAmount}|${rank}`;
@@ -5533,7 +5541,7 @@
             } else {
                 // 일반 업데이트 (낙찰 없음)
                 const hasPrev = _blindRankState.prevOrder.length > 0;
-                const visibleSorted = sorted.slice(0, LEADERBOARD_VISIBLE_LIMIT);
+                const visibleSorted = sorted;
                 const orderChanged = hasPrev && JSON.stringify(visibleSorted.map(r => r.team)) !== JSON.stringify(_blindRankState.prevOrder);
                 const valueIncreased = hasPrev && visibleSorted.some(row => Number(row.total) > Number(_blindRankState.prevTotals[row.team] || 0));
                 const biddersConfigured = String(map?.live_bidders_show ?? '0') === '1';
