@@ -3312,12 +3312,30 @@
 
             // '1 릴잔틱'과 같이 숫자로 개체를 구분하는 경우 대응
             const numMatch = nameUpper.match(/^([1-9]\d*)/);
-            if (numMatch && item.company && window._teamToLetterMap) {
-                const teamLetter = window._teamToLetterMap[String(item.company).trim()];
+            if (numMatch && item.company) {
+                const teamLetter = getActiveBracketTeamLetter(item.company)
+                    || (window._teamToLetterMap ? window._teamToLetterMap[String(item.company).trim()] : '');
                 if (teamLetter) {
                     return teamLetter + numMatch[1]; // 예: 'A' + '1' = 'A1'
                 }
             }
+            return '';
+        }
+
+        function getActiveBracketTeamLetter(company) {
+            const companyName = String(company || '').trim();
+            const map = window.latestConfigMap || {};
+            const activeScale = Number.parseInt(map.active_tournament || '', 10);
+            if (!companyName || ![16, 8, 4, 2].includes(activeScale)) return '';
+            try {
+                const bracket = JSON.parse(map['tournament_bracket_' + activeScale] || '{"matches":{}}');
+                const matchCount = activeScale / 2;
+                for (let i = 1; i <= matchCount; i++) {
+                    const match = bracket.matches?.[activeScale + '_' + i] || {};
+                    if (String(match.left || '').trim() === companyName) return String.fromCharCode(65 + (i - 1) * 2);
+                    if (String(match.right || '').trim() === companyName) return String.fromCharCode(65 + (i - 1) * 2 + 1);
+                }
+            } catch(e) {}
             return '';
         }
 
@@ -6262,25 +6280,27 @@
             }
 
             let baseBracket = null;
-            let baseScale = 16;
-            if (map.tournament_bracket_16) {
+            let baseScale = 0;
+            const activeScale = Number.parseInt(map.active_tournament || '', 10);
+            if ([16, 8, 4, 2].includes(activeScale) && map['tournament_bracket_' + activeScale]) {
                 try {
-                    const parsed = JSON.parse(map.tournament_bracket_16);
+                    const parsed = JSON.parse(map['tournament_bracket_' + activeScale]);
                     if (hasAnyMatches(parsed)) {
                         baseBracket = parsed;
-                        baseScale = 16;
+                        baseScale = activeScale;
                     }
                 } catch(e){}
             }
-            if (!baseBracket && map.tournament_bracket_8) {
+            [16, 8, 4, 2].forEach(candidateScale => {
+                if (baseBracket || !map['tournament_bracket_' + candidateScale]) return;
                 try {
-                    const parsed = JSON.parse(map.tournament_bracket_8);
+                    const parsed = JSON.parse(map['tournament_bracket_' + candidateScale]);
                     if (hasAnyMatches(parsed)) {
                         baseBracket = parsed;
-                        baseScale = 8;
+                        baseScale = candidateScale;
                     }
                 } catch(e){}
-            }
+            });
             if (!baseBracket) {
                 baseBracket = bracket;
                 baseScale = scale;
@@ -6954,25 +6974,27 @@
                 }
 
                 let baseBracket = null;
-                let baseScale = 16;
-                if (map.tournament_bracket_16) {
+                let baseScale = 0;
+                const activeScale = Number.parseInt(map.active_tournament || '', 10);
+                if ([16, 8, 4, 2].includes(activeScale) && map['tournament_bracket_' + activeScale]) {
                     try {
-                        const parsed = JSON.parse(map.tournament_bracket_16);
+                        const parsed = JSON.parse(map['tournament_bracket_' + activeScale]);
                         if (hasAnyMatches(parsed)) {
                             baseBracket = parsed;
-                            baseScale = 16;
+                            baseScale = activeScale;
                         }
                     } catch(e){}
                 }
-                if (!baseBracket && map.tournament_bracket_8) {
+                [16, 8, 4, 2].forEach(candidateScale => {
+                    if (baseBracket || !map['tournament_bracket_' + candidateScale]) return;
                     try {
-                        const parsed = JSON.parse(map.tournament_bracket_8);
+                        const parsed = JSON.parse(map['tournament_bracket_' + candidateScale]);
                         if (hasAnyMatches(parsed)) {
                             baseBracket = parsed;
-                            baseScale = 8;
+                            baseScale = candidateScale;
                         }
                     } catch(e){}
-                }
+                });
                 if (!baseBracket) {
                     baseBracket = bracket;
                     baseScale = scale;
