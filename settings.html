@@ -322,7 +322,7 @@
                 <button onclick="switchPreview(2,this)">2P 개체용</button>
                 <button onclick="switchPreview(3,this)">3P 종합용</button>
             </div>
-            <div class="preview-wrap"><iframe id="preview-frame" src="broadcast.html?page=1&amp;v=20260708-teamfont-max96"></iframe></div>
+            <div class="preview-wrap"><iframe id="preview-frame" src="broadcast.html?page=1&amp;v=20260708-bidder-slash-space"></iframe></div>
         </div>
 
         <!-- ══ 빠른 제어 ══ -->
@@ -478,7 +478,7 @@
             const p = ['1', '2', '3'].includes(String(page)) ? String(page) : '1';
             return moduleId === 'crewart'
                 ? `crewart-broadcast.html?page=${p}`
-                    : `broadcast.html?page=${p}&v=20260708-teamfont-max96`;
+                    : `broadcast.html?page=${p}&v=20260708-bidder-slash-space`;
         }
 
         function updatePreviewPageLinks(moduleId) {
