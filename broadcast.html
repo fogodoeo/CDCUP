@@ -2781,6 +2781,34 @@
             grid-template-columns: auto minmax(0, 1fr) auto;
             gap: calc(var(--blind-total-fs) * 0.42);
         }
+        #live-bidders-overlay .blind-total-row {
+            transition:
+                opacity 0.28s ease,
+                filter 0.28s ease,
+                transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.3s ease;
+        }
+        #live-bidders-overlay .blind-total-row[data-rank="1"] {
+            opacity: 1;
+            filter: none;
+            transform-origin: center top;
+        }
+        #live-bidders-overlay .blind-total-row[data-rank="2"] {
+            opacity: 0.74;
+            filter: blur(0.18px) saturate(0.92);
+        }
+        #live-bidders-overlay .blind-total-row[data-rank="3"] {
+            opacity: 0.52;
+            filter: blur(0.46px) saturate(0.82);
+        }
+        #live-bidders-overlay .blind-total-row[data-rank="4"] {
+            opacity: 0.36;
+            filter: blur(0.76px) saturate(0.72);
+        }
+        #live-bidders-overlay .blind-total-row[data-rank="5"] {
+            opacity: 0.24;
+            filter: blur(1px) saturate(0.62);
+        }
         .blind-total-row.rank-changed {
             box-shadow: 0 4px 24px rgba(217, 176, 92, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
             border-color: rgba(217, 176, 92, 0.5);
@@ -5467,6 +5495,7 @@
                     rowEl.className = 'blind-total-row bidders-row';
                     rowEl.dataset.bidderKey = bid.key;
                 }
+                rowEl.dataset.rank = String(rank);
 
                 rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
                 rowEl.innerHTML = `
