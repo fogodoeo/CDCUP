@@ -2588,6 +2588,7 @@
         #p3-switching-container {
             --blind-total-fs: 14px;
             --blind-total-opacity: 0.45;
+            --p3-wipe-duration: 520ms;
             display: none;
             position: absolute;
             top: 10%;
@@ -2608,7 +2609,7 @@
             box-sizing: border-box;
             pointer-events: none;
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
         }
         #p3-switching-container.visible {
             display: block;
@@ -2632,7 +2633,12 @@
             -webkit-backdrop-filter: none !important;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.35s ease;
+            display: flex;
+            flex-direction: column;
+            gap: calc(var(--blind-total-fs) * 0.32);
+            clip-path: inset(0 0 0 0);
+            transform-origin: left center;
+            transition: opacity 0.22s ease;
         }
         #blind-team-total-overlay.active,
         #live-bidders-overlay.active {
@@ -2641,31 +2647,100 @@
             opacity: 1;
             pointer-events: auto;
         }
+        #blind-team-total-overlay.p3-wipe-out,
+        #live-bidders-overlay.p3-wipe-out {
+            opacity: 1;
+            pointer-events: none;
+            animation: p3-panel-erase-out var(--p3-wipe-duration) cubic-bezier(0.5,0,0.2,1) both;
+        }
+        #blind-team-total-overlay.p3-wipe-in,
+        #live-bidders-overlay.p3-wipe-in {
+            opacity: 1;
+            animation: p3-panel-erase-in var(--p3-wipe-duration) cubic-bezier(0.16,1,0.3,1) both;
+        }
+        @keyframes p3-panel-erase-out {
+            0% { clip-path: inset(0 0 0 0); filter: blur(0); }
+            58% { clip-path: inset(0 46% 0 0); filter: blur(0.4px); }
+            100% { clip-path: inset(0 100% 0 0); filter: blur(1px); }
+        }
+        @keyframes p3-panel-erase-in {
+            0% { clip-path: inset(0 0 0 100%); filter: blur(1px); }
+            100% { clip-path: inset(0 0 0 0); filter: blur(0); }
+        }
 
 
         .blind-total-head {
-            display: none;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-rows: auto auto;
+            align-items: center;
+            column-gap: calc(var(--blind-total-fs) * 0.7);
+            row-gap: calc(var(--blind-total-fs) * 0.08);
+            min-height: calc(var(--blind-total-fs) * 1.95);
+            padding: calc(var(--blind-total-fs) * 0.24) calc(var(--blind-total-fs) * 0.45);
+            border: 1px solid rgba(217, 176, 92, 0.2);
+            border-radius: 8px;
+            background: rgba(8, 13, 24, var(--blind-total-opacity));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
         }
         .blind-total-kicker {
-            display: none;
+            display: inline-flex;
+            grid-column: 1;
+            grid-row: 1;
+            align-items: center;
+            gap: calc(var(--blind-total-fs) * 0.28);
+            color: #d9b05c;
+            font-size: calc(var(--blind-total-fs) * 0.48);
+            font-weight: 950;
+            letter-spacing: 0.16em;
+            line-height: 1;
+        }
+        .blind-total-kicker::before {
+            content: "";
+            display: inline-block;
+            width: calc(var(--blind-total-fs) * 0.36);
+            height: calc(var(--blind-total-fs) * 0.36);
+            border-radius: 50%;
+            background: #d9b05c;
+            box-shadow: 0 0 10px rgba(217, 176, 92, 0.62);
+            animation: sports-live-pulse 1.4s ease-in-out infinite;
         }
         .blind-total-title {
-            display: none;
+            display: block;
+            grid-column: 1 / 3;
+            grid-row: 2;
+            min-width: 0;
+            color: #fff7df;
+            font-size: calc(var(--blind-total-fs) * 0.84);
+            font-weight: 950;
+            letter-spacing: 0;
+            line-height: 1.05;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .blind-total-meta {
-            display: none;
+            display: flex;
+            grid-column: 2;
+            grid-row: 1;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: calc(var(--blind-total-fs) * 3.1);
         }
         .blind-total-list {
             display: flex;
             flex-direction: column;
-            gap: calc(var(--blind-total-fs) * 0.28);
+            gap: calc(var(--blind-total-fs) * 0.2);
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
             position: relative;
         }
         .blind-total-row {
             display: flex;
             align-items: center;
-            min-height: calc(var(--blind-total-fs) * 1.82);
-            padding: calc(var(--blind-total-fs) * 0.32) calc(var(--blind-total-fs) * 0.5);
+            min-height: calc(var(--blind-total-fs) * 1.42);
+            padding: calc(var(--blind-total-fs) * 0.2) calc(var(--blind-total-fs) * 0.45);
             border: 1px solid rgba(217, 176, 92, 0.18);
             border-radius: 8px;
             background: rgba(8, 13, 24, 0.35);
@@ -2676,16 +2751,52 @@
         }
         .blind-total-row.team-totals-row {
             display: grid;
-            grid-template-columns: auto minmax(34px, 0.42fr) minmax(38px, 0.52fr) minmax(0, 1fr);
+            grid-template-columns: auto minmax(0, 1fr) auto;
             gap: calc(var(--blind-total-fs) * 0.42);
         }
         .blind-total-row.bidders-row {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            gap: calc(var(--blind-total-fs) * 0.42);
         }
         .blind-total-row.rank-changed {
             box-shadow: 0 4px 24px rgba(217, 176, 92, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
             border-color: rgba(217, 176, 92, 0.5);
+        }
+        .blind-total-row.row-entering {
+            animation: p3-row-enter-top 0.48s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .blind-total-row.is-new-leader {
+            animation: p3-row-leader-glow 1.1s ease both;
+        }
+        @keyframes p3-row-enter-top {
+            from {
+                opacity: 0;
+                transform: translateY(calc(var(--blind-total-fs) * -1.2)) scale(0.985);
+                clip-path: inset(0 0 100% 0);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                clip-path: inset(0 0 0 0);
+            }
+        }
+        @keyframes p3-row-leader-glow {
+            0% {
+                border-color: rgba(217, 176, 92, 0.78);
+                background: rgba(217, 176, 92, 0.18);
+                box-shadow: 0 0 0 rgba(217, 176, 92, 0), inset 4px 0 0 #d9b05c;
+            }
+            42% {
+                border-color: rgba(251, 191, 36, 0.86);
+                background: rgba(217, 176, 92, 0.24);
+                box-shadow: 0 8px 30px rgba(217, 176, 92, 0.26), inset 4px 0 0 #fbbf24;
+            }
+            100% {
+                border-color: rgba(217, 176, 92, 0.18);
+                background: rgba(8, 13, 24, 0.35);
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+            }
         }
         .blind-total-rank {
             display: flex;
@@ -2710,12 +2821,21 @@
             background: rgba(217, 176, 92, 0.12);
             box-shadow: inset 3px 0 0 #d9b05c;
         }
+        .blind-total-main {
+            display: flex;
+            align-items: baseline;
+            min-width: 0;
+            gap: calc(var(--blind-total-fs) * 0.38);
+        }
         .blind-total-team {
             color: #d9b05c;
             font-size: calc(var(--blind-total-fs) * 0.82);
             font-weight: 950;
             letter-spacing: 0.02em;
             white-space: nowrap;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .blind-total-progress {
             min-width: 0;
@@ -2753,7 +2873,7 @@
             display: flex;
             align-items: center;
             gap: calc(var(--blind-total-fs) * 0.3);
-            padding: calc(var(--blind-total-fs) * 0.3) calc(var(--blind-total-fs) * 0.5);
+            padding: calc(var(--blind-total-fs) * 0.22) calc(var(--blind-total-fs) * 0.45);
             font-size: calc(var(--blind-total-fs) * 0.72);
             font-weight: 840;
             color: #fff7df;
@@ -2765,6 +2885,11 @@
             -webkit-backdrop-filter: blur(18px) saturate(1.3);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.06);
             width: fit-content;
+        }
+        .blind-total-meta .blind-total-counter {
+            background: rgba(217, 176, 92, 0.1);
+            border-color: rgba(217, 176, 92, 0.22);
+            box-shadow: none;
         }
         .blind-total-counter-num {
             font-variant-numeric: tabular-nums;
@@ -4962,6 +5087,7 @@
 
             // 델타 계산용 이전 총합
             const prevTotals = _blindRankState.prevTotals;
+            const previousLeader = _blindRankState.prevOrder[0] || '';
 
             // 행 업데이트/생성 + DOM 순서 정렬
             sorted.forEach((row, idx) => {
@@ -4975,22 +5101,32 @@
                 }
 
                 // 기존 델타 뱃지 제거
+                rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
                 rowEl.querySelectorAll('.blind-total-delta').forEach(d => d.remove());
 
                 rowEl.innerHTML = `
                     <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
-                    <strong class="blind-total-team">${row.team}팀</strong>
-                    <div class="blind-total-progress">
+                    <div class="blind-total-main">
+                        <strong class="blind-total-team">${row.team}팀</strong>
                         <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
                     </div>
                     <strong class="blind-total-amount">${formatBlindTotalAmount(row.total)}</strong>
                 `;
+                rowEl.classList.remove('is-active');
 
                 // 델타 뱃지
                 if (animate) {
                     const prev = prevTotals[row.team] || 0;
                     const diff = row.total - prev;
                     if (diff > 0) showDeltaBadge(rowEl, diff);
+                }
+                if (animate && isNew) {
+                    rowEl.classList.add('row-entering');
+                    setTimeout(() => rowEl.classList.remove('row-entering'), 620);
+                }
+                if (animate && previousLeader && rank === 1 && row.team !== previousLeader) {
+                    rowEl.classList.add('is-new-leader');
+                    setTimeout(() => rowEl.classList.remove('is-new-leader'), 1200);
                 }
 
                 listEl.appendChild(rowEl);
@@ -5055,27 +5191,9 @@
                 return;
             }
 
-            const top = map.blind_totals_top || '10%';
-            const left = map.blind_totals_left || '2%';
-            const right = map.blind_totals_right || 'auto';
-            const bottom = map.blind_totals_bottom || 'auto';
-            const width = map.blind_totals_width || '42%';
-            const height = map.blind_totals_height || '24%';
-            const fontSize = Math.max(9, Math.min(32, parseInt(map.blind_totals_font_size || '14', 10) || 14));
-            const opacity = Math.max(0, Math.min(100, parseInt(map.blind_totals_opacity || '45', 10) || 45)) / 100;
-            panel.style.removeProperty('top');
-            panel.style.removeProperty('left');
-            panel.style.removeProperty('right');
-            panel.style.removeProperty('bottom');
-            panel.style.top = top !== 'auto' ? top : '';
-            panel.style.left = left !== 'auto' ? left : '';
-            panel.style.right = right !== 'auto' ? right : '';
-            panel.style.bottom = bottom !== 'auto' ? bottom : '';
-            panel.style.width = width;
-            panel.style.minHeight = '0';
-            panel.style.height = height;
-            panel.style.setProperty('--blind-total-fs', fontSize + 'px');
-            panel.style.setProperty('--blind-total-opacity', String(opacity));
+            ['top', 'left', 'right', 'bottom', 'width', 'height', 'min-height'].forEach(prop => {
+                panel.style.removeProperty(prop);
+            });
 
             const rows = getBlindTotalRows(items, map);
             const totalDone = rows.reduce((sum, row) => sum + row.soldCount, 0);
@@ -5085,18 +5203,14 @@
             // 낙찰 감지
             const soldItem = detectBlindSoldItem(items);
 
-            // 카운터 업데이트
-            let counterEl = panel.querySelector('.blind-total-counter');
-            if (!counterEl) {
-                counterEl = document.createElement('div');
-                counterEl.className = 'blind-total-counter';
-                panel.prepend(counterEl);
-            }
-            counterEl.innerHTML = `
-                <span class="blind-total-counter-num">${totalDone}</span>
-                <span class="blind-total-counter-sep">/</span>
-                <span class="blind-total-counter-num">${totalItems}</span>
-            `;
+            const updateTeamHeader = (done, total) => ensureP3PanelHeader(panel, '팀 실시간 내역', `
+                <span class="blind-total-counter">
+                    <span class="blind-total-counter-num">${done}</span>
+                    <span class="blind-total-counter-sep">/</span>
+                    <span class="blind-total-counter-num">${total}</span>
+                </span>
+            `);
+            updateTeamHeader(totalDone, totalItems);
 
             panel.classList.add('visible');
 
@@ -5119,11 +5233,7 @@
                     // 카운터도 최신으로
                     const latestDone = latestRows.reduce((s, r) => s + r.soldCount, 0);
                     const latestTotal = latestRows.reduce((s, r) => s + r.itemCount, 0);
-                    counterEl.innerHTML = `
-                        <span class="blind-total-counter-num">${latestDone}</span>
-                        <span class="blind-total-counter-sep">/</span>
-                        <span class="blind-total-counter-num">${latestTotal}</span>
-                    `;
+                    updateTeamHeader(latestDone, latestTotal);
 
                     applyLeaderboardUpdate(panel, latestSorted, latestMap, true);
                     _blindRankState.pendingData = null;
@@ -5140,34 +5250,162 @@
 
         // P3 실시간 스위칭 타이머 및 상태 변수
         let _p3SwitchTimer = null;
+        let _p3SwitchEffectTimer = null;
         let _p3SwitchIntervalVal = 0;
         let _p3ActiveCard = 'totals'; // 'totals' 또는 'bidders'
+        const _liveBiddersRankState = {
+            prevOrder: [],
+            prevAmounts: {}
+        };
 
-        function renderLiveBidders(map, items) {
-            const panel = document.getElementById('live-bidders-overlay');
+        function ensureP3PanelHeader(panel, title, metaHtml) {
             if (!panel) return;
-
-            const activeItem = items.find(i => ['진행', '진행중', 'active'].includes(String(i.status || '').trim()));
-            let bids = [];
-            if (activeItem && activeItem.bid_log) {
-                try {
-                    bids = JSON.parse(activeItem.bid_log) || [];
-                } catch(e) {
-                    console.error("Failed to parse bid_log in renderLiveBidders", e);
-                }
+            Array.from(panel.children).forEach(child => {
+                if (child.classList && child.classList.contains('blind-total-counter')) child.remove();
+            });
+            let head = panel.querySelector('.blind-total-head');
+            if (!head) {
+                head = document.createElement('div');
+                head.className = 'blind-total-head';
+                panel.prepend(head);
             }
-
-            // 카운터 생성 및 업데이트 (3/12 위치에 실시간 입찰 출력)
-            let counterEl = panel.querySelector('.blind-total-counter');
-            if (!counterEl) {
-                counterEl = document.createElement('div');
-                counterEl.className = 'blind-total-counter';
-                panel.prepend(counterEl);
-            }
-            counterEl.innerHTML = `
-                <span class="blind-total-counter-num" style="font-size: calc(var(--blind-total-fs) * 0.72); letter-spacing: 0.02em;">실시간 입찰</span>
+            head.innerHTML = `
+                <span class="blind-total-kicker">LIVE</span>
+                <strong class="blind-total-title">${esc(title)}</strong>
+                <span class="blind-total-meta">${metaHtml || ''}</span>
             `;
+        }
 
+        function getActiveAuctionItem(items) {
+            return (items || []).find(i => ['진행', '진행중', 'active'].includes(String(i.status || '').trim())) || null;
+        }
+
+        function getBidLogRows(item) {
+            if (!item || !item.bid_log) return [];
+            try {
+                const parsed = JSON.parse(item.bid_log);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch(e) {
+                console.error("Failed to parse bid_log", e);
+                return [];
+            }
+        }
+
+        function normalizeBidAmount(value) {
+            const numeric = parseFloat(String(value ?? 0).replace(/[^0-9.]/g, '')) || 0;
+            return numeric >= 1000 ? numeric / 10000 : numeric;
+        }
+
+        function bidSortTime(bid, index) {
+            const candidates = [bid?.time, bid?.timestamp, bid?.created_at, bid?.createdAt, bid?.updated_at, bid?.updatedAt];
+            for (const value of candidates) {
+                const raw = String(value || '').trim();
+                if (!raw) continue;
+                const parsed = Date.parse(raw);
+                if (Number.isFinite(parsed) && /[-T/]/.test(raw)) return parsed;
+                const clock = raw.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+                if (clock) return (Number(clock[1]) * 3600) + (Number(clock[2]) * 60) + Number(clock[3] || 0);
+                if (Number.isFinite(parsed)) return parsed;
+            }
+            return index;
+        }
+
+        function cleanBidderName(name) {
+            return String(name || '알 수 없음')
+                .replace(/\s*[\(\[-]?\s*010[-]?\d{3,4}[-]?\d{4}[\)\]-]?/g, '')
+                .replace(/\s*[\(\[-]\d{2,4}[\)\]-]/g, '')
+                .replace(/\s+\d{2,4}$/g, '')
+                .trim() || '알 수 없음';
+        }
+
+        function formatLiveBidAmount(amount) {
+            const value = Number(amount) || 0;
+            return value.toLocaleString('ko-KR', { maximumFractionDigits: 1 });
+        }
+
+        function buildLiveBidRows(map, activeItem) {
+            const bids = getBidLogRows(activeItem);
+            const mode = map?.live_bidders_mode || 'top';
+            if (!activeItem || bids.length === 0) return [];
+
+            if (mode === 'top') {
+                const topBidsMap = new Map();
+                bids.forEach((bid, index) => {
+                    const rawName = bid.name || '알 수 없음';
+                    const key = String(bid.bidder_key || bid.key || rawName || index).trim();
+                    const amount = normalizeBidAmount(bid.amount !== undefined && bid.amount !== null ? bid.amount : bid.price);
+                    const sortTime = bidSortTime(bid, index);
+                    const current = topBidsMap.get(key);
+                    if (!current || amount > current.amount || (amount === current.amount && sortTime >= current.sortTime)) {
+                        topBidsMap.set(key, {
+                            key,
+                            name: rawName,
+                            amount,
+                            sortTime,
+                            index
+                        });
+                    }
+                });
+                return Array.from(topBidsMap.values()).sort((a, b) =>
+                    (b.amount - a.amount)
+                    || (b.sortTime - a.sortTime)
+                    || (b.index - a.index)
+                    || String(a.name).localeCompare(String(b.name), 'ko')
+                );
+            }
+
+            return bids.map((bid, index) => {
+                const rawName = bid.name || '알 수 없음';
+                return {
+                    key: String(bid.bidder_key || bid.key || rawName || 'bidder') + '|' + index,
+                    name: rawName,
+                    amount: normalizeBidAmount(bid.amount !== undefined && bid.amount !== null ? bid.amount : bid.price),
+                    sortTime: bidSortTime(bid, index),
+                    index
+                };
+            }).sort((a, b) => (b.sortTime - a.sortTime) || (b.index - a.index));
+        }
+
+        function clearP3PanelEffects(totalsPanel, biddersPanel) {
+            [totalsPanel, biddersPanel].forEach(panel => {
+                if (!panel) return;
+                panel.classList.remove('p3-wipe-out', 'p3-wipe-in');
+            });
+            if (_p3SwitchEffectTimer) {
+                clearTimeout(_p3SwitchEffectTimer);
+                _p3SwitchEffectTimer = null;
+            }
+        }
+
+        function setP3ActivePanel(totalsPanel, biddersPanel, nextCard, animate) {
+            const panels = { totals: totalsPanel, bidders: biddersPanel };
+            const nextPanel = panels[nextCard];
+            if (!nextPanel) return;
+            const currentPanel = panels[_p3ActiveCard];
+            clearP3PanelEffects(totalsPanel, biddersPanel);
+
+            if (!animate || !currentPanel || currentPanel === nextPanel || !currentPanel.classList.contains('active')) {
+                Object.keys(panels).forEach(key => {
+                    if (panels[key]) panels[key].classList.toggle('active', key === nextCard);
+                });
+                _p3ActiveCard = nextCard;
+                return;
+            }
+
+            currentPanel.classList.add('p3-wipe-out');
+            nextPanel.classList.remove('active');
+            _p3SwitchEffectTimer = setTimeout(() => {
+                currentPanel.classList.remove('active', 'p3-wipe-out');
+                nextPanel.classList.add('active', 'p3-wipe-in');
+                _p3ActiveCard = nextCard;
+                _p3SwitchEffectTimer = setTimeout(() => {
+                    nextPanel.classList.remove('p3-wipe-in');
+                    _p3SwitchEffectTimer = null;
+                }, 560);
+            }, 430);
+        }
+
+        function applyBidderLeaderboardUpdate(panel, rows, animate) {
             let listEl = panel.querySelector('.blind-total-list');
             if (!listEl) {
                 listEl = document.createElement('div');
@@ -5175,72 +5413,109 @@
                 panel.appendChild(listEl);
             }
 
-            if (!activeItem || bids.length === 0) {
+            if (!rows.length) {
                 listEl.innerHTML = '<div class="blind-total-empty">입찰 대기 중</div>';
+                _liveBiddersRankState.prevOrder = [];
+                _liveBiddersRankState.prevAmounts = {};
                 return;
             }
 
-            const mode = map?.live_bidders_mode || 'top';
-            let displayBids = [];
+            const oldPositions = {};
+            listEl.querySelectorAll('.blind-total-row[data-bidder-key]').forEach(el => {
+                oldPositions[el.dataset.bidderKey] = el.getBoundingClientRect().top;
+            });
 
-            if (mode === 'top') {
-                const topBidsMap = new Map();
-                bids.forEach(bid => {
-                    const name = bid.name || '알 수 없음';
-                    const amountRaw = bid.amount !== undefined && bid.amount !== null ? bid.amount : (bid.price || 0);
-                    // 단위 보정: 파싱 결과가 1000 이상(예: 90,000원 등)이면 원 단위로 인식해 10000으로 나눠 만원 단위(9)로 치환
-                    let amount = parseFloat(String(amountRaw).replace(/[^0-9.]/g, '')) || 0;
-                    if (amount >= 1000) {
-                        amount = amount / 10000;
-                    }
-                    if (!topBidsMap.has(name) || topBidsMap.get(name) < amount) {
-                        topBidsMap.set(name, amount);
-                    }
+            const existingRows = {};
+            listEl.querySelectorAll('.blind-total-row[data-bidder-key]').forEach(el => {
+                existingRows[el.dataset.bidderKey] = el;
+            });
+
+            const emptyEl = listEl.querySelector('.blind-total-empty');
+            if (emptyEl) emptyEl.remove();
+
+            const previousLeader = _liveBiddersRankState.prevOrder[0] || '';
+            const visibleRows = rows.slice(0, 5);
+            visibleRows.forEach((bid, idx) => {
+                const rank = idx + 1;
+                let rowEl = existingRows[bid.key];
+                const isNew = !rowEl;
+                if (isNew) {
+                    rowEl = document.createElement('div');
+                    rowEl.className = 'blind-total-row bidders-row';
+                    rowEl.dataset.bidderKey = bid.key;
+                }
+
+                rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
+                rowEl.innerHTML = `
+                    <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
+                    <div class="blind-total-main">
+                        <strong class="blind-total-team">${esc(cleanBidderName(bid.name))}</strong>
+                    </div>
+                    <strong class="blind-total-amount">${formatLiveBidAmount(bid.amount)}</strong>
+                `;
+
+                if (animate && isNew) {
+                    rowEl.classList.add('row-entering');
+                    setTimeout(() => rowEl.classList.remove('row-entering'), 620);
+                }
+                if (animate && previousLeader && rank === 1 && bid.key !== previousLeader) {
+                    rowEl.classList.add('is-new-leader');
+                    setTimeout(() => rowEl.classList.remove('is-new-leader'), 1200);
+                }
+
+                listEl.appendChild(rowEl);
+                delete existingRows[bid.key];
+            });
+
+            Object.values(existingRows).forEach(el => el.remove());
+
+            if (animate && Object.keys(oldPositions).length > 0) {
+                listEl.querySelectorAll('.blind-total-row[data-bidder-key]').forEach(el => {
+                    const key = el.dataset.bidderKey;
+                    const oldTop = oldPositions[key];
+                    if (oldTop === undefined) return;
+                    const newTop = el.getBoundingClientRect().top;
+                    const delta = oldTop - newTop;
+                    if (Math.abs(delta) < 1) return;
+
+                    el.style.transition = 'none';
+                    el.style.transform = `translateY(${delta}px)`;
+                    el.classList.add('rank-changed');
+
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => {
+                            el.style.transition = 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease';
+                            el.style.transform = '';
+                            setTimeout(() => {
+                                el.classList.remove('rank-changed');
+                                el.style.transition = '';
+                            }, 1500);
+                        });
+                    });
                 });
-                displayBids = Array.from(topBidsMap.entries()).map(([name, amount]) => ({ name, amount }));
-                displayBids.sort((a, b) => b.amount - a.amount);
-            } else {
-                displayBids = bids.map(bid => {
-                    const amountRaw = bid.amount !== undefined && bid.amount !== null ? bid.amount : (bid.price || 0);
-                    let amount = parseFloat(String(amountRaw).replace(/[^0-9.]/g, '')) || 0;
-                    if (amount >= 1000) {
-                        amount = amount / 10000;
-                    }
-                    return {
-                        name: bid.name || '알 수 없음',
-                        amount: amount
-                    };
-                });
-                displayBids.reverse(); // 최신순
             }
 
-            const maxShow = 5;
-            const slicedBids = displayBids.slice(0, maxShow);
+            _liveBiddersRankState.prevOrder = visibleRows.map(row => row.key);
+            _liveBiddersRankState.prevAmounts = visibleRows.reduce((acc, row) => {
+                acc[row.key] = row.amount;
+                return acc;
+            }, {});
+        }
 
-            listEl.innerHTML = '';
-            slicedBids.forEach((bid, idx) => {
-                const rank = idx + 1;
-                
-                // 이름에서 전화번호 제거
-                const cleanName = String(bid.name || '알 수 없음')
-                    .replace(/\s*[\(\[-]?\s*010[-]?\d{3,4}[-]?\d{4}[\)\]-]?/g, '') // 휴대폰 번호 제거
-                    .replace(/\s*[\(\[-]\d{2,4}[\)\]-]/g, '')                      // 괄호 안 2~4자리 숫자(뒤번호) 제거
-                    .replace(/\s+\d{2,4}$/g, '')                                    // 끝의 2~4자리 숫자 제거
-                    .trim();
+        function renderLiveBidders(map, items) {
+            const panel = document.getElementById('live-bidders-overlay');
+            if (!panel) return;
 
-                const rowEl = document.createElement('div');
-                rowEl.className = 'blind-total-row bidders-row';
-                
-                // 리더보드 순위표 플롯을 재사용하되 좌우 플렉스 형태로 넓게 정렬
-                rowEl.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: calc(var(--blind-total-fs) * 0.42); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 70%;">
-                        <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
-                        <strong class="blind-total-team" style="color: #f8fafc; font-size: calc(var(--blind-total-fs) * 0.82); font-weight: 950; letter-spacing: 0.02em;">${esc(cleanName)}</strong>
-                    </div>
-                    <strong class="blind-total-amount" style="font-size: calc(var(--blind-total-fs) * 0.8); font-weight: 950; color: #f8fafc;">${bid.amount}</strong>
-                `;
-                listEl.appendChild(rowEl);
-            });
+            const activeItem = getActiveAuctionItem(items);
+            const bidRows = buildLiveBidRows(map, activeItem);
+            ensureP3PanelHeader(panel, '실시간 입찰 내역', `
+                <span class="blind-total-counter">
+                    <span class="blind-total-counter-num">${bidRows.length}</span>
+                    <span class="blind-total-counter-sep">명</span>
+                </span>
+            `);
+
+            applyBidderLeaderboardUpdate(panel, bidRows, _liveBiddersRankState.prevOrder.length > 0);
         }
 
         function updateP3SwitchingLogic(map, items) {
@@ -5252,6 +5527,7 @@
             const isTotalsMode = isCdcupBlindTotalsMode(map);
             if (!isTotalsMode) {
                 container.classList.remove('visible');
+                clearP3PanelEffects(totalsPanel, biddersPanel);
                 totalsPanel.classList.remove('active');
                 biddersPanel.classList.remove('active');
                 if (_p3SwitchTimer) { clearInterval(_p3SwitchTimer); _p3SwitchTimer = null; }
@@ -5259,8 +5535,10 @@
             }
 
             const totalsShow = String(map?.blind_totals_show ?? '1') !== '0';
-            const biddersShow = String(map?.live_bidders_show ?? '0') === '1';
-            const switchSec = 10; // 10초 주기로 고정
+            const activeAuctionItem = getActiveAuctionItem(items);
+            const biddersConfigured = String(map?.live_bidders_show ?? '0') === '1';
+            const biddersShow = biddersConfigured && Boolean(activeAuctionItem);
+            const switchSec = Math.max(3, Math.min(30, parseInt(map?.live_bidders_switch_sec || '5', 10) || 5));
 
             const top = map.blind_totals_top || '10%';
             const left = map.blind_totals_left || '2%';
@@ -5294,6 +5572,8 @@
                 renderLiveBidders(map, items);
             } else {
                 biddersPanel.classList.remove('active');
+                _liveBiddersRankState.prevOrder = [];
+                _liveBiddersRankState.prevAmounts = {};
             }
 
             if (totalsShow && biddersShow) {
@@ -5302,35 +5582,29 @@
                 if (!_p3SwitchTimer || _p3SwitchIntervalVal !== switchSec) {
                     if (_p3SwitchTimer) clearInterval(_p3SwitchTimer);
                     _p3SwitchIntervalVal = switchSec;
-                    _p3ActiveCard = 'totals';
-                    totalsPanel.classList.add('active');
-                    biddersPanel.classList.remove('active');
+                    setP3ActivePanel(totalsPanel, biddersPanel, 'totals', false);
 
                     _p3SwitchTimer = setInterval(() => {
-                        if (_p3ActiveCard === 'totals') {
-                            _p3ActiveCard = 'bidders';
-                            totalsPanel.classList.remove('active');
-                            biddersPanel.classList.add('active');
-                        } else {
-                            _p3ActiveCard = 'totals';
-                            biddersPanel.classList.remove('active');
-                            totalsPanel.classList.add('active');
-                        }
+                        const nextCard = _p3ActiveCard === 'totals' ? 'bidders' : 'totals';
+                        setP3ActivePanel(totalsPanel, biddersPanel, nextCard, true);
                     }, switchSec * 1000);
+                } else if (!totalsPanel.classList.contains('active') && !biddersPanel.classList.contains('active')) {
+                    setP3ActivePanel(totalsPanel, biddersPanel, _p3ActiveCard || 'totals', false);
                 }
             } else {
                 if (_p3SwitchTimer) { clearInterval(_p3SwitchTimer); _p3SwitchTimer = null; }
-                totalsPanel.classList.remove('active');
-                biddersPanel.classList.remove('active');
+                clearP3PanelEffects(totalsPanel, biddersPanel);
 
                 if (totalsShow) {
                     container.classList.add('visible');
-                    totalsPanel.classList.add('active');
+                    setP3ActivePanel(totalsPanel, biddersPanel, 'totals', false);
                 } else if (biddersShow) {
                     container.classList.add('visible');
-                    biddersPanel.classList.add('active');
+                    setP3ActivePanel(totalsPanel, biddersPanel, 'bidders', false);
                 } else {
                     container.classList.remove('visible');
+                    totalsPanel.classList.remove('active');
+                    biddersPanel.classList.remove('active');
                 }
             }
         }
@@ -5342,6 +5616,7 @@
             if (panel) panel.classList.remove('active');
             const biddersPanel = document.getElementById('live-bidders-overlay');
             if (biddersPanel) biddersPanel.classList.remove('active');
+            clearP3PanelEffects(panel, biddersPanel);
             if (_p3SwitchTimer) {
                 clearInterval(_p3SwitchTimer);
                 _p3SwitchTimer = null;
