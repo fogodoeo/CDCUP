@@ -3341,16 +3341,10 @@
 
         function getAuctionItemDisplayLabel(item) {
             if (!item) return '';
-            const code = getCleanCode(item);
             const meta = getItemAuctionMeta(item);
-            const rawName = String(item.displayName || meta.publicName || item.name || '').trim();
-            if (!code) return rawName;
-            if (!rawName) return code;
-            const upperName = rawName.toUpperCase();
-            if (upperName === code || upperName.startsWith(code + ' ') || upperName.startsWith(code + '-')) {
-                return rawName;
-            }
-            return code + ' · ' + rawName;
+            // publicName은 팀 코드(A1/C2 등)를 제거한 이름이므로 우선 사용한다.
+            const rawName = String(meta.publicName || item.displayName || item.name || '').trim();
+            return rawName || String(meta.publicNumber || item.num || '').trim();
         }
 
         function findItemByCode(items, code) {
@@ -4398,39 +4392,19 @@
                 }
             }
 
-            // 진행 중인 토너먼트 개체는 팀 코드와 실제 개체명을 함께 보여준다.
+            // 공개 화면에는 업체를 특정할 수 있는 팀 코드(A1/C2 등)를 노출하지 않는다.
             let cleanInfoName = getAuctionItemDisplayLabel(item) || origName;
-            const codeFromItem = getCleanCode(item);
-            if (codeFromItem && !cleanInfoName.includes(' · ')) {
-                const teamLetter = codeFromItem.charAt(0);
-                let companyName = '';
-                if (window.latestConfigMap && window.latestConfigMap.active_tournament && window.latestConfigMap.active_tournament !== 'none') {
-                    const activeScale = window.latestConfigMap.active_tournament;
-                    const bracketKey = 'tournament_bracket_' + activeScale;
-                    if (window.latestConfigMap[bracketKey]) {
-                        try {
-                            const bracket = JSON.parse(window.latestConfigMap[bracketKey]);
-                            const matchCount = parseInt(activeScale, 10) / 2;
-                            for (let i = 1; i <= matchCount; i++) {
-                                const match = bracket.matches[activeScale + '_' + i];
-                                if (match) {
-                                    const leftL = String.fromCharCode(65 + (i - 1) * 2);
-                                    const rightL = String.fromCharCode(65 + (i - 1) * 2 + 1);
-                                    if (leftL === teamLetter) { companyName = match.left; break; }
-                                    if (rightL === teamLetter) { companyName = match.right; break; }
-                                }
-                            }
-                        } catch(e){}
-                    }
-                }
-                
-                if (companyName && companyName.trim()) {
-                    const escapedCompany = companyName.trim().replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-                    const regex = new RegExp(escapedCompany, 'gi');
-                    cleanInfoName = origName.replace(regex, teamLetter + '팀');
-                } else {
-                    cleanInfoName = codeFromItem;
-                }
+            const publicCompanyName = String(item.company || '').trim();
+            if (publicCompanyName) {
+                const escapedCompany = publicCompanyName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+                const regex = new RegExp(escapedCompany, 'gi');
+                const withoutCompany = cleanInfoName
+                    .replace(regex, '')
+                    .replace(/^\s*[-·:]\s*/, '')
+                    .replace(/\s*[-·:]\s*$/, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                if (withoutCompany) cleanInfoName = withoutCompany;
             }
             // 공개 화면은 팀 슬롯과 분리된 숫자 라벨만 사용한다.
             document.getElementById("info-name").textContent = cleanInfoName;
@@ -6911,14 +6885,14 @@
 
             const nextNote = '다음 경매 개체';
             const nextHtml = isWaiting
-                ? '<div class="live-next-panel"><span class="live-next-label">NEXT</span><strong class="live-next-code">' + esc(waitingNextCode) + '</strong><span class="live-next-note">' + nextNote + '</span></div>'
+                ? '<div class="live-next-panel"><span class="live-next-label">NEXT</span><strong class="live-next-code">다음 개체</strong><span class="live-next-note">' + nextNote + '</span></div>'
                 : '';
             const scoreHtml = isFinalTotals
                 ? '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + finalLeftWin + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score is-total" aria-label="합산 낙찰금액 ' + leftAuctionTotal + ' 대 ' + rightAuctionTotal + '"><strong>' + leftAuctionTotal + '</strong><i>:</i><strong>' + rightAuctionTotal + '</strong><em class="blind-live-score-unit">만원</em></div><div class="blind-live-team' + finalRightWin + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>'
                 : '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>';
             const liveBodyHtml = isWaiting ? nextHtml : scoreHtml;
             const periodicNextHtml = activeItem && activeNextCode && !mot
-                ? '<div class="live-periodic-next" aria-label="다음 경매 ' + esc(activeNextCode) + '"><span>NEXT</span><strong>' + esc(activeNextCode) + '</strong></div>'
+                ? '<div class="live-periodic-next" aria-label="다음 경매 개체"><span>NEXT</span><strong>다음 개체</strong></div>'
                 : '';
             const chipClass = isWaiting ? 'live-round-chip is-standby' : 'live-round-chip';
             const chipText = isFinalTotals ? 'FINAL' : (isWaiting ? 'STANDBY' : 'LIVE');
