@@ -13,7 +13,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="supabase-bridge.js?v=20260708-event-live-total"></script>
     <script src="event-modules.js?v=20260707-nav3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
@@ -4953,6 +4953,30 @@
             return Number.isFinite(numeric) ? numeric : 0;
         }
 
+        function normalizeTotalBidAmount(value) {
+            const numeric = Number(String(value ?? 0).replace(/[^0-9.]/g, '')) || 0;
+            return numeric >= 1000 ? numeric / 10000 : numeric;
+        }
+
+        function readTopBidAmount(item) {
+            if (!item || !item.bid_log) return 0;
+            try {
+                const rows = JSON.parse(item.bid_log);
+                if (!Array.isArray(rows)) return 0;
+                return rows.reduce((max, bid) => {
+                    const amount = normalizeTotalBidAmount(bid?.amount !== undefined && bid?.amount !== null ? bid.amount : bid?.price);
+                    return Math.max(max, amount);
+                }, 0);
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function readLiveTotalAmount(item) {
+            const sold = readSoldAmount(item);
+            return isActiveForTotals(item) ? Math.max(sold, readTopBidAmount(item)) : sold;
+        }
+
         function isSoldForTotals(item) {
             const status = String(item?.status || '').trim();
             return status.includes('낙찰')
@@ -5069,10 +5093,8 @@
                 }
                 const group = byTeam[team];
                 group.itemCount += 1;
-                if (isSoldForTotals(item)) {
-                    group.total += readSoldAmount(item);
-                    group.soldCount += 1;
-                }
+                group.total += readLiveTotalAmount(item);
+                if (isSoldForTotals(item)) group.soldCount += 1;
                 if (isActiveForTotals(item)) group.active = true;
             });
             return groups.sort((a, b) => a.team.localeCompare(b.team, 'en'));
@@ -5095,10 +5117,8 @@
                 }
                 const group = byCompany[company];
                 group.itemCount += 1;
-                if (isSoldForTotals(item)) {
-                    group.total += readSoldAmount(item);
-                    group.soldCount += 1;
-                }
+                group.total += readLiveTotalAmount(item);
+                if (isSoldForTotals(item)) group.soldCount += 1;
                 if (isActiveForTotals(item)) group.active = true;
             });
             return groups.sort((a, b) => b.total - a.total);

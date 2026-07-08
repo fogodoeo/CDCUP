@@ -417,14 +417,17 @@ async function updateItem(row, data, pw) {
     }
     
     // checklist가 변경되었으면 파싱본도 자동 반영
-    if (data.checklist !== undefined || data.auctionType !== undefined || data.tournamentCode !== undefined || data.teamCode !== undefined) {
-        const existingChecklist = data.checklist !== undefined ? data.checklist : '';
-        payload.checklist = mergeItemAuctionMeta(existingChecklist, {
-            auctionType: data.auctionType,
-            tournamentCode: data.tournamentCode,
-            teamCode: data.teamCode,
-            tournamentStage: data.tournamentStage,
-            publicNumber: data.publicNumber
+    if (data.checklist !== undefined || data.auctionType !== undefined || data.tournamentCode !== undefined || data.teamCode !== undefined || data.tournamentStage !== undefined || data.publicNumber !== undefined) {
+        const currentRows = await _sbFetch(`items?id=eq.${row}&select=checklist,num,name&limit=1`);
+        const current = currentRows && currentRows[0] ? currentRows[0] : {};
+        const currentMeta = getItemAuctionMeta(current);
+        const baseChecklist = data.checklist !== undefined ? data.checklist : (current.checklist || '');
+        payload.checklist = mergeItemAuctionMeta(baseChecklist, {
+            auctionType: data.auctionType ?? currentMeta.auctionType,
+            tournamentCode: data.tournamentCode ?? currentMeta.tournamentCode,
+            teamCode: data.teamCode ?? currentMeta.teamCode,
+            tournamentStage: data.tournamentStage ?? currentMeta.tournamentStage,
+            publicNumber: data.publicNumber ?? data.num ?? currentMeta.publicNumber ?? current.num
         });
         payload.checklist_parsed = formatChecklist(payload.checklist);
     }
