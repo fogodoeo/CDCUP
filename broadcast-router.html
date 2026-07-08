@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>CREO 송출 화면</title>
     <script src="supabase-bridge.js?v=20260708-event-fallback"></script>
@@ -12,6 +12,7 @@
         body {
             width: 100%;
             height: 100%;
+            min-height: 100dvh;
             margin: 0;
             overflow: hidden;
             background: transparent;
@@ -19,9 +20,11 @@
 
         iframe {
             position: fixed;
-            inset: 0;
-            width: 100%;
-            height: 100%;
+            left: 50%;
+            top: 50%;
+            width: min(100vw, calc(var(--router-vh, 100dvh) * 16 / 9));
+            height: min(var(--router-vh, 100dvh), calc(100vw * 9 / 16));
+            transform: translate(-50%, -50%);
             border: 0;
             background: transparent;
         }
@@ -51,11 +54,19 @@
         const params = new URLSearchParams(location.search);
         const frame = document.getElementById('broadcast-frame');
         const statusEl = document.getElementById('status');
-        const assetVersion = '20260708-active-bracket-first';
+        const assetVersion = '20260708-hide-team-code';
         let lastSrc = '';
         let lastMode = '';
 
+        function syncViewportSize() {
+            const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            document.documentElement.style.setProperty('--router-vh', Math.max(1, height) + 'px');
+        }
+
         if (params.get('debug') === '1') document.body.classList.add('debug');
+        syncViewportSize();
+        window.addEventListener('resize', syncViewportSize, { passive: true });
+        window.visualViewport?.addEventListener('resize', syncViewportSize, { passive: true });
 
         function normalizeEvent(value) {
             value = String(value || '').toLowerCase();
