@@ -5222,7 +5222,7 @@
                         if (map[bracketKey]) {
                             let bracket = { matches: {} };
                             try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
-                            renderBracketPageTree(parseInt(active), bracket, map);
+                            renderBracketPageTree(parseInt(active), bracket, map, window.latestItemsList || []);
                         }
                     }
                 } else if (treeFull) {
@@ -5269,7 +5269,7 @@
             try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
 
             if (masterShow && fullShow) {
-                renderBracketPageTree(parseInt(active), bracket, map);
+                renderBracketPageTree(parseInt(active), bracket, map, window.latestItemsList || []);
             }
             if (masterShow && liveShow) {
                 renderBracketLiveView(parseInt(active), bracket, map);
@@ -5341,14 +5341,16 @@
             };
         }
 
-        async function renderBracketPageTree(scale, bracket, map) {
+        async function renderBracketPageTree(scale, bracket, map, providedItems = null) {
             const renderId = ++bracketFullRenderId;
             const tree = document.getElementById('bracket-page-tree-full');
 
             // 전체 결과는 수동 winner 값이 아니라 실제 낙찰 완료 데이터로 계산한다.
-            let items = [];
-            try { items = await getBattleItemsCached(); } catch (e) {
+            let items = providedItems && providedItems.length ? providedItems : [];
+            if (!items || !items.length) {
+                try { items = await getBattleItemsCached(); } catch (e) {
                 console.error('Failed to load auction results for bracket', e);
+            }
             }
             if (renderId !== bracketFullRenderId) return;
             tree.innerHTML = '';
@@ -6021,7 +6023,7 @@
                 if (!items || items.length === 0) return;
 
                 // Sync bracket overlay visibility & positioning on all pages (items 포함)
-                applyBracketPageMap(map, items);
+                applyBracketPageMap(map, rawItems);
                 
                 // 현재 진행 중인 개체(status가 '진행', '진행중' 또는 'active'인 개체) 찾기
                 const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
