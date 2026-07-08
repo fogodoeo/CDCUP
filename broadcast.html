@@ -2588,7 +2588,6 @@
         #p3-switching-container {
             --blind-total-fs: 14px;
             --blind-total-opacity: 0;
-            --p3-wipe-duration: 520ms;
             display: none;
             position: absolute;
             top: 10%;
@@ -2637,8 +2636,9 @@
             gap: calc(var(--blind-total-fs) * 0.22);
             clip-path: inset(0 0 0 0);
             transform-origin: left center;
-            transform: translate3d(0, 0, 0);
-            transition: opacity 0.18s ease;
+            transform: none;
+            transition: none;
+            visibility: hidden;
         }
         #blind-team-total-overlay.active,
         #live-bidders-overlay.active {
@@ -2646,35 +2646,34 @@
             flex-direction: column;
             opacity: 1;
             pointer-events: auto;
+            visibility: visible;
         }
         #blind-team-total-overlay.p3-wipe-out,
         #live-bidders-overlay.p3-wipe-out {
-            opacity: 1;
+            opacity: 0;
             pointer-events: none;
-            animation: p3-panel-glide-out 0.42s cubic-bezier(0.33,0,0.2,1) both;
+            animation: none;
+            visibility: hidden;
         }
         #blind-team-total-overlay.p3-wipe-in,
         #live-bidders-overlay.p3-wipe-in {
             opacity: 1;
-            animation: p3-panel-glide-in 0.72s cubic-bezier(0.16,1,0.3,1) both;
+            animation: none;
+            visibility: visible;
         }
         #blind-team-total-overlay.p3-wipe-out .blind-total-head,
         #blind-team-total-overlay.p3-wipe-out .blind-total-row,
         #live-bidders-overlay.p3-wipe-out .blind-total-head,
         #live-bidders-overlay.p3-wipe-out .blind-total-row {
-            animation: p3-card-glide-out 0.34s cubic-bezier(0.33,0,0.2,1) both;
+            animation: none;
         }
         #blind-team-total-overlay.p3-wipe-in .blind-total-head,
         #blind-team-total-overlay.p3-wipe-in .blind-total-row,
         #live-bidders-overlay.p3-wipe-in .blind-total-head,
         #live-bidders-overlay.p3-wipe-in .blind-total-row {
-            animation: p3-card-glide-in 0.68s cubic-bezier(0.16,1,0.3,1) both;
+            animation: none;
         }
-        .p3-wipe-in .blind-total-row:nth-child(2) { animation-delay: 0.04s !important; }
-        .p3-wipe-in .blind-total-row:nth-child(3) { animation-delay: 0.08s !important; }
-        .p3-wipe-in .blind-total-row:nth-child(4) { animation-delay: 0.12s !important; }
-        .p3-wipe-in .blind-total-row:nth-child(5) { animation-delay: 0.16s !important; }
-        .p3-wipe-in .blind-total-row:nth-child(6) { animation-delay: 0.20s !important; }
+        .p3-wipe-in .blind-total-row { animation-delay: 0s !important; }
 
         /* ── 이벤트 매치 섹션 ── */
         .event-match-separator {
@@ -2705,7 +2704,7 @@
             border-radius: 50%;
             background: #38bdf8;
             box-shadow: 0 0 10px rgba(56, 189, 248, 0.62);
-            animation: sports-live-pulse 1.4s ease-in-out infinite;
+            animation: none;
         }
         .event-match-title {
             font-size: calc(var(--blind-total-fs) * 0.72);
@@ -2722,7 +2721,7 @@
             background: rgba(15,23,42,0.85);
             border: 1px solid rgba(56,189,248,0.15);
             margin-bottom: calc(var(--blind-total-fs) * 0.2);
-            transition: background 0.3s, border-color 0.3s;
+            transition: none;
             position: relative;
         }
         .event-match-row.is-leader {
@@ -2757,26 +2756,6 @@
             white-space: nowrap;
             font-variant-numeric: tabular-nums;
         }
-        @keyframes p3-panel-glide-out {
-            0% { opacity: 1; transform: translate3d(0,0,0) scale(1); filter: blur(0); }
-            100% { opacity: 0; transform: translate3d(-10px, -4px, 0) scale(0.992); filter: blur(1.2px); }
-        }
-        @keyframes p3-panel-glide-in {
-            0% { opacity: 0; transform: translate3d(14px, 10px, 0) scale(0.992); filter: blur(1.6px); }
-            62% { opacity: 1; filter: blur(0.2px); }
-            100% { opacity: 1; transform: translate3d(0,0,0) scale(1); filter: blur(0); }
-        }
-        @keyframes p3-card-glide-out {
-            0% { opacity: 1; transform: translate3d(0,0,0); }
-            100% { opacity: 0; transform: translate3d(-8px, -5px, 0); }
-        }
-        @keyframes p3-card-glide-in {
-            0% { opacity: 0; transform: translate3d(18px, 14px, 0); }
-            64% { opacity: 1; }
-            100% { opacity: 1; transform: translate3d(0,0,0); }
-        }
-
-
         .blind-total-head {
             display: flex;
             align-items: center;
@@ -2806,7 +2785,7 @@
             border-radius: 50%;
             background: #d9b05c;
             box-shadow: 0 0 10px rgba(217, 176, 92, 0.62);
-            animation: sports-live-pulse 1.4s ease-in-out infinite;
+            animation: none;
         }
         .blind-total-title {
             display: block;
@@ -2844,11 +2823,14 @@
             border: 1px solid rgba(217, 176, 92, 0.18);
             border-radius: 8px;
             background: rgba(8, 13, 24, var(--blind-total-opacity));
-            backdrop-filter: blur(10px) saturate(1.12);
-            -webkit-backdrop-filter: blur(10px) saturate(1.12);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
             box-shadow: 0 6px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
             transition: none;
-            will-change: transform;
+            opacity: 1;
+            filter: none;
+            transform: none;
+            will-change: auto;
             box-sizing: border-box;
         }
         .blind-total-row.team-totals-row {
@@ -2867,77 +2849,37 @@
         #live-bidders-overlay .blind-total-row[data-rank="1"] {
             opacity: 1;
             filter: none;
-            transform-origin: center top;
         }
         #live-bidders-overlay .blind-total-row[data-rank="2"] {
-            opacity: 0.74;
-            filter: blur(0.18px) saturate(0.92);
+            opacity: 1;
+            filter: none;
         }
         #live-bidders-overlay .blind-total-row[data-rank="3"] {
-            opacity: 0.52;
-            filter: blur(0.46px) saturate(0.82);
+            opacity: 1;
+            filter: none;
         }
         #live-bidders-overlay .blind-total-row[data-rank="4"] {
-            opacity: 0.36;
-            filter: blur(0.76px) saturate(0.72);
+            opacity: 1;
+            filter: none;
         }
         #live-bidders-overlay .blind-total-row[data-rank="5"] {
-            opacity: 0.24;
-            filter: blur(1px) saturate(0.62);
+            opacity: 1;
+            filter: none;
         }
         .blind-total-row[data-rank="1"] {
             background: rgba(15,23,42,0.95);
             border-color: rgba(217,176,92,0.4);
         }
         .blind-total-row.rank-changed {
-            box-shadow: 0 4px 28px rgba(217, 176, 92, 0.35), inset 0 1px 0 rgba(255,255,255,0.12);
-            border-color: rgba(217, 176, 92, 0.6);
-            filter: brightness(1.25);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
+            border-color: rgba(217, 176, 92, 0.18);
+            filter: none;
         }
         .blind-total-row.row-entering {
-            animation: p3-row-enter-top 0.48s cubic-bezier(0.16,1,0.3,1) both;
+            animation: none;
         }
         .blind-total-row.is-new-leader {
-            animation: p3-row-leader-glow 1.1s ease both;
-        }
-        @keyframes p3-row-enter-top {
-            from {
-                opacity: 0;
-                transform: translateY(calc(var(--blind-total-fs) * -1.2)) scale(0.985);
-                clip-path: inset(0 0 100% 0);
-            }
-            to {
-                transform: translateY(0) scale(1);
-                clip-path: inset(0 0 0 0);
-            }
-        }
-        @keyframes p3-row-leader-glow {
-            0% {
-                border-color: rgba(251, 191, 36, 0.9);
-                background: rgba(217, 176, 92, 0.22);
-                box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5), inset 4px 0 0 #fbbf24;
-                transform: scale(1.06);
-                filter: brightness(1.3);
-            }
-            25% {
-                box-shadow: 0 0 32px 8px rgba(251, 191, 36, 0.25), inset 4px 0 0 #fbbf24;
-                transform: scale(1.03);
-                filter: brightness(1.2);
-            }
-            60% {
-                border-color: rgba(251, 191, 36, 0.6);
-                background: rgba(217, 176, 92, 0.15);
-                box-shadow: 0 4px 16px rgba(217, 176, 92, 0.15), inset 3px 0 0 #d9b05c;
-                transform: scale(1.01);
-                filter: brightness(1.05);
-            }
-            100% {
-                border-color: rgba(217, 176, 92, 0.4);
-                background: rgba(15, 23, 42, 0.95);
-                box-shadow: 0 6px 16px rgba(0,0,0,0.2);
-                transform: scale(1);
-                filter: brightness(1);
-            }
+            animation: none;
         }
         .blind-total-rank {
             display: none;
@@ -3043,23 +2985,15 @@
             font-weight: 900;
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
-            animation: blind-delta-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+            animation: none;
             pointer-events: none;
             z-index: 10;
             box-shadow: 0 2px 12px rgba(251, 191, 36, 0.4);
         }
         .blind-total-delta.fade-out {
-            animation: blind-delta-out 0.6s ease-out both;
+            display: none;
+            animation: none;
         }
-        @keyframes blind-delta-in {
-            from { opacity: 0; transform: translateY(-50%) translateX(100%) scale(0.5); }
-            to   { opacity: 1; transform: translateY(-50%) translateX(100%) scale(1); }
-        }
-        @keyframes blind-delta-out {
-            from { opacity: 1; transform: translateY(-50%) translateX(100%) scale(1); }
-            to   { opacity: 0; transform: translateY(-50%) translateX(100%) translateY(-10px) scale(0.7); }
-        }
-
         .blind-total-row {
             position: relative;
         }
@@ -5179,16 +5113,6 @@
                 const formatted = row.total > 0 ? Number(row.total).toLocaleString() : '-';
                 amount.textContent = formatted;
 
-                // 델타 배지 (카드 바깥 오른쪽)
-                const prevTotal = _eventMatchPrevTotals[row.company] || 0;
-                if (row.total > prevTotal && prevTotal > 0) {
-                    const delta = document.createElement('span');
-                    delta.className = 'blind-total-delta';
-                    delta.textContent = '+' + Number(row.total - prevTotal).toLocaleString();
-                    el.appendChild(delta);
-                    setTimeout(() => { delta.classList.add('fade-out'); }, 1800);
-                    setTimeout(() => { delta.remove(); }, 2500);
-                }
                 _eventMatchPrevTotals[row.company] = row.total;
 
                 el.appendChild(rank);
@@ -5282,19 +5206,6 @@
             pendingMap: null
         };
 
-        // 델타 뱃지 표시
-        function showDeltaBadge(rowEl, delta) {
-            if (delta <= 0) return;
-            const badge = document.createElement('span');
-            badge.className = 'blind-total-delta';
-            badge.textContent = '+' + delta.toLocaleString('ko-KR');
-            rowEl.appendChild(badge);
-            setTimeout(() => {
-                badge.classList.add('fade-out');
-                setTimeout(() => badge.remove(), 500);
-            }, 2500);
-        }
-
         // 리더보드 DOM 업데이트 (애니메이션 효과 제거 및 즉시 갱신)
         function applyLeaderboardUpdate(panel, sorted, map, animate) {
             let listEl = panel.querySelector('.blind-total-list');
@@ -5318,9 +5229,6 @@
             // empty 제거
             const emptyEl = listEl.querySelector('.blind-total-empty');
             if (emptyEl) emptyEl.remove();
-
-            // 델타 계산용 이전 총합
-            const prevTotals = _blindRankState.prevTotals;
 
             // 행 업데이트/생성 + DOM 순서 정렬
             sorted.forEach((row, idx) => {
@@ -5351,13 +5259,6 @@
                     `;
                 }
                 rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed', 'is-active');
-
-                // 델타 뱃지
-                if (animate) {
-                    const prev = prevTotals[row.team] || 0;
-                    const diff = row.total - prev;
-                    if (diff > 0) showDeltaBadge(rowEl, diff);
-                }
 
                 listEl.appendChild(rowEl);
                 delete existingRows[row.team];
@@ -5586,34 +5487,15 @@
             const panels = { totals: totalsPanel, bidders: biddersPanel };
             const nextPanel = panels[nextCard];
             if (!nextPanel) return;
-            const currentPanel = panels[_p3ActiveCard];
-
-            if (_p3ActiveCard === nextCard) {
-                return;
-            }
 
             clearP3PanelEffects(totalsPanel, biddersPanel);
 
-            if (!animate || !currentPanel || currentPanel === nextPanel || !currentPanel.classList.contains('active')) {
-                Object.keys(panels).forEach(key => {
-                    if (panels[key]) panels[key].classList.toggle('active', key === nextCard);
-                });
-                _p3ActiveCard = nextCard;
-                return;
-            }
-
+            Object.keys(panels).forEach(key => {
+                if (!panels[key]) return;
+                panels[key].classList.remove('p3-wipe-out', 'p3-wipe-in');
+                panels[key].classList.toggle('active', key === nextCard);
+            });
             _p3ActiveCard = nextCard;
-
-            currentPanel.classList.add('p3-wipe-out');
-            nextPanel.classList.remove('active');
-            _p3SwitchEffectTimer = setTimeout(() => {
-                currentPanel.classList.remove('active', 'p3-wipe-out');
-                nextPanel.classList.add('active', 'p3-wipe-in');
-                _p3SwitchEffectTimer = setTimeout(() => {
-                    nextPanel.classList.remove('p3-wipe-in');
-                    _p3SwitchEffectTimer = null;
-                }, 720);
-            }, 360);
         }
 
         function startP3SwitchTimer(totalsPanel, biddersPanel, switchSec) {
@@ -5677,20 +5559,6 @@
                 }
 
                 rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
-
-                // 델타 배지
-                if (animate) {
-                    const prevAmount = _liveBiddersRankState.prevAmounts[bid.key] || 0;
-                    const diff = bid.amount - prevAmount;
-                    if (diff > 0) {
-                        const delta = document.createElement('span');
-                        delta.className = 'blind-total-delta';
-                        delta.textContent = '+' + Number(diff).toLocaleString();
-                        rowEl.appendChild(delta);
-                        setTimeout(() => { delta.classList.add('fade-out'); }, 1800);
-                        setTimeout(() => { delta.remove(); }, 2500);
-                    }
-                }
 
                 listEl.appendChild(rowEl);
                 delete existingRows[bid.key];
