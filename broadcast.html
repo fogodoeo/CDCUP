@@ -2690,12 +2690,22 @@
             margin-bottom: calc(var(--blind-total-fs) * 0.15);
         }
         .event-match-kicker {
-            font-size: calc(var(--blind-total-fs) * 0.52);
-            font-weight: 800;
-            color: #38bdf8;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            opacity: 0.85;
+            display: inline-flex;
+            align-items: center;
+            width: calc(var(--blind-total-fs) * 0.48);
+            min-width: calc(var(--blind-total-fs) * 0.48);
+            font-size: 0;
+            line-height: 1;
+        }
+        .event-match-kicker::before {
+            content: "";
+            display: inline-block;
+            width: calc(var(--blind-total-fs) * 0.36);
+            height: calc(var(--blind-total-fs) * 0.36);
+            border-radius: 50%;
+            background: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.62);
+            animation: sports-live-pulse 1.4s ease-in-out infinite;
         }
         .event-match-title {
             font-size: calc(var(--blind-total-fs) * 0.72);
@@ -5144,7 +5154,7 @@
             // 헤더
             const header = document.createElement('div');
             header.className = 'event-match-header';
-            header.innerHTML = '<span class="event-match-kicker">EVENT</span><strong class="event-match-title">이벤트 매치</strong>';
+            header.innerHTML = '<span class="event-match-kicker"></span><strong class="event-match-title">이벤트 매치</strong>';
             section.appendChild(header);
 
             // 각 업체 행
