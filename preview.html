@@ -1060,6 +1060,33 @@
                 <div class="t-item-warning">선택한 개체만 현재 라운드 슬롯에 연결되고 낙찰·배송 상태가 초기화됩니다. 일반 경매와 이전 라운드 기록은 삭제하지 않습니다.</div>
             </section>
 
+            <!-- ── 이벤트 매치 설정 ── -->
+            <section class="t-item-setup" id="event-match-setup" style="margin-top:24px; border-top: 2px solid rgba(56,189,248,0.2); padding-top: 18px;">
+                <div class="t-item-setup-head">
+                    <div>
+                        <div class="t-item-setup-title" style="color:#38bdf8;">EVENT MATCH</div>
+                        <div class="t-item-setup-desc">토너먼트와 별도로 진행되는 이벤트 매치 팀을 설정합니다.</div>
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:flex-start; margin-top:12px;">
+                    <!-- 이벤트 매치 팀 슬롯 -->
+                    <div id="event-match-slots" style="display:flex; gap:8px; flex-wrap:wrap; flex:1; min-width:0;">
+                    </div>
+
+                    <!-- 컨트롤 -->
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <button class="t-btn" type="button" onclick="evAddSlot()">+ 팀 추가</button>
+                        <label class="t-item-count-control">업체당 <input id="ev-items-per-team" type="number" min="1" max="99" value="4" style="width:48px;">마리</label>
+                        <button class="t-btn save" type="button" onclick="evApplyEventItems()">이벤트 개체 편성</button>
+                    </div>
+                </div>
+
+                <div class="t-item-warning" style="margin-top:8px; border-color: rgba(56,189,248,0.15);">
+                    팀 슬롯에 업체명을 드래그하거나 직접 입력하세요. 편성 버튼을 누르면 해당 업체의 개체가 이벤트 경매 개체로 등록됩니다.
+                </div>
+            </section>
+
 
         </div>
 
@@ -2587,6 +2614,7 @@
                     `<div class="t-team-chip" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${tEsc(t)}')">${tEsc(t)}</div>`
                 ).join('');
                 tRenderItemSetup();
+                evInitSlots();
             } catch (err) {
                 tAllItems = [];
                 document.getElementById('t-team-pool').innerHTML = '<span style="color:#f87171; font-size:12px;">팀 목록 로딩 실패</span>';
@@ -3083,6 +3111,147 @@
         }
 
 
+
+
+        // ── 이벤트 매치 팀 설정 ──
+        let evSlotCount = 0;
+
+        function evAddSlot(prefill) {
+            const container = document.getElementById('event-match-slots');
+            if (!container) return;
+            evSlotCount++;
+            const slot = document.createElement('div');
+            slot.className = 't-team-chip';
+            slot.style.cssText = 'min-width:120px; min-height:36px; border:2px dashed rgba(56,189,248,0.3); border-radius:8px; display:flex; align-items:center; justify-content:center; gap:6px; padding:4px 10px; background:rgba(15,23,42,0.6); cursor:pointer; position:relative;';
+            slot.dataset.evSlot = evSlotCount;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = '업체명 입력 또는 드래그';
+            input.value = prefill || '';
+            input.style.cssText = 'background:transparent; border:none; color:#e2e8f0; font-size:13px; font-weight:700; width:100%; outline:none; text-align:center;';
+            slot.appendChild(input);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.textContent = 'X';
+            removeBtn.style.cssText = 'position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; background:#ef4444; color:#fff; border:none; font-size:10px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; line-height:1;';
+            removeBtn.onclick = function(e) { e.stopPropagation(); slot.remove(); };
+            slot.appendChild(removeBtn);
+
+            // 드래그앤드롭 수신
+            slot.addEventListener('dragover', function(e) { e.preventDefault(); slot.style.borderColor = '#38bdf8'; });
+            slot.addEventListener('dragleave', function() { slot.style.borderColor = 'rgba(56,189,248,0.3)'; });
+            slot.addEventListener('drop', function(e) {
+                e.preventDefault();
+                slot.style.borderColor = 'rgba(56,189,248,0.3)';
+                const team = e.dataTransfer.getData('text/plain');
+                if (team) input.value = team;
+            });
+
+            container.appendChild(slot);
+        }
+
+        function evGetTeams() {
+            const slots = document.querySelectorAll('#event-match-slots [data-ev-slot]');
+            const teams = [];
+            slots.forEach(slot => {
+                const input = slot.querySelector('input');
+                const name = (input?.value || '').trim();
+                if (name) teams.push(name);
+            });
+            return teams;
+        }
+
+        async function evApplyEventItems() {
+            const teams = evGetTeams();
+            if (teams.length < 2) { toast('이벤트 매치에 최소 2팀이 필요합니다.'); return; }
+
+            const duplicates = teams.filter((t, i) => teams.indexOf(t) !== i);
+            if (duplicates.length) { toast('중복된 업체명이 있습니다: ' + duplicates.join(', ')); return; }
+
+            const count = Math.max(1, Math.min(99, Number(document.getElementById('ev-items-per-team')?.value) || 4));
+            const total = teams.length * count;
+            if (!confirm('이벤트 매치 개체를 편성합니다.\n\n' + teams.join(' vs ') + '\n업체당 ' + count + '마리, 총 ' + total + '개체\n\n기존 이벤트 개체는 덮어씌워집니다. 계속할까요?')) return;
+
+            try {
+                // 1. 기존 이벤트 개체 삭제
+                const allItems = await getItems();
+                const existingEvent = (allItems || []).filter(item => {
+                    const cl = String(item.checklist || '');
+                    return cl.includes('_auction:event');
+                });
+                if (existingEvent.length > 0) {
+                    const pw = prompt('관리자 비밀번호를 입력하세요.');
+                    if (pw === null) return;
+                    const delResult = await deleteItems(existingEvent.map(i => i.row), pw);
+                    if (!delResult || delResult.success === false) throw new Error(delResult?.error || '기존 이벤트 개체 삭제 실패');
+                }
+
+                // 2. 새 이벤트 개체 생성
+                const newItems = [];
+                let labelNum = 1;
+                teams.forEach(company => {
+                    for (let i = 1; i <= count; i++) {
+                        newItems.push({
+                            company,
+                            name: String(i),
+                            startPrice: '', note: '', announce: '',
+                            photoItem: '', photoSire: '', photoDam: '', photoSibling: '',
+                            checklist: '_auction:event|_label:' + (labelNum + newItems.length),
+                            sireId: '', damId: ''
+                        });
+                    }
+                });
+
+                // 라벨 넘버 재계산 (토너먼트 개체 이후부터)
+                const maxTournamentNum = Math.max(0, ...(allItems || []).filter(item => {
+                    const cl = String(item.checklist || '');
+                    return !cl.includes('_auction:event');
+                }).map(i => Number(i.num) || 0));
+
+                // 라벨 번호를 토너먼트 이후부터 시작
+                newItems.forEach((item, idx) => {
+                    item.checklist = '_auction:event|_label:' + (maxTournamentNum + idx + 1);
+                });
+
+                const result = await registerBatch(newItems);
+                if (!result || result.success === false) throw new Error(result?.error || '이벤트 개체 등록 실패');
+
+                // 3. 이벤트 매치 설정 저장 + event_match_show 자동 활성화
+                await updateConfigs({ event_match_show: '1' });
+                const toggle = document.getElementById('toggle-event-match-show');
+                if (toggle) toggle.checked = true;
+
+                toast(teams.join(' vs ') + ' 이벤트 매치 편성 완료 (' + total + '개체)');
+                await tLoadTeams();
+            } catch (err) {
+                toast('이벤트 개체 편성 실패: ' + err.message);
+            }
+        }
+
+        function evInitSlots() {
+            // 기존 이벤트 개체에서 업체 목록 추출하여 슬롯 자동 생성
+            const container = document.getElementById('event-match-slots');
+            if (!container) return;
+            container.innerHTML = '';
+            evSlotCount = 0;
+
+            const eventTeams = [...new Set(
+                (tAllItems || [])
+                    .filter(item => String(item.checklist || '').includes('_auction:event'))
+                    .map(item => String(item.company || '').trim())
+                    .filter(Boolean)
+            )];
+
+            if (eventTeams.length > 0) {
+                eventTeams.forEach(team => evAddSlot(team));
+            } else {
+                // 기본 2개 빈 슬롯
+                evAddSlot();
+                evAddSlot();
+            }
+        }
 
         function toggleEventMatchShow() {
             saveCoordinates(true);
