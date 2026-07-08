@@ -2229,7 +2229,7 @@
 
         body { padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
         .toast { bottom:58px; }
-        .app-bottom-nav { position:fixed; left:50%; bottom:max(2px,env(safe-area-inset-bottom)); z-index:1900; display:grid; grid-template-columns:repeat(4,1fr); gap:2px; width:min(390px,calc(100% - 8px)); height:50px; padding:3px; border:1px solid rgba(148,163,184,.34); border-radius:14px; background:rgba(248,250,252,.97); box-shadow:0 10px 30px rgba(15,23,42,.18); transform:translateX(-50%); backdrop-filter:blur(16px); }
+        .app-bottom-nav { position:fixed; left:50%; bottom:max(2px,env(safe-area-inset-bottom)); z-index:1900; display:grid; grid-template-columns:repeat(3,1fr); gap:2px; width:min(330px,calc(100% - 8px)); height:50px; padding:3px; border:1px solid rgba(148,163,184,.34); border-radius:14px; background:rgba(248,250,252,.97); box-shadow:0 10px 30px rgba(15,23,42,.18); transform:translateX(-50%); backdrop-filter:blur(16px); }
         .app-bottom-nav a,.app-bottom-nav button { display:flex; align-items:center; justify-content:center; min-width:0; border:0; border-radius:10px; background:transparent; color:#64748B; font-family:inherit; font-size:10.5px; font-weight:850; text-decoration:none; white-space:nowrap; cursor:pointer; }
         .app-bottom-nav a.active { background:#2563EB; color:#fff; }
         .app-bottom-nav .utility { margin-left:2px; border-left:1px solid #D7DEE8; border-radius:0 10px 10px 0; color:#334155; }
@@ -2392,7 +2392,6 @@
     <nav class="app-bottom-nav" aria-label="CREO 공통 페이지 이동">
         <a class="active" href="shipping.html" aria-current="page">배송관리</a>
         <a href="shipping-status.html">전체조회</a>
-        <a href="index.html">허브</a>
         <button class="utility" type="button" onclick="openCompanySelectModal()">업체변경</button>
     </nav>
 

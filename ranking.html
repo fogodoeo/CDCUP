@@ -167,12 +167,12 @@
         .filter-btn.active { color: #0b0e13; border-color: var(--rank-gold); background: var(--rank-gold); }
 
         .table-scroll { overflow-x: auto; }
-        .ranking-table { width: 100%; min-width: 830px; border-collapse: collapse; table-layout: fixed; }
+        .ranking-table { width: 100%; min-width: 960px; border-collapse: collapse; table-layout: fixed; }
         .ranking-table col.rank-col { width: 74px; }
-        .ranking-table col.team-col { width: 30%; }
-        .ranking-table col.phase-col { width: 17%; }
-        .ranking-table col.amount-col { width: 18%; }
-        .ranking-table col.result-col { width: 17%; }
+        .ranking-table col.team-col { width: 25%; }
+        .ranking-table col.phase-col { width: 15%; }
+        .ranking-table col.amount-col { width: 15%; }
+        .ranking-table col.result-col { width: 13%; }
         .ranking-table th { height: 32px; padding: 0 16px; border-bottom: 1px solid var(--rank-line); background: #0a1018; color: var(--rank-dim); text-align: left; font-size: 9px; font-weight: 850; letter-spacing: .12em; }
         .ranking-table th.amount, .ranking-table td.amount { text-align: right; }
         .ranking-table td { height: 40px; padding: 0 16px; border-bottom: 1px solid var(--rank-line); color: #dce1e8; font-size: 12px; }
@@ -199,7 +199,7 @@
         .download-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--rank-gold); background: rgba(195, 154, 74, 0.08); color: var(--rank-gold-light); font-family: inherit; font-size: 11px; font-weight: 850; cursor: pointer; transition: all 0.2s ease; border-radius: 3px; }
         .download-btn:hover { background: var(--rank-gold); color: #0a0d12; }
         body { padding-bottom:calc(60px + env(safe-area-inset-bottom)); }
-        .app-bottom-nav { position:fixed; left:50%; bottom:max(2px,env(safe-area-inset-bottom)); z-index:1900; display:grid; grid-template-columns:repeat(5,1fr); gap:2px; width:min(460px,calc(100% - 8px)); height:50px; padding:3px; border:1px solid rgba(148,163,184,.34); border-radius:14px; background:rgba(248,250,252,.97); box-shadow:0 10px 30px rgba(0,0,0,.22); transform:translateX(-50%); backdrop-filter:blur(16px); }
+        .app-bottom-nav { position:fixed; left:50%; bottom:max(2px,env(safe-area-inset-bottom)); z-index:1900; display:grid; grid-template-columns:repeat(2,1fr); gap:2px; width:min(260px,calc(100% - 8px)); height:50px; padding:3px; border:1px solid rgba(148,163,184,.34); border-radius:14px; background:rgba(248,250,252,.97); box-shadow:0 10px 30px rgba(0,0,0,.22); transform:translateX(-50%); backdrop-filter:blur(16px); }
         .app-bottom-nav a { display:flex; align-items:center; justify-content:center; min-width:0; border-radius:10px; color:#64748b; font-size:10.5px; font-weight:850; text-decoration:none; white-space:nowrap; }
         .app-bottom-nav a.active { background:#2563eb; color:#fff; }
         .app-bottom-nav .utility { margin-left:2px; border-left:1px solid #d7dee8; border-radius:0 10px 10px 0; color:#334155; }
@@ -278,7 +278,7 @@
 
             /* 820px 이하에서 테이블 가로폭 모바일 맞춤 및 스크롤 방지 */
             .ranking-table { min-width: 0; }
-            .ranking-table col.phase-col, .ranking-table th:nth-child(3), .ranking-table th:nth-child(4), .ranking-table td:nth-child(3), .ranking-table td:nth-child(4) { display: none; }
+            .ranking-table col.phase-col, .ranking-table th:nth-child(3), .ranking-table th:nth-child(4), .ranking-table th:nth-child(5), .ranking-table td:nth-child(3), .ranking-table td:nth-child(4), .ranking-table td:nth-child(5) { display: none; }
             .ranking-table col.rank-col { width: 44px; }
             .ranking-table col.team-col { width: 40%; }
             .ranking-table col.amount-col { width: 30%; }
@@ -417,11 +417,8 @@
     </main>
 
     <nav class="app-bottom-nav" aria-label="CDCUP 페이지 이동">
-        <a href="index.html">허브</a>
-        <a href="summary.html">결과표</a>
-        <a href="shipping.html">배송</a>
-        <a href="shipping-status.html">조회</a>
         <a class="active" href="ranking.html" aria-current="page">순위표</a>
+        <a href="shipping.html">배송</a>
     </nav>
 
     <div class="journey-modal" id="team-journey-modal" onclick="if(event.target===this) closeTeamJourney()" role="dialog" aria-modal="true" aria-label="업체 경기 여정">
@@ -1051,14 +1048,15 @@
                     <td><div class="table-team">${logoMarkup(row)}<div class="team-copy"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(englishName(row.name))}</span></div></div></td>
                     <td>${phaseMarkup(row, 16)}</td>
                     <td>${phaseMarkup(row, 8)}</td>
+                    <td>${phaseMarkup(row, 4)}</td>
                     <td class="amount"><strong>${formatAmount(row.amount)}</strong><span>만원</span></td>
                     <td><span class="round-badge ${final.kind}">${escapeHtml(final.text)}</span></td>
                 </tr>`;
             }).join('');
             document.getElementById('board-content').innerHTML = `<div class="table-scroll"><table class="ranking-table">
-                <colgroup><col class="rank-col"><col class="team-col"><col class="phase-col"><col class="phase-col"><col class="amount-col"><col class="result-col"></colgroup>
-                <thead><tr><th>RANK</th><th>TEAM</th><th>ROUND OF 16</th><th>QUARTER FINAL</th><th class="amount">낙찰금 총액</th><th>최종 성적</th></tr></thead>
-                <tbody>${rows || '<tr><td colspan="6" class="empty">선택한 대회의 참가 팀이 없습니다.</td></tr>'}</tbody>
+                <colgroup><col class="rank-col"><col class="team-col"><col class="phase-col"><col class="phase-col"><col class="phase-col"><col class="amount-col"><col class="result-col"></colgroup>
+                <thead><tr><th>RANK</th><th>TEAM</th><th>ROUND OF 16</th><th>QUARTER FINAL</th><th>SEMI FINAL</th><th class="amount">낙찰금 총액</th><th>최종 성적</th></tr></thead>
+                <tbody>${rows || '<tr><td colspan="7" class="empty">선택한 대회의 참가 팀이 없습니다.</td></tr>'}</tbody>
             </table></div>`;
         }
 
