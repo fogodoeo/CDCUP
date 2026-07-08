@@ -941,8 +941,8 @@
                     </div>
                     <div class="switch-container" id="toggle-blind-totals-opacity-group" style="display:none; gap: 7px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">투명도:</span>
-                        <input type="range" id="blind-totals-opacity-input" min="0" max="100" step="5" value="45" oninput="previewBlindTotalsOpacity(this.value)" onchange="updateBlindTotalsOpacity(this.value)" style="width:86px; accent-color:#d9b05c;">
-                        <strong id="blind-totals-opacity-value" style="min-width:32px; font-size:11px; color:var(--text-muted);">45%</strong>
+                        <input type="range" id="blind-totals-opacity-input" min="0" max="100" step="5" value="0" oninput="previewBlindTotalsOpacity(this.value)" onchange="updateBlindTotalsOpacity(this.value)" onwheel="wheelBlindTotalsOpacity(event)" style="width:86px; accent-color:#d9b05c;">
+                        <strong id="blind-totals-opacity-value" style="min-width:32px; font-size:11px; color:var(--text-muted);">0%</strong>
                     </div>
                     <div class="switch-container" id="toggle-bracket-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">송출 모드:</span>
@@ -1361,7 +1361,7 @@
             elements.blind_totals = {
                 el: document.getElementById('draggable-blind-totals'),
                 top: "10%", left: "2%", right: "auto", bottom: "auto",
-                show: "1", width: "42%", height: "24%", fontSize: "14"
+                show: "1", width: "42%", height: "24%", fontSize: "14", opacity: "0"
             };
         }
 
@@ -1417,7 +1417,8 @@
         }
 
         function previewBlindTotalsOpacity(val) {
-            const opacity = Math.max(0, Math.min(100, parseInt(val) || 45));
+            const parsed = parseInt(val, 10);
+            const opacity = Math.max(0, Math.min(100, Number.isFinite(parsed) ? parsed : 0));
             const valueEl = document.getElementById('blind-totals-opacity-value');
             if (valueEl) valueEl.textContent = opacity + '%';
             if (elements.blind_totals) elements.blind_totals.opacity = String(opacity);
@@ -1426,6 +1427,16 @@
         function updateBlindTotalsOpacity(val) {
             previewBlindTotalsOpacity(val);
             saveCoordinates(false);
+        }
+
+        function wheelBlindTotalsOpacity(event) {
+            event.preventDefault();
+            const input = event.currentTarget;
+            const step = parseInt(input.step || '5', 10) || 5;
+            const current = parseInt(input.value || '0', 10) || 0;
+            const next = Math.max(0, Math.min(100, current + (event.deltaY < 0 ? step : -step)));
+            input.value = String(next);
+            updateBlindTotalsOpacity(next);
         }
 
         async function toggleFullBracketBlind() {
@@ -1590,7 +1601,7 @@
                     elements.blind_totals.width = cfg.blind_totals_width || '42%';
                     elements.blind_totals.height = cfg.blind_totals_height || '24%';
                     elements.blind_totals.fontSize = cfg.blind_totals_font_size || '14';
-                    elements.blind_totals.opacity = cfg.blind_totals_opacity || '45';
+                    elements.blind_totals.opacity = cfg.blind_totals_opacity ?? '0';
 
                     const blindFontInput = document.getElementById('blind-totals-font-input');
                     if (blindFontInput) blindFontInput.value = elements.blind_totals.fontSize;
@@ -2282,7 +2293,7 @@
                     configMap['blind_totals_height'] = elements.blind_totals.height;
                     configMap['blind_totals_show'] = elements.blind_totals.show;
                     configMap['blind_totals_font_size'] = elements.blind_totals.fontSize || '14';
-                    configMap['blind_totals_opacity'] = elements.blind_totals.opacity || '45';
+                    configMap['blind_totals_opacity'] = elements.blind_totals.opacity ?? '0';
                     configMap['bracket_live_show'] = '0';
                     configMap['battle_ann_show'] = '0';
 
@@ -2458,12 +2469,15 @@
                     elements.blind_totals.width = "42%";
                     elements.blind_totals.height = "24%";
                     elements.blind_totals.fontSize = "14";
+                    elements.blind_totals.opacity = "0";
                     elements.blind_totals.el.style.width = '42%';
                     elements.blind_totals.el.style.height = '24%';
                     const blindShowToggle = document.getElementById('toggle-blind-totals-show');
                     if (blindShowToggle) blindShowToggle.checked = !resetIsCrewart;
                     const blindFontInput = document.getElementById('blind-totals-font-input');
                     if (blindFontInput) blindFontInput.value = '14';
+                    const blindOpacityInput = document.getElementById('blind-totals-opacity-input');
+                    if (blindOpacityInput) { blindOpacityInput.value = '0'; previewBlindTotalsOpacity('0'); }
                     applyVisualState('blind_totals');
                     focusBracketLayer(resetIsCrewart ? 'bracket_full' : 'blind_totals');
                 }
