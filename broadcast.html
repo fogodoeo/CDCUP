@@ -3034,7 +3034,17 @@
             }
             const nameUpper = (item.name || '').trim().toUpperCase();
             const match = nameUpper.match(/^([A-Z]\d+)/);
-            return match ? match[1] : '';
+            if (match) return match[1];
+
+            // '1 릴잔틱'과 같이 숫자로 개체를 구분하는 경우 대응
+            const numMatch = nameUpper.match(/^([1-9]\d*)/);
+            if (numMatch && item.company && window._teamToLetterMap) {
+                const teamLetter = window._teamToLetterMap[String(item.company).trim()];
+                if (teamLetter) {
+                    return teamLetter + numMatch[1]; // 예: 'A' + '1' = 'A1'
+                }
+            }
+            return '';
         }
 
         function findItemByCode(items, code) {
@@ -5096,6 +5106,49 @@
         function applyBracketPageMap(map, items) {
             if (!map) return;
             window.latestConfigMap = map;
+
+            // 글로벌 팀-알파벳 매핑 맵 빌드 (개체명이 '1 릴잔틱' 일 때 소속 팀을 찾아 기호로 치환하기 위함)
+            const globalTeamToLetter = {};
+            let baseBracket = null;
+            let baseScale = 16;
+            if (map.tournament_bracket_16) {
+                try {
+                    const parsed = JSON.parse(map.tournament_bracket_16);
+                    if (Object.values(parsed.matches || {}).some(m => m.left || m.right)) {
+                        baseBracket = parsed;
+                        baseScale = 16;
+                    }
+                } catch(e){}
+            }
+            if (!baseBracket && map.tournament_bracket_8) {
+                try {
+                    const parsed = JSON.parse(map.tournament_bracket_8);
+                    if (Object.values(parsed.matches || {}).some(m => m.left || m.right)) {
+                        baseBracket = parsed;
+                        baseScale = 8;
+                    }
+                } catch(e){}
+            }
+            if (!baseBracket && map.active_tournament && map.active_tournament !== 'none') {
+                const activeScale = map.active_tournament;
+                const bracketKey = 'tournament_bracket_' + activeScale;
+                if (map[bracketKey]) {
+                    try { baseBracket = JSON.parse(map[bracketKey]); baseScale = parseInt(activeScale, 10); } catch(e){}
+                }
+            }
+            if (baseBracket && baseBracket.matches) {
+                const baseMatchCount = baseScale / 2;
+                for (let i = 1; i <= baseMatchCount; i++) {
+                    const matchKey = baseScale + '_' + i;
+                    const match = baseBracket.matches[matchKey] || { left: '', right: '' };
+                    const leftLetter = String.fromCharCode(65 + (i - 1) * 2);
+                    const rightLetter = String.fromCharCode(65 + (i - 1) * 2 + 1);
+                    if (match.left) globalTeamToLetter[match.left.trim()] = leftLetter;
+                    if (match.right) globalTeamToLetter[match.right.trim()] = rightLetter;
+                }
+            }
+            window._teamToLetterMap = globalTeamToLetter;
+
             const eventModule = applyAuctionEventModule(map);
             
             // 빈 목록도 반영해야 전체삭제 직후 이전 경기 결과가 남지 않는다.
