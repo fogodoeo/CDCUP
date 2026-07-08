@@ -3216,8 +3216,8 @@
             labelEl.style.setProperty('font-weight', '780', 'important');
             labelEl.style.setProperty('letter-spacing', '-0.025em', 'important');
             labelEl.style.setProperty('text-shadow', 'none', 'important');
-            if (window.activeItem && window._totalItemsCount > 0) {
-                const currentOrder = window._completedItemsCount + 1;
+            if (window._totalItemsCount > 0) {
+                const currentOrder = Math.min(window._completedItemsCount + 1, window._totalItemsCount);
                 labelEl.textContent = `${currentOrder}/${window._totalItemsCount}`;
             } else {
                 labelEl.textContent = '';
