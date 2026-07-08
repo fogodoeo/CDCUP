@@ -5391,11 +5391,24 @@
                 if (step?.matchKey) roundsByMatch[step.matchKey] = Number(step.roundsPerMatch) || 4;
             });
 
-            // 1라운드 매칭으로 회사명 -> 알파벳 매핑 생성
+            // 1라운드 매칭으로 회사명 -> 알파벳 매핑 생성 (가장 큰 대진표 기준으로 매핑해야 개체 코드 A1~P4와 매치됨)
             const teamToLetter = {};
-            for (let i = 1; i <= matchCount; i++) {
-                const matchKey = scale + '_' + i;
-                const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
+            let baseBracket = null;
+            let baseScale = 16;
+            if (map.tournament_bracket_16) {
+                try { baseBracket = JSON.parse(map.tournament_bracket_16); baseScale = 16; } catch(e){}
+            }
+            if ((!baseBracket || !baseBracket.matches) && map.tournament_bracket_8) {
+                try { baseBracket = JSON.parse(map.tournament_bracket_8); baseScale = 8; } catch(e){}
+            }
+            if (!baseBracket || !baseBracket.matches) {
+                baseBracket = bracket;
+                baseScale = scale;
+            }
+            const baseMatchCount = baseScale / 2;
+            for (let i = 1; i <= baseMatchCount; i++) {
+                const matchKey = baseScale + '_' + i;
+                const match = baseBracket.matches[matchKey] || { left: '', right: '', winner: '' };
                 const leftLetter = String.fromCharCode(65 + (i - 1) * 2);      // A, C, E...
                 const rightLetter = String.fromCharCode(65 + (i - 1) * 2 + 1);  // B, D, F...
                 if (match.left) teamToLetter[match.left.trim()] = leftLetter;
@@ -5994,24 +6007,34 @@
                 let bracket = { matches: {} };
                 try { bracket = JSON.parse(map[bracketKey]); } catch(e){}
                 
-                // 2. 1라운드 매치들의 슬롯에 배정된 실제 업체명에 알파벳 팀명 매핑 부여
+                // 2. 1라운드 매치들의 슬롯에 배정된 실제 업체명에 알파벳 팀명 매핑 부여 (가장 큰 대진표 기준)
                 const teamToLetter = {};
                 const letterToTeam = {};
-                const matchCount = scale / 2;
-                for (let i = 1; i <= matchCount; i++) {
-                    const matchKey = scale + '_' + i;
-                    const match = bracket.matches[matchKey] || { left: '', right: '', winner: '' };
-                    
+                let baseBracket = null;
+                let baseScale = 16;
+                if (map.tournament_bracket_16) {
+                    try { baseBracket = JSON.parse(map.tournament_bracket_16); baseScale = 16; } catch(e){}
+                }
+                if ((!baseBracket || !baseBracket.matches) && map.tournament_bracket_8) {
+                    try { baseBracket = JSON.parse(map.tournament_bracket_8); baseScale = 8; } catch(e){}
+                }
+                if (!baseBracket || !baseBracket.matches) {
+                    baseBracket = bracket;
+                    baseScale = scale;
+                }
+                const baseMatchCount = baseScale / 2;
+                for (let i = 1; i <= baseMatchCount; i++) {
+                    const matchKey = baseScale + '_' + i;
+                    const match = baseBracket.matches[matchKey] || { left: '', right: '', winner: '' };
                     const leftLetter = String.fromCharCode(65 + (i - 1) * 2);      // A, C, E...
                     const rightLetter = String.fromCharCode(65 + (i - 1) * 2 + 1);  // B, D, F...
-                    
                     if (match.left) {
-                        teamToLetter[match.left] = leftLetter;
-                        letterToTeam[leftLetter] = match.left;
+                        teamToLetter[match.left.trim()] = leftLetter;
+                        letterToTeam[leftLetter] = match.left.trim();
                     }
                     if (match.right) {
-                        teamToLetter[match.right] = rightLetter;
-                        letterToTeam[rightLetter] = match.right;
+                        teamToLetter[match.right.trim()] = rightLetter;
+                        letterToTeam[rightLetter] = match.right.trim();
                     }
                 }
                 
