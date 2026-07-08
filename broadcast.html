@@ -3321,6 +3321,20 @@
             return '';
         }
 
+        function getAuctionItemDisplayLabel(item) {
+            if (!item) return '';
+            const code = getCleanCode(item);
+            const meta = getItemAuctionMeta(item);
+            const rawName = String(item.displayName || meta.publicName || item.name || '').trim();
+            if (!code) return rawName;
+            if (!rawName) return code;
+            const upperName = rawName.toUpperCase();
+            if (upperName === code || upperName.startsWith(code + ' ') || upperName.startsWith(code + '-')) {
+                return rawName;
+            }
+            return code + ' · ' + rawName;
+        }
+
         function findItemByCode(items, code) {
             if (!items || !code) return null;
             const target = code.trim().toUpperCase();
@@ -4366,10 +4380,10 @@
                 }
             }
 
-            // 개체명은 원래 명칭(예: A1) 그대로 출력하되, 토너먼트 진행 중(blind)일 때는 업체명 노출을 방지하기 위해 업체명을 '팀 알파벳'으로 치환
-            let cleanInfoName = origName;
+            // 진행 중인 토너먼트 개체는 팀 코드와 실제 개체명을 함께 보여준다.
+            let cleanInfoName = getAuctionItemDisplayLabel(item) || origName;
             const codeFromItem = getCleanCode(item);
-            if (codeFromItem) {
+            if (codeFromItem && !cleanInfoName.includes(' · ')) {
                 const teamLetter = codeFromItem.charAt(0);
                 let companyName = '';
                 if (window.latestConfigMap && window.latestConfigMap.active_tournament && window.latestConfigMap.active_tournament !== 'none') {
@@ -5913,25 +5927,7 @@
             // 글로벌 팀-알파벳 매핑 맵 빌드 (개체명이 '1 릴잔틱' 일 때 소속 팀을 찾아 기호로 치환하기 위함)
             const globalTeamToLetter = {};
             let baseBracket = null;
-            let baseScale = 16;
-            if (map.tournament_bracket_16) {
-                try {
-                    const parsed = JSON.parse(map.tournament_bracket_16);
-                    if (Object.values(parsed.matches || {}).some(m => m.left || m.right)) {
-                        baseBracket = parsed;
-                        baseScale = 16;
-                    }
-                } catch(e){}
-            }
-            if (!baseBracket && map.tournament_bracket_8) {
-                try {
-                    const parsed = JSON.parse(map.tournament_bracket_8);
-                    if (Object.values(parsed.matches || {}).some(m => m.left || m.right)) {
-                        baseBracket = parsed;
-                        baseScale = 8;
-                    }
-                } catch(e){}
-            }
+            let baseScale = 0;
             if (!baseBracket && map.active_tournament && map.active_tournament !== 'none') {
                 const activeScale = map.active_tournament;
                 const bracketKey = 'tournament_bracket_' + activeScale;
@@ -5939,6 +5935,16 @@
                     try { baseBracket = JSON.parse(map[bracketKey]); baseScale = parseInt(activeScale, 10); } catch(e){}
                 }
             }
+            [16, 8, 4, 2].forEach(scale => {
+                if (baseBracket || !map['tournament_bracket_' + scale]) return;
+                try {
+                    const parsed = JSON.parse(map['tournament_bracket_' + scale]);
+                    if (Object.values(parsed.matches || {}).some(m => m.left || m.right)) {
+                        baseBracket = parsed;
+                        baseScale = scale;
+                    }
+                } catch(e){}
+            });
             if (baseBracket && baseBracket.matches) {
                 const baseMatchCount = baseScale / 2;
                 for (let i = 1; i <= baseMatchCount; i++) {
