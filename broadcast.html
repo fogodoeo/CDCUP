@@ -2833,7 +2833,7 @@
             gap: calc(var(--blind-total-fs) * 0.2);
             flex: 1;
             min-height: 0;
-            overflow: hidden;
+            overflow: visible;
             position: relative;
         }
         .blind-total-row {
@@ -2893,15 +2893,10 @@
             background: rgba(15,23,42,0.95);
             border-color: rgba(217,176,92,0.4);
         }
-                .blind-total-row.rank-changed {
+        .blind-total-row.rank-changed {
             box-shadow: 0 4px 28px rgba(217, 176, 92, 0.35), inset 0 1px 0 rgba(255,255,255,0.12);
             border-color: rgba(217, 176, 92, 0.6);
-            animation: p3-rank-shift 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-        }
-        @keyframes p3-rank-shift {
-            0% { transform: scale(1.04) translateX(-3px); filter: brightness(1.3); }
-            50% { transform: scale(1.02) translateX(1px); filter: brightness(1.15); }
-            100% { transform: scale(1) translateX(0); filter: brightness(1); }
+            filter: brightness(1.25);
         }
         .blind-total-row.row-entering {
             animation: p3-row-enter-top 0.48s cubic-bezier(0.16,1,0.3,1) both;
@@ -5408,7 +5403,7 @@
 
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
-                            el.style.transition = 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease';
+                            el.style.transition = 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.4s ease, filter 0.6s ease';
                             el.style.transform = '';
                             setTimeout(() => {
                                 el.classList.remove('rank-changed');
@@ -5743,7 +5738,7 @@
 
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
-                            el.style.transition = 'transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease';
+                            el.style.transition = 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.4s ease, filter 0.6s ease';
                             el.style.transform = '';
                             setTimeout(() => {
                                 el.classList.remove('rank-changed');
