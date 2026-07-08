@@ -2675,6 +2675,81 @@
         .p3-wipe-in .blind-total-row:nth-child(4) { animation-delay: 0.12s !important; }
         .p3-wipe-in .blind-total-row:nth-child(5) { animation-delay: 0.16s !important; }
         .p3-wipe-in .blind-total-row:nth-child(6) { animation-delay: 0.20s !important; }
+
+        /* ── 이벤트 매치 섹션 ── */
+        .event-match-separator {
+            margin: calc(var(--blind-total-fs) * 0.5) 0 calc(var(--blind-total-fs) * 0.3);
+            border: none;
+            border-top: 1px solid rgba(195,154,74,0.25);
+        }
+        .event-match-header {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--blind-total-fs) * 0.3);
+            padding: calc(var(--blind-total-fs) * 0.15) 0;
+            margin-bottom: calc(var(--blind-total-fs) * 0.15);
+        }
+        .event-match-kicker {
+            font-size: calc(var(--blind-total-fs) * 0.52);
+            font-weight: 800;
+            color: #38bdf8;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0.85;
+        }
+        .event-match-title {
+            font-size: calc(var(--blind-total-fs) * 0.72);
+            font-weight: 780;
+            color: #e2e8f0;
+            letter-spacing: -0.02em;
+        }
+        .event-match-row {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--blind-total-fs) * 0.35);
+            padding: calc(var(--blind-total-fs) * 0.28) calc(var(--blind-total-fs) * 0.45);
+            border-radius: calc(var(--blind-total-fs) * 0.35);
+            background: rgba(15,23,42,0.85);
+            border: 1px solid rgba(56,189,248,0.15);
+            margin-bottom: calc(var(--blind-total-fs) * 0.2);
+            transition: background 0.3s, border-color 0.3s;
+        }
+        .event-match-row.is-leader {
+            border-color: rgba(56,189,248,0.4);
+            background: rgba(15,23,42,0.95);
+        }
+        .event-match-rank {
+            font-size: calc(var(--blind-total-fs) * 0.62);
+            font-weight: 800;
+            color: #38bdf8;
+            min-width: calc(var(--blind-total-fs) * 1.1);
+            text-align: center;
+        }
+        .event-match-main {
+            flex: 1;
+            min-width: 0;
+        }
+        .event-match-company {
+            font-size: calc(var(--blind-total-fs) * 0.82);
+            font-weight: 700;
+            color: #f1f5f9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .event-match-count {
+            font-size: calc(var(--blind-total-fs) * 0.52);
+            color: #64748b;
+            font-weight: 600;
+            margin-left: calc(var(--blind-total-fs) * 0.25);
+        }
+        .event-match-amount {
+            font-size: calc(var(--blind-total-fs) * 0.88);
+            font-weight: 800;
+            color: #38bdf8;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
         @keyframes p3-panel-glide-out {
             0% { opacity: 1; transform: translate3d(0,0,0) scale(1); filter: blur(0); }
             100% { opacity: 0; transform: translate3d(-10px, -4px, 0) scale(0.992); filter: blur(1.2px); }
@@ -5018,6 +5093,108 @@
             return groups.sort((a, b) => a.team.localeCompare(b.team, 'en'));
         }
 
+        // ── 이벤트 매치 업체별 합산 ──
+        function getEventMatchRows(items) {
+            const eventItems = (items || []).filter(item => {
+                const meta = getItemAuctionMeta(item);
+                return meta.auctionType === AUCTION_TYPES.EVENT;
+            });
+            if (eventItems.length === 0) return [];
+            const groups = [];
+            const byCompany = {};
+            eventItems.forEach(item => {
+                const company = String(item.company || '').trim() || '미지정';
+                if (!byCompany[company]) {
+                    byCompany[company] = { company, total: 0, soldCount: 0, itemCount: 0, active: false };
+                    groups.push(byCompany[company]);
+                }
+                const group = byCompany[company];
+                group.itemCount += 1;
+                if (isSoldForTotals(item)) {
+                    group.total += readSoldAmount(item);
+                    group.soldCount += 1;
+                }
+                if (isActiveForTotals(item)) group.active = true;
+            });
+            return groups.sort((a, b) => b.total - a.total);
+        }
+
+        let _eventMatchPrevTotals = {};
+
+        function renderEventMatchSection(panel, items, map) {
+            // 기존 이벤트 매치 섹션 제거
+            const oldSection = panel.querySelector('.event-match-section');
+            if (oldSection) oldSection.remove();
+
+            const showEvent = String(map?.event_match_show ?? '0') === '1';
+            if (!showEvent) return;
+
+            const rows = getEventMatchRows(items);
+            if (rows.length < 2) return; // 2팀 이상일 때만 표시
+
+            const section = document.createElement('div');
+            section.className = 'event-match-section';
+
+            // 구분선
+            const sep = document.createElement('hr');
+            sep.className = 'event-match-separator';
+            section.appendChild(sep);
+
+            // 헤더
+            const header = document.createElement('div');
+            header.className = 'event-match-header';
+            header.innerHTML = '<span class="event-match-kicker">EVENT</span><strong class="event-match-title">이벤트 매치</strong>';
+            section.appendChild(header);
+
+            // 각 업체 행
+            rows.forEach((row, idx) => {
+                const el = document.createElement('div');
+                el.className = 'event-match-row' + (idx === 0 && row.total > 0 ? ' is-leader' : '');
+
+                const rank = document.createElement('span');
+                rank.className = 'event-match-rank';
+                rank.textContent = idx + 1;
+
+                const main = document.createElement('div');
+                main.className = 'event-match-main';
+
+                const companyEl = document.createElement('strong');
+                companyEl.className = 'event-match-company';
+                companyEl.textContent = row.company;
+
+                const countEl = document.createElement('span');
+                countEl.className = 'event-match-count';
+                countEl.textContent = row.soldCount + '/' + row.itemCount;
+
+                main.appendChild(companyEl);
+                main.appendChild(countEl);
+
+                const amount = document.createElement('strong');
+                amount.className = 'event-match-amount';
+                const formatted = row.total > 0 ? Number(row.total).toLocaleString() : '-';
+                amount.textContent = formatted;
+
+                // 델타 배지
+                const prevTotal = _eventMatchPrevTotals[row.company] || 0;
+                if (row.total > prevTotal && prevTotal > 0) {
+                    const delta = document.createElement('span');
+                    delta.style.cssText = 'font-size:0.7em; color:#4ade80; margin-left:4px; font-weight:700; opacity:1; transition:opacity 2s;';
+                    delta.textContent = '+' + Number(row.total - prevTotal).toLocaleString();
+                    amount.appendChild(delta);
+                    setTimeout(() => { delta.style.opacity = '0'; }, 50);
+                    setTimeout(() => { delta.remove(); }, 2200);
+                }
+                _eventMatchPrevTotals[row.company] = row.total;
+
+                el.appendChild(rank);
+                el.appendChild(main);
+                el.appendChild(amount);
+                section.appendChild(el);
+            });
+
+            panel.appendChild(section);
+        }
+
         // ── 낙찰 알림 상태 (블라인드 팀 합산 패널용) ──
         const _blindSoldState = {
             initialized: false,
@@ -5288,6 +5465,7 @@
                     updateTeamHeader(latestDone, latestTotal);
 
                     applyLeaderboardUpdate(panel, latestSorted, latestMap, true);
+                    renderEventMatchSection(panel, latestItems, latestMap);
                     _blindRankState.pendingData = null;
                     _blindRankState.pendingMap = null;
                 }, 4300);
@@ -5296,6 +5474,7 @@
                 const hasPrev = _blindRankState.prevOrder.length > 0;
                 const orderChanged = hasPrev && JSON.stringify(sorted.map(r => r.team)) !== JSON.stringify(_blindRankState.prevOrder);
                 applyLeaderboardUpdate(panel, sorted, map, orderChanged);
+                renderEventMatchSection(panel, items, map);
             }
         }
 

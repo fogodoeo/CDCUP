@@ -894,6 +894,10 @@
                         <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-blind-totals-show" class="switch-input" checked onchange="toggleShowState('blind_totals')">
                     </div>
+                    <div class="switch-container" id="toggle-event-match-show-group" style="display:none;">
+                        <span>이벤트 매치</span>
+                        <input type="checkbox" id="toggle-event-match-show" class="switch-input" onchange="toggleEventMatchShow()">
+                    </div>
                     <div class="switch-container" id="toggle-live-bidders-show-group" style="display:none;">
                         <span>입찰자 팝업</span>
                         <input type="checkbox" id="toggle-live-bidders-show" class="switch-input" onchange="toggleLiveBiddersShow()">
@@ -1177,6 +1181,7 @@
                 setDisplay('toggle-bracket-mode-group', !isCrewart);
                 setDisplay('toggle-bracket-full-font-group', isCrewart);
                 setDisplay('toggle-blind-totals-show-group', !isCrewart);
+                setDisplay('toggle-event-match-show-group', !isCrewart);
                 setDisplay('toggle-blind-totals-font-group', !isCrewart);
                 setDisplay('toggle-blind-totals-opacity-group', !isCrewart);
                 setDisplay('toggle-live-bidders-show-group', !isCrewart);
@@ -1621,6 +1626,11 @@
 
                     const modeSelect = document.getElementById('live-bidders-mode-select');
                     if (modeSelect) modeSelect.value = liveBiddersMode;
+
+                    // 이벤트 매치 설정 로딩
+                    const eventMatchShow = cfg.event_match_show !== undefined ? String(cfg.event_match_show) : '0';
+                    const eventMatchToggle = document.getElementById('toggle-event-match-show');
+                    if (eventMatchToggle) eventMatchToggle.checked = eventMatchShow === '1';
                 }
 
                 // Apply states visually
@@ -2301,6 +2311,7 @@
                     configMap['live_bidders_show'] = document.getElementById('toggle-live-bidders-show')?.checked ? '1' : '0';
                     configMap['live_bidders_switch_sec'] = document.getElementById('live-bidders-switch-input')?.value || '5';
                     configMap['live_bidders_mode'] = document.getElementById('live-bidders-mode-select')?.value || 'top';
+                    configMap['event_match_show'] = document.getElementById('toggle-event-match-show')?.checked ? '1' : '0';
                 }
             }
 
@@ -3073,6 +3084,9 @@
 
 
 
+        function toggleEventMatchShow() {
+            saveCoordinates(true);
+        }
         function toggleLiveBiddersShow() {
             saveCoordinates(true);
         }
