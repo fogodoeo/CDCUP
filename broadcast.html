@@ -2597,18 +2597,17 @@
             min-width: 168px;
             max-width: 330px;
             min-height: 0;
+            height: 24%;
             padding: calc(var(--blind-total-fs) * 0.8) calc(var(--blind-total-fs) * 1);
-            border: 1px solid rgba(217, 176, 92, 0.18);
+            border: 1.5px solid rgba(217, 176, 92, 0.45);
             border-radius: 8px;
-            background: rgba(8, 13, 24, var(--blind-total-opacity));
-            backdrop-filter: blur(18px) saturate(1.3);
-            -webkit-backdrop-filter: blur(18px) saturate(1.3);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+            background: #080c18 !important;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
             color: #f8fafc;
             font-family: 'Pretendard', sans-serif;
             box-sizing: border-box;
             pointer-events: none;
-            overflow: visible;
+            overflow: hidden;
             transition: all 0.3s ease;
         }
         #p3-switching-container.visible {
@@ -2617,8 +2616,13 @@
 
         #blind-team-total-overlay,
         #live-bidders-overlay {
-            width: 100%;
-            height: 100%;
+            position: absolute;
+            top: calc(var(--blind-total-fs) * 0.8);
+            left: calc(var(--blind-total-fs) * 1);
+            right: calc(var(--blind-total-fs) * 1);
+            bottom: calc(var(--blind-total-fs) * 0.8);
+            width: auto;
+            height: auto;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
@@ -2628,15 +2632,13 @@
             -webkit-backdrop-filter: none !important;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.4s ease, transform 0.4s ease;
-            transform: translateY(8px);
+            transition: opacity 0.35s ease;
         }
         #blind-team-total-overlay.active,
         #live-bidders-overlay.active {
             display: flex;
             flex-direction: column;
             opacity: 1;
-            transform: translateY(0);
             pointer-events: auto;
         }
 
@@ -2660,20 +2662,26 @@
             position: relative;
         }
         .blind-total-row {
-            display: grid;
-            grid-template-columns: auto minmax(34px, 0.42fr) minmax(38px, 0.52fr) minmax(0, 1fr);
+            display: flex;
             align-items: center;
-            gap: calc(var(--blind-total-fs) * 0.42);
             min-height: calc(var(--blind-total-fs) * 1.82);
             padding: calc(var(--blind-total-fs) * 0.32) calc(var(--blind-total-fs) * 0.5);
             border: 1px solid rgba(217, 176, 92, 0.18);
             border-radius: 8px;
-            background: rgba(8, 13, 24, var(--blind-total-opacity));
-            backdrop-filter: blur(18px) saturate(1.3);
-            -webkit-backdrop-filter: blur(18px) saturate(1.3);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+            background: rgba(8, 13, 24, 0.35);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
             transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
             will-change: transform;
+            box-sizing: border-box;
+        }
+        .blind-total-row.team-totals-row {
+            display: grid;
+            grid-template-columns: auto minmax(34px, 0.42fr) minmax(38px, 0.52fr) minmax(0, 1fr);
+            gap: calc(var(--blind-total-fs) * 0.42);
+        }
+        .blind-total-row.bidders-row {
+            display: flex;
+            justify-content: space-between;
         }
         .blind-total-row.rank-changed {
             box-shadow: 0 4px 24px rgba(217, 176, 92, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
@@ -4962,7 +4970,7 @@
                 const isNew = !rowEl;
                 if (isNew) {
                     rowEl = document.createElement('div');
-                    rowEl.className = 'blind-total-row';
+                    rowEl.className = 'blind-total-row team-totals-row';
                     rowEl.dataset.team = row.team;
                 }
 
@@ -5221,14 +5229,15 @@
                     .trim();
 
                 const rowEl = document.createElement('div');
-                rowEl.className = 'blind-total-row';
+                rowEl.className = 'blind-total-row bidders-row';
                 
-                // 리더보드 순위표 플롯을 그대로 재사용
+                // 리더보드 순위표 플롯을 재사용하되 좌우 플렉스 형태로 넓게 정렬
                 rowEl.innerHTML = `
-                    <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
-                    <strong class="blind-total-team" style="color: #f8fafc; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${esc(cleanName)}</strong>
-                    <div class="blind-total-progress"></div>
-                    <strong class="blind-total-amount">${bid.amount}</strong>
+                    <div style="display: flex; align-items: center; gap: calc(var(--blind-total-fs) * 0.42); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 70%;">
+                        <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
+                        <strong class="blind-total-team" style="color: #f8fafc; font-size: calc(var(--blind-total-fs) * 0.82); font-weight: 950; letter-spacing: 0.02em;">${esc(cleanName)}</strong>
+                    </div>
+                    <strong class="blind-total-amount" style="font-size: calc(var(--blind-total-fs) * 0.8); font-weight: 950; color: #f8fafc;">${bid.amount}</strong>
                 `;
                 listEl.appendChild(rowEl);
             });
@@ -5251,7 +5260,7 @@
 
             const totalsShow = String(map?.blind_totals_show ?? '1') !== '0';
             const biddersShow = String(map?.live_bidders_show ?? '0') === '1';
-            const switchSec = Math.max(2, parseInt(map?.live_bidders_switch_sec || '5', 10));
+            const switchSec = 10; // 10초 주기로 고정
 
             const top = map.blind_totals_top || '10%';
             const left = map.blind_totals_left || '2%';
