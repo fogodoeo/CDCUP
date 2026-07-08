@@ -2774,14 +2774,10 @@
             display: flex;
             align-items: center;
             gap: calc(var(--blind-total-fs) * 0.32);
-            min-height: calc(var(--blind-total-fs) * 1.42);
-            padding: calc(var(--blind-total-fs) * 0.22) calc(var(--blind-total-fs) * 0.5);
-            border: 1px solid rgba(217, 176, 92, 0.26);
-            border-radius: 8px;
-            background: rgba(8, 13, 24, var(--blind-total-opacity));
-            backdrop-filter: blur(12px) saturate(1.18);
-            -webkit-backdrop-filter: blur(12px) saturate(1.18);
-            box-shadow: 0 8px 22px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+            padding: calc(var(--blind-total-fs) * 0.15) calc(var(--blind-total-fs) * 0.1);
+            background: transparent;
+            border: none;
+            box-shadow: none;
         }
         .blind-total-kicker {
             display: inline-flex;
@@ -2886,7 +2882,11 @@
             opacity: 0.24;
             filter: blur(1px) saturate(0.62);
         }
-        .blind-total-row.rank-changed {
+        .blind-total-row[data-rank="1"] {
+            background: rgba(15,23,42,0.95);
+            border-color: rgba(217,176,92,0.4);
+        }
+                .blind-total-row.rank-changed {
             box-shadow: 0 4px 24px rgba(217, 176, 92, 0.3), inset 0 1px 0 rgba(255,255,255,0.1);
             border-color: rgba(217, 176, 92, 0.5);
         }
@@ -6303,13 +6303,10 @@
 
                 const isComplete = completedRounds === roundsPerMatch;
                 let calculatedWinner = '';
-                if (isComplete) {
+                if (completedRounds > 0) {
                     if (leftTotal > rightTotal) calculatedWinner = 'left';
                     else if (rightTotal > leftTotal) calculatedWinner = 'right';
-                    else calculatedWinner = 'draw';
-                } else if (completedRounds > 0) {
-                    if (ls > rs) calculatedWinner = 'left';
-                    else if (rs > ls) calculatedWinner = 'right';
+                    else if (isComplete) calculatedWinner = 'draw';
                 }
                 const hasScore = completedRounds > 0;
                 const displayWinner = calculatedWinner || (!hasScore ? match.winner : '');
@@ -6323,12 +6320,12 @@
                 const titleText = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
                 const leftWin = displayWinner === 'left';
                 const rightWin = displayWinner === 'right';
-                const stateText = isComplete ? 'FINAL' : (isCurrent ? 'LIVE' : `${completedRounds}/${roundsPerMatch} ROUND`);
+                const stateText = isComplete ? 'FINAL' : (isCurrent ? 'LIVE' : (completedRounds > 0 ? `${completedRounds}/${roundsPerMatch}` : ''));
                 const leftName = fullBracketBlind ? leftL + '팀' : (match.left || '대기 중');
                 const rightName = fullBracketBlind ? rightL + '팀' : (match.right || '대기 중');
-                const leftScore = isComplete ? leftTotal : (hasScore ? ls : 0);
-                const rightScore = isComplete ? rightTotal : (hasScore ? rs : 0);
-                const scoreLabel = isComplete ? '합산 낙찰금액' : '라운드 스코어';
+                const leftScore = leftTotal;
+                const rightScore = rightTotal;
+                const scoreLabel = '합산 낙찰금액';
 
                 const leftLogo = fullBracketBlind ? '' : getTeamLogo(match.left);
                 const rightLogo = fullBracketBlind ? '' : getTeamLogo(match.right);
@@ -6348,7 +6345,7 @@
                             <span class="${leftWin ? 'is-leading' : ''}">${leftScore}</span>
                             <i class="sports-score-separator">:</i>
                             <span class="${rightWin ? 'is-leading' : ''}">${rightScore}</span>
-                            ${isComplete ? '<em class="sports-score-unit">만원</em>' : ''}
+                            ${(leftTotal > 0 || rightTotal > 0) ? '<em class="sports-score-unit">만원</em>' : ''}
                         </div>
                         <div class="sports-team sports-team--right${rightWin ? ' is-leading' : ''}">
                             <span class="sports-team-code">${fullBracketBlind ? 'BLIND ' + esc(rightL) : esc(rightL) + ' TEAM'}</span>
@@ -6357,19 +6354,112 @@
                         ${fullBracketBlind ? '' : (rightLogo ? `<img src="${rightLogo}" class="sports-team-logo" alt="" onerror="this.style.display='none'">` : '<div class="sports-logo-placeholder"></div>')}
                     </div>
                     <div class="sports-match-footer">
-                        <span>${isComplete ? `총 ${leftTotal}만원` : `${ls}승`}</span>
-                        <span class="sports-match-draws">${isComplete ? '낙찰금액 합계' : (draws ? `무 ${draws}` : `${completedRounds}/${roundsPerMatch}`)}</span>
-                        <span>${isComplete ? `총 ${rightTotal}만원` : `${rs}승`}</span>
+                        <span>${leftTotal > 0 ? `${leftTotal.toLocaleString()}만원` : '-'}</span>
+                        <span class="sports-match-draws">${isComplete ? 'FINAL' : (completedRounds > 0 ? `${completedRounds}/${roundsPerMatch}` : '')}</span>
+                        <span>${rightTotal > 0 ? `${rightTotal.toLocaleString()}만원` : '-'}</span>
                     </div>
                 `;
                 col.appendChild(node);
             }
             board.appendChild(col);
-            const note = document.createElement('div');
-            note.className = 'sports-results-note';
-            note.textContent = '진행 중에는 라운드 스코어 · 경기 종료 후에는 합산 낙찰금액';
-            board.appendChild(note);
+            // 안내문구 제거됨
             tree.appendChild(board);
+
+            // ── 이벤트 매치 전체 결과 ──
+            const eventShowConfig = String(map?.event_match_show ?? '0') === '1';
+            if (eventShowConfig) {
+                const eventRows = getEventMatchRows(items);
+                if (eventRows.length >= 2) {
+                    const eventBoard = document.createElement('section');
+                    eventBoard.className = 'sports-results-board' + (shouldAnimate ? ' animate-in' : '');
+                    eventBoard.style.marginTop = '24px';
+                    const eventSorted = [...eventRows].sort((a, b) => b.total - a.total);
+                    const eventHeader = document.createElement('header');
+                    eventHeader.className = 'sports-results-header';
+                    eventHeader.innerHTML = `
+                        <div class="sports-results-heading">
+                            <span class="sports-results-kicker" style="color:#38bdf8;">EVENT MATCH</span>
+                            <h2 class="sports-results-title">이벤트 매치 결과</h2>
+                        </div>
+                        <span class="sports-results-live" style="background:rgba(56,189,248,0.12);color:#38bdf8;">EVENT</span>
+                    `;
+                    eventBoard.appendChild(eventHeader);
+
+                    const eventGrid = document.createElement('div');
+                    eventGrid.className = 'sports-results-grid';
+                    eventGrid.style.gridTemplateColumns = 'minmax(0, 1fr)';
+
+                    // 이벤트 매치를 하나의 카드에 vs 형태로 표시
+                    const evNode = document.createElement('article');
+                    const allComplete = eventSorted.every(r => r.soldCount === r.itemCount && r.itemCount > 0);
+                    evNode.className = 'sports-match-card' + (allComplete ? '' : ' is-current');
+                    evNode.style.setProperty('--match-index', 0);
+
+                    const leftEv = eventSorted[0];
+                    const rightEv = eventSorted[1];
+                    const leftEvWin = leftEv.total > rightEv.total && leftEv.total > 0;
+                    const rightEvWin = rightEv.total > leftEv.total && rightEv.total > 0;
+                    const evState = allComplete ? 'FINAL' : 'LIVE';
+
+                    const leftEvLogo = fullBracketBlind ? '' : getTeamLogo(leftEv.company);
+                    const rightEvLogo = fullBracketBlind ? '' : getTeamLogo(rightEv.company);
+
+                    evNode.innerHTML = `
+                        <div class="sports-match-meta">
+                            <span>이벤트 매치</span>
+                            <span class="sports-match-state" style="background:rgba(56,189,248,0.12);color:#38bdf8;">${evState}</span>
+                        </div>
+                        <div class="sports-scoreline">
+                            ${leftEvLogo ? '<img src="' + leftEvLogo + '" class="sports-team-logo" alt="" onerror="this.style.display=\'none\'">' : '<div class="sports-logo-placeholder"></div>'}
+                            <div class="sports-team sports-team--left${leftEvWin ? ' is-leading' : ''}">
+                                <span class="sports-team-code">${leftEv.soldCount}/${leftEv.itemCount}</span>
+                                <strong class="sports-team-name">${esc(leftEv.company)}</strong>
+                            </div>
+                            <div class="sports-score${allComplete ? ' is-total' : ''}" aria-label="합산 ${leftEv.total} 대 ${rightEv.total}">
+                                <span class="${leftEvWin ? 'is-leading' : ''}">${leftEv.total}</span>
+                                <i class="sports-score-separator">:</i>
+                                <span class="${rightEvWin ? 'is-leading' : ''}">${rightEv.total}</span>
+                                ${(leftEv.total > 0 || rightEv.total > 0) ? '<em class="sports-score-unit">만원</em>' : ''}
+                            </div>
+                            <div class="sports-team sports-team--right${rightEvWin ? ' is-leading' : ''}">
+                                <span class="sports-team-code">${rightEv.soldCount}/${rightEv.itemCount}</span>
+                                <strong class="sports-team-name">${esc(rightEv.company)}</strong>
+                            </div>
+                            ${rightEvLogo ? '<img src="' + rightEvLogo + '" class="sports-team-logo" alt="" onerror="this.style.display=\'none\'">' : '<div class="sports-logo-placeholder"></div>'}
+                        </div>
+                        <div class="sports-match-footer">
+                            <span>${leftEv.total > 0 ? leftEv.total.toLocaleString() + '만원' : '-'}</span>
+                            <span class="sports-match-draws">${allComplete ? 'FINAL' : leftEv.soldCount + rightEv.soldCount + '/' + (leftEv.itemCount + rightEv.itemCount)}</span>
+                            <span>${rightEv.total > 0 ? rightEv.total.toLocaleString() + '만원' : '-'}</span>
+                        </div>
+                    `;
+                    eventGrid.appendChild(evNode);
+
+                    // 3팀 이상일 경우 추가 카드
+                    for (let ei = 2; ei < eventSorted.length; ei++) {
+                        const extraTeam = eventSorted[ei];
+                        const extraNode = document.createElement('article');
+                        extraNode.className = 'sports-match-card';
+                        extraNode.style.setProperty('--match-index', ei - 1);
+                        extraNode.innerHTML = `
+                            <div class="sports-match-meta">
+                                <span>${esc(extraTeam.company)}</span>
+                                <span class="sports-match-state">${extraTeam.soldCount}/${extraTeam.itemCount}</span>
+                            </div>
+                            <div class="sports-scoreline" style="justify-content:center;">
+                                <div class="sports-score is-total">
+                                    <span>${extraTeam.total}</span>
+                                    ${extraTeam.total > 0 ? '<em class="sports-score-unit">만원</em>' : ''}
+                                </div>
+                            </div>
+                        `;
+                        eventGrid.appendChild(extraNode);
+                    }
+
+                    eventBoard.appendChild(eventGrid);
+                    tree.appendChild(eventBoard);
+                }
+            }
         }
 
         function maskAuctionWinner(value) {
