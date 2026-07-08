@@ -2847,7 +2847,7 @@
             backdrop-filter: blur(10px) saturate(1.12);
             -webkit-backdrop-filter: blur(10px) saturate(1.12);
             box-shadow: 0 6px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
-            transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.4s ease, background 0.4s ease, filter 0.4s ease;
+            transition: none;
             will-change: transform;
             box-sizing: border-box;
         }
@@ -2862,9 +2862,7 @@
             gap: calc(var(--blind-total-fs) * 0.3);
         }
         #live-bidders-overlay .blind-total-row {
-            transition:
-                transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.3s ease;
+            transition: none;
         }
         #live-bidders-overlay .blind-total-row[data-rank="1"] {
             opacity: 1;
@@ -5297,7 +5295,7 @@
             }, 2500);
         }
 
-        // 리더보드 DOM 업데이트 (FLIP 애니메이션 포함)
+        // 리더보드 DOM 업데이트 (애니메이션 효과 제거 및 즉시 갱신)
         function applyLeaderboardUpdate(panel, sorted, map, animate) {
             let listEl = panel.querySelector('.blind-total-list');
             if (!listEl) {
@@ -5311,12 +5309,6 @@
                 return;
             }
 
-            // FLIP Step 1: FIRST — 기존 위치 기록
-            const oldPositions = {};
-            listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
-                oldPositions[el.dataset.team] = el.getBoundingClientRect().top;
-            });
-
             // 기존 행 DOM 맵
             const existingRows = {};
             listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
@@ -5329,7 +5321,6 @@
 
             // 델타 계산용 이전 총합
             const prevTotals = _blindRankState.prevTotals;
-            const previousLeader = _blindRankState.prevOrder[0] || '';
 
             // 행 업데이트/생성 + DOM 순서 정렬
             sorted.forEach((row, idx) => {
@@ -5342,9 +5333,6 @@
                     rowEl.dataset.team = row.team;
                 }
 
-                // 기존 델타 뱃지 제거
-                rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
-                rowEl.querySelectorAll('.blind-total-delta').forEach(d => d.remove());
                 rowEl.dataset.rank = String(rank);
 
                 const formattedAmount = formatBlindTotalAmount(row.total);
@@ -5362,21 +5350,13 @@
                         <strong class="blind-total-amount">${formattedAmount}</strong>
                     `;
                 }
-                rowEl.classList.remove('is-active');
+                rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed', 'is-active');
 
                 // 델타 뱃지
                 if (animate) {
                     const prev = prevTotals[row.team] || 0;
                     const diff = row.total - prev;
                     if (diff > 0) showDeltaBadge(rowEl, diff);
-                }
-                if (animate && isNew) {
-                    rowEl.classList.add('row-entering');
-                    setTimeout(() => rowEl.classList.remove('row-entering'), 620);
-                }
-                if (animate && previousLeader && rank === 1 && row.team !== previousLeader) {
-                    rowEl.classList.add('is-new-leader');
-                    setTimeout(() => rowEl.classList.remove('is-new-leader'), 1200);
                 }
 
                 listEl.appendChild(rowEl);
@@ -5388,38 +5368,7 @@
 
             // 이전 총합 업데이트
             sorted.forEach(row => { _blindRankState.prevTotals[row.team] = row.total; });
-
-            // FLIP Step 2,3,4: LAST → INVERT → PLAY
-            if (animate && Object.keys(oldPositions).length > 0) {
-                listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
-                    const team = el.dataset.team;
-                    const oldTop = oldPositions[team];
-                    if (oldTop === undefined) return;
-
-                    const newTop = el.getBoundingClientRect().top;
-                    const delta = oldTop - newTop;
-
-                    if (Math.abs(delta) < 1) return;
-
-                    el.style.transition = 'none';
-                    el.style.transform = `translateY(${delta}px)`;
-                    el.classList.add('rank-changed');
-
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            el.style.transition = 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.4s ease, filter 0.6s ease';
-                            el.style.transform = '';
-                            setTimeout(() => {
-                                el.classList.remove('rank-changed');
-                                el.style.transition = '';
-                            }, 1500);
-                        });
-                    });
-                });
-            } else if (!animate) {
-                // 초기 렌더 시 prevTotals 세팅
-                sorted.forEach(row => { _blindRankState.prevTotals[row.team] = row.total; });
-            }
+        }
 
             // 순서 기록
             _blindRankState.prevOrder = sorted.map(r => r.team);
@@ -5691,11 +5640,6 @@
                 return;
             }
 
-            const oldPositions = {};
-            listEl.querySelectorAll('.blind-total-row[data-bidder-key]').forEach(el => {
-                oldPositions[el.dataset.bidderKey] = el.getBoundingClientRect().top;
-            });
-
             const existingRows = {};
             listEl.querySelectorAll('.blind-total-row[data-bidder-key]').forEach(el => {
                 existingRows[el.dataset.bidderKey] = el;
@@ -5704,7 +5648,6 @@
             const emptyEl = listEl.querySelector('.blind-total-empty');
             if (emptyEl) emptyEl.remove();
 
-            const previousLeader = _liveBiddersRankState.prevOrder[0] || '';
             const visibleRows = rows.slice(0, 5);
             visibleRows.forEach((bid, idx) => {
                 const rank = idx + 1;
@@ -5717,7 +5660,6 @@
                 }
                 rowEl.dataset.rank = String(rank);
 
-                rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
                 const cleanName = cleanBidderName(bid.name);
                 const formattedAmount = formatLiveBidAmount(bid.amount);
                 const cacheKey = `${cleanName}|${formattedAmount}|${rank}`;
@@ -5734,13 +5676,20 @@
                     `;
                 }
 
-                if (animate && isNew) {
-                    rowEl.classList.add('row-entering');
-                    setTimeout(() => rowEl.classList.remove('row-entering'), 620);
-                }
-                if (animate && previousLeader && rank === 1 && bid.key !== previousLeader) {
-                    rowEl.classList.add('is-new-leader');
-                    setTimeout(() => rowEl.classList.remove('is-new-leader'), 1200);
+                rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
+
+                // 델타 배지
+                if (animate) {
+                    const prevAmount = _liveBiddersRankState.prevAmounts[bid.key] || 0;
+                    const diff = bid.amount - prevAmount;
+                    if (diff > 0) {
+                        const delta = document.createElement('span');
+                        delta.className = 'blind-total-delta';
+                        delta.textContent = '+' + Number(diff).toLocaleString();
+                        rowEl.appendChild(delta);
+                        setTimeout(() => { delta.classList.add('fade-out'); }, 1800);
+                        setTimeout(() => { delta.remove(); }, 2500);
+                    }
                 }
 
                 listEl.appendChild(rowEl);
@@ -5748,32 +5697,6 @@
             });
 
             Object.values(existingRows).forEach(el => el.remove());
-
-            if (animate && Object.keys(oldPositions).length > 0) {
-                listEl.querySelectorAll('.blind-total-row[data-bidder-key]').forEach(el => {
-                    const key = el.dataset.bidderKey;
-                    const oldTop = oldPositions[key];
-                    if (oldTop === undefined) return;
-                    const newTop = el.getBoundingClientRect().top;
-                    const delta = oldTop - newTop;
-                    if (Math.abs(delta) < 1) return;
-
-                    el.style.transition = 'none';
-                    el.style.transform = `translateY(${delta}px)`;
-                    el.classList.add('rank-changed');
-
-                    requestAnimationFrame(() => {
-                        requestAnimationFrame(() => {
-                            el.style.transition = 'transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.4s ease, filter 0.6s ease';
-                            el.style.transform = '';
-                            setTimeout(() => {
-                                el.classList.remove('rank-changed');
-                                el.style.transition = '';
-                            }, 1500);
-                        });
-                    });
-                });
-            }
 
             _liveBiddersRankState.prevOrder = visibleRows.map(row => row.key);
             _liveBiddersRankState.prevAmounts = visibleRows.reduce((acc, row) => {
