@@ -4528,6 +4528,15 @@
         }
 
         let hasActive = false;
+        function isAuctionActiveStatus(status) {
+            const value = String(status || '').trim().toLowerCase();
+            return value === 'active' || value.includes('진행') || value.includes('경매');
+        }
+
+        function isAuctionActiveItem(item) {
+            return isAuctionActiveStatus(item?.status);
+        }
+
         async function smartRefresh(prefetchedItems) {
             if (document.hidden) return;
             maybeRefreshHostConfig(false);
@@ -4536,7 +4545,7 @@
                     ? prefetchedItems
                     : await getBroadcastItems();
                 processItemsList(items);
-                const active = items.find(candidate => ['진행', '진행중', 'active'].includes(String(candidate?.status || '').trim()));
+                const active = items.find(candidate => isAuctionActiveItem(candidate));
                 const item = active ? await enrichBroadcastItem(active) : null;
                 hasActive = !!item;
                 render(item);
@@ -4599,7 +4608,7 @@
             const now = Date.now();
             const safeActivityAt = Math.min(Number(activityAt) || 0, now);
             const hasLiveItem = Array.isArray(items) && items.some(item =>
-                ['진행', '진행중', 'active'].includes(String(item?.status || '').trim())
+                isAuctionActiveItem(item)
             );
             if (safeActivityAt > _auctionLastActivityAt) {
                 _auctionLastActivityAt = safeActivityAt;
@@ -4985,8 +4994,7 @@
         }
 
         function isActiveForTotals(item) {
-            const status = String(item?.status || '').trim();
-            return status.includes('진행') || status === 'active';
+            return isAuctionActiveItem(item);
         }
 
         function formatBlindTotalAmount(value) {
@@ -5589,7 +5597,7 @@
         }
 
         function getActiveAuctionItem(items) {
-            return (items || []).find(i => ['진행', '진행중', 'active'].includes(String(i.status || '').trim())) || null;
+            return (items || []).find(i => isAuctionActiveItem(i)) || null;
         }
 
         function getBidLogRows(item) {
@@ -6202,7 +6210,7 @@
             }
             if (renderId !== bracketFullRenderId) return;
             tree.innerHTML = '';
-            const activeAuctionItem = items.find(item => ['진행', '진행중', 'active'].includes(item?.status));
+            const activeAuctionItem = items.find(item => isAuctionActiveItem(item));
             const activeAuctionCode = getCleanCode(activeAuctionItem) || '';
 
             // 업체 로고 맵 구성 (업체명 -> 로고URL)
@@ -6610,7 +6618,7 @@
             }
 
             // 저장된 경매 순서와 실제 완료 상태를 함께 보고 아직 끝나지 않은 첫 단계를 찾는다.
-            const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
+            const activeItem = items.find(i => isAuctionActiveItem(i));
             const newestSoldItem = newSoldItems.length ? newSoldItems[newSoldItems.length - 1] : null;
             let detectedRound = 0, detectedGroup = 0, detectedLetter = '';
             let leftTeamLetter = '', rightTeamLetter = '';
@@ -6990,7 +6998,7 @@
                 applyBracketPageMap(map, rawItems);
                 
                 // 현재 진행 중인 개체(status가 '진행', '진행중' 또는 'active'인 개체) 찾기
-                const activeItem = items.find(i => i.status === '진행' || i.status === '진행중' || i.status === 'active');
+                const activeItem = items.find(i => isAuctionActiveItem(i));
                 
                 const ann = document.getElementById('battle-announcement-overlay');
                 if (ann) {
