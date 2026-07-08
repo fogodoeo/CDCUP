@@ -4702,8 +4702,12 @@
 
             if (e.data.type === 'configUpdate') {
                 // 전체 config 맵 갱신 → 티커/배너/룰 즉시 반영
-                const cfg = e.data.config || {};
+                const cfg = Object.assign({}, window.latestConfigMap || {}, e.data.config || {});
+                window.latestConfigMap = cfg;
                 applyAuctionEventModule(cfg);
+                if (document.body.classList.contains('bracket-page')) {
+                    applyBracketPageMap(cfg, window.latestItemsList || []);
+                }
                 const bottomBar = document.querySelector('.hc-bottom-bar');
                 const bannerContainer = document.querySelector('.hc-banner-float');
                 const lp = (new URLSearchParams(window.location.search).get('page') || '').toLowerCase() === 'bracket' ? 'p3_' : (document.body.classList.contains('host-mode') ? '' : 'p2_');

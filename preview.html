@@ -780,7 +780,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260708-live-top3-transparent"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260708-teamfont-live"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -925,12 +925,12 @@
                     </div>
                     <div class="switch-container" id="toggle-bracket-full-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">전체결과 폰트:</span>
-                        <input type="number" id="bracket-full-font-input" onchange="updateBracketFontSize('bracket_full', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="8" max="60" value="14">
+                        <input type="number" id="bracket-full-font-input" oninput="previewBracketFontSize('bracket_full', this.value)" onchange="updateBracketFontSize('bracket_full', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="8" max="60" value="14">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
                     </div>
                     <div class="switch-container" id="toggle-bracket-live-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">실시간 폰트:</span>
-                        <input type="number" id="bracket-live-font-input" onchange="updateBracketFontSize('bracket_live', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="8" max="60" value="14">
+                        <input type="number" id="bracket-live-font-input" oninput="previewBracketFontSize('bracket_live', this.value)" onchange="updateBracketFontSize('bracket_live', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="8" max="60" value="14">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
                     </div>
                     <div class="switch-container" id="toggle-bracket-live-opacity-group" style="display:none; gap: 7px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
@@ -940,7 +940,7 @@
                     </div>
                     <div class="switch-container" id="toggle-blind-totals-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">팀합산 폰트:</span>
-                        <input type="number" id="blind-totals-font-input" onchange="updateBracketFontSize('blind_totals', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="9" max="32" value="14">
+                        <input type="number" id="blind-totals-font-input" oninput="previewBracketFontSize('blind_totals', this.value)" onchange="updateBracketFontSize('blind_totals', this.value)" class="cdcup-input" style="padding: 2px 6px; width: 52px; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;" min="9" max="32" value="14">
                         <span style="font-size: 11px; font-weight: 700; color: var(--text-muted);">px</span>
                     </div>
                     <div class="switch-container" id="toggle-blind-totals-opacity-group" style="display:none; gap: 7px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
@@ -1119,7 +1119,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260708-live-top3-transparent';
+        const broadcastAssetVersion = '20260708-teamfont-live';
         let previewConfigMap = {};
 
         function requestedModuleId() {
@@ -1426,13 +1426,37 @@
             setTimeout(() => { t.classList.remove('show'); }, 2000);
         }
 
-        function updateBracketFontSize(key, val) {
+        function fontSizeConfigKey(key) {
+            if (key === 'bracket_full') return 'bracket_full_font_size';
+            if (key === 'bracket_live') return 'bracket_live_font_size';
+            if (key === 'blind_totals') return 'blind_totals_font_size';
+            return '';
+        }
+
+        function postPreviewConfigPatch(patch) {
+            if (!patch || !Object.keys(patch).length) return;
+            previewConfigMap = { ...(previewConfigMap || {}), ...patch };
+            try {
+                frame.contentWindow.postMessage({ type: 'configUpdate', config: previewConfigMap }, '*');
+            } catch (e) {}
+        }
+
+        function previewBracketFontSize(key, val) {
             const size = parseInt(val, 10) || 14;
             if (elements[key]) {
                 elements[key].fontSize = String(size);
                 applyVisualState(key);
-                saveCoordinates(false);
+                const configKey = fontSizeConfigKey(key);
+                const patch = configKey ? { [configKey]: String(size) } : {};
+                if (key === 'bracket_full') patch.bracket_font_size = String(size);
+                postPreviewConfigPatch(patch);
             }
+            return size;
+        }
+
+        function updateBracketFontSize(key, val) {
+            previewBracketFontSize(key, val);
+            saveCoordinates(false);
         }
 
         function previewBracketOpacity(val) {
@@ -2375,6 +2399,7 @@
 
             try {
                 await updateConfigs(configMap);
+                previewConfigMap = { ...(previewConfigMap || {}), ...configMap };
                 // Flash Save status indicator
                 const indicator = document.getElementById('save-status');
                 indicator.style.display = 'inline';
@@ -2382,6 +2407,7 @@
 
                 if (!isAuto) toast("방송 배치 정보 및 노출 설정을 저장했습니다.");
 
+                frame.contentWindow.postMessage({ type: 'configUpdate', config: previewConfigMap }, '*');
                 // Reload iframe inside visual screen simulator to show real result
                 frame.contentWindow.location.reload();
             } catch(err) { toast('저장 실패: ' + err.message); }
