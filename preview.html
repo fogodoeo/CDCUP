@@ -2458,10 +2458,11 @@
 
         function tIsCurrentStageItem(item) {
             const meta = getItemAuctionMeta(item);
-            if (meta.auctionType !== 'tournament') return false;
-            if (meta.tournamentStage) return meta.tournamentStage === Number(tScale);
-            if (!meta.tournamentCode) return true;
-            return tLegacyTournamentScale() === Number(tScale);
+            // 다른 라운드에 이미 명시적으로 편성되어 있는 토너먼트 개체만 제외
+            if (meta.auctionType === 'tournament' && meta.tournamentStage && meta.tournamentStage !== Number(tScale)) {
+                return false;
+            }
+            return true;
         }
 
         async function tInit() {
