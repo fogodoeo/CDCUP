@@ -3225,7 +3225,7 @@
         }
 
         function processItemsList(items) {
-            const activeScale = isBracketPageTemp ? (Number(window.latestConfigMap?.active_tournament) || 0) : 0;
+            const activeScale = 0;
             const progressItems = activeScale ? scopeTournamentItems(items, activeScale) : items;
             window._totalItemsCount = progressItems.length;
             window._lastCountFetchTime = Date.now();
@@ -4440,8 +4440,13 @@
                 if (cl.activity) addPill(track, '활동성:' + (GRADE[cl.activity] || cl.activity), '');
                 if (cl.feed) addPill(track, '먹이:' + (GRADE[cl.feed] || cl.feed), '');
                 if (cl.structure) addPill(track, '체형:' + (GRADE[cl.structure] || cl.structure), '');
-                if (cl.memo) addPill(track, cl.memo, '');
-                if (item.note && item.note !== cl.memo) {
+                const isCleanNote = (txt) => {
+                    if (!txt) return false;
+                    const clean = String(txt).trim().toLowerCase();
+                    return clean !== '' && clean !== 'none' && clean !== 'null' && clean !== 'undefined';
+                };
+                if (isCleanNote(cl.memo)) addPill(track, cl.memo, '');
+                if (isCleanNote(item.note) && item.note !== cl.memo) {
                     addPill(track, item.note, '');
                 }
 
