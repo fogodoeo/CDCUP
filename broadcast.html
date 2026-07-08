@@ -6365,34 +6365,24 @@
             // 안내문구 제거됨
             tree.appendChild(board);
 
-            // ── 이벤트 매치 전체 결과 ──
+            // ── 이벤트 매치 전체 결과 (토너먼트 그리드 안에 합침) ──
             const eventShowConfig = String(map?.event_match_show ?? '0') === '1';
             if (eventShowConfig) {
                 const eventRows = getEventMatchRows(items);
                 if (eventRows.length >= 2) {
-                    const eventBoard = document.createElement('section');
-                    eventBoard.className = 'sports-results-board' + (shouldAnimate ? ' animate-in' : '');
-                    eventBoard.style.marginTop = '24px';
                     const eventSorted = [...eventRows].sort((a, b) => b.total - a.total);
-                    const eventHeader = document.createElement('header');
-                    eventHeader.className = 'sports-results-header';
-                    eventHeader.innerHTML = `
-                        <div class="sports-results-heading">
-                            <span class="sports-results-kicker" style="color:#38bdf8;">EVENT MATCH</span>
-                            <h2 class="sports-results-title">이벤트 매치 결과</h2>
-                        </div>
-                        <span class="sports-results-live" style="background:rgba(56,189,248,0.12);color:#38bdf8;">EVENT</span>
-                    `;
-                    eventBoard.appendChild(eventHeader);
 
-                    const eventGrid = document.createElement('div');
-                    eventGrid.className = 'sports-results-grid';
-                    eventGrid.style.gridTemplateColumns = 'minmax(0, 1fr)';
+                    // 구분선
+                    const divider = document.createElement('div');
+                    divider.style.cssText = 'grid-column: 1 / -1; border-top: 1px solid rgba(56,189,248,0.2); margin: 8px 0 4px; display:flex; align-items:center; gap:8px; padding-top:8px;';
+                    divider.innerHTML = '<span style="font-size:11px;font-weight:800;color:#38bdf8;letter-spacing:0.08em;">EVENT MATCH</span>';
+                    col.appendChild(divider);
 
-                    // 이벤트 매치를 하나의 카드에 vs 형태로 표시
+                    // 이벤트 매치 카드
                     const evNode = document.createElement('article');
                     const allComplete = eventSorted.every(r => r.soldCount === r.itemCount && r.itemCount > 0);
                     evNode.className = 'sports-match-card' + (allComplete ? '' : ' is-current');
+                    evNode.style.cssText = 'grid-column: 1 / -1;';
                     evNode.style.setProperty('--match-index', 0);
 
                     const leftEv = eventSorted[0];
@@ -6433,34 +6423,11 @@
                             <span>${rightEv.total > 0 ? rightEv.total.toLocaleString() + '만원' : '-'}</span>
                         </div>
                     `;
-                    eventGrid.appendChild(evNode);
-
-                    // 3팀 이상일 경우 추가 카드
-                    for (let ei = 2; ei < eventSorted.length; ei++) {
-                        const extraTeam = eventSorted[ei];
-                        const extraNode = document.createElement('article');
-                        extraNode.className = 'sports-match-card';
-                        extraNode.style.setProperty('--match-index', ei - 1);
-                        extraNode.innerHTML = `
-                            <div class="sports-match-meta">
-                                <span>${esc(extraTeam.company)}</span>
-                                <span class="sports-match-state">${extraTeam.soldCount}/${extraTeam.itemCount}</span>
-                            </div>
-                            <div class="sports-scoreline" style="justify-content:center;">
-                                <div class="sports-score is-total">
-                                    <span>${extraTeam.total}</span>
-                                    ${extraTeam.total > 0 ? '<em class="sports-score-unit">만원</em>' : ''}
-                                </div>
-                            </div>
-                        `;
-                        eventGrid.appendChild(extraNode);
-                    }
-
-                    eventBoard.appendChild(eventGrid);
-                    tree.appendChild(eventBoard);
+                    col.appendChild(evNode);
                 }
             }
         }
+
 
         function maskAuctionWinner(value) {
             const raw = String(value || '').trim();
