@@ -14,7 +14,7 @@
             height: 100%;
             margin: 0;
             overflow: hidden;
-            background: #000;
+            background: transparent;
         }
 
         iframe {
@@ -23,7 +23,7 @@
             width: 100%;
             height: 100%;
             border: 0;
-            background: #000;
+            background: transparent;
         }
 
         .status {
@@ -44,14 +44,14 @@
     </style>
 </head>
 <body>
-    <iframe id="broadcast-frame" title="CREO 송출 화면"></iframe>
+    <iframe id="broadcast-frame" title="CREO 송출 화면" allowtransparency="true"></iframe>
     <div class="status" id="status">송출 화면 연결 중</div>
 
     <script>
         const params = new URLSearchParams(location.search);
         const frame = document.getElementById('broadcast-frame');
         const statusEl = document.getElementById('status');
-        const assetVersion = '20260708-live-top3';
+        const assetVersion = '20260708-live-top3-transparent';
         let lastSrc = '';
         let lastMode = '';
 

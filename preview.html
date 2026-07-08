@@ -780,7 +780,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260708-live-top3"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260708-live-top3-transparent"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -1119,7 +1119,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260708-live-top3';
+        const broadcastAssetVersion = '20260708-live-top3-transparent';
         let previewConfigMap = {};
 
         function requestedModuleId() {
