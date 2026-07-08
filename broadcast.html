@@ -5484,7 +5484,12 @@
                 // 일반 업데이트 (낙찰 없음)
                 const hasPrev = _blindRankState.prevOrder.length > 0;
                 const orderChanged = hasPrev && JSON.stringify(sorted.map(r => r.team)) !== JSON.stringify(_blindRankState.prevOrder);
-                applyLeaderboardUpdate(panel, sorted, map, orderChanged);
+                const biddersConfigured = String(map?.live_bidders_show ?? '0') === '1';
+                const activeAuctionItem = getActiveAuctionItem(items);
+                const biddersShow = biddersConfigured && Boolean(activeAuctionItem);
+                const isPanelActive = _p3ActiveCard === 'totals' || !biddersShow;
+
+                applyLeaderboardUpdate(panel, sorted, map, isPanelActive && orderChanged);
                 renderEventMatchSection(panel, items, map);
             }
         }
@@ -5782,7 +5787,8 @@
                 </span>
             `);
 
-            applyBidderLeaderboardUpdate(panel, bidRows, _liveBiddersRankState.prevOrder.length > 0);
+            const isPanelActive = _p3ActiveCard === 'bidders';
+            applyBidderLeaderboardUpdate(panel, bidRows, isPanelActive && _liveBiddersRankState.prevOrder.length > 0);
             return hasBidUpdate;
         }
 
