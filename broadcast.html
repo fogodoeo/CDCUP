@@ -2723,6 +2723,7 @@
             border: 1px solid rgba(56,189,248,0.15);
             margin-bottom: calc(var(--blind-total-fs) * 0.2);
             transition: background 0.3s, border-color 0.3s;
+            position: relative;
         }
         .event-match-row.is-leader {
             border-color: rgba(56,189,248,0.4);
@@ -3041,31 +3042,34 @@
         /* ── 점수 델타 뱃지 (+100,000) ── */
         .blind-total-delta {
             position: absolute;
-            right: calc(var(--blind-total-fs) * 0.4);
+            right: calc(var(--blind-total-fs) * -0.15);
             top: 50%;
-            transform: translateY(-50%);
-            padding: 2px 8px;
-            border-radius: 12px;
-            background: rgba(217, 176, 92, 0.22);
-            color: #fbbf24;
-            font-size: calc(var(--blind-total-fs) * 0.58);
+            transform: translateY(-50%) translateX(100%);
+            padding: 3px 10px;
+            border-radius: 14px;
+            background: rgba(251, 191, 36, 0.92);
+            color: #0f172a;
+            font-size: calc(var(--blind-total-fs) * 0.52);
             font-weight: 900;
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
-            animation: blind-delta-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+            animation: blind-delta-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
             pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 2px 12px rgba(251, 191, 36, 0.4);
         }
         .blind-total-delta.fade-out {
-            animation: blind-delta-out 0.5s ease-out both;
+            animation: blind-delta-out 0.6s ease-out both;
         }
         @keyframes blind-delta-in {
-            from { opacity: 0; transform: translateY(-50%) translateX(10px) scale(0.8); }
-            to   { opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
+            from { opacity: 0; transform: translateY(-50%) translateX(100%) scale(0.5); }
+            to   { opacity: 1; transform: translateY(-50%) translateX(100%) scale(1); }
         }
         @keyframes blind-delta-out {
-            from { opacity: 1; }
-            to   { opacity: 0; transform: translateY(-50%) translateY(-6px); }
+            from { opacity: 1; transform: translateY(-50%) translateX(100%) scale(1); }
+            to   { opacity: 0; transform: translateY(-50%) translateX(100%) translateY(-10px) scale(0.7); }
         }
+
         .blind-total-row {
             position: relative;
         }
@@ -5185,15 +5189,15 @@
                 const formatted = row.total > 0 ? Number(row.total).toLocaleString() : '-';
                 amount.textContent = formatted;
 
-                // 델타 배지
+                // 델타 배지 (카드 바깥 오른쪽)
                 const prevTotal = _eventMatchPrevTotals[row.company] || 0;
                 if (row.total > prevTotal && prevTotal > 0) {
                     const delta = document.createElement('span');
-                    delta.style.cssText = 'font-size:0.7em; color:#4ade80; margin-left:4px; font-weight:700; opacity:1; transition:opacity 2s;';
+                    delta.className = 'blind-total-delta';
                     delta.textContent = '+' + Number(row.total - prevTotal).toLocaleString();
-                    amount.appendChild(delta);
-                    setTimeout(() => { delta.style.opacity = '0'; }, 50);
-                    setTimeout(() => { delta.remove(); }, 2200);
+                    el.appendChild(delta);
+                    setTimeout(() => { delta.classList.add('fade-out'); }, 1800);
+                    setTimeout(() => { delta.remove(); }, 2500);
                 }
                 _eventMatchPrevTotals[row.company] = row.total;
 
