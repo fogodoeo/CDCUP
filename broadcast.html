@@ -2599,17 +2599,16 @@
             max-width: 330px;
             min-height: 0;
             height: 24%;
-            padding: calc(var(--blind-total-fs) * 0.8) calc(var(--blind-total-fs) * 1);
-            border: 1.5px solid rgba(217, 176, 92, 0.45);
-            border-radius: 8px;
-            background: #080c18 !important;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: transparent !important;
+            box-shadow: none;
             color: #f8fafc;
             font-family: 'Pretendard', sans-serif;
             box-sizing: border-box;
             pointer-events: none;
-            overflow: hidden;
-            transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+            overflow: visible;
         }
         #p3-switching-container.visible {
             display: block;
@@ -2618,10 +2617,10 @@
         #blind-team-total-overlay,
         #live-bidders-overlay {
             position: absolute;
-            top: calc(var(--blind-total-fs) * 0.8);
-            left: calc(var(--blind-total-fs) * 1);
-            right: calc(var(--blind-total-fs) * 1);
-            bottom: calc(var(--blind-total-fs) * 0.8);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: auto;
             width: auto;
             height: auto;
             background: transparent !important;
@@ -2638,7 +2637,8 @@
             gap: calc(var(--blind-total-fs) * 0.32);
             clip-path: inset(0 0 0 0);
             transform-origin: left center;
-            transition: opacity 0.22s ease;
+            transform: translate3d(0, 0, 0);
+            transition: opacity 0.18s ease;
         }
         #blind-team-total-overlay.active,
         #live-bidders-overlay.active {
@@ -2651,48 +2651,71 @@
         #live-bidders-overlay.p3-wipe-out {
             opacity: 1;
             pointer-events: none;
-            animation: p3-panel-erase-out var(--p3-wipe-duration) cubic-bezier(0.5,0,0.2,1) both;
+            animation: p3-panel-deck-out 0.34s cubic-bezier(0.5,0,0.2,1) both;
         }
         #blind-team-total-overlay.p3-wipe-in,
         #live-bidders-overlay.p3-wipe-in {
             opacity: 1;
-            animation: p3-panel-erase-in var(--p3-wipe-duration) cubic-bezier(0.16,1,0.3,1) both;
+            animation: p3-panel-deck-in 0.52s cubic-bezier(0.16,1,0.3,1) both;
         }
-        @keyframes p3-panel-erase-out {
-            0% { clip-path: inset(0 0 0 0); filter: blur(0); }
-            58% { clip-path: inset(0 46% 0 0); filter: blur(0.4px); }
-            100% { clip-path: inset(0 100% 0 0); filter: blur(1px); }
+        #blind-team-total-overlay.p3-wipe-out .blind-total-head,
+        #blind-team-total-overlay.p3-wipe-out .blind-total-row,
+        #live-bidders-overlay.p3-wipe-out .blind-total-head,
+        #live-bidders-overlay.p3-wipe-out .blind-total-row {
+            animation: p3-card-deck-out 0.28s cubic-bezier(0.5,0,0.2,1) both;
         }
-        @keyframes p3-panel-erase-in {
-            0% { clip-path: inset(0 0 0 100%); filter: blur(1px); }
-            100% { clip-path: inset(0 0 0 0); filter: blur(0); }
+        #blind-team-total-overlay.p3-wipe-in .blind-total-head,
+        #blind-team-total-overlay.p3-wipe-in .blind-total-row,
+        #live-bidders-overlay.p3-wipe-in .blind-total-head,
+        #live-bidders-overlay.p3-wipe-in .blind-total-row {
+            animation: p3-card-deck-in 0.48s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .p3-wipe-in .blind-total-row:nth-child(2) { animation-delay: 0.04s !important; }
+        .p3-wipe-in .blind-total-row:nth-child(3) { animation-delay: 0.08s !important; }
+        .p3-wipe-in .blind-total-row:nth-child(4) { animation-delay: 0.12s !important; }
+        .p3-wipe-in .blind-total-row:nth-child(5) { animation-delay: 0.16s !important; }
+        .p3-wipe-in .blind-total-row:nth-child(6) { animation-delay: 0.20s !important; }
+        @keyframes p3-panel-deck-out {
+            0% { opacity: 1; transform: translate3d(0,0,0) scale(1); filter: blur(0); }
+            100% { opacity: 0; transform: translate3d(-18px, 0, 0) scale(0.985); filter: blur(1.6px); }
+        }
+        @keyframes p3-panel-deck-in {
+            0% { opacity: 0; transform: translate3d(18px, 0, 0) scale(0.99); filter: blur(1.4px); }
+            100% { opacity: 1; transform: translate3d(0,0,0) scale(1); filter: blur(0); }
+        }
+        @keyframes p3-card-deck-out {
+            0% { opacity: 1; transform: translate3d(0,0,0); }
+            100% { opacity: 0; transform: translate3d(-10px, -2px, 0); }
+        }
+        @keyframes p3-card-deck-in {
+            0% { opacity: 0; transform: translate3d(14px, 8px, 0); }
+            100% { opacity: 1; transform: translate3d(0,0,0); }
         }
 
 
         .blind-total-head {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            grid-template-rows: auto auto;
+            display: flex;
             align-items: center;
-            column-gap: calc(var(--blind-total-fs) * 0.7);
-            row-gap: calc(var(--blind-total-fs) * 0.08);
-            min-height: calc(var(--blind-total-fs) * 1.95);
-            padding: calc(var(--blind-total-fs) * 0.24) calc(var(--blind-total-fs) * 0.45);
-            border: 1px solid rgba(217, 176, 92, 0.2);
+            gap: calc(var(--blind-total-fs) * 0.32);
+            min-height: calc(var(--blind-total-fs) * 1.42);
+            padding: calc(var(--blind-total-fs) * 0.22) calc(var(--blind-total-fs) * 0.5);
+            border: 1px solid rgba(217, 176, 92, 0.26);
             border-radius: 8px;
-            background: rgba(8, 13, 24, var(--blind-total-opacity));
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+            background: rgba(8, 13, 24, 0.48);
+            backdrop-filter: blur(12px) saturate(1.18);
+            -webkit-backdrop-filter: blur(12px) saturate(1.18);
+            box-shadow: 0 8px 22px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.06);
         }
         .blind-total-kicker {
             display: inline-flex;
-            grid-column: 1;
-            grid-row: 1;
             align-items: center;
-            gap: calc(var(--blind-total-fs) * 0.28);
+            gap: 0;
+            width: calc(var(--blind-total-fs) * 0.48);
+            min-width: calc(var(--blind-total-fs) * 0.48);
             color: #d9b05c;
-            font-size: calc(var(--blind-total-fs) * 0.48);
+            font-size: 0;
             font-weight: 950;
-            letter-spacing: 0.16em;
+            letter-spacing: 0;
             line-height: 1;
         }
         .blind-total-kicker::before {
@@ -2707,25 +2730,22 @@
         }
         .blind-total-title {
             display: block;
-            grid-column: 1 / 3;
-            grid-row: 2;
             min-width: 0;
             color: #fff7df;
-            font-size: calc(var(--blind-total-fs) * 0.84);
+            font-size: calc(var(--blind-total-fs) * 0.78);
             font-weight: 950;
             letter-spacing: 0;
-            line-height: 1.05;
+            line-height: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         .blind-total-meta {
             display: flex;
-            grid-column: 2;
-            grid-row: 1;
             align-items: center;
             justify-content: flex-end;
-            min-width: calc(var(--blind-total-fs) * 3.1);
+            min-width: auto;
+            margin-left: calc(var(--blind-total-fs) * 0.08);
         }
         .blind-total-list {
             display: flex;
@@ -2743,8 +2763,10 @@
             padding: calc(var(--blind-total-fs) * 0.2) calc(var(--blind-total-fs) * 0.45);
             border: 1px solid rgba(217, 176, 92, 0.18);
             border-radius: 8px;
-            background: rgba(8, 13, 24, 0.35);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+            background: rgba(8, 13, 24, 0.52);
+            backdrop-filter: blur(10px) saturate(1.12);
+            -webkit-backdrop-filter: blur(10px) saturate(1.12);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
             transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
             will-change: transform;
             box-sizing: border-box;
@@ -2872,23 +2894,24 @@
         .blind-total-counter {
             display: flex;
             align-items: center;
-            gap: calc(var(--blind-total-fs) * 0.3);
+            gap: calc(var(--blind-total-fs) * 0.04);
             padding: calc(var(--blind-total-fs) * 0.22) calc(var(--blind-total-fs) * 0.45);
-            font-size: calc(var(--blind-total-fs) * 0.72);
+            font-size: calc(var(--blind-total-fs) * 0.68);
             font-weight: 840;
             color: #fff7df;
-            letter-spacing: 0.04em;
-            border: 1px solid rgba(217, 176, 92, 0.18);
-            border-radius: 8px;
-            background: rgba(8, 13, 24, var(--blind-total-opacity));
-            backdrop-filter: blur(18px) saturate(1.3);
-            -webkit-backdrop-filter: blur(18px) saturate(1.3);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+            letter-spacing: 0.02em;
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            box-shadow: none;
             width: fit-content;
         }
         .blind-total-meta .blind-total-counter {
-            background: rgba(217, 176, 92, 0.1);
-            border-color: rgba(217, 176, 92, 0.22);
+            padding: 0;
+            background: transparent;
+            border-color: transparent;
             box-shadow: none;
         }
         .blind-total-counter-num {
@@ -5401,8 +5424,8 @@
                 _p3SwitchEffectTimer = setTimeout(() => {
                     nextPanel.classList.remove('p3-wipe-in');
                     _p3SwitchEffectTimer = null;
-                }, 560);
-            }, 430);
+                }, 640);
+            }, 300);
         }
 
         function applyBidderLeaderboardUpdate(panel, rows, animate) {
