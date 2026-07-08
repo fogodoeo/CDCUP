@@ -5261,13 +5261,7 @@
             // 낙찰 감지
             const soldItem = detectBlindSoldItem(items);
 
-            const updateTeamHeader = (done, total) => ensureP3PanelHeader(panel, '팀 실시간 내역', `
-                <span class="blind-total-counter">
-                    <span class="blind-total-counter-num">${done}</span>
-                    <span class="blind-total-counter-sep">/</span>
-                    <span class="blind-total-counter-num">${total}</span>
-                </span>
-            `);
+            const updateTeamHeader = () => ensureP3PanelHeader(panel, '팀 실시간 내역', '');
             updateTeamHeader(totalDone, totalItems);
 
             panel.classList.add('visible');
