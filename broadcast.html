@@ -3225,7 +3225,7 @@
         }
 
         function processItemsList(items) {
-            const activeScale = Number(window.latestConfigMap?.active_tournament) || 0;
+            const activeScale = isBracketPageTemp ? (Number(window.latestConfigMap?.active_tournament) || 0) : 0;
             const progressItems = activeScale ? scopeTournamentItems(items, activeScale) : items;
             window._totalItemsCount = progressItems.length;
             window._lastCountFetchTime = Date.now();
