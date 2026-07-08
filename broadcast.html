@@ -5347,14 +5347,21 @@
                 rowEl.querySelectorAll('.blind-total-delta').forEach(d => d.remove());
                 rowEl.dataset.rank = String(rank);
 
-                rowEl.innerHTML = `
-                    <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
-                    <div class="blind-total-main">
-                        <strong class="blind-total-team">${row.team}팀</strong>
-                        <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
-                    </div>
-                    <strong class="blind-total-amount">${formatBlindTotalAmount(row.total)}</strong>
-                `;
+                const formattedAmount = formatBlindTotalAmount(row.total);
+                const cacheKey = `${row.team}|${row.soldCount}/${row.itemCount}|${formattedAmount}|${rank}`;
+                if (rowEl.dataset.lastCache === cacheKey) {
+                    // 스킵
+                } else {
+                    rowEl.dataset.lastCache = cacheKey;
+                    rowEl.innerHTML = `
+                        <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
+                        <div class="blind-total-main">
+                            <strong class="blind-total-team">${row.team}팀</strong>
+                            <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
+                        </div>
+                        <strong class="blind-total-amount">${formattedAmount}</strong>
+                    `;
+                }
                 rowEl.classList.remove('is-active');
 
                 // 델타 뱃지
@@ -5711,13 +5718,21 @@
                 rowEl.dataset.rank = String(rank);
 
                 rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
-                rowEl.innerHTML = `
-                    <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
-                    <div class="blind-total-main">
-                        <strong class="blind-total-team">${esc(cleanBidderName(bid.name))}</strong>
-                    </div>
-                    <strong class="blind-total-amount">${formatLiveBidAmount(bid.amount)}</strong>
-                `;
+                const cleanName = cleanBidderName(bid.name);
+                const formattedAmount = formatLiveBidAmount(bid.amount);
+                const cacheKey = `${cleanName}|${formattedAmount}|${rank}`;
+                if (rowEl.dataset.lastCache === cacheKey) {
+                    // 스킵
+                } else {
+                    rowEl.dataset.lastCache = cacheKey;
+                    rowEl.innerHTML = `
+                        <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
+                        <div class="blind-total-main">
+                            <strong class="blind-total-team">${esc(cleanName)}</strong>
+                        </div>
+                        <strong class="blind-total-amount">${formattedAmount}</strong>
+                    `;
+                }
 
                 if (animate && isNew) {
                     rowEl.classList.add('row-entering');
