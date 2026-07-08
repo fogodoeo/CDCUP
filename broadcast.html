@@ -6345,7 +6345,7 @@
                             <span class="${leftWin ? 'is-leading' : ''}">${leftScore}</span>
                             <i class="sports-score-separator">:</i>
                             <span class="${rightWin ? 'is-leading' : ''}">${rightScore}</span>
-                            ${(leftTotal > 0 || rightTotal > 0) ? '<em class="sports-score-unit">만원</em>' : ''}
+                            
                         </div>
                         <div class="sports-team sports-team--right${rightWin ? ' is-leading' : ''}">
                             <span class="sports-team-code">${fullBracketBlind ? 'BLIND ' + esc(rightL) : esc(rightL) + ' TEAM'}</span>
@@ -6409,7 +6409,7 @@
                                 <span class="${leftEvWin ? 'is-leading' : ''}">${leftEv.total}</span>
                                 <i class="sports-score-separator">:</i>
                                 <span class="${rightEvWin ? 'is-leading' : ''}">${rightEv.total}</span>
-                                ${(leftEv.total > 0 || rightEv.total > 0) ? '<em class="sports-score-unit">만원</em>' : ''}
+                                
                             </div>
                             <div class="sports-team sports-team--right${rightEvWin ? ' is-leading' : ''}">
                                 <span class="sports-team-code">${rightEv.soldCount}/${rightEv.itemCount}</span>
