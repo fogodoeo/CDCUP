@@ -2721,12 +2721,31 @@
             background: rgba(15,23,42,0.85);
             border: 1px solid rgba(56,189,248,0.15);
             margin-bottom: calc(var(--blind-total-fs) * 0.2);
-            transition: none;
+            transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.22s ease,
+                        background-color 0.22s ease,
+                        box-shadow 0.22s ease;
             position: relative;
+            --rank-text-opacity: 1;
+            will-change: transform;
         }
         .event-match-row.is-leader {
             border-color: rgba(56,189,248,0.4);
             background: rgba(15,23,42,0.95);
+        }
+        .event-match-row[data-rank="2"] {
+            --rank-text-opacity: 0.78;
+        }
+        .event-match-row[data-rank="3"] {
+            --rank-text-opacity: 0.56;
+        }
+        .event-match-row.rank-changed {
+            border-color: rgba(56,189,248,0.48);
+            box-shadow: 0 0 18px rgba(56,189,248,0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+            animation: leaderboard-rank-pulse 0.7s ease;
+        }
+        .event-match-row.row-entering {
+            animation: leaderboard-row-enter 0.38s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .event-match-rank {
             display: none;
@@ -2734,6 +2753,8 @@
         .event-match-main {
             flex: 1;
             min-width: 0;
+            opacity: var(--rank-text-opacity);
+            transition: opacity 0.24s ease;
         }
         .event-match-company {
             font-size: calc(var(--blind-total-fs) * 0.82);
@@ -2755,6 +2776,8 @@
             color: #38bdf8;
             white-space: nowrap;
             font-variant-numeric: tabular-nums;
+            opacity: var(--rank-text-opacity);
+            transition: opacity 0.24s ease;
         }
         .blind-total-head {
             display: flex;
@@ -2826,12 +2849,16 @@
             backdrop-filter: none;
             -webkit-backdrop-filter: none;
             box-shadow: 0 6px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
-            transition: none;
+            transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.22s ease,
+                        background-color 0.22s ease,
+                        box-shadow 0.22s ease;
             opacity: 1;
             filter: none;
             transform: none;
-            will-change: auto;
+            will-change: transform;
             box-sizing: border-box;
+            --rank-text-opacity: 1;
         }
         .blind-total-row.team-totals-row {
             display: grid;
@@ -2843,43 +2870,27 @@
             grid-template-columns: minmax(0, 1fr) auto;
             gap: calc(var(--blind-total-fs) * 0.3);
         }
-        #live-bidders-overlay .blind-total-row {
-            transition: none;
+        .blind-total-row[data-rank="2"] {
+            --rank-text-opacity: 0.78;
         }
-        #live-bidders-overlay .blind-total-row[data-rank="1"] {
-            opacity: 1;
-            filter: none;
-        }
-        #live-bidders-overlay .blind-total-row[data-rank="2"] {
-            opacity: 1;
-            filter: none;
-        }
-        #live-bidders-overlay .blind-total-row[data-rank="3"] {
-            opacity: 1;
-            filter: none;
-        }
-        #live-bidders-overlay .blind-total-row[data-rank="4"] {
-            opacity: 1;
-            filter: none;
-        }
-        #live-bidders-overlay .blind-total-row[data-rank="5"] {
-            opacity: 1;
-            filter: none;
+        .blind-total-row[data-rank="3"] {
+            --rank-text-opacity: 0.56;
         }
         .blind-total-row[data-rank="1"] {
             background: rgba(15,23,42,0.95);
             border-color: rgba(217,176,92,0.4);
         }
         .blind-total-row.rank-changed {
-            box-shadow: 0 6px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04);
-            border-color: rgba(217, 176, 92, 0.18);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2), 0 0 18px rgba(217,176,92,0.24), inset 0 1px 0 rgba(255,255,255,0.04);
+            border-color: rgba(217, 176, 92, 0.48);
             filter: none;
+            animation: leaderboard-rank-pulse 0.7s ease;
         }
         .blind-total-row.row-entering {
-            animation: none;
+            animation: leaderboard-row-enter 0.38s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .blind-total-row.is-new-leader {
-            animation: none;
+            animation: leaderboard-rank-pulse 0.7s ease;
         }
         .blind-total-rank {
             display: none;
@@ -2897,6 +2908,8 @@
             align-items: baseline;
             min-width: 0;
             gap: calc(var(--blind-total-fs) * 0.38);
+            opacity: var(--rank-text-opacity);
+            transition: opacity 0.24s ease;
         }
         .blind-total-team {
             color: #d9b05c;
@@ -2931,6 +2944,8 @@
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
             text-align: right;
+            opacity: var(--rank-text-opacity);
+            transition: opacity 0.24s ease;
         }
         .blind-total-empty {
             padding: 14px 8px;
@@ -2985,17 +3000,44 @@
             font-weight: 900;
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
-            animation: none;
+            animation: leaderboard-delta-pop 1.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             pointer-events: none;
             z-index: 10;
             box-shadow: 0 2px 12px rgba(251, 191, 36, 0.4);
         }
         .blind-total-delta.fade-out {
-            display: none;
+            opacity: 0;
             animation: none;
         }
         .blind-total-row {
             position: relative;
+        }
+        @keyframes leaderboard-row-enter {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes leaderboard-rank-pulse {
+            0% { filter: brightness(1); }
+            35% { filter: brightness(1.2); }
+            100% { filter: brightness(1); }
+        }
+        @keyframes leaderboard-delta-pop {
+            0% {
+                opacity: 0;
+                transform: translateY(-50%) translateX(80%) scale(0.88);
+            }
+            14% {
+                opacity: 1;
+                transform: translateY(-50%) translateX(100%) scale(1);
+            }
+            72% {
+                opacity: 1;
+                transform: translateY(-50%) translateX(100%) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-68%) translateX(112%) scale(0.96);
+            }
         }
         /* ── 낙찰 풀스크린 팝업 오버레이 ── */
         .blind-sold-popup-overlay {
@@ -5058,70 +5100,100 @@
             return groups.sort((a, b) => b.total - a.total);
         }
 
+        const LEADERBOARD_VISIBLE_LIMIT = 3;
+
         let _eventMatchPrevTotals = {};
+        let _eventMatchPrevOrder = [];
 
         function renderEventMatchSection(panel, items, map) {
-            // 기존 이벤트 매치 섹션 제거
-            const oldSection = panel.querySelector('.event-match-section');
-            if (oldSection) oldSection.remove();
-
+            let section = panel.querySelector('.event-match-section');
             const showEvent = String(map?.event_match_show ?? '0') === '1';
-            if (!showEvent) return;
+            if (!showEvent) {
+                if (section) section.remove();
+                _eventMatchPrevOrder = [];
+                return;
+            }
 
-            const rows = getEventMatchRows(items);
-            if (rows.length < 2) return; // 2팀 이상일 때만 표시
+            const allRows = getEventMatchRows(items);
+            const rows = allRows.slice(0, LEADERBOARD_VISIBLE_LIMIT);
+            if (allRows.length < 2) {
+                if (section) section.remove();
+                _eventMatchPrevOrder = [];
+                return; // 2팀 이상일 때만 표시
+            }
 
-            const section = document.createElement('div');
-            section.className = 'event-match-section';
+            if (!section) {
+                section = document.createElement('div');
+                section.className = 'event-match-section';
 
-            // 구분선
-            const sep = document.createElement('hr');
-            sep.className = 'event-match-separator';
-            section.appendChild(sep);
+                const sep = document.createElement('hr');
+                sep.className = 'event-match-separator';
+                section.appendChild(sep);
 
-            // 헤더
-            const header = document.createElement('div');
-            header.className = 'event-match-header';
-            header.innerHTML = '<span class="event-match-kicker"></span><strong class="event-match-title">이벤트 매치</strong>';
-            section.appendChild(header);
+                const header = document.createElement('div');
+                header.className = 'event-match-header';
+                header.innerHTML = '<span class="event-match-kicker"></span><strong class="event-match-title">이벤트 매치</strong>';
+                section.appendChild(header);
 
-            // 각 업체 행
-            rows.forEach((row, idx) => {
-                const el = document.createElement('div');
-                el.className = 'event-match-row' + (idx === 0 && row.total > 0 ? ' is-leader' : '');
+                panel.appendChild(section);
+            }
 
-                const rank = document.createElement('span');
-                rank.className = 'event-match-rank';
-                rank.textContent = idx + 1;
+            const nextOrder = rows.map(row => row.company);
+            const hasPrev = _eventMatchPrevOrder.length > 0;
+            const orderChanged = hasPrev && JSON.stringify(nextOrder) !== JSON.stringify(_eventMatchPrevOrder);
+            const valueIncreased = hasPrev && rows.some(row => Number(row.total) > Number(_eventMatchPrevTotals[row.company] || 0));
+            const shouldAnimate = panel.classList.contains('active') && (orderChanged || valueIncreased);
+            const beforePositions = shouldAnimate ? captureLeaderboardPositions(section, '.event-match-row[data-company-key]') : new Map();
 
-                const main = document.createElement('div');
-                main.className = 'event-match-main';
-
-                const companyEl = document.createElement('strong');
-                companyEl.className = 'event-match-company';
-                companyEl.textContent = row.company;
-
-                const countEl = document.createElement('span');
-                countEl.className = 'event-match-count';
-                countEl.textContent = row.soldCount + '/' + row.itemCount;
-
-                main.appendChild(companyEl);
-                main.appendChild(countEl);
-
-                const amount = document.createElement('strong');
-                amount.className = 'event-match-amount';
-                const formatted = row.total > 0 ? Number(row.total).toLocaleString() : '-';
-                amount.textContent = formatted;
-
-                _eventMatchPrevTotals[row.company] = row.total;
-
-                el.appendChild(rank);
-                el.appendChild(main);
-                el.appendChild(amount);
-                section.appendChild(el);
+            const existingRows = Object.create(null);
+            section.querySelectorAll('.event-match-row[data-company-key]').forEach(el => {
+                existingRows[el.dataset.companyKey] = el;
             });
 
-            panel.appendChild(section);
+            rows.forEach((row, idx) => {
+                const rank = idx + 1;
+                const key = row.company;
+                let el = existingRows[key];
+                if (!el) {
+                    el = document.createElement('div');
+                    el.dataset.companyKey = key;
+                }
+
+                el.className = 'event-match-row' + (idx === 0 && row.total > 0 ? ' is-leader' : '');
+                el.dataset.rank = String(rank);
+
+                const formatted = row.total > 0 ? Number(row.total).toLocaleString() : '-';
+                const cacheKey = `${row.company}|${row.soldCount}/${row.itemCount}|${formatted}|${rank}`;
+                if (el.dataset.lastCache !== cacheKey) {
+                    el.dataset.lastCache = cacheKey;
+                    el.innerHTML = `
+                        <span class="event-match-rank">${rank}</span>
+                        <div class="event-match-main">
+                            <strong class="event-match-company">${esc(row.company)}</strong>
+                            <span class="event-match-count">${row.soldCount}/${row.itemCount}</span>
+                        </div>
+                        <strong class="event-match-amount">${formatted}</strong>
+                    `;
+                }
+
+                const previousTotal = Number(_eventMatchPrevTotals[key] || 0);
+                const delta = Number(row.total) - previousTotal;
+                if (shouldAnimate && delta > 0) {
+                    showLeaderboardDelta(el, formatLeaderboardDelta(delta));
+                }
+
+                section.appendChild(el);
+                delete existingRows[key];
+            });
+
+            Object.values(existingRows).forEach(el => el.remove());
+
+            if (shouldAnimate) {
+                animateLeaderboardRows(section, beforePositions, '.event-match-row[data-company-key]');
+            }
+
+            allRows.forEach(row => { _eventMatchPrevTotals[row.company] = row.total; });
+            _eventMatchPrevOrder = nextOrder;
         }
 
         // ── 낙찰 알림 상태 (블라인드 팀 합산 패널용) ──
@@ -5206,7 +5278,73 @@
             pendingMap: null
         };
 
-        // 리더보드 DOM 업데이트 (애니메이션 효과 제거 및 즉시 갱신)
+        function getLeaderboardElementKey(el) {
+            return el?.dataset?.team || el?.dataset?.bidderKey || el?.dataset?.companyKey || '';
+        }
+
+        function captureLeaderboardPositions(container, selector) {
+            const positions = new Map();
+            if (!container) return positions;
+            container.querySelectorAll(selector).forEach(el => {
+                const key = getLeaderboardElementKey(el);
+                if (key) positions.set(key, el.getBoundingClientRect().top);
+            });
+            return positions;
+        }
+
+        function animateLeaderboardRows(container, beforePositions, selector) {
+            if (!container || !beforePositions || beforePositions.size === 0) return;
+            container.querySelectorAll(selector).forEach(el => {
+                const key = getLeaderboardElementKey(el);
+                if (!key) return;
+                const previousTop = beforePositions.get(key);
+                if (previousTop === undefined) {
+                    el.classList.remove('row-entering');
+                    void el.offsetWidth;
+                    el.classList.add('row-entering');
+                    setTimeout(() => el.classList.remove('row-entering'), 480);
+                    return;
+                }
+
+                const nextTop = el.getBoundingClientRect().top;
+                const deltaY = previousTop - nextTop;
+                if (Math.abs(deltaY) < 1) return;
+
+                el.classList.add('rank-changed');
+                el.style.transition = 'none';
+                el.style.transform = `translateY(${deltaY}px)`;
+                void el.offsetWidth;
+
+                requestAnimationFrame(() => {
+                    el.style.transition = '';
+                    el.style.transform = '';
+                });
+
+                setTimeout(() => {
+                    el.classList.remove('rank-changed');
+                    el.style.transition = '';
+                    el.style.transform = '';
+                }, 640);
+            });
+        }
+
+        function formatLeaderboardDelta(value) {
+            const numeric = Number(value) || 0;
+            if (numeric <= 0) return '';
+            return '+' + numeric.toLocaleString('ko-KR', { maximumFractionDigits: 1 });
+        }
+
+        function showLeaderboardDelta(rowEl, text) {
+            if (!rowEl || !text) return;
+            rowEl.querySelectorAll('.blind-total-delta').forEach(el => el.remove());
+            const deltaEl = document.createElement('span');
+            deltaEl.className = 'blind-total-delta';
+            deltaEl.textContent = text;
+            rowEl.appendChild(deltaEl);
+            setTimeout(() => deltaEl.remove(), 1650);
+        }
+
+        // 리더보드 DOM 업데이트 (상위 3개 및 FLIP 이동 애니메이션)
         function applyLeaderboardUpdate(panel, sorted, map, animate) {
             let listEl = panel.querySelector('.blind-total-list');
             if (!listEl) {
@@ -5215,13 +5353,16 @@
                 panel.appendChild(listEl);
             }
 
-            if (!sorted.length) {
+            const visibleRows = sorted.slice(0, LEADERBOARD_VISIBLE_LIMIT);
+            if (!visibleRows.length) {
                 listEl.innerHTML = '<div class="blind-total-empty">토너먼트 개체 대기 중</div>';
                 return;
             }
 
+            const beforePositions = animate ? captureLeaderboardPositions(listEl, '.blind-total-row[data-team]') : new Map();
+
             // 기존 행 DOM 맵
-            const existingRows = {};
+            const existingRows = Object.create(null);
             listEl.querySelectorAll('.blind-total-row[data-team]').forEach(el => {
                 existingRows[el.dataset.team] = el;
             });
@@ -5231,11 +5372,10 @@
             if (emptyEl) emptyEl.remove();
 
             // 행 업데이트/생성 + DOM 순서 정렬
-            sorted.forEach((row, idx) => {
+            visibleRows.forEach((row, idx) => {
                 const rank = idx + 1;
                 let rowEl = existingRows[row.team];
-                const isNew = !rowEl;
-                if (isNew) {
+                if (!rowEl) {
                     rowEl = document.createElement('div');
                     rowEl.className = 'blind-total-row team-totals-row';
                     rowEl.dataset.team = row.team;
@@ -5260,6 +5400,12 @@
                 }
                 rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed', 'is-active');
 
+                const previousTotal = Number(_blindRankState.prevTotals[row.team] || 0);
+                const delta = Number(row.total) - previousTotal;
+                if (animate && delta > 0) {
+                    showLeaderboardDelta(rowEl, formatLeaderboardDelta(delta));
+                }
+
                 listEl.appendChild(rowEl);
                 delete existingRows[row.team];
             });
@@ -5267,11 +5413,15 @@
             // 제거된 팀 삭제
             Object.values(existingRows).forEach(el => el.remove());
 
+            if (animate) {
+                animateLeaderboardRows(listEl, beforePositions, '.blind-total-row[data-team]');
+            }
+
             // 이전 총합 업데이트
             sorted.forEach(row => { _blindRankState.prevTotals[row.team] = row.total; });
 
             // 순서 기록
-            _blindRankState.prevOrder = sorted.map(r => r.team);
+            _blindRankState.prevOrder = visibleRows.map(r => r.team);
         }
 
 
@@ -5337,22 +5487,24 @@
             } else {
                 // 일반 업데이트 (낙찰 없음)
                 const hasPrev = _blindRankState.prevOrder.length > 0;
-                const orderChanged = hasPrev && JSON.stringify(sorted.map(r => r.team)) !== JSON.stringify(_blindRankState.prevOrder);
+                const visibleSorted = sorted.slice(0, LEADERBOARD_VISIBLE_LIMIT);
+                const orderChanged = hasPrev && JSON.stringify(visibleSorted.map(r => r.team)) !== JSON.stringify(_blindRankState.prevOrder);
+                const valueIncreased = hasPrev && visibleSorted.some(row => Number(row.total) > Number(_blindRankState.prevTotals[row.team] || 0));
                 const biddersConfigured = String(map?.live_bidders_show ?? '0') === '1';
                 const activeAuctionItem = getActiveAuctionItem(items);
-                const biddersShow = biddersConfigured && Boolean(activeAuctionItem);
+                const liveBidRows = biddersConfigured ? buildLiveBidRows(map, activeAuctionItem) : [];
+                const biddersShow = biddersConfigured && liveBidRows.length > 0;
                 const isPanelActive = _p3ActiveCard === 'totals' || !biddersShow;
 
-                applyLeaderboardUpdate(panel, sorted, map, isPanelActive && orderChanged);
+                applyLeaderboardUpdate(panel, sorted, map, isPanelActive && (orderChanged || valueIncreased));
                 renderEventMatchSection(panel, items, map);
             }
         }
 
 
-        // P3 실시간 스위칭 타이머 및 상태 변수
+        // P3 실시간 패널 상태 변수
         let _p3SwitchTimer = null;
         let _p3SwitchEffectTimer = null;
-        let _p3SwitchIntervalVal = 0;
         let _p3ActiveCard = 'totals'; // 'totals' 또는 'bidders'
         const _liveBiddersRankState = {
             prevOrder: [],
@@ -5498,15 +5650,6 @@
             _p3ActiveCard = nextCard;
         }
 
-        function startP3SwitchTimer(totalsPanel, biddersPanel, switchSec) {
-            if (_p3SwitchTimer) clearInterval(_p3SwitchTimer);
-            _p3SwitchIntervalVal = switchSec;
-            _p3SwitchTimer = setInterval(() => {
-                const nextCard = _p3ActiveCard === 'totals' ? 'bidders' : 'totals';
-                setP3ActivePanel(totalsPanel, biddersPanel, nextCard, true);
-            }, switchSec * 1000);
-        }
-
         function applyBidderLeaderboardUpdate(panel, rows, animate) {
             let listEl = panel.querySelector('.blind-total-list');
             if (!listEl) {
@@ -5522,7 +5665,8 @@
                 return;
             }
 
-            const existingRows = {};
+            const beforePositions = animate ? captureLeaderboardPositions(listEl, '.blind-total-row[data-bidder-key]') : new Map();
+            const existingRows = Object.create(null);
             listEl.querySelectorAll('.blind-total-row[data-bidder-key]').forEach(el => {
                 existingRows[el.dataset.bidderKey] = el;
             });
@@ -5530,12 +5674,11 @@
             const emptyEl = listEl.querySelector('.blind-total-empty');
             if (emptyEl) emptyEl.remove();
 
-            const visibleRows = rows.slice(0, 5);
+            const visibleRows = rows.slice(0, LEADERBOARD_VISIBLE_LIMIT);
             visibleRows.forEach((bid, idx) => {
                 const rank = idx + 1;
                 let rowEl = existingRows[bid.key];
-                const isNew = !rowEl;
-                if (isNew) {
+                if (!rowEl) {
                     rowEl = document.createElement('div');
                     rowEl.className = 'blind-total-row bidders-row';
                     rowEl.dataset.bidderKey = bid.key;
@@ -5560,25 +5703,35 @@
 
                 rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
 
+                const previousAmount = Number(_liveBiddersRankState.prevAmounts[bid.key] || 0);
+                const delta = Number(bid.amount) - previousAmount;
+                if (animate && delta > 0) {
+                    showLeaderboardDelta(rowEl, formatLeaderboardDelta(delta));
+                }
+
                 listEl.appendChild(rowEl);
                 delete existingRows[bid.key];
             });
 
             Object.values(existingRows).forEach(el => el.remove());
 
+            if (animate) {
+                animateLeaderboardRows(listEl, beforePositions, '.blind-total-row[data-bidder-key]');
+            }
+
             _liveBiddersRankState.prevOrder = visibleRows.map(row => row.key);
-            _liveBiddersRankState.prevAmounts = visibleRows.reduce((acc, row) => {
+            _liveBiddersRankState.prevAmounts = rows.reduce((acc, row) => {
                 acc[row.key] = row.amount;
                 return acc;
             }, {});
         }
 
-        function renderLiveBidders(map, items) {
+        function renderLiveBidders(map, items, prebuiltRows) {
             const panel = document.getElementById('live-bidders-overlay');
             if (!panel) return;
 
             const activeItem = getActiveAuctionItem(items);
-            const bidRows = buildLiveBidRows(map, activeItem);
+            const bidRows = Array.isArray(prebuiltRows) ? prebuiltRows : buildLiveBidRows(map, activeItem);
             const signature = bidRows.map(row => [row.key, row.amount, row.sortTime].join(':')).join('|');
             const hasBidUpdate = _liveBiddersRankState.initialized && signature && signature !== _liveBiddersRankState.prevSignature;
             _liveBiddersRankState.initialized = true;
@@ -5614,8 +5767,8 @@
             const totalsShow = String(map?.blind_totals_show ?? '1') !== '0';
             const activeAuctionItem = getActiveAuctionItem(items);
             const biddersConfigured = String(map?.live_bidders_show ?? '0') === '1';
-            const biddersShow = biddersConfigured && Boolean(activeAuctionItem);
-            const switchSec = Math.max(3, Math.min(30, parseInt(map?.live_bidders_switch_sec || '5', 10) || 5));
+            const liveBidRows = biddersConfigured ? buildLiveBidRows(map, activeAuctionItem) : [];
+            const biddersShow = biddersConfigured && liveBidRows.length > 0;
 
             const top = map.blind_totals_top || '10%';
             const left = map.blind_totals_left || '2%';
@@ -5646,9 +5799,8 @@
                 totalsPanel.classList.remove('active');
             }
 
-            let bidderUpdated = false;
             if (biddersShow) {
-                bidderUpdated = Boolean(renderLiveBidders(map, items));
+                renderLiveBidders(map, items, liveBidRows);
             } else {
                 biddersPanel.classList.remove('active');
                 _liveBiddersRankState.prevOrder = [];
@@ -5657,34 +5809,22 @@
                 _liveBiddersRankState.initialized = false;
             }
 
-            if (totalsShow && biddersShow) {
+            if (biddersShow) {
+                if (_p3SwitchTimer) { clearInterval(_p3SwitchTimer); _p3SwitchTimer = null; }
+                clearP3PanelEffects(totalsPanel, biddersPanel);
                 container.classList.add('visible');
-
-                if (!_p3SwitchTimer || _p3SwitchIntervalVal !== switchSec) {
-                    setP3ActivePanel(totalsPanel, biddersPanel, 'totals', false);
-                    startP3SwitchTimer(totalsPanel, biddersPanel, switchSec);
-                } else if (!totalsPanel.classList.contains('active') && !biddersPanel.classList.contains('active')) {
-                    setP3ActivePanel(totalsPanel, biddersPanel, _p3ActiveCard || 'totals', false);
-                }
-                if (bidderUpdated && _p3ActiveCard !== 'bidders') {
-                    setP3ActivePanel(totalsPanel, biddersPanel, 'bidders', true);
-                    startP3SwitchTimer(totalsPanel, biddersPanel, switchSec);
-                }
+                setP3ActivePanel(totalsPanel, biddersPanel, 'bidders', false);
+            } else if (totalsShow) {
+                if (_p3SwitchTimer) { clearInterval(_p3SwitchTimer); _p3SwitchTimer = null; }
+                clearP3PanelEffects(totalsPanel, biddersPanel);
+                container.classList.add('visible');
+                setP3ActivePanel(totalsPanel, biddersPanel, 'totals', false);
             } else {
                 if (_p3SwitchTimer) { clearInterval(_p3SwitchTimer); _p3SwitchTimer = null; }
                 clearP3PanelEffects(totalsPanel, biddersPanel);
-
-                if (totalsShow) {
-                    container.classList.add('visible');
-                    setP3ActivePanel(totalsPanel, biddersPanel, 'totals', false);
-                } else if (biddersShow) {
-                    container.classList.add('visible');
-                    setP3ActivePanel(totalsPanel, biddersPanel, 'bidders', false);
-                } else {
-                    container.classList.remove('visible');
-                    totalsPanel.classList.remove('active');
-                    biddersPanel.classList.remove('active');
-                }
+                container.classList.remove('visible');
+                totalsPanel.classList.remove('active');
+                biddersPanel.classList.remove('active');
             }
         }
 
