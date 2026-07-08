@@ -5338,6 +5338,7 @@
                 // 기존 델타 뱃지 제거
                 rowEl.classList.remove('row-entering', 'is-new-leader', 'rank-changed');
                 rowEl.querySelectorAll('.blind-total-delta').forEach(d => d.remove());
+                rowEl.dataset.rank = String(rank);
 
                 rowEl.innerHTML = `
                     <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
