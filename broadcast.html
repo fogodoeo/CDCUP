@@ -5368,11 +5368,11 @@
 
             // 이전 총합 업데이트
             sorted.forEach(row => { _blindRankState.prevTotals[row.team] = row.total; });
-        }
 
             // 순서 기록
             _blindRankState.prevOrder = sorted.map(r => r.team);
         }
+
 
         function renderBlindTeamTotals(map, items) {
             const panel = document.getElementById('blind-team-total-overlay');
