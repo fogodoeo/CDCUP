@@ -3869,8 +3869,13 @@ ${wrapangDuplicateNote}`;
             }
 
             if (editorShippingState.type === '배송' && editorShippingState.company !== '기타' &&
+                clearEmbeddedHubSelectionIfQueryChanged('editor')) {
+                refreshEmbeddedHubPricing('editor');
+            }
+
+            if (editorShippingState.type === '배송' && editorShippingState.company !== '기타' &&
                 (!editorShippingState.region || !editorShippingState.hub)) {
-                showToast('수령 거점을 선택해 주세요.', true);
+                showToast('검색 결과에서 수령 거점을 다시 선택해 주세요.', true);
                 return;
             }
 
@@ -4260,6 +4265,56 @@ ${wrapangDuplicateNote}`;
             buyer: '전체'
         };
 
+        function getEmbeddedHubState(target) {
+            return target === 'editor' ? editorShippingState : buyerShippingState;
+        }
+
+        function normalizeHubQuery(value) {
+            return String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+        }
+
+        function selectedEmbeddedHubText(target) {
+            const state = getEmbeddedHubState(target);
+            if (!state || !state.region || !state.hub) return '';
+            return `${state.region} ${state.hub}`;
+        }
+
+        function setEmbeddedHubSearchText(target, region, hub) {
+            const searchInput = document.getElementById(`${target}-hub-search`);
+            if (searchInput) searchInput.value = `${region} ${hub}`;
+        }
+
+        function clearEmbeddedHubSelection(target) {
+            const state = getEmbeddedHubState(target);
+            if (!state) return false;
+            const hadSelection = Boolean(state.region || state.hub);
+            state.region = '';
+            state.hub = '';
+            if (Object.prototype.hasOwnProperty.call(state, 'cost')) state.cost = 0;
+            return hadSelection;
+        }
+
+        function clearEmbeddedHubSelectionIfQueryChanged(target) {
+            const searchInput = document.getElementById(`${target}-hub-search`);
+            if (!searchInput) return false;
+
+            const selectedText = normalizeHubQuery(selectedEmbeddedHubText(target));
+            if (!selectedText) return false;
+
+            const queryText = normalizeHubQuery(searchInput.value);
+            if (queryText === selectedText) return false;
+
+            return clearEmbeddedHubSelection(target);
+        }
+
+        function refreshEmbeddedHubPricing(target) {
+            if (target === 'editor') {
+                if (activeEditorWinner) updateEditorPricing();
+            } else {
+                recalculateBuyerTotal();
+            }
+        }
+
         function renderEmbeddedRegionTabs(comp, target) {
             const container = document.getElementById(`${target}-hub-regions`);
             if (!container) return;
@@ -4290,6 +4345,10 @@ ${wrapangDuplicateNote}`;
             // Clear search input text
             const searchInput = document.getElementById(`${target}-hub-search`);
             if (searchInput) searchInput.value = '';
+
+            if (clearEmbeddedHubSelection(target)) {
+                refreshEmbeddedHubPricing(target);
+            }
             
             // Highlight the active button
             const container = document.getElementById(`${target}-hub-regions`);
@@ -4304,13 +4363,17 @@ ${wrapangDuplicateNote}`;
             filterEmbeddedHubs(target);
         }
 
-        function filterEmbeddedHubs(target) {
+        function filterEmbeddedHubs(target, options = {}) {
             const searchInput = document.getElementById(`${target}-hub-search`);
             const resultsBox = document.getElementById(`${target}-hub-results`);
             if (!searchInput || !resultsBox) return;
 
             const q = searchInput.value.trim().toLowerCase();
             const activeReg = activeEmbeddedRegion[target] || '전체';
+
+            if (!options.keepSelection && clearEmbeddedHubSelectionIfQueryChanged(target)) {
+                refreshEmbeddedHubPricing(target);
+            }
 
             let comp = '';
             let itemCount = 1;
@@ -4538,8 +4601,9 @@ ${wrapangDuplicateNote}`;
             if (target === 'editor') {
                 editorShippingState.region = region;
                 editorShippingState.hub = shop;
-                
-                filterEmbeddedHubs('editor');
+
+                setEmbeddedHubSearchText('editor', region, shop);
+                filterEmbeddedHubs('editor', { keepSelection: true });
                 updateEditorPricing();
 
                 // 모바일은 고정 바가 키보드를 가리지 않도록 유지하고,
@@ -4557,7 +4621,8 @@ ${wrapangDuplicateNote}`;
                 buyerShippingState.hub = shop;
                 buyerShippingState.cost = cost;
 
-                filterEmbeddedHubs('buyer');
+                setEmbeddedHubSearchText('buyer', region, shop);
+                filterEmbeddedHubs('buyer', { keepSelection: true });
                 recalculateBuyerTotal();
             }
         }
@@ -4607,8 +4672,13 @@ ${wrapangDuplicateNote}`;
             }
 
             if (buyerShippingState.type === '배송' && buyerShippingState.company !== '기타' &&
+                clearEmbeddedHubSelectionIfQueryChanged('buyer')) {
+                refreshEmbeddedHubPricing('buyer');
+            }
+
+            if (buyerShippingState.type === '배송' && buyerShippingState.company !== '기타' &&
                 (!buyerShippingState.region || !buyerShippingState.hub)) {
-                showToast('수령 거점을 선택해 주세요.', true);
+                showToast('검색 결과에서 수령 거점을 다시 선택해 주세요.', true);
                 return;
             }
 
