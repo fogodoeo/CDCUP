@@ -39,6 +39,8 @@
         }
 
         html {
+            --broadcast-safe-x: clamp(32px, 5.5vw, 80px);
+            --broadcast-safe-y: clamp(16px, 3vh, 36px);
             width: 100%;
             height: 100%;
             overflow: hidden;
@@ -690,7 +692,7 @@
             left: 0;
             right: 0;
             min-height: 90px;
-            padding: 14px 44px 16px;
+            padding: 14px max(44px, var(--broadcast-safe-x)) 16px;
             align-items: center;
             justify-content: center;
             background: var(--ticker-shell-bg);
@@ -710,7 +712,7 @@
         /* 자막 스폰서 로고 스타일 */
         .ticker-sponsors-left {
             position: absolute;
-            left: 32px;
+            left: max(32px, var(--broadcast-safe-x));
             top: 50%;
             transform: translateY(-50%);
             display: flex;
@@ -721,7 +723,7 @@
 
         .ticker-sponsors-right {
             position: absolute;
-            right: 32px;
+            right: max(32px, var(--broadcast-safe-x));
             top: 50%;
             transform: translateY(-50%);
             display: flex;
@@ -3735,6 +3737,17 @@
             return normalizeViewportSize(raw, defaultUnit);
         }
 
+        function hasPlacementValue(value) {
+            return Boolean(value && value !== 'auto' && value !== 'initial' && value !== 'unset');
+        }
+
+        function safeEdgeCss(value, axis) {
+            const fallback = axis === 'x' ? 'var(--broadcast-safe-x)' : 'var(--broadcast-safe-y)';
+            const normalized = normalizeCssLength(value);
+            if (!hasPlacementValue(normalized) || normalized === '0') return fallback;
+            return `max(${normalized}, ${fallback})`;
+        }
+
         function normalizeOpacity(value, fallback) {
             const raw = String(value == null ? '' : value).trim();
             const fallbackValue = typeof fallback === 'number' ? fallback : 0.93;
@@ -3809,19 +3822,19 @@
             container.style.bottom = 'auto';
 
             if (right) {
-                container.style.right = right;
+                container.style.right = safeEdgeCss(right, 'x');
             } else if (left) {
-                container.style.left = left;
+                container.style.left = safeEdgeCss(left, 'x');
             } else {
-                container.style.right = '1%';
+                container.style.right = 'var(--broadcast-safe-x)';
             }
 
             if (bottom) {
-                container.style.bottom = bottom;
+                container.style.bottom = safeEdgeCss(bottom, 'y');
             } else if (top) {
-                container.style.top = top;
+                container.style.top = safeEdgeCss(top, 'y');
             } else {
-                container.style.bottom = '4%';
+                container.style.bottom = 'var(--broadcast-safe-y)';
             }
 
             const maxW = normalizeCssLength(cfg.banner_maxwidth) || '42vw';
@@ -3870,22 +3883,20 @@
             container.style.removeProperty('top');
             container.style.removeProperty('bottom');
 
-            const isVal = (val) => val && val !== 'auto' && val !== 'initial' && val !== 'unset';
-
-            if (isVal(layout.right)) {
-                container.style.right = layout.right;
-            } else if (isVal(layout.left)) {
-                container.style.left = layout.left;
+            if (hasPlacementValue(layout.right)) {
+                container.style.right = safeEdgeCss(layout.right, 'x');
+            } else if (hasPlacementValue(layout.left)) {
+                container.style.left = safeEdgeCss(layout.left, 'x');
             } else {
-                container.style.right = '1%';
+                container.style.right = 'var(--broadcast-safe-x)';
             }
 
-            if (isVal(layout.bottom)) {
-                container.style.bottom = layout.bottom;
-            } else if (isVal(layout.top)) {
-                container.style.top = layout.top;
+            if (hasPlacementValue(layout.bottom)) {
+                container.style.bottom = safeEdgeCss(layout.bottom, 'y');
+            } else if (hasPlacementValue(layout.top)) {
+                container.style.top = safeEdgeCss(layout.top, 'y');
             } else {
-                container.style.bottom = '4%';
+                container.style.bottom = 'var(--broadcast-safe-y)';
             }
         }
 
@@ -4060,7 +4071,6 @@
             if (isHostMode || isBracketPageTemp) return;
             const info = document.getElementById('scoreboard-wrap');
             if (!info) return;
-            const isValue = value => value && value !== 'auto' && value !== 'initial' && value !== 'unset';
             const left = normalizeCssLength(cfg.p2_info_left);
             const right = normalizeCssLength(cfg.p2_info_right);
             const top = normalizeCssLength(cfg.p2_info_top);
@@ -4070,12 +4080,12 @@
             info.style.right = 'auto';
             info.style.top = 'auto';
             info.style.bottom = 'auto';
-            if (isValue(right)) info.style.right = right;
-            else if (isValue(left)) info.style.left = left;
-            else info.style.right = '2%';
-            if (isValue(bottom)) info.style.bottom = bottom;
-            else if (isValue(top)) info.style.top = top;
-            else info.style.top = '3%';
+            if (hasPlacementValue(right)) info.style.right = safeEdgeCss(right, 'x');
+            else if (hasPlacementValue(left)) info.style.left = safeEdgeCss(left, 'x');
+            else info.style.right = 'var(--broadcast-safe-x)';
+            if (hasPlacementValue(bottom)) info.style.bottom = safeEdgeCss(bottom, 'y');
+            else if (hasPlacementValue(top)) info.style.top = safeEdgeCss(top, 'y');
+            else info.style.top = 'var(--broadcast-safe-y)';
         }
 
         function applyLoadedHostConfig(cfg) {
@@ -4180,8 +4190,6 @@
                 el.style.removeProperty('right');
                 el.style.removeProperty('top');
                 el.style.removeProperty('bottom');
-                const isV = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
-                
                 const ntLeft = cfg[prefix+'left'];
                 const ntRight = cfg[prefix+'right'];
                 const ntWidth = cfg['nametag_width'] || cfg[prefix+'width'];
@@ -4189,16 +4197,16 @@
                 const ntTop = cfg['nametag_top'] || cfg[prefix+'top'];
                 const ntBottom = cfg['nametag_bottom'] || cfg[prefix+'bottom'];
 
-                if (isV(ntRight)) el.style.right = ntRight;
-                else if (isV(ntLeft)) el.style.left = ntLeft;
+                if (hasPlacementValue(ntRight)) el.style.right = safeEdgeCss(ntRight, 'x');
+                else if (hasPlacementValue(ntLeft)) el.style.left = safeEdgeCss(ntLeft, 'x');
                 else {
-                    if (defaultRight !== 'auto') el.style.right = defaultRight;
-                    else el.style.left = defaultLeft;
+                    if (defaultRight !== 'auto') el.style.right = safeEdgeCss(defaultRight, 'x');
+                    else el.style.left = safeEdgeCss(defaultLeft, 'x');
                 }
                 
-                if (isV(ntBottom)) el.style.bottom = ntBottom;
-                else if (isV(ntTop)) el.style.top = ntTop;
-                else el.style.bottom = defaultBottom;
+                if (hasPlacementValue(ntBottom)) el.style.bottom = safeEdgeCss(ntBottom, 'y');
+                else if (hasPlacementValue(ntTop)) el.style.top = safeEdgeCss(ntTop, 'y');
+                else el.style.bottom = safeEdgeCss(defaultBottom, 'y');
                 
                 if (cfg[prefix+'show'] === '0') {
                     el.style.setProperty('display','none','important');
@@ -4828,8 +4836,6 @@
                         el.style.removeProperty('right');
                         el.style.removeProperty('top');
                         el.style.removeProperty('bottom');
-                        const isV = (v) => v && v !== 'auto' && v !== 'initial' && v !== 'unset';
-                        
                         const ntLeft = cfg[prefix+'left'];
                         const ntRight = cfg[prefix+'right'];
                         const ntWidth = cfg['nametag_width'] || cfg[prefix+'width'];
@@ -4837,16 +4843,16 @@
                         const ntTop = cfg['nametag_top'] || cfg[prefix+'top'];
                         const ntBottom = cfg['nametag_bottom'] || cfg[prefix+'bottom'];
 
-                        if (isV(ntRight)) el.style.right = ntRight;
-                        else if (isV(ntLeft)) el.style.left = ntLeft;
+                        if (hasPlacementValue(ntRight)) el.style.right = safeEdgeCss(ntRight, 'x');
+                        else if (hasPlacementValue(ntLeft)) el.style.left = safeEdgeCss(ntLeft, 'x');
                         else {
-                            if (defaultRight !== 'auto') el.style.right = defaultRight;
-                            else el.style.left = defaultLeft;
+                            if (defaultRight !== 'auto') el.style.right = safeEdgeCss(defaultRight, 'x');
+                            else el.style.left = safeEdgeCss(defaultLeft, 'x');
                         }
                         
-                        if (isV(ntBottom)) el.style.bottom = ntBottom;
-                        else if (isV(ntTop)) el.style.top = ntTop;
-                        else el.style.bottom = defaultBottom;
+                        if (hasPlacementValue(ntBottom)) el.style.bottom = safeEdgeCss(ntBottom, 'y');
+                        else if (hasPlacementValue(ntTop)) el.style.top = safeEdgeCss(ntTop, 'y');
+                        else el.style.bottom = safeEdgeCss(defaultBottom, 'y');
                         
                         if (cfg[prefix+'show'] === '0') {
                             el.style.setProperty('display','none','important');
