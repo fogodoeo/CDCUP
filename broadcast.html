@@ -7,6 +7,18 @@
             alert("[BROADCAST RUNTIME ERROR]\nMessage: " + message + "\nSource: " + source + "\nLine: " + lineno + "\nCol: " + colno + "\nStack: " + (error ? error.stack : 'no stack'));
             return false;
         };
+
+        (function() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('direct') === '1' || window.self !== window.top) return;
+
+            const page = params.get('page') || '1';
+            const eventId = params.get('event') || params.get('module') || 'cdcup';
+            const routerParams = new URLSearchParams(window.location.search);
+            routerParams.set('event', eventId);
+            routerParams.set('page', page);
+            window.location.replace('broadcast-router.html?' + routerParams.toString());
+        })();
     </script>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
