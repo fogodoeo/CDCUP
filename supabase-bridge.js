@@ -443,7 +443,93 @@ async function updateItem(row, data, pw) {
 /**
  * 배송 정보 업데이트 (낙찰자용 패스워드 없는 버전)
  */
-async function updateItemShipping(row, shippingData) {
+function _shippingAuditSnapshot(row) {
+    return {
+        shipping_type: row?.shipping_type || '',
+        shipping_company: row?.shipping_company || '',
+        shipping_region: row?.shipping_region || '',
+        shipping_cost: Number(row?.shipping_cost || 0),
+        status: row?.status || ''
+    };
+}
+
+function _shippingAuditCompareValue(value) {
+    return String(value == null ? '' : value).trim();
+}
+
+function _shippingAuditChangedFields(before, after) {
+    return ['shipping_type', 'shipping_company', 'shipping_region', 'shipping_cost', 'status']
+        .filter(field => _shippingAuditCompareValue(before[field]) !== _shippingAuditCompareValue(after[field]));
+}
+
+function _shippingAuditMaskedName(value) {
+    const clean = String(value || '').replace(/[\[\]]/g, '').split('/').map(v => v.trim()).filter(Boolean)[0] || '';
+    if (!clean) return '';
+    if (clean.length <= 1) return clean;
+    if (clean.length === 2) return clean.charAt(0) + '*';
+    return clean.charAt(0) + '*' + clean.slice(-1);
+}
+
+function _shippingAuditPhoneLast4(value) {
+    const digits = String(value || '').replace(/[^0-9]/g, '');
+    return digits ? digits.slice(-4) : '';
+}
+
+function _shippingAuditActor(meta = {}, current = {}) {
+    const type = String(meta.actor_type || meta.actorType || 'unknown');
+    const source = String(meta.source || '');
+    const actorName = meta.actor_name || meta.actorName || (type === 'buyer' ? current.winner : '') || '';
+    const actorPhone = meta.actor_phone || meta.actorPhone || (type === 'buyer' ? current.winner_phone : '') || '';
+    return {
+        type,
+        source,
+        label: meta.actor_label || meta.actorLabel || (type === 'buyer' ? '낙찰자 셀프입력' : type === 'operator' ? '운영자 화면' : '미확인'),
+        name_masked: _shippingAuditMaskedName(actorName),
+        phone_last4: _shippingAuditPhoneLast4(actorPhone)
+    };
+}
+
+function _shippingAuditKey(row) {
+    const stamp = new Date().toISOString().replace(/[-:.TZ]/g, '');
+    const suffix = Math.random().toString(36).slice(2, 8);
+    return `shipping_log_${stamp}_${row}_${suffix}`;
+}
+
+async function _insertShippingAuditLog(log) {
+    await _sbFetch('config', {
+        method: 'POST',
+        headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ key: log.key, value: JSON.stringify(log) })
+    });
+}
+
+async function _markShippingAuditLog(log, status, errorMessage = '') {
+    const nextLog = {
+        ...log,
+        status,
+        applied_at: status === 'applied' ? new Date().toISOString() : log.applied_at || '',
+        error: errorMessage ? String(errorMessage).slice(0, 500) : ''
+    };
+    await _sbFetch(`config?key=eq.${encodeURIComponent(log.key)}`, {
+        method: 'PATCH',
+        headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ value: JSON.stringify(nextLog) })
+    });
+}
+
+async function getShippingAuditLogs(limit = 100) {
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 100, 300));
+    const rows = await _sbFetch(`config?select=key,value&key=like.shipping_log_%25&order=key.desc&limit=${safeLimit}`);
+    return (rows || []).map(row => {
+        try {
+            return JSON.parse(row.value || '{}');
+        } catch (e) {
+            return null;
+        }
+    }).filter(Boolean).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+}
+
+async function updateItemShipping(row, shippingData, auditMeta = {}) {
     const mapping = {
         shipping_type: 'shipping_type',
         shipping_company: 'shipping_company',
@@ -455,11 +541,54 @@ async function updateItemShipping(row, shippingData) {
     for (const [k, v] of Object.entries(shippingData)) {
         if (mapping[k] !== undefined) payload[mapping[k]] = v;
     }
-    await _sbFetch(`items?id=eq.${row}`, {
-        method: 'PATCH',
-        headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
-        body: JSON.stringify(payload),
-    });
+
+    let current = null;
+    let auditLog = null;
+    const currentRows = await _sbFetch(`items?id=eq.${encodeURIComponent(row)}&select=id,num,company,name,winner,winner_phone,shipping_type,shipping_company,shipping_region,shipping_cost,status,updated_at&limit=1`);
+    current = currentRows && currentRows[0] ? currentRows[0] : null;
+
+    if (current) {
+        const before = _shippingAuditSnapshot(current);
+        const after = { ...before, ...payload };
+        const changedFields = _shippingAuditChangedFields(before, after);
+        if (changedFields.length > 0) {
+            auditLog = {
+                key: _shippingAuditKey(row),
+                status: 'requested',
+                created_at: new Date().toISOString(),
+                item_id: current.id || row,
+                item_num: current.num || '',
+                item_company: current.company || '',
+                item_name: current.name || '',
+                winner: {
+                    name_masked: _shippingAuditMaskedName(current.winner || ''),
+                    phone_last4: _shippingAuditPhoneLast4(current.winner_phone || '')
+                },
+                actor: _shippingAuditActor(auditMeta, current),
+                before,
+                after,
+                changed_fields: changedFields
+            };
+            await _insertShippingAuditLog(auditLog);
+        }
+    }
+
+    try {
+        await _sbFetch(`items?id=eq.${encodeURIComponent(row)}`, {
+            method: 'PATCH',
+            headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
+            body: JSON.stringify(payload),
+        });
+    } catch (e) {
+        if (auditLog) {
+            try { await _markShippingAuditLog(auditLog, 'failed', e.message); } catch (logErr) { console.warn('[SB] shipping audit failure mark failed:', logErr); }
+        }
+        throw e;
+    }
+
+    if (auditLog) {
+        try { await _markShippingAuditLog(auditLog, 'applied'); } catch (logErr) { console.warn('[SB] shipping audit apply mark failed:', logErr); }
+    }
     return { success: true };
 }
 

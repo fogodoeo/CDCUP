@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>배송 등록 조회 | CREO</title>
-    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="supabase-bridge.js?v=20260709-shipping-audit"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css">
     <style>
         :root { --bg:#f4f7fb; --card:#fff; --line:#e3e9f1; --text:#172033; --muted:#6b7280; --blue:#2563eb; --green:#15803d; --orange:#c2410c; --red:#b91c1c; --shadow:0 10px 30px rgba(23,32,51,.07); font-family:'Pretendard Variable','Pretendard',sans-serif; }
@@ -30,7 +30,7 @@
         .section-title small { color:var(--blue); font-size:10px; font-weight:850; letter-spacing:.1em; }
         .section-title h2 { margin:4px 0 3px; font-size:18px; }
         .section-title p { margin:0; color:var(--muted); font-size:12px; }
-        .basis-tabs { display:grid; grid-template-columns:repeat(2,1fr); gap:6px; margin-bottom:10px; padding:5px; border:1px solid var(--line); border-radius:14px; background:#eef2f7; }
+        .basis-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; padding:5px; border:1px solid var(--line); border-radius:14px; background:#eef2f7; }
         .basis-tab { min-height:42px; border:0; border-radius:10px; background:transparent; color:#64748b; font-size:12px; font-weight:850; cursor:pointer; }
         .basis-tab.active { background:#fff; color:var(--blue); box-shadow:0 3px 10px rgba(23,32,51,.09); }
         .view { display:none; }
@@ -83,6 +83,15 @@
         .company-item-detail { display:grid; grid-template-columns:1.4fr .7fr 1fr; gap:10px; margin-top:10px; padding:9px 10px; border-radius:9px; background:#f8fafc; }
         .company-item-detail span { min-width:0; color:#8a94a3; font-size:8px; font-weight:700; }
         .company-item-detail b { display:block; margin-top:3px; overflow:hidden; color:#475569; font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
+        .log-list { display:grid; gap:10px; }
+        .log-card { padding:15px; border:1px solid var(--line); border-radius:13px; background:#fff; }
+        .log-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+        .log-card-head strong { display:block; font-size:13px; }
+        .log-card-head span { display:block; margin-top:3px; color:var(--muted); font-size:10px; }
+        .log-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:11px; }
+        .log-box { min-width:0; padding:10px; border-radius:9px; background:#f8fafc; }
+        .log-box span { display:block; color:#7a8493; font-size:8px; font-weight:800; }
+        .log-box b { display:block; margin-top:4px; color:#344054; font-size:10px; line-height:1.45; word-break:break-word; }
         .empty { padding:34px 12px; color:#98a2b3; font-size:12px; text-align:center; }
         .loading { position:fixed; inset:0; z-index:20; display:grid; place-items:center; background:rgba(244,247,251,.86); color:#475569; font-size:13px; font-weight:800; backdrop-filter:blur(4px); }
         .toast { position:fixed; left:50%; bottom:60px; z-index:30; transform:translate(-50%,20px); padding:11px 15px; border-radius:10px; background:#172033; color:#fff; font-size:11px; font-weight:750; opacity:0; pointer-events:none; transition:.2s; }
@@ -106,6 +115,7 @@
             .company-item { padding:12px 13px; }
             .company-item-detail { grid-template-columns:1fr 1fr; }
             .company-item-detail span:first-child { grid-column:1 / -1; }
+            .log-grid { grid-template-columns:1fr; }
         }
     </style>
 </head>
@@ -122,6 +132,7 @@
         <div class="basis-tabs" aria-label="조회 기준">
             <button class="basis-tab active" id="basis-winner" type="button" onclick="openMode('winner')">낙찰자 기준</button>
             <button class="basis-tab" id="basis-company" type="button" onclick="openMode('company')">업체 기준</button>
+            <button class="basis-tab" id="basis-audit" type="button" onclick="openMode('audit')">변경 이력</button>
         </div>
 
         <section class="mode-section view" id="mode-company">
@@ -136,6 +147,11 @@
             <div class="directory" id="winner-directory"></div>
             <div class="result" id="winner-result"></div>
         </section>
+
+        <section class="mode-section view" id="mode-audit">
+            <div class="view-head"><div class="section-title"><small>AUDIT LOG</small><h2>배송 정보 변경 이력</h2><p>배송 방식, 배송사, 거점, 배송비 변경 요청과 적용 상태를 확인합니다.</p></div></div>
+            <div class="result" id="audit-result"></div>
+        </section>
     </main>
     <nav class="app-bottom-nav" aria-label="CREO 공통 페이지 이동">
         <a href="shipping.html">배송관리</a>
@@ -147,6 +163,7 @@
     <script>
         let soldItems = [];
         let winnerGroups = [];
+        let auditLogs = [];
 
         function esc(value) { return String(value == null ? '' : value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
         function winnerIdentity(item) {
@@ -167,6 +184,21 @@
         function fmtTime(value) {
             const d=new Date(value||0); if(Number.isNaN(d.getTime())||!value) return '-';
             return d.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+        }
+        function auditShippingLabel(data) {
+            if(!data) return '-';
+            if(!data.shipping_type) return '미등록';
+            if(data.shipping_type==='직접수령') return '직접수령';
+            if(data.shipping_type==='배송') return (data.shipping_company||'배송')+' · '+(data.shipping_region||'배송지 미입력')+' · '+(Number(data.shipping_cost)||0).toLocaleString()+'원';
+            return data.shipping_type;
+        }
+        function auditActorLabel(log) {
+            const actor=log.actor||{};
+            const winner=log.winner||{};
+            const by=actor.label||actor.type||'미확인';
+            const name=actor.name_masked||winner.name_masked||'';
+            const phone=actor.phone_last4||winner.phone_last4||'';
+            return by+(name?' · '+name:'')+(phone?' · 끝 '+phone:'');
         }
         function shippingSignature(item) { return [item.shipping_type||'',item.shipping_company||'',item.shipping_region||''].join('|'); }
         function parseRegion(raw) {
@@ -225,6 +257,7 @@
                 document.getElementById('winner-result').innerHTML='';
                 renderWinnerDirectory('');
             }
+            if(mode==='audit') renderAuditLogs();
             window.scrollTo({top:0,behavior:'smooth'});
         }
         function renderStats() {
@@ -291,10 +324,22 @@
             search.focus();
             window.scrollTo({top:0,behavior:'smooth'});
         }
+        function auditLogHtml(log) {
+            const statusClass=log.status==='failed'?'mismatch':(log.status==='applied'?'complete':'partial');
+            const statusText=log.status==='failed'?'실패':(log.status==='applied'?'적용 완료':'요청 기록');
+            const changed=(log.changed_fields||[]).join(', ') || '-';
+            const item=[log.item_company, log.item_num ? '#'+log.item_num : '', log.item_name].filter(Boolean).join(' · ');
+            return '<article class="log-card"><div class="log-card-head"><div><strong>'+esc(item||'개체 정보 없음')+'</strong><span>'+esc(fmtTime(log.created_at))+' · '+esc(auditActorLabel(log))+'</span></div><span class="badge '+statusClass+'">'+statusText+'</span></div><div class="log-grid"><div class="log-box"><span>변경 전</span><b>'+esc(auditShippingLabel(log.before))+'</b></div><div class="log-box"><span>변경 후</span><b>'+esc(auditShippingLabel(log.after))+'</b></div><div class="log-box"><span>변경 필드</span><b>'+esc(changed)+'</b></div><div class="log-box"><span>대상 낙찰자</span><b>'+esc(((log.winner||{}).name_masked||'-')+(((log.winner||{}).phone_last4)?' · 끝 '+(log.winner||{}).phone_last4:''))+'</b></div></div></article>';
+        }
+        function renderAuditLogs() {
+            const box=document.getElementById('audit-result');
+            if(!box) return;
+            box.innerHTML=auditLogs.length?'<div class="result-head"><strong>최근 변경 '+auditLogs.length+'건</strong><span>최신순</span></div><div class="log-list">'+auditLogs.map(auditLogHtml).join('')+'</div>':'<div class="empty">아직 기록된 배송 변경 이력이 없습니다.</div>';
+        }
         function showToast(text){const t=document.getElementById('toast');t.textContent=text;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
         async function loadData() {
             document.getElementById('loading').style.display='grid';
-            try { const items=await getItems(); soldItems=(items||[]).filter(i=>i.status&&i.status.includes('낙찰')); buildGroups(); renderStats(); populateCompanies(); renderCompany(''); renderWinnerDirectory(''); }
+            try { const [items, logs]=await Promise.all([getItems(), typeof getShippingAuditLogs==='function'?getShippingAuditLogs(120):Promise.resolve([])]); auditLogs=logs||[]; soldItems=(items||[]).filter(i=>i.status&&i.status.includes('낙찰')); buildGroups(); renderStats(); populateCompanies(); renderCompany(''); renderWinnerDirectory(''); renderAuditLogs(); }
             catch(e){ console.error(e); document.getElementById('mode-winner').innerHTML='<div class="empty">데이터를 불러오지 못했습니다.</div>'; }
             finally { document.getElementById('loading').style.display='none'; }
         }

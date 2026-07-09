@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>CREO - 배송/수령 정보 등록</title>
-    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="supabase-bridge.js?v=20260709-shipping-audit"></script>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard-dynamic-subset.css" />
     <style>
         /* ══════════════════════════════════════
@@ -2990,6 +2990,107 @@ ${wrapangDuplicateNote}`;
             }, 0);
         }
 
+        function shippingCompareValue(value) {
+            return String(value == null ? '' : value).trim();
+        }
+
+        function shippingDataLabel(data) {
+            const type = shippingCompareValue(data?.shipping_type);
+            if (!type) return '미등록';
+            if (type === '직접수령') return '직접수령';
+            if (type === '배송') {
+                return `${shippingCompareValue(data?.shipping_company) || '배송'} / ${shippingCompareValue(data?.shipping_region) || '배송지 미입력'}`;
+            }
+            return type;
+        }
+
+        function hasExistingShippingData(item) {
+            return Boolean(
+                shippingCompareValue(item?.shipping_type) ||
+                shippingCompareValue(item?.shipping_company) ||
+                shippingCompareValue(item?.shipping_region)
+            );
+        }
+
+        function isShippingDataChanged(item, nextData) {
+            return ['shipping_type', 'shipping_company', 'shipping_region'].some(field =>
+                shippingCompareValue(item?.[field]) !== shippingCompareValue(nextData?.[field])
+            );
+        }
+
+        function confirmShippingOverwrite(items, nextData) {
+            const changed = (items || []).filter(item => hasExistingShippingData(item) && isShippingDataChanged(item, nextData));
+            if (changed.length === 0) return true;
+
+            const sample = changed[0];
+            return window.confirm(
+                `이미 배송 정보가 등록된 낙찰 건 ${changed.length}개체를 변경합니다.\n\n` +
+                `현재: ${shippingDataLabel(sample)}\n` +
+                `변경: ${shippingDataLabel(nextData)}\n\n` +
+                '이 값으로 다시 저장할까요?'
+            );
+        }
+
+        function buildEditorShippingBaseData() {
+            const type = editorShippingState.type;
+            let company = '';
+            let region = '';
+
+            if (type === '배송') {
+                company = editorShippingState.company;
+                if (company === '기타') {
+                    company = (document.getElementById('editor-custom-company').value || '').trim() || '기타';
+                    region = (document.getElementById('editor-custom-region').value || '').trim() || '직접기입';
+                } else {
+                    region = `${editorShippingState.region} (${editorShippingState.hub})`;
+                }
+            }
+
+            const memoVal = document.getElementById('editor-memo')?.value.trim();
+            if (memoVal) region = `${region} [메모: ${memoVal}]`.trim();
+
+            return { shipping_type: type, shipping_company: company, shipping_region: region };
+        }
+
+        function buildBuyerShippingBaseData() {
+            const type = buyerShippingState.type;
+            let company = '';
+            let region = '';
+
+            if (type === '배송') {
+                if (buyerShippingState.company === '기타') {
+                    company = (document.getElementById('buyer-custom-company-input').value || '').trim() || '기타';
+                    region = (document.getElementById('buyer-custom-region-input').value || '').trim() || '직접기입';
+                } else {
+                    company = buyerShippingState.company;
+                    region = `${buyerShippingState.region} (${buyerShippingState.hub})`;
+                }
+            }
+
+            const memoVal = document.getElementById('buyer-memo-input')?.value.trim();
+            if (memoVal) region = `${region} [요청: ${memoVal}]`.trim();
+
+            return { shipping_type: type, shipping_company: company, shipping_region: region };
+        }
+
+        function buildEditorShippingAuditMeta() {
+            return {
+                actor_type: 'operator',
+                actor_label: '배송관리 운영자 화면',
+                source: 'shipping_admin_editor'
+            };
+        }
+
+        function buildBuyerShippingAuditMeta() {
+            return {
+                actor_type: 'buyer',
+                actor_label: '낙찰자 셀프입력',
+                source: 'buyer_self_service',
+                actor_name: document.getElementById('buyer-name-input')?.value || '',
+                actor_phone: document.getElementById('buyer-phone-input')?.value || ''
+            };
+        }
+
         function getWinnerIdentity(item) {
             const clean = String(item?.winner || '').replace(/[\[\]]/g, '').trim();
             const phoneMatch = clean.match(/01[0-9][\-\.\s]?\d{3,4}[\-\.\s]?\d{4}|(?<!\d)\d{8}(?!\d)/);
@@ -3886,29 +3987,15 @@ ${wrapangDuplicateNote}`;
                 return;
             }
 
+            const baseShipping = buildEditorShippingBaseData();
+            if (!confirmShippingOverwrite(state.allItems, baseShipping)) return;
+
             showLoading(true, '배송 정보를 전송하는 중...');
             try {
-                const type = editorShippingState.type;
-                let company = '';
-                let region = '';
-
-                if (type === '배송') {
-                    company = editorShippingState.company;
-                    if (company === '기타') {
-                        company = (document.getElementById('editor-custom-company').value || '').trim() || '기타';
-                        region = (document.getElementById('editor-custom-region').value || '').trim() || '직접기입';
-                    } else {
-                        region = `${editorShippingState.region} (${editorShippingState.hub})`;
-                    }
-                } else if (type === '직접수령') {
-                    company = '';
-                    region = '';
-                }
-
-                const memoVal = document.getElementById('editor-memo').value.trim();
-                if (memoVal) {
-                    region = `${region} [메모: ${memoVal}]`.trim();
-                }
+                const type = baseShipping.shipping_type;
+                const company = baseShipping.shipping_company;
+                const region = baseShipping.shipping_region;
+                const auditMeta = buildEditorShippingAuditMeta();
 
                 // Calculate split shipping cost
                 const sellerCos = state.sellerCompanies;
@@ -3935,7 +4022,7 @@ ${wrapangDuplicateNote}`;
                                 shipping_company: company,
                                 shipping_region: region,
                                 shipping_cost: shippingCost
-                            })
+                            }, auditMeta)
                         );
                     });
                 }
@@ -4689,9 +4776,13 @@ ${wrapangDuplicateNote}`;
                 return;
             }
 
+            const baseShipping = buildBuyerShippingBaseData();
+            if (!confirmShippingOverwrite(buyerFoundItems, baseShipping)) return;
+
             showLoading(true, '배송 정보를 전송하는 중...');
             try {
-                const type = buyerShippingState.type;
+                const type = baseShipping.shipping_type;
+                const auditMeta = buildBuyerShippingAuditMeta();
                 const sellerCos = [...new Set(buyerFoundItems.map(it => (it.company || '').trim()))];
                 // 전체 배송비 구한 뒤, 업체별로 쪼개기
                 let totalShipping = 0;
@@ -4725,13 +4816,8 @@ ${wrapangDuplicateNote}`;
                         let shipping_cost = 0;
 
                         if (type === '배송') {
-                            if (buyerShippingState.company === '기타') {
-                                shipping_company = document.getElementById('buyer-custom-company-input').value.trim() || '기타';
-                                shipping_region = document.getElementById('buyer-custom-region-input').value.trim() || '직접기입';
-                            } else {
-                                shipping_company = buyerShippingState.company;
-                                shipping_region = `${buyerShippingState.region} (${buyerShippingState.hub})`;
-                            }
+                            shipping_company = baseShipping.shipping_company;
+                            shipping_region = baseShipping.shipping_region;
 
                             if (isWrapangCentralPayment) {
                                 if (!wrapangTotalAssigned) {
@@ -4741,18 +4827,12 @@ ${wrapangDuplicateNote}`;
                             } else if (idx === 0) shipping_cost = shippingAllocations[co] || 0;
                         }
 
-                        // 메모
-                        const memoVal = document.getElementById('buyer-memo-input').value.trim();
-                        if (memoVal) {
-                            shipping_region = `${shipping_region} [요청: ${memoVal}]`.trim();
-                        }
-
                         await updateItemShipping(it.row, {
                             shipping_type,
                             shipping_company,
                             shipping_region,
                             shipping_cost
-                        });
+                        }, auditMeta);
                     }
                 }
 
