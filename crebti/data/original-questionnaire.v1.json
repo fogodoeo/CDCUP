@@ -1,0 +1,145 @@
+{
+  "meta": {
+    "name": "기존 크레와트 15문항 보존본",
+    "version": "original-v1",
+    "archivedAt": "2026-07-10",
+    "purpose": "원문 보존 및 CREBTI 재분류"
+  },
+  "questions": [
+    {
+      "id": "OQ01",
+      "prompt": "당신은 둘 중 어떤 화이트가 더 좋나요?",
+      "options": ["화이트 양은 적지만, 퓨어화이트", "화이트 양은 많지만, 아이보리 또는 노란색"],
+      "classification": "expert-preference",
+      "recommendedUse": "루멘크라운 내부 표현 취향 태그",
+      "action": "revise-with-controlled-images",
+      "reason": "화이트 표현 취향은 측정하지만 CREBTI 축 자체를 측정하지는 않는다."
+    },
+    {
+      "id": "OQ02",
+      "prompt": "비슷하지만 좀 더 끌리는 모프는?",
+      "options": ["세이블 릴리", "프라푸치노"],
+      "classification": "expert-preference",
+      "recommendedUse": "경험자 전용 모프 선호 데이터",
+      "action": "expert-only",
+      "reason": "초보에게는 지식 문제이며 특정 개체와 사진의 품질에 영향을 받는다."
+    },
+    {
+      "id": "OQ03",
+      "prompt": "두가지 타입 중 하나를 고른다면?",
+      "options": ["쿼드 타입", "익할(익스트림 할리퀸) 타입"],
+      "classification": "expert-preference",
+      "recommendedUse": "경험자용 패턴 선호 태그",
+      "action": "revise-with-controlled-images",
+      "reason": "패턴 구조의 선호는 드러나지만 초보는 용어와 실제 차이를 알기 어렵다."
+    },
+    {
+      "id": "OQ04",
+      "prompt": "둘 중 더 선호하는 먹이급여 방식은?",
+      "options": ["슈퍼푸드 단일", "슈퍼푸드 & 충식 병행"],
+      "classification": "husbandry-behavior",
+      "recommendedUse": "별도 사육 스타일 데이터",
+      "action": "separate-from-type-score",
+      "reason": "개체 연령, 건강, 사육 규모와 사육 철학이 함께 영향을 준다."
+    },
+    {
+      "id": "OQ05",
+      "prompt": "내가 좋아하는 사육장은?",
+      "options": ["아크릴사육장 또는 유리장", "적재형 케이지"],
+      "classification": "husbandry-environment",
+      "recommendedUse": "사육 규모와 공간 운영 데이터",
+      "action": "separate-from-type-score",
+      "reason": "취향보다 공간, 비용과 현재 마릿수가 답을 결정할 수 있다."
+    },
+    {
+      "id": "OQ06",
+      "prompt": "내가 조금 더 선호하는 유명 라인은?",
+      "options": ["보바", "SPT"],
+      "classification": "expert-preference",
+      "recommendedUse": "경험자 전용 라인 선호 데이터",
+      "action": "expert-only-with-unknown",
+      "reason": "특정 커뮤니티와 시점에 의존하며 라인을 모르면 무작위 응답이 된다."
+    },
+    {
+      "id": "OQ07",
+      "prompt": "장단점이 뚜렷한 크레 두마리가 있습니다. 어느아이로 선택하시겠습니까?",
+      "options": ["옆구리(레터럴)이 아쉽지만, 크라운이 매우 좋음", "크라운이 없지만, 옆구리(레터럴)이 매우 좋음"],
+      "classification": "expert-preference",
+      "recommendedUse": "경험자용 구조 우선순위 태그",
+      "action": "expert-only-with-visuals",
+      "reason": "실제 구조 트레이드오프지만 초보는 용어를 모르고 개체 전체 밸런스도 필요하다."
+    },
+    {
+      "id": "OQ08",
+      "prompt": "평소 입양할때 조금 더 선호하는 방식은?",
+      "options": ["오프라인 (행사, 샵 등)", "온라인 (피들, 파사모 등)"],
+      "classification": "acquisition-channel",
+      "recommendedUse": "경매 및 행사 홍보 채널 분석",
+      "action": "behavior-data-only",
+      "reason": "거주지, 이동 거리와 채널 접근성이 성향보다 크게 작용할 수 있다."
+    },
+    {
+      "id": "OQ09",
+      "prompt": "두 가지 형질 중 하나를 골라야한다면?",
+      "options": ["색감은 매우좋지만, 형질이 아쉬운", "형질이 매우 좋지만, 색감이 아쉬운"],
+      "classification": "core-inspiration",
+      "recommendedUse": "S/N 또는 기숙사 대비 문항 소재",
+      "action": "rewrite",
+      "reason": "시각적 만족과 구조적 기준의 대비는 있으나 형질의 의미가 넓고 선택지 구체성이 다르다."
+    },
+    {
+      "id": "OQ10",
+      "prompt": "내가 처음 해칭한 크레는?",
+      "options": ["모프(릴리, 카푸, 세이블, 아잔틱 등)", "노멀 (트라이, 챠콜, 달마 등)"],
+      "classification": "experience-fact",
+      "recommendedUse": "브리딩 이력 또는 회고 데이터",
+      "action": "move-to-profile",
+      "reason": "해칭 경험이 없는 사람은 답할 수 없고 성향이 아닌 과거 사실이다."
+    },
+    {
+      "id": "OQ11",
+      "prompt": "내가 선호하는 슈퍼푸드는?",
+      "options": ["기호도는 낮으나, 영양성분이 좋은 슈퍼푸드", "영양성분이 낮으나, 기호도가 좋은 슈퍼푸드"],
+      "classification": "invalid-dichotomy",
+      "recommendedUse": "사용하지 않음",
+      "action": "exclude",
+      "reason": "한쪽이 더 책임감 있는 정답처럼 보이고 실제 제품 평가를 지나치게 단순화한다."
+    },
+    {
+      "id": "OQ12",
+      "prompt": "메인숫을 한마리만 입양할 수 있습니다. 두마리중 어느아이로 고르시겠습니까?",
+      "options": ["일년에 한번 메이팅하는 초 하이엔드 수컷", "매일 메이팅하는 나의 돌쇠 수컷 (퀄리티 보장 못함)"],
+      "classification": "invalid-humor",
+      "recommendedUse": "점수 없는 농담 소재로만 검토",
+      "action": "exclude-or-rewrite",
+      "reason": "퀄리티, 교배 빈도, 번식 능력과 동물복지가 한 문항에 섞여 있다."
+    },
+    {
+      "id": "OQ13",
+      "prompt": "두 가지 상황 중 하나를 골라야합니다. 누구와 함께하시겠습니까?",
+      "options": ["파충류샵 데이트 가자 하는 카리나 또는 차은우", "같이 크레 입양하러 가자 하는 이재용"],
+      "classification": "fun-only",
+      "recommendedUse": "결과 공유 후 보너스 밸런스게임",
+      "action": "unscored",
+      "reason": "크레 성향보다 유명인 호감과 경제적 상상을 측정한다."
+    },
+    {
+      "id": "OQ14",
+      "prompt": "로또에 당첨됐습니다. 어떻게 사용하시겠습니까?",
+      "options": ["1000만원 퀄리티 10마리 입양", "100만원 퀄리티 100마리 입양"],
+      "classification": "core-inspiration",
+      "recommendedUse": "집중과 확장 성향 문항 소재",
+      "action": "rewrite-realistically",
+      "reason": "소수 집중과 다수 확장 이미지는 분명하지만 현실성과 사육 책임 문제가 선택에 영향을 준다."
+    },
+    {
+      "id": "OQ15",
+      "prompt": "당신이 크레를 키우며 가장 설레였던 순간은 둘중 언제였나요?",
+      "options": ["처음 입양했던 기억", "처음 해칭했던 순간"],
+      "classification": "experience-reflection",
+      "recommendedUse": "경험자 결과 카드 또는 회고 콘텐츠",
+      "action": "remove-from-core-score",
+      "reason": "해칭 경험이 없으면 선택할 수 없고 성향보다 경험 유무를 측정한다."
+    }
+  ]
+}
