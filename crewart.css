@@ -642,6 +642,15 @@ body.crewart-broadcast {
 }
 .cw-choice.selected,
 .cw-choice:hover { border-color: var(--cw-gold); background: var(--cw-gold-soft); color: var(--cw-gold); }
+.cw-choice:disabled { cursor: default; opacity: .72; }
+.cw-choice.selected:disabled { opacity: 1; }
+.cw-question.too-fast { animation: cw-read-warning .34s ease; border-color: rgba(252,165,165,.7); }
+
+@keyframes cw-read-warning {
+    0%, 100% { transform: translateX(0); }
+    30% { transform: translateX(-5px); }
+    70% { transform: translateX(5px); }
+}
 
 .cw-result-breakdown {
     display: grid;
@@ -685,12 +694,58 @@ body.crewart-broadcast {
 }
 
 .cw-trait-breakdown {
-    display: flex;
-    justify-content: center;
-    gap: 7px;
-    flex-wrap: wrap;
+    display: block;
     margin-top: 12px;
+    text-align: left;
 }
+
+.cw-result-type-card {
+    padding: 22px;
+    border: 1px solid rgba(214,178,94,.32);
+    background: linear-gradient(145deg, rgba(214,178,94,.12), rgba(255,255,255,.025));
+}
+
+.cw-result-type-card > span {
+    display: block;
+    color: var(--cw-gold);
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: .14em;
+}
+
+.cw-result-type-card > strong {
+    display: block;
+    margin-top: 6px;
+    color: var(--cw-ink);
+    font-size: clamp(24px, 4vw, 38px);
+    font-weight: 950;
+}
+
+.cw-result-type-card > p {
+    margin: 10px 0 0;
+    color: var(--cw-muted);
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.cw-result-sections {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.cw-result-sections article {
+    padding: 18px;
+    border: 1px solid var(--cw-line);
+    background: rgba(255,255,255,.025);
+}
+
+.cw-result-sections article.caution { border-color: rgba(252,165,165,.28); }
+.cw-result-sections article.wide { grid-column: 1 / -1; }
+.cw-result-sections h3 { margin: 0 0 9px; color: var(--cw-gold); font-size: 12px; font-weight: 950; }
+.cw-result-sections strong { display: block; margin-bottom: 7px; color: var(--cw-ink); font-size: 17px; }
+.cw-result-sections p { margin: 0; color: var(--cw-muted); font-size: 13px; line-height: 1.72; }
 
 .cw-trait-pill {
     display: inline-flex;
@@ -724,4 +779,6 @@ body.crewart-broadcast {
     .cw-ticker { left: 16px; right: 16px; bottom: 14px; }
     .cw-choice-grid { grid-template-columns: 1fr; }
     .cw-result-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cw-result-sections { grid-template-columns: 1fr; }
+    .cw-result-sections article.wide { grid-column: auto; }
 }

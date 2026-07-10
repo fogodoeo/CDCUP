@@ -30,10 +30,10 @@
     }
   ],
   "houses": {
-    "SF": { "id": "lumen-crown", "name": "루멘크라운", "motto": "눈에 들어오는 데는 이유가 있다." },
-    "ST": { "id": "moss-grove", "name": "모스그로브", "motto": "잘 키우는 것이 최고의 퀄리티다." },
-    "NT": { "id": "sable-quill", "name": "세이블퀼", "motto": "좋은 결과에는 근거가 있다." },
-    "NF": { "id": "onyx-tail", "name": "오닉스테일", "motto": "아직 없는 결과를 먼저 본다." }
+    "SF": { "id": "lumen-crown", "name": "감각형", "motto": "눈에 들어오는 데는 이유가 있다." },
+    "ST": { "id": "moss-grove", "name": "관리형", "motto": "잘 키우는 것이 최고의 퀄리티다." },
+    "NT": { "id": "sable-quill", "name": "분석형", "motto": "좋은 결과에는 근거가 있다." },
+    "NF": { "id": "onyx-tail", "name": "비전형", "motto": "아직 없는 결과를 먼저 본다." }
   },
   "types": {
     "ESFJ": { "house": "SF", "name": "표현 큐레이터", "tagline": "좋은 개체의 장점을 함께 즐길 수 있는 언어로 보여주는 사람" },

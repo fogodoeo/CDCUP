@@ -54,11 +54,22 @@
     });
 
     const DEFAULT_HOUSES = Object.freeze([
-        { id: 'valor', name: '용맹의 탑', color: '#B91C1C', accent: '#FCA5A5' },
-        { id: 'wisdom', name: '지혜의 탑', color: '#1D4ED8', accent: '#93C5FD' },
-        { id: 'harmony', name: '조화의 탑', color: '#047857', accent: '#86EFAC' },
-        { id: 'ambition', name: '야망의 탑', color: '#6D28D9', accent: '#C4B5FD' }
+        { id: 'sensory', name: '감각형', color: '#B91C1C', accent: '#FCA5A5' },
+        { id: 'care', name: '관리형', color: '#047857', accent: '#86EFAC' },
+        { id: 'analysis', name: '분석형', color: '#1D4ED8', accent: '#93C5FD' },
+        { id: 'vision', name: '비전형', color: '#6D28D9', accent: '#C4B5FD' }
     ]);
+
+    const LEGACY_HOUSE_NAMES = Object.freeze({
+        '용맹의 탑': '감각형',
+        '지혜의 탑': '관리형',
+        '조화의 탑': '분석형',
+        '야망의 탑': '비전형',
+        '루멘크라운': '감각형',
+        '모스그로브': '관리형',
+        '세이블퀼': '분석형',
+        '오닉스테일': '비전형'
+    });
 
     function normalizeModuleId(value) {
         const raw = String(value || '').trim().toLowerCase();
@@ -86,7 +97,7 @@
         const rows = text.split(/\r?\n/).map(parseDelimitedLine).filter(parts => parts.length);
         const houses = rows.map((parts, index) => ({
             id: slugify(parts[0] || ('house-' + (index + 1))) || ('house-' + (index + 1)),
-            name: parts[0] || ('기숙사 ' + (index + 1)),
+            name: LEGACY_HOUSE_NAMES[parts[0]] || parts[0] || ('기숙사 ' + (index + 1)),
             color: parts[1] || DEFAULT_HOUSES[index % DEFAULT_HOUSES.length].color,
             accent: parts[2] || DEFAULT_HOUSES[index % DEFAULT_HOUSES.length].accent
         }));
@@ -133,6 +144,9 @@
             houseByName[normalizePerson(house.name)] = house;
             houseByName[slugify(house.name)] = house;
             houseByName[normalizePerson(house.id)] = house;
+            Object.entries(LEGACY_HOUSE_NAMES).forEach(([legacyName, currentName]) => {
+                if (currentName === house.name) houseByName[normalizePerson(legacyName)] = house;
+            });
         });
 
         const map = {};

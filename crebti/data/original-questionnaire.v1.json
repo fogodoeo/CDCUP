@@ -11,7 +11,7 @@
       "prompt": "당신은 둘 중 어떤 화이트가 더 좋나요?",
       "options": ["화이트 양은 적지만, 퓨어화이트", "화이트 양은 많지만, 아이보리 또는 노란색"],
       "classification": "expert-preference",
-      "recommendedUse": "루멘크라운 내부 표현 취향 태그",
+      "recommendedUse": "감각형 내부 표현 취향 태그",
       "action": "revise-with-controlled-images",
       "reason": "화이트 표현 취향은 측정하지만 CREBTI 축 자체를 측정하지는 않는다."
     },
