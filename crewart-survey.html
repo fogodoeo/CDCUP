@@ -9,20 +9,9 @@
     <script src="event-modules.js?v=20260710-crebti4"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260711-choice-moments1">
+    <link rel="stylesheet" href="crewart.css?v=20260711-choice-stage2">
 </head>
 <body class="crewart-page crewart-survey-page">
-    <nav class="cw-nav">
-        <a class="cw-brand" href="crewart-survey.html"><span class="cw-brand-mark">W</span><span>크레와트</span></a>
-        <div class="cw-nav-links">
-            <a href="index.html">허브</a>
-            <a href="crewart-settings.html">기숙사 설정</a>
-            <a class="active" href="crewart-survey.html">선택</a>
-            <a href="crewart-ranking.html">점수표</a>
-            <a href="cdcup/">CDCUP</a>
-        </div>
-    </nav>
-
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
 
     <main class="cw-shell cw-survey-shell">
@@ -117,6 +106,11 @@
             </div>
         </section>
     </main>
+
+    <div class="cw-moment-shift" id="moment-shift" hidden aria-live="polite">
+        <div class="cw-moment-shift-ring" aria-hidden="true"><i></i><i></i></div>
+        <span>선택이 다음 순간을 엽니다</span>
+    </div>
 
     <section class="cw-time-rewind" id="time-rewind" hidden aria-live="polite">
         <div class="cw-rewind-rings" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -477,12 +471,17 @@
             const wrap = document.getElementById('questions');
             wrap.innerHTML = QUESTIONS.map((question, index) => `
                 <article class="cw-question ${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
-                    ${questionIllustration(question.id)}
-                    <div class="cw-question-label">${escapeHtml(question.label)}</div>
-                    <h2>${formatText(question.q)}</h2>
-                    <p class="cw-question-guide">둘 다 맞다면, 평소에 더 자주 하는 쪽을 고르세요.</p>
-                    <div class="cw-choice-grid">
-                        ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice ${answers[index] === choiceIndex ? 'selected' : ''}" aria-pressed="${answers[index] === choiceIndex}" onclick="chooseAnswer(${index}, ${choiceIndex})"><span class="cw-choice-number">${choiceIndex === 0 ? 'A' : 'B'}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
+                    <header class="cw-question-head">
+                        <div class="cw-question-label">${escapeHtml(question.label)}</div>
+                        <h2>${formatText(question.q)}</h2>
+                        <p class="cw-question-guide">생각을 오래 붙잡지 말고, 평소의 나와 더 가까운 쪽을 고르세요.</p>
+                    </header>
+                    <div class="cw-choice-stage">
+                        ${questionIllustration(question.id)}
+                        <div class="cw-choice-grid">
+                            ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice cw-choice-${choiceIndex === 0 ? 'left' : 'right'} ${answers[index] === choiceIndex ? 'selected' : ''}" aria-pressed="${answers[index] === choiceIndex}" onmouseenter="setChoiceFocus(this, true)" onmouseleave="setChoiceFocus(this, false)" onfocus="setChoiceFocus(this, true)" onblur="setChoiceFocus(this, false)" onclick="chooseAnswer(${index}, ${choiceIndex})"><span class="cw-choice-number">${choiceIndex === 0 ? 'A' : 'B'}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
+                        </div>
+                        <div class="cw-transition-orbit" aria-hidden="true"><i></i><i></i></div>
                     </div>
                 </article>
             `).join('');
@@ -496,6 +495,13 @@
             return Math.min(3000, Math.max(1800, 900 + (textLength * 10)));
         }
 
+        function setChoiceFocus(button, focused) {
+            const stage = button.closest('.cw-choice-stage');
+            if (!stage) return;
+            button.classList.toggle('is-focused', focused);
+            stage.classList.toggle('choice-focused', focused);
+        }
+
         function chooseAnswer(index, choiceIndex) {
             if (pendingAdvance || index !== current) return;
             const remaining = requiredReadTime(QUESTIONS[index]) - (performance.now() - questionShownAt);
@@ -507,7 +513,12 @@
             }
             answers[index] = choiceIndex;
             pendingAdvance = true;
-            const choices = document.querySelectorAll('.cw-question.active .cw-choice');
+            const activeQuestion = document.querySelector('.cw-question.active');
+            const momentShift = document.getElementById('moment-shift');
+            momentShift.hidden = false;
+            momentShift.className = `cw-moment-shift active ${choiceIndex === 0 ? 'toward-left' : 'toward-right'}`;
+            activeQuestion?.classList.add('leaving', choiceIndex === 0 ? 'toward-left' : 'toward-right');
+            const choices = activeQuestion?.querySelectorAll('.cw-choice') || [];
             choices.forEach((choice, buttonIndex) => {
                 choice.disabled = true;
                 choice.classList.toggle('selected', buttonIndex === choiceIndex);
@@ -520,7 +531,9 @@
                 } else {
                     finishSurvey();
                 }
-            }, 280);
+                momentShift.hidden = true;
+                momentShift.className = 'cw-moment-shift';
+            }, 720);
         }
 
         function prevQuestion() {
