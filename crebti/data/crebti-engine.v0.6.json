@@ -1,10 +1,10 @@
 {
   "meta": {
     "name": "CREBTI content engine",
-    "version": "content-v0.5",
+    "version": "content-v0.6",
     "createdAt": "2026-07-10",
     "language": "ko",
-    "status": "plain-language-reviewed-pilot-pending",
+    "status": "readability-reviewed-pilot-pending",
     "estimatedMinutes": 2,
     "coreQuestionCount": 12,
     "maximumQuestionCount": 14,
@@ -97,17 +97,17 @@
       "id": "C01",
       "axis": "EI",
       "context": "auction",
-      "prompt": "고민될 때 생각이 정리되는 쪽은?",
+      "prompt": "경매 마감 5분 전, 두 개체 사이에서 고민된다. 나는?",
       "options": [
         {
           "id": "talk-through",
-          "label": "누군가와 이야기하면서 정리한다.",
+          "label": "지인에게 말해보며 생각을 정리한다.",
           "score": "E",
           "signal": "external-processing"
         },
         {
           "id": "write-through",
-          "label": "혼자 메모하면서 정리한다.",
+          "label": "사진을 혼자 다시 보며 생각을 정리한다.",
           "score": "I",
           "signal": "internal-processing"
         }
@@ -118,13 +118,14 @@
           "조언 의존성",
           "자료 분석 성향"
         ]
-      }
+      },
+      "displayLabel": "경매 마감 전"
     },
     {
       "id": "C02",
       "axis": "SN",
       "context": "selection",
-      "prompt": "어린 개체를 볼 때 더 궁금한 정보는?",
+      "prompt": "어린 개체를 볼 때, 더 먼저 보고 싶은 것은?",
       "options": [
         {
           "id": "current-views",
@@ -134,7 +135,7 @@
         },
         {
           "id": "family-pattern",
-          "label": "부모·형제가 자라며 변한 흐름",
+          "label": "부모와 형제가 자라며 변한 과정",
           "score": "N",
           "signal": "pattern-inference"
         }
@@ -145,23 +146,24 @@
           "전문 용어 지식",
           "위험 선호"
         ]
-      }
+      },
+      "displayLabel": "어린 개체를 볼 때"
     },
     {
       "id": "C03",
       "axis": "JP",
       "context": "auction",
-      "prompt": "원래 1순위 말고 새 후보가 눈에 들어왔다. 나는?",
+      "prompt": "원래 원픽 말고 다른 개체가 갑자기 눈에 들어왔다. 나는?",
       "options": [
         {
           "id": "planned-close",
-          "label": "정해둔 순서와 예산대로 고른다.",
+          "label": "처음 정한 원픽과 예산을 지킨다.",
           "score": "J",
           "signal": "planned-closure"
         },
         {
           "id": "open-adjust",
-          "label": "끝까지 비교하고 선택을 바꿀 수 있다.",
+          "label": "둘을 끝까지 비교하고 바꿀 수도 있다.",
           "score": "P",
           "signal": "adaptive-openness"
         }
@@ -172,23 +174,24 @@
           "고집",
           "충동 구매"
         ]
-      }
+      },
+      "displayLabel": "새 후보가 나타났을 때"
     },
     {
       "id": "C04",
       "axis": "TF",
       "context": "selection",
-      "prompt": "조건이 비슷한 두 개체 중 하나를 고른다면?",
+      "prompt": "가격과 건강 상태가 비슷하다. 마지막 선택은?",
       "options": [
         {
           "id": "consistent-fit",
-          "label": "처음 정한 기준에 더 잘 맞는 쪽",
+          "label": "내 기준표에 더 잘 맞는 개체",
           "score": "T",
           "signal": "consistent-criteria"
         },
         {
           "id": "personal-fit",
-          "label": "내 취향에 더 오래 마음이 가는 쪽",
+          "label": "자꾸 눈이 가는 개체",
           "score": "F",
           "signal": "personal-values"
         }
@@ -199,23 +202,24 @@
           "책임감의 우열",
           "감정 대 이성 구도"
         ]
-      }
+      },
+      "displayLabel": "마지막 한 마리"
     },
     {
       "id": "C05",
       "axis": "EI",
       "context": "observation",
-      "prompt": "예상하지 못한 변화가 보이면 먼저?",
+      "prompt": "키우던 개체의 색이 예상과 다르게 변했다. 나는?",
       "options": [
         {
           "id": "exchange-first",
-          "label": "바로 공유하고 이야기를 나눠본다.",
+          "label": "바로 사진을 공유하고 이야기한다.",
           "score": "E",
           "signal": "interactive-exploration"
         },
         {
           "id": "reflect-first",
-          "label": "혼자 더 살펴본 뒤 생각을 나눈다.",
+          "label": "예전 사진과 혼자 먼저 비교한다.",
           "score": "I",
           "signal": "private-exploration"
         }
@@ -226,13 +230,14 @@
           "기록 습관",
           "사교성의 우열"
         ]
-      }
+      },
+      "displayLabel": "예상 밖의 변화"
     },
     {
       "id": "C06",
       "axis": "SN",
       "context": "growth",
-      "prompt": "성장 사진을 볼 때 먼저 보이는 것은?",
+      "prompt": "성장 사진을 넘겨볼 때, 먼저 보는 것은?",
       "options": [
         {
           "id": "specific-change",
@@ -242,7 +247,7 @@
         },
         {
           "id": "overall-direction",
-          "label": "변화의 흐름과 앞으로의 가능성",
+          "label": "앞으로 어떤 모습으로 변할지",
           "score": "N",
           "signal": "pattern-direction"
         }
@@ -253,23 +258,24 @@
           "낙관성",
           "완성 개체 선호"
         ]
-      }
+      },
+      "displayLabel": "성장 사진을 볼 때"
     },
     {
       "id": "C07",
       "axis": "TF",
       "context": "transaction",
-      "prompt": "기본 정보가 같다면, 더 믿음이 가는 상담은?",
+      "prompt": "판매자에게 질문 하나만 할 수 있다면?",
       "options": [
         {
           "id": "principle-answer",
-          "label": "판단 기준과 이유를 분명히 설명한다.",
+          "label": "“이 개체가 좋다고 보는 근거가 뭔가요?”",
           "score": "T",
           "signal": "principle-trust"
         },
         {
           "id": "fit-answer",
-          "label": "내 상황을 듣고 잘 맞을지 함께 본다.",
+          "label": "“제 사육 환경에 잘 맞을까요?”",
           "score": "F",
           "signal": "relational-trust"
         }
@@ -280,13 +286,14 @@
           "거래 안전성",
           "친절함의 유무"
         ]
-      }
+      },
+      "displayLabel": "판매자에게 묻는다면"
     },
     {
       "id": "C08",
       "axis": "JP",
       "context": "care",
-      "prompt": "새 개체가 오기 전 나는?",
+      "prompt": "새 개체가 오기 전, 나는 보통?",
       "options": [
         {
           "id": "checklist-ready",
@@ -307,17 +314,18 @@
           "준비성의 우열",
           "무계획"
         ]
-      }
+      },
+      "displayLabel": "새 개체가 오기 전"
     },
     {
       "id": "C09",
       "axis": "EI",
       "context": "event",
-      "prompt": "행사 중 잠깐 쉴 때 더 충전되는 쪽은?",
+      "prompt": "행사에서 잠깐 쉴 시간이 생겼다. 나는?",
       "options": [
         {
           "id": "social-recharge",
-          "label": "사람들과 방금 본 것들을 이야기한다.",
+          "label": "사람들과 방금 본 개체 얘기를 한다.",
           "score": "E",
           "signal": "social-recharge"
         },
@@ -334,23 +342,24 @@
           "행사 참여 여부",
           "정보 수집 능력"
         ]
-      }
+      },
+      "displayLabel": "행사 쉬는 시간"
     },
     {
       "id": "C10",
       "axis": "SN",
       "context": "collection",
-      "prompt": "새 라인 설명, 더 이해가 잘 되는 쪽은?",
+      "prompt": "처음 보는 라인을 이해하려면?",
       "options": [
         {
           "id": "example-detail",
-          "label": "사진과 사례로 특징을 하나씩 설명",
+          "label": "현재 개체의 사진과 특징부터 본다.",
           "score": "S",
           "signal": "example-based-understanding"
         },
         {
           "id": "connected-map",
-          "label": "부모·형제의 흐름과 가능성을 연결해 설명",
+          "label": "부모·형제의 성장 흐름부터 본다.",
           "score": "N",
           "signal": "pattern-based-understanding"
         }
@@ -361,23 +370,24 @@
           "어린 개체 구매 위험",
           "가격 선호"
         ]
-      }
+      },
+      "displayLabel": "처음 보는 라인"
     },
     {
       "id": "C11",
       "axis": "TF",
       "context": "retention",
-      "prompt": "둘 다 좋은 새 주인을 찾았다. 한 마리만 계속 키운다면?",
+      "prompt": "둘 다 좋은 새 주인을 찾았다. 한 마리만 남긴다면?",
       "options": [
         {
           "id": "portfolio-role",
-          "label": "앞으로 맡을 역할이 더 분명한 개체",
+          "label": "앞으로 브리딩 계획에 필요한 개체",
           "score": "T",
           "signal": "system-role"
         },
         {
           "id": "personal-history",
-          "label": "함께한 기억이 더 특별한 개체",
+          "label": "함께한 추억이 더 많은 개체",
           "score": "F",
           "signal": "personal-meaning"
         }
@@ -388,23 +398,24 @@
           "복지에 대한 죄책감",
           "도덕성의 우열"
         ]
-      }
+      },
+      "displayLabel": "한 마리만 남긴다면"
     },
     {
       "id": "C12",
       "axis": "JP",
       "context": "recording",
-      "prompt": "오래 기록한다면 더 잘 맞는 방식은?",
+      "prompt": "성장 기록을 오래 남긴다면?",
       "options": [
         {
           "id": "regular-format",
-          "label": "정한 날짜와 항목대로 짧게 기록",
+          "label": "매주 같은 항목을 짧게 기록한다.",
           "score": "J",
           "signal": "scheduled-continuity"
         },
         {
           "id": "event-format",
-          "label": "변화가 있을 때 필요한 내용을 자세히 기록",
+          "label": "변화가 보일 때 자세히 기록한다.",
           "score": "P",
           "signal": "event-led-depth"
         }
@@ -415,7 +426,8 @@
           "성실성의 우열",
           "기록량의 차이"
         ]
-      }
+      },
+      "displayLabel": "성장 기록"
     }
   ],
   "calibrationQuestions": {
