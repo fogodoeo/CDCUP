@@ -12,8 +12,8 @@
     "validationNotice": "문항은 축 정의와 선택지 균형을 기준으로 내용 타당도를 재검토했으며, 통계적 타당도와 신뢰도는 파일럿 응답 데이터로 별도 검증해야 한다."
   },
   "presentation": {
-    "headline": "약 2분 뒤, 당신의 크레비티와 소속 기숙사가 결정됩니다.",
-    "instruction": "정답은 없습니다. 오래 고민하기보다 지금의 자신과 더 가까운 쪽을 선택하세요.",
+    "headline": "크레와 함께 마주치는 12가지 순간에서, 평소 몰랐던 나의 선택 기준을 발견합니다.",
+    "instruction": "정답은 없습니다. 각 순간에 더 자연스럽게 끌리는 쪽을 선택하세요.",
     "progressMode": "bar-only",
     "randomizeQuestionOrder": true,
     "randomizeOptionOrder": true,
