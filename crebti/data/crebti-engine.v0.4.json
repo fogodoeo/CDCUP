@@ -1,14 +1,15 @@
 {
   "meta": {
     "name": "CREBTI content engine",
-    "version": "content-v0.3",
+    "version": "content-v0.4",
     "createdAt": "2026-07-10",
     "language": "ko",
-    "status": "pilot-ready-revised",
+    "status": "construct-reviewed-pilot-pending",
     "estimatedMinutes": 2,
     "coreQuestionCount": 12,
     "maximumQuestionCount": 14,
-    "notice": "크레스티드게코 생활 속 선택을 바탕으로 만든 재미용 성향 테스트이며, 공식 MBTI 검사나 심리 진단이 아닙니다."
+    "notice": "크레스티드게코 생활 속 선택을 바탕으로 만든 재미용 성향 테스트이며, 공식 MBTI 검사나 심리 진단이 아닙니다.",
+    "validationNotice": "문항은 축 정의와 선택지 균형을 기준으로 내용 타당도를 재검토했으며, 통계적 타당도와 신뢰도는 파일럿 응답 데이터로 별도 검증해야 한다."
   },
   "presentation": {
     "headline": "약 2분 뒤, 당신의 크레비티와 소속 기숙사가 결정됩니다.",
@@ -96,21 +97,28 @@
       "id": "C01",
       "axis": "EI",
       "context": "auction",
-      "prompt": "경매 마감 전, 후보 둘 사이에서 고민이 깊어졌다. 생각을 정리할 때 더 자연스러운 방식은?",
+      "prompt": "마음에 드는 두 개체 사이에서 판단이 막혔다. 내 생각이 더 또렷해지는 순간은?",
       "options": [
         {
-          "id": "dialogue",
-          "label": "믿는 사람과 대화를 주고받으며 내 기준을 선명하게 만든다.",
+          "id": "talk-through",
+          "label": "누군가와 생각을 말로 풀고 반응을 주고받는 동안",
           "score": "E",
-          "signal": "social-synthesis"
+          "signal": "external-processing"
         },
         {
-          "id": "private-review",
-          "label": "사진과 메모를 다시 보며 혼자 내 기준을 선명하게 만든다.",
+          "id": "write-through",
+          "label": "혼자 생각을 글이나 메모로 차분히 정리하는 동안",
           "score": "I",
-          "signal": "private-synthesis"
+          "signal": "internal-processing"
         }
-      ]
+      ],
+      "review": {
+        "target": "생각을 정리하는 에너지 방향",
+        "avoids": [
+          "조언 의존성",
+          "자료 분석 성향"
+        ]
+      }
     },
     {
       "id": "C02",
@@ -125,12 +133,19 @@
           "signal": "present-evidence"
         },
         {
-          "id": "family-growth",
-          "label": "부모와 형제가 같은 시기에 어떻게 변했는지 보여주는 성장 기록",
+          "id": "family-pattern",
+          "label": "부모와 형제가 같은 시기에 보인 변화의 흐름",
           "score": "N",
           "signal": "pattern-inference"
         }
-      ]
+      ],
+      "review": {
+        "target": "현재 정보와 패턴 정보 중 우선 신뢰하는 형태",
+        "avoids": [
+          "전문 용어 지식",
+          "위험 선호"
+        ]
+      }
     },
     {
       "id": "C03",
@@ -139,98 +154,133 @@
       "prompt": "미리 정한 1순위 외에 뜻밖의 후보가 나타났다. 두 경매의 종료 시간은 비슷하다. 더 편한 방식은?",
       "options": [
         {
-          "id": "keep-priority",
-          "label": "정해둔 예산과 우선순위에 맞춰 이번 선택을 마무리한다.",
+          "id": "planned-close",
+          "label": "처음 정한 예산 상한과 우선순위 안에서 선택을 마무리한다.",
           "score": "J",
-          "signal": "structured-closure"
+          "signal": "planned-closure"
         },
         {
-          "id": "keep-open",
-          "label": "새 후보까지 열어두고 마지막 정보에 따라 선택을 조정한다.",
+          "id": "open-adjust",
+          "label": "후보를 모두 열어두고 마지막 정보까지 반영해 선택을 조정한다.",
           "score": "P",
-          "signal": "live-reframing"
+          "signal": "adaptive-openness"
         }
-      ]
+      ],
+      "review": {
+        "target": "외부 선택을 마무리하는 방식",
+        "avoids": [
+          "고집",
+          "충동 구매"
+        ]
+      }
     },
     {
       "id": "C04",
       "axis": "TF",
       "context": "selection",
-      "prompt": "건강과 가격이 비슷한 두 개체 중 한 마리만 선택해야 한다. 마지막에 더 힘이 실리는 기준은?",
+      "prompt": "건강과 가격이 비슷한 두 개체 중 한 마리만 선택한다. 마지막 판단에 더 힘이 실리는 기준은?",
       "options": [
         {
-          "id": "criteria-fit",
-          "label": "처음 세운 목적과 조건에 더 잘 맞고 선택 이유가 분명한 쪽",
+          "id": "consistent-fit",
+          "label": "처음 정한 목적과 조건에 얼마나 맞고, 같은 기준으로 설명할 수 있는지",
           "score": "T",
-          "signal": "system-fit"
+          "signal": "consistent-criteria"
         },
         {
-          "id": "lasting-pull",
-          "label": "비교가 끝난 뒤에도 계속 마음에 남아 오래 함께하고 싶은 쪽",
+          "id": "personal-fit",
+          "label": "내 사육 환경과 취향에 얼마나 잘 맞고, 오래 만족하며 함께할 수 있는지",
           "score": "F",
-          "signal": "personal-resonance"
+          "signal": "personal-values"
         }
-      ]
+      ],
+      "review": {
+        "target": "최종 결정을 정당화하는 기준",
+        "avoids": [
+          "책임감의 우열",
+          "감정 대 이성 구도"
+        ]
+      }
     },
     {
       "id": "C05",
       "axis": "EI",
       "context": "observation",
-      "prompt": "키우던 개체에서 예상하지 못한 변화가 보였다. 그 의미를 파악할 때 먼저 하는 일은?",
+      "prompt": "키우던 개체에서 예상하지 못한 변화가 보였다. 생각을 발전시키는 데 더 자연스러운 흐름은?",
       "options": [
         {
-          "id": "share-first",
-          "label": "믿는 사람들과 이야기를 나누며 여러 해석을 빠르게 모은다.",
+          "id": "exchange-first",
+          "label": "사진과 생각을 바로 공유하고 반응을 주고받으며 해석을 넓힌다.",
           "score": "E",
-          "signal": "network-interpretation"
+          "signal": "interactive-exploration"
         },
         {
-          "id": "compare-first",
-          "label": "이전 사진과 기록을 혼자 비교하며 변화의 맥락을 정리한다.",
+          "id": "reflect-first",
+          "label": "먼저 혼자 충분히 관찰하고 내 설명이 잡힌 뒤 다른 사람과 나눈다.",
           "score": "I",
-          "signal": "internal-verification"
+          "signal": "private-exploration"
         }
-      ]
+      ],
+      "review": {
+        "target": "흥미를 탐색할 때의 상호작용 방향",
+        "avoids": [
+          "기록 습관",
+          "사교성의 우열"
+        ]
+      }
     },
     {
       "id": "C06",
       "axis": "SN",
       "context": "growth",
-      "prompt": "성장 중인 개체의 변화를 볼 때 더 먼저 눈에 들어오는 것은?",
+      "prompt": "같은 개체의 성장 사진을 시간순으로 볼 때, 더 먼저 눈에 들어오는 것은?",
       "options": [
         {
-          "id": "current-expression",
-          "label": "지금 실제로 선명해진 표현과 현재 컨디션",
+          "id": "specific-change",
+          "label": "날짜별 색, 패턴, 체형처럼 구체적으로 달라진 부분",
           "score": "S",
-          "signal": "confirmed-expression"
+          "signal": "concrete-change"
         },
         {
-          "id": "future-direction",
-          "label": "지금의 변화가 앞으로 이어질 것 같은 방향과 가능성",
+          "id": "overall-direction",
+          "label": "여러 변화가 이어지는 전체 흐름과 다음에 나타날 가능성",
           "score": "N",
-          "signal": "emergent-possibility"
+          "signal": "pattern-direction"
         }
-      ]
+      ],
+      "review": {
+        "target": "구체적 변화와 전체 패턴 중 먼저 보는 정보",
+        "avoids": [
+          "낙관성",
+          "완성 개체 선호"
+        ]
+      }
     },
     {
       "id": "C07",
       "axis": "TF",
       "context": "transaction",
-      "prompt": "상태와 거래 조건이 비슷한 개체를 두 곳에서 만났다. 더 신뢰가 생기는 판매자는?",
+      "prompt": "두 판매자 모두 기본 기록과 거래 조건은 명확하다. 상담에서 더 신뢰가 생기는 답변은?",
       "options": [
         {
-          "id": "transparent-records",
-          "label": "체중, 급여, 상태와 거래 조건을 빠짐없이 명확하게 보여주는 사람",
+          "id": "principle-answer",
+          "label": "상태와 조건을 어떤 기준으로 판단했는지 일관된 근거를 설명하는 답변",
           "score": "T",
-          "signal": "structural-trust"
+          "signal": "principle-trust"
         },
         {
-          "id": "individual-fit",
-          "label": "개체의 습관을 잘 알고 내 사육 환경까지 세심하게 물어보는 사람",
+          "id": "fit-answer",
+          "label": "내 사육 환경과 걱정을 듣고 이 개체와의 적합성을 함께 살피는 답변",
           "score": "F",
           "signal": "relational-trust"
         }
-      ]
+      ],
+      "review": {
+        "target": "구조적 근거와 상황 적합성 중 신뢰 기준",
+        "avoids": [
+          "거래 안전성",
+          "친절함의 유무"
+        ]
+      }
     },
     {
       "id": "C08",
@@ -239,78 +289,106 @@
       "prompt": "새 개체가 도착하기 전, 나를 더 편하게 만드는 준비 방식은?",
       "options": [
         {
-          "id": "prepare-sequence",
-          "label": "세팅과 적응 확인 순서를 미리 정하고 필요한 것을 모두 준비한다.",
+          "id": "checklist-ready",
+          "label": "필요한 준비를 체크리스트로 마치고 적응 확인 순서까지 정한다.",
           "score": "J",
           "signal": "pre-structured-care"
         },
         {
-          "id": "adapt-response",
-          "label": "기본 세팅을 갖춘 뒤 실제 반응을 보며 순서와 방식을 조정한다.",
+          "id": "response-ready",
+          "label": "필수 준비를 마친 뒤 실제 반응에 따라 세팅과 확인 순서를 조정한다.",
           "score": "P",
           "signal": "response-led-care"
         }
-      ]
+      ],
+      "review": {
+        "target": "사전 구조화와 현장 조정 중 선호 방식",
+        "avoids": [
+          "준비성의 우열",
+          "무계획"
+        ]
+      }
     },
     {
       "id": "C09",
       "axis": "EI",
       "context": "event",
-      "prompt": "행사에서 궁금한 개체를 발견했다. 그 개체를 더 알아갈 때 자연스러운 방식은?",
+      "prompt": "행사 도중 잠깐 쉬는 시간이 생겼다. 다음 일정을 위해 더 잘 충전되는 방식은?",
       "options": [
         {
-          "id": "talk-through",
-          "label": "주변 사람이나 사육자와 대화하며 관찰 포인트를 넓힌다.",
+          "id": "social-recharge",
+          "label": "사람들과 방금 본 개체나 인상 깊은 장면을 이야기한다.",
           "score": "E",
-          "signal": "interaction-energy"
+          "signal": "social-recharge"
         },
         {
-          "id": "observe-through",
-          "label": "한동안 직접 관찰하고 메모하며 내 판단을 정리한다.",
+          "id": "quiet-recharge",
+          "label": "조용한 곳에서 사진과 메모를 보며 혼자 생각을 정리한다.",
           "score": "I",
-          "signal": "observation-energy"
+          "signal": "solitary-recharge"
         }
-      ]
+      ],
+      "review": {
+        "target": "에너지를 회복하는 방향",
+        "avoids": [
+          "행사 참여 여부",
+          "정보 수집 능력"
+        ]
+      }
     },
     {
       "id": "C10",
       "axis": "SN",
       "context": "collection",
-      "prompt": "사육 공간에 한 자리만 남았다. 조건이 비슷하다면 더 끌리는 선택은?",
+      "prompt": "새로운 라인에 대한 설명을 들을 때 더 빠르게 이해되는 방식은?",
       "options": [
         {
-          "id": "finished-expression",
-          "label": "지금 컬렉션에 없던 표현을 이미 선명하게 갖춘 개체",
+          "id": "example-detail",
+          "label": "현재 개체에서 확인되는 특징을 사진과 실제 사례로 하나씩 보여주는 설명",
           "score": "S",
-          "signal": "current-completion"
+          "signal": "example-based-understanding"
         },
         {
-          "id": "future-opening",
-          "label": "아직 완성되지는 않았지만 새로운 방향을 열 것 같은 어린 개체",
+          "id": "connected-map",
+          "label": "부모와 형제의 흐름을 연결해 앞으로의 방향을 한 그림으로 보여주는 설명",
           "score": "N",
-          "signal": "future-opening"
+          "signal": "pattern-based-understanding"
         }
-      ]
+      ],
+      "review": {
+        "target": "구체적 사례와 연결된 큰 그림 중 이해 선호",
+        "avoids": [
+          "어린 개체 구매 위험",
+          "가격 선호"
+        ]
+      }
     },
     {
       "id": "C11",
       "axis": "TF",
       "context": "retention",
-      "prompt": "비슷한 수준의 두 개체 중 한 마리만 계속 키울 수 있다. 더 놓기 어려운 쪽은?",
+      "prompt": "둘 다 건강하고, 보내는 개체에게도 좋은 새 사육처가 있다. 한 마리만 계속 키운다면?",
       "options": [
         {
-          "id": "clear-role",
-          "label": "앞으로 맡을 역할이 분명하고 전체 계획에 꼭 필요한 개체",
+          "id": "portfolio-role",
+          "label": "앞으로 맡을 역할이 분명하고 전체 사육 계획에 더 잘 맞는 개체",
           "score": "T",
-          "signal": "portfolio-role"
+          "signal": "system-role"
         },
         {
-          "id": "shared-history",
-          "label": "지켜본 시간과 기억이 쌓여 나에게 특별한 의미가 생긴 개체",
+          "id": "personal-history",
+          "label": "함께한 기억이 쌓였고 나와의 관계에서 더 특별한 의미가 있는 개체",
           "score": "F",
-          "signal": "relational-meaning"
+          "signal": "personal-meaning"
         }
-      ]
+      ],
+      "review": {
+        "target": "체계적 역할과 개인적 가치 중 결정 기준",
+        "avoids": [
+          "복지에 대한 죄책감",
+          "도덕성의 우열"
+        ]
+      }
     },
     {
       "id": "C12",
@@ -319,18 +397,25 @@
       "prompt": "성장 기록을 몇 달 이상 이어간다면 나에게 더 잘 맞는 방식은?",
       "options": [
         {
-          "id": "fixed-format",
-          "label": "정한 주기와 항목에 맞춰 짧게라도 꾸준히 기록한다.",
+          "id": "regular-format",
+          "label": "정한 주기와 항목에 맞춰 짧게라도 같은 형식으로 기록한다.",
           "score": "J",
           "signal": "scheduled-continuity"
         },
         {
-          "id": "change-led",
-          "label": "변화가 보일 때 항목을 바꿔가며 필요한 내용을 자세히 기록한다.",
+          "id": "event-format",
+          "label": "변화가 보일 때 그 상황에 맞는 항목을 골라 자세히 기록한다.",
           "score": "P",
           "signal": "event-led-depth"
         }
-      ]
+      ],
+      "review": {
+        "target": "정기적 구조와 상황 반응형 운영 중 선호",
+        "avoids": [
+          "성실성의 우열",
+          "기록량의 차이"
+        ]
+      }
     }
   ],
   "calibrationQuestions": {
