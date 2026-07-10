@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>크레와트 설문</title>
+    <title>크레와트 분류 시험</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
     <script src="event-modules.js?v=20260710-crebti4"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260710-readability7">
+    <link rel="stylesheet" href="crewart.css?v=20260711-sorting-exam1">
 </head>
-<body class="crewart-page">
+<body class="crewart-page crewart-survey-page">
     <nav class="cw-nav">
         <a class="cw-brand" href="crewart-survey.html"><span class="cw-brand-mark">W</span><span>크레와트</span></a>
         <div class="cw-nav-links">
@@ -23,46 +23,68 @@
         </div>
     </nav>
 
-    <main class="cw-shell" style="max-width:920px;">
+    <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
+
+    <main class="cw-shell cw-survey-shell">
         <header class="cw-page-head">
             <div>
-                <div class="cw-kicker">CREBTI · SORTING TEST</div>
-                <h1>크레비티 기숙사 배정</h1>
-                <p>12가지 크레 생활 속 선택으로 CREBTI 유형과 기숙사가 배정됩니다.</p>
+                <div class="cw-kicker">CREWART SCHOOL · SORTING EXAM</div>
+                <h1>크레와트 분류 시험</h1>
+                <p>12개의 크레 생활 장면을 지나, 당신의 시선이 머무는 기숙사를 찾습니다.</p>
             </div>
         </header>
 
-        <section class="cw-panel" id="intro-panel">
-            <h2>입찰자 정보</h2>
-            <div class="cw-grid">
+        <section class="cw-panel cw-exam-intro" id="intro-panel">
+            <div class="cw-intro-emblem" aria-hidden="true"><span>W</span></div>
+            <div class="cw-kicker">ADMISSION PAPER · NO. 12</div>
+            <h2>당신의 선택에는<br>반복되는 방향이 있습니다</h2>
+            <p class="cw-intro-copy">정답을 찾는 시험이 아닙니다. 실제 크레 생활에서 더 자연스러운 쪽을 고르면 됩니다.</p>
+            <div class="cw-exam-facts" aria-label="시험 안내">
+                <span><b>12</b> 장면</span>
+                <span><b>약 2분</b> 소요</span>
+                <span><b>4</b> 기숙사</span>
+            </div>
+            <div class="cw-intro-form">
                 <div class="cw-field">
-                    <label for="nickname">낙찰/채팅 닉네임</label>
-                    <input class="cw-input" id="nickname" autocomplete="nickname" placeholder="예: 크레마법사">
+                    <label for="nickname">응시자 이름</label>
+                    <input class="cw-input" id="nickname" autocomplete="nickname" placeholder="사용할 닉네임">
                 </div>
                 <div class="cw-field">
-                    <label for="aliases">별칭</label>
-                    <input class="cw-input" id="aliases" placeholder="예: 밴드닉/오픈채팅닉">
+                    <label for="aliases">다른 이름 <small>선택</small></label>
+                    <input class="cw-input" id="aliases" placeholder="밴드닉·오픈채팅닉">
                 </div>
             </div>
-            <button class="cw-btn primary" type="button" onclick="startSurvey()">시작</button>
+            <button class="cw-btn primary cw-start-button" id="start-button" type="button" onclick="startSurvey()" disabled><span>시험지 준비 중...</span><i aria-hidden="true">✦</i></button>
+            <p class="cw-intro-note">선택지는 매번 다른 순서로 나타납니다.</p>
+        </section>
+
+        <section class="cw-exam-opening" id="exam-opening" hidden aria-live="polite">
+            <div class="cw-opening-sheet cw-opening-sheet-left" aria-hidden="true"></div>
+            <div class="cw-opening-sheet cw-opening-sheet-right" aria-hidden="true"></div>
+            <div class="cw-opening-content">
+                <div class="cw-opening-seal" aria-hidden="true">W</div>
+                <div class="cw-kicker">THE EXAM BEGINS</div>
+                <h2>분류 시험을 시작합니다</h2>
+                <p>첫 번째 장면을 펼치는 중...</p>
+            </div>
         </section>
 
         <section id="question-area" style="display:none;">
             <div class="cw-question-progress">
-                <span id="progress">문항 1 / 12</span>
+                <span id="progress">장면 1 / 12</span>
                 <div class="cw-progress-track"><i id="progress-bar"></i></div>
             </div>
             <div id="questions"></div>
             <div class="cw-actions" style="justify-content:space-between;margin-top:14px;">
-                <button class="cw-btn" type="button" onclick="prevQuestion()">이전</button>
-                <span class="cw-note">선택하면 다음 문항으로 자동 이동합니다.</span>
+                <button class="cw-btn" type="button" onclick="prevQuestion()">이전 장면</button>
+                <span class="cw-note">고르면 다음 장면이 바로 열립니다.</span>
             </div>
         </section>
 
         <section class="cw-panel cw-before-result" id="mbti-step-panel" style="display:none;">
-            <div class="cw-kicker">ONE LAST THING</div>
+            <div class="cw-kicker">FINAL CHECK</div>
             <h1>평소의 나를 알려주세요</h1>
-            <p>결과를 바꾸지는 않아요. 평소의 나와 크레 앞의 내가 어디서 달라지는지 읽는 데 사용합니다.</p>
+            <p>기숙사 배정에는 영향을 주지 않습니다. 평소의 나와 크레 앞의 내가 어디서 달라지는지만 덧붙여 읽습니다.</p>
             <div class="cw-mbti-grid" id="mbti-options" aria-label="평소 MBTI 선택"></div>
             <div class="cw-actions">
                 <button class="cw-btn" type="button" onclick="skipKnownMbti()">잘 모르겠어요</button>
@@ -77,11 +99,16 @@
             <p id="sorting-copy">평소의 나와 크레 앞의 나를 겹쳐보는 중...</p>
         </section>
 
-        <section class="cw-panel cw-final-result" id="result-panel" style="display:none;text-align:center;">
-            <div class="cw-house-seal" id="result-seal">W</div>
-            <div class="cw-kicker">SORTING COMPLETE</div>
-            <h1 id="result-house"></h1>
-            <p id="result-copy"></p>
+        <section class="cw-panel cw-final-result" id="result-panel" style="display:none;">
+            <div class="cw-result-hero">
+                <div class="cw-result-heading">
+                    <div class="cw-house-seal" id="result-seal">W</div>
+                    <div class="cw-kicker">SORTING COMPLETE</div>
+                    <h1 id="result-house"></h1>
+                    <p id="result-copy"></p>
+                </div>
+                <figure class="cw-result-illustration"><img id="result-illustration" alt=""></figure>
+            </div>
             <div class="cw-trait-breakdown" id="trait-breakdown"></div>
             <div class="cw-actions" style="justify-content:center;margin-top:20px;">
                 <a class="cw-btn" href="crewart-ranking.html">점수표 보기</a>
@@ -105,6 +132,7 @@
         let pendingAdvance = false;
         let surveyPrepared = false;
         let selectedMbti = '';
+        let openingInProgress = false;
 
         const HOUSE_PROFILES = [
             { title: '감각형', copy: '현재 보이는 표현과 개체 고유의 매력에 먼저 반응합니다.' },
@@ -131,11 +159,11 @@
 
         const QUESTIONS = [
           {
-                    "q": "경매 마감 5분 전, 두 개체 사이에서 고민된다. 나는?",
+                    "q": "경매 마감 5분 전. 두 개체 중 하나를 골라야 한다. 나는?",
                     "label": "경매 마감 전",
                     "a": [
-                              "지인에게 말해보며 생각을 정리한다.",
-                              "사진을 혼자 다시 보며 생각을 정리한다."
+                              "지인에게 말해보며 결정을 정리한다.",
+                              "사진을 혼자 다시 보며 결정한다."
                     ],
                     "scores": [
                               "E",
@@ -145,11 +173,11 @@
                     "axis": "EI"
           },
           {
-                    "q": "어린 개체를 볼 때, 더 먼저 보고 싶은 것은?",
+                    "q": "어린 개체를 볼 때, 무엇부터 확인할까?",
                     "label": "어린 개체를 볼 때",
                     "a": [
-                              "지금 여러 각도에서 보이는 모습",
-                              "부모와 형제가 자라며 변한 과정"
+                              "지금 보이는 색·패턴·체형",
+                              "부모·형제가 자라며 바뀐 과정"
                     ],
                     "scores": [
                               "S",
@@ -159,11 +187,11 @@
                     "axis": "SN"
           },
           {
-                    "q": "원래 원픽 말고 다른 개체가 갑자기 눈에 들어왔다. 나는?",
+                    "q": "원픽 말고 다른 개체가 눈에 들어왔다. 나는?",
                     "label": "새 후보가 나타났을 때",
                     "a": [
                               "처음 정한 원픽과 예산을 지킨다.",
-                              "둘을 끝까지 비교하고 바꿀 수도 있다."
+                              "둘을 다시 비교해 원픽을 바꿀 수도 있다."
                     ],
                     "scores": [
                               "J",
@@ -173,7 +201,7 @@
                     "axis": "JP"
           },
           {
-                    "q": "가격과 건강 상태가 비슷하다. 마지막 선택은?",
+                    "q": "가격과 건강이 비슷하다. 나는 어느 쪽을 고를까?",
                     "label": "마지막 한 마리",
                     "a": [
                               "내 기준표에 더 잘 맞는 개체",
@@ -201,7 +229,7 @@
                     "axis": "EI"
           },
           {
-                    "q": "성장 사진을 넘겨볼 때, 먼저 보는 것은?",
+                    "q": "성장 사진을 볼 때, 무엇부터 눈에 들어올까?",
                     "label": "성장 사진을 볼 때",
                     "a": [
                               "색·패턴·체형이 실제로 달라진 부분",
@@ -215,7 +243,7 @@
                     "axis": "SN"
           },
           {
-                    "q": "판매자에게 질문 하나만 할 수 있다면?",
+                    "q": "판매자에게 하나만 물을 수 있다. 나는?",
                     "label": "판매자에게 묻는다면",
                     "a": [
                               "“이 개체가 좋다고 보는 근거가 뭔가요?”",
@@ -229,11 +257,11 @@
                     "axis": "TF"
           },
           {
-                    "q": "새 개체가 오기 전, 나는 보통?",
+                    "q": "새 개체가 오기 전, 나는?",
                     "label": "새 개체가 오기 전",
                     "a": [
-                              "세팅과 확인 순서를 미리 정해둔다.",
-                              "기본 세팅 후 반응을 보며 바꾼다."
+                              "필요한 세팅과 확인 순서를 미리 정한다.",
+                              "기본 세팅만 하고, 반응에 맞춰 바꾼다."
                     ],
                     "scores": [
                               "J",
@@ -243,7 +271,7 @@
                     "axis": "JP"
           },
           {
-                    "q": "행사에서 잠깐 쉴 시간이 생겼다. 나는?",
+                    "q": "행사에서 잠깐 쉬게 됐다. 나는?",
                     "label": "행사 쉬는 시간",
                     "a": [
                               "사람들과 방금 본 개체 얘기를 한다.",
@@ -257,7 +285,7 @@
                     "axis": "EI"
           },
           {
-                    "q": "처음 보는 라인을 이해하려면?",
+                    "q": "처음 보는 라인을 알아보려면?",
                     "label": "처음 보는 라인",
                     "a": [
                               "현재 개체의 사진과 특징부터 본다.",
@@ -271,7 +299,7 @@
                     "axis": "SN"
           },
           {
-                    "q": "둘 다 좋은 새 주인을 찾았다. 한 마리만 남긴다면?",
+                    "q": "둘 중 한 마리만 남겨야 한다. 나는?",
                     "label": "한 마리만 남긴다면",
                     "a": [
                               "앞으로 브리딩 계획에 필요한 개체",
@@ -381,33 +409,48 @@
             surveyPrepared = true;
         }
 
-        const QUESTION_SCENES = {
-            C01: '<rect x="28" y="48" width="48" height="28" rx="6"/><rect x="104" y="48" width="48" height="28" rx="6"/><circle cx="90" cy="27" r="18"/><path d="M90 16v12l8 5M76 62h28"/>',
-            C02: '<circle cx="45" cy="58" r="16"/><circle cx="135" cy="34" r="11"/><circle cx="135" cy="72" r="11"/><path d="M61 55c24-2 34-15 63-20M61 61c25 2 38 9 63 12M35 32c14-12 30-12 42 0"/>',
-            C03: '<rect x="28" y="34" width="50" height="38" rx="7"/><rect x="102" y="34" width="50" height="38" rx="7"/><path d="M90 22v56M83 29l7-7 7 7M83 71l7 7 7-7"/><path d="M42 53h22M116 53h22"/>',
-            C04: '<path d="M90 20v55M53 34h74M67 34l-18 30h36L67 34ZM113 34 95 64h36l-18-30ZM72 78h36"/>',
-            C05: '<rect x="30" y="28" width="52" height="42" rx="7"/><rect x="98" y="28" width="52" height="42" rx="7"/><path d="M43 57l11-12 9 8 8-6M111 55l9-10 17 13M86 49h8M90 45v8"/>',
-            C06: '<rect x="23" y="38" width="38" height="30" rx="5"/><rect x="71" y="30" width="38" height="38" rx="5"/><rect x="119" y="21" width="38" height="47" rx="5"/><path d="M35 58l8-9 9 10M83 57l8-13 8 12M131 56l9-18 8 17M30 76h120"/>',
-            C07: '<path d="M28 28h55v35H55l-14 11 3-11H28zM97 38h55v35h-17l-13 10 2-10H97z"/><path d="M40 42h30M40 51h21M109 51h30M109 60h22"/>',
-            C08: '<rect x="34" y="22" width="112" height="58" rx="8"/><path d="M52 22v58M128 22v58M52 53h76M68 66h25M106 66h11M73 39h34M90 31v16"/>',
-            C09: '<circle cx="55" cy="34" r="10"/><circle cx="90" cy="28" r="10"/><circle cx="125" cy="34" r="10"/><path d="M38 74c2-20 10-29 17-29s15 9 17 29M73 74c2-24 10-35 17-35s15 11 17 35M108 74c2-20 10-29 17-29s15 9 17 29"/>',
-            C10: '<circle cx="38" cy="52" r="12"/><circle cx="90" cy="24" r="12"/><circle cx="142" cy="52" r="12"/><circle cx="90" cy="74" r="12"/><path d="M49 46l30-16M101 30l30 16M49 58l30 11M131 58l-30 11"/>',
-            C11: '<rect x="27" y="30" width="52" height="44" rx="8"/><rect x="101" y="30" width="52" height="44" rx="8"/><path d="M42 50c0-10 14-10 14 0 0-10 14-10 14 0 0 9-14 16-14 16s-14-7-14-16ZM90 20v60"/>',
-            C12: '<rect x="38" y="22" width="82" height="58" rx="7"/><path d="M38 39h82M57 15v14M101 15v14M52 51h12M73 51h12M94 51h12M52 64h12M73 64h12"/><path d="M131 65l20-20 7 7-20 20-11 4z"/>'
+        const QUESTION_ILLUSTRATIONS = {
+            C01: ['question-c01.webp', '경매 마감 직전, 두 개체를 놓고 고민하는 모습'],
+            C02: ['question-c02.webp', '어린 개체의 현재 모습과 가족의 성장 기록을 비교하는 모습'],
+            C03: ['question-c03.webp', '원래 고른 개체와 새로 눈에 들어온 개체를 비교하는 모습'],
+            C04: ['question-c04.webp', '기준표와 마음 사이에서 두 개체를 고르는 모습'],
+            C05: ['question-c05.webp', '예상과 다르게 변한 개체를 예전 사진과 비교하는 모습'],
+            C06: ['question-c06.webp', '한 개체의 성장 과정과 앞으로의 모습을 살피는 모습'],
+            C07: ['question-c07.webp', '판매자에게 물을 질문을 생각하는 행사 방문객의 모습'],
+            C08: ['question-c08.webp', '새 개체가 오기 전에 사육장을 준비하는 모습'],
+            C09: ['question-c09.webp', '행사 쉬는 시간에 대화와 기록 사이에서 고민하는 모습'],
+            C10: ['question-c10.webp', '처음 보는 라인의 현재 특징과 가족 흐름을 살피는 모습'],
+            C11: ['question-c11.webp', '계획과 추억 사이에서 남길 한 마리를 고민하는 모습'],
+            C12: ['question-c12.webp', '개체의 성장 기록을 달력과 관찰 노트에 남기는 모습']
         };
 
         function questionIllustration(questionId) {
-            return `<div class="cw-question-illustration" aria-hidden="true"><svg viewBox="0 0 180 96" role="img" focusable="false" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${QUESTION_SCENES[questionId] || QUESTION_SCENES.C01}</svg></div>`;
+            const [filename, alt] = QUESTION_ILLUSTRATIONS[questionId] || QUESTION_ILLUSTRATIONS.C01;
+            return `<figure class="cw-question-illustration"><img src="assets/crewart-illustrations/${filename}" alt="${escapeHtml(alt)}" width="960" height="640" decoding="async"></figure>`;
         }
 
         function startSurvey() {
             const nickname = document.getElementById('nickname').value.trim();
             if (!nickname) { toast('닉네임을 입력해주세요.', true); return; }
             if (!isLoaded || !houses.length) { toast('기숙사 설정을 불러오는 중입니다. 잠시 후 다시 시작해주세요.', true); return; }
+            if (openingInProgress) return;
+            openingInProgress = true;
             prepareSurvey();
-            document.getElementById('intro-panel').style.display = 'none';
-            document.getElementById('question-area').style.display = '';
-            renderQuestions();
+            const intro = document.getElementById('intro-panel');
+            const opening = document.getElementById('exam-opening');
+            opening.hidden = false;
+            requestAnimationFrame(() => opening.classList.add('active'));
+            intro.classList.add('leaving');
+            const openingDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 120 : 1450;
+            setTimeout(() => {
+                intro.style.display = 'none';
+                opening.hidden = true;
+                opening.classList.remove('active');
+                document.getElementById('question-area').style.display = '';
+                renderQuestions();
+                document.getElementById('question-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                openingInProgress = false;
+            }, openingDelay);
         }
 
         function renderQuestions() {
@@ -418,13 +461,13 @@
                     ${questionIllustration(question.id)}
                     <div class="cw-question-label">${escapeHtml(question.label)}</div>
                     <h2>${formatText(question.q)}</h2>
-                    <p class="cw-question-guide">둘 다 맞다면, 평소에 조금 더 자주 하는 쪽을 골라주세요.</p>
+                    <p class="cw-question-guide">둘 다 맞다면, 평소에 더 자주 하는 쪽을 고르세요.</p>
                     <div class="cw-choice-grid">
-                        ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice ${answers[index] === choiceIndex ? 'selected' : ''}" aria-pressed="${answers[index] === choiceIndex}" onclick="chooseAnswer(${index}, ${choiceIndex})"><span class="cw-choice-number">선택 ${choiceIndex + 1}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
+                        ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice ${answers[index] === choiceIndex ? 'selected' : ''}" aria-pressed="${answers[index] === choiceIndex}" onclick="chooseAnswer(${index}, ${choiceIndex})"><span class="cw-choice-number">${choiceIndex === 0 ? 'A' : 'B'}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
                     </div>
                 </article>
             `).join('');
-            document.getElementById('progress').textContent = `문항 ${current + 1} / ${QUESTIONS.length}`;
+            document.getElementById('progress').textContent = `장면 ${current + 1} / ${QUESTIONS.length}`;
             document.getElementById('progress-bar').style.width = `${((current + 1) / QUESTIONS.length) * 100}%`;
             questionShownAt = performance.now();
         }
@@ -622,6 +665,11 @@
                 toast('기숙사 설정을 불러오지 못했습니다: ' + error.message, true);
             } finally {
                 isLoaded = true;
+                const startButton = document.getElementById('start-button');
+                if (startButton) {
+                    startButton.disabled = !houses.length;
+                    startButton.querySelector('span').textContent = houses.length ? '봉인을 열고 시험 시작' : '기숙사 설정을 확인해주세요';
+                }
             }
         }
 
@@ -674,6 +722,13 @@
             NF: { name: '비전 기숙사', seal: '✦', motto: '아직 없는 결과를 먼저 본다.', core: '앞으로의 가능성을 보고, 그 개체와 함께 만들 이야기를 선택합니다.' }
         };
 
+        const HOUSE_ILLUSTRATIONS = {
+            SF: ['result-sf.webp', '남들이 지나친 개체의 작은 매력을 발견하는 감각 기숙사'],
+            ST: ['result-st.webp', '안정적인 사육 환경과 루틴을 관리하는 관리 기숙사'],
+            NT: ['result-nt.webp', '가족 기록과 표현의 근거를 연결하는 분석 기숙사'],
+            NF: ['result-nf.webp', '어린 개체의 앞으로 펼쳐질 모습을 그리는 비전 기숙사']
+        };
+
         const HOUSE_READINGS = {
             SF: '남들이 지나친 작은 차이에서 매력을 발견하고, 한 번 마음이 머문 지점을 쉽게 잊지 않습니다.',
             ST: '화려한 가능성보다 지금 잘 먹고 잘 자랄 수 있는지를 보며, 오래 책임질 수 있는 선택을 좋은 선택이라 여깁니다.',
@@ -682,10 +737,10 @@
         };
 
         const STYLE_READINGS = {
-            EJ: '생각이 서면 주변과 나누고, 방향이 정해지면 빠르게 움직입니다. 모두가 납득할 답을 찾느라 자기 취향을 뒤늦게 확인할 때도 있습니다.',
-            EP: '사람과 반응을 주고받을수록 취향이 선명해지고, 예상 밖의 개체에서 기회를 발견합니다. 마음이 움직인 뒤 확인할 기준 하나가 있으면 선택이 더 단단해집니다.',
-            IJ: '겉으로 드러내기 전에 오래 관찰하고, 기준이 선 뒤에는 쉽게 흔들리지 않습니다. 충분한 확신을 기다리다 좋은 타이밍을 늦게 잡을 때도 있습니다.',
-            IP: '혼자 충분히 살핀 뒤 작은 변화에 맞춰 유연하게 움직입니다. 머릿속 기준은 분명하지만 다른 사람에게는 그 이유가 잘 보이지 않을 수 있습니다.'
+            EJ: '마음이 정해지면 빠르게 움직이지만, 모두가 납득할 답을 찾느라 자기 취향을 늦게 확인할 때가 있습니다.',
+            EP: '사람과 반응을 주고받을수록 취향이 선명해지며, 마음이 움직인 뒤 확인할 기준 하나가 필요합니다.',
+            IJ: '오래 관찰한 뒤 기준이 서면 쉽게 흔들리지 않지만, 확신을 기다리다 좋은 타이밍을 놓칠 때가 있습니다.',
+            IP: '혼자 충분히 살핀 뒤 유연하게 움직이며, 머릿속 기준을 말로 설명하는 데는 시간이 걸립니다.'
         };
 
         const CREBTI_WAYS = {
@@ -800,20 +855,32 @@
             document.getElementById('result-house').textContent = house.name;
             document.getElementById('result-house').style.color = finalHouse?.accent || finalHouse?.color || 'var(--cw-gold)';
             document.getElementById('result-copy').textContent = result.type.name;
+            const [resultImage, resultImageAlt] = HOUSE_ILLUSTRATIONS[result.houseKey];
+            document.getElementById('result-illustration').src = `assets/crewart-illustrations/${resultImage}`;
+            document.getElementById('result-illustration').alt = resultImageAlt;
             document.getElementById('trait-breakdown').innerHTML = `
                 <section class="cw-assignment-card">
-                    <span>배정의 말</span>
-                    <p class="cw-assignment-to">${escapeHtml(nickname)}님을 ${escapeHtml(house.name)}로 배정합니다.</p>
+                    <div class="cw-assignment-heading">
+                        <span>배정의 말</span>
+                        <p class="cw-assignment-to">${escapeHtml(nickname)}님을 ${escapeHtml(house.name)}로 배정합니다.</p>
+                    </div>
                     <div class="cw-personality-reading">
-                        <p>${escapeHtml(result.type.archetype)}</p>
-                        <p>${escapeHtml(HOUSE_READINGS[result.houseKey])} ${escapeHtml(STYLE_READINGS[styleKey])}</p>
+                        <p class="cw-reading-lead">${escapeHtml(result.type.archetype)}</p>
+                        <div class="cw-reading-points">
+                            <p><b>눈이 먼저 가는 곳</b>${escapeHtml(HOUSE_READINGS[result.houseKey])}</p>
+                            <p><b>선택하는 방식</b>${escapeHtml(STYLE_READINGS[styleKey])}</p>
+                        </div>
                     </div>
                     ${mbtiBonus ? `<div class="cw-mbti-bonus"><b>평소의 나와 다른 한 가지</b><p>${escapeHtml(mbtiBonus)}</p></div>` : ''}
-                    <p class="cw-house-core">${escapeHtml(house.core)}<br><strong>그래서 ${escapeHtml(house.name)}입니다.</strong></p>
-                    <div class="cw-role-line">당신의 자리 <strong>${escapeHtml(role)}</strong></div>
+                    <div class="cw-assignment-verdict">
+                        <span>최종 배정</span>
+                        <strong>그래서 ${escapeHtml(house.name)}입니다.</strong>
+                        <p>${escapeHtml(house.core)}</p>
+                        <div class="cw-role-line">당신의 자리 <strong>${escapeHtml(role)}</strong></div>
+                    </div>
                 </section>
                 <details class="cw-result-more">
-                    <summary>내 크레비티 더 보기</summary>
+                    <summary>더 자세히 보기</summary>
                     <div class="cw-result-more-body">
                         ${detailChanges}
                         <div class="cw-more-ways">${wayLetters.map(letter => `<p><b>${escapeHtml(CREBTI_WAYS[letter][0])}</b>${escapeHtml(CREBTI_WAYS[letter][1])}</p>`).join('')}</div>
