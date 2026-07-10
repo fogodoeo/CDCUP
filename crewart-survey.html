@@ -326,10 +326,19 @@
             return String(value || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/[^0-9a-z가-힣ㄱ-ㅎㅏ-ㅣ]/gi, '');
         }
 
+        function randomIndex(limit) {
+            if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+                const value = new Uint32Array(1);
+                window.crypto.getRandomValues(value);
+                return value[0] % limit;
+            }
+            return Math.floor(Math.random() * limit);
+        }
+
         function shuffled(items) {
             const next = items.slice();
             for (let index = next.length - 1; index > 0; index -= 1) {
-                const target = Math.floor(Math.random() * (index + 1));
+                const target = randomIndex(index + 1);
                 [next[index], next[target]] = [next[target], next[index]];
             }
             return next;
@@ -338,21 +347,57 @@
         function prepareSurvey() {
             if (surveyPrepared) return;
             let ordered = QUESTIONS.slice();
-            for (let attempt = 0; attempt < 40; attempt += 1) {
+            let previousOrder = [];
+            try {
+                previousOrder = JSON.parse(sessionStorage.getItem('crebti_last_question_order') || '[]');
+            } catch (error) {
+                previousOrder = [];
+            }
+            for (let attempt = 0; attempt < 100; attempt += 1) {
                 const candidate = shuffled(QUESTIONS);
-                if (candidate.every((question, index) => index === 0 || question.axis !== candidate[index - 1].axis)) {
+                const candidateIds = candidate.map(question => question.id);
+                const avoidsAxisRepeat = candidate.every((question, index) => index === 0 || question.axis !== candidate[index - 1].axis);
+                const differsFromPrevious = !previousOrder.length || (
+                    candidateIds.join('|') !== previousOrder.join('|') &&
+                    candidateIds[0] !== previousOrder[0]
+                );
+                if (avoidsAxisRepeat && differsFromPrevious) {
                     ordered = candidate;
                     break;
                 }
             }
             QUESTIONS.splice(0, QUESTIONS.length, ...ordered);
             QUESTIONS.forEach(question => {
-                if (Math.random() < 0.5) {
+                if (randomIndex(2) === 0) {
                     [question.a[0], question.a[1]] = [question.a[1], question.a[0]];
                     [question.scores[0], question.scores[1]] = [question.scores[1], question.scores[0]];
                 }
             });
+            try {
+                sessionStorage.setItem('crebti_last_question_order', JSON.stringify(QUESTIONS.map(question => question.id)));
+            } catch (error) {
+                // 저장소를 사용할 수 없는 브라우저에서도 설문은 정상 진행한다.
+            }
             surveyPrepared = true;
+        }
+
+        const QUESTION_SCENES = {
+            C01: '<rect x="28" y="48" width="48" height="28" rx="6"/><rect x="104" y="48" width="48" height="28" rx="6"/><circle cx="90" cy="27" r="18"/><path d="M90 16v12l8 5M76 62h28"/>',
+            C02: '<circle cx="45" cy="58" r="16"/><circle cx="135" cy="34" r="11"/><circle cx="135" cy="72" r="11"/><path d="M61 55c24-2 34-15 63-20M61 61c25 2 38 9 63 12M35 32c14-12 30-12 42 0"/>',
+            C03: '<rect x="28" y="34" width="50" height="38" rx="7"/><rect x="102" y="34" width="50" height="38" rx="7"/><path d="M90 22v56M83 29l7-7 7 7M83 71l7 7 7-7"/><path d="M42 53h22M116 53h22"/>',
+            C04: '<path d="M90 20v55M53 34h74M67 34l-18 30h36L67 34ZM113 34 95 64h36l-18-30ZM72 78h36"/>',
+            C05: '<rect x="30" y="28" width="52" height="42" rx="7"/><rect x="98" y="28" width="52" height="42" rx="7"/><path d="M43 57l11-12 9 8 8-6M111 55l9-10 17 13M86 49h8M90 45v8"/>',
+            C06: '<rect x="23" y="38" width="38" height="30" rx="5"/><rect x="71" y="30" width="38" height="38" rx="5"/><rect x="119" y="21" width="38" height="47" rx="5"/><path d="M35 58l8-9 9 10M83 57l8-13 8 12M131 56l9-18 8 17M30 76h120"/>',
+            C07: '<path d="M28 28h55v35H55l-14 11 3-11H28zM97 38h55v35h-17l-13 10 2-10H97z"/><path d="M40 42h30M40 51h21M109 51h30M109 60h22"/>',
+            C08: '<rect x="34" y="22" width="112" height="58" rx="8"/><path d="M52 22v58M128 22v58M52 53h76M68 66h25M106 66h11M73 39h34M90 31v16"/>',
+            C09: '<circle cx="55" cy="34" r="10"/><circle cx="90" cy="28" r="10"/><circle cx="125" cy="34" r="10"/><path d="M38 74c2-20 10-29 17-29s15 9 17 29M73 74c2-24 10-35 17-35s15 11 17 35M108 74c2-20 10-29 17-29s15 9 17 29"/>',
+            C10: '<circle cx="38" cy="52" r="12"/><circle cx="90" cy="24" r="12"/><circle cx="142" cy="52" r="12"/><circle cx="90" cy="74" r="12"/><path d="M49 46l30-16M101 30l30 16M49 58l30 11M131 58l-30 11"/>',
+            C11: '<rect x="27" y="30" width="52" height="44" rx="8"/><rect x="101" y="30" width="52" height="44" rx="8"/><path d="M42 50c0-10 14-10 14 0 0-10 14-10 14 0 0 9-14 16-14 16s-14-7-14-16ZM90 20v60"/>',
+            C12: '<rect x="38" y="22" width="82" height="58" rx="7"/><path d="M38 39h82M57 15v14M101 15v14M52 51h12M73 51h12M94 51h12M52 64h12M73 64h12"/><path d="M131 65l20-20 7 7-20 20-11 4z"/>'
+        };
+
+        function questionIllustration(questionId) {
+            return `<div class="cw-question-illustration" aria-hidden="true"><svg viewBox="0 0 180 96" role="img" focusable="false" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${QUESTION_SCENES[questionId] || QUESTION_SCENES.C01}</svg></div>`;
         }
 
         function startSurvey() {
@@ -370,6 +415,7 @@
             const wrap = document.getElementById('questions');
             wrap.innerHTML = QUESTIONS.map((question, index) => `
                 <article class="cw-question ${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
+                    ${questionIllustration(question.id)}
                     <div class="cw-question-label">${escapeHtml(question.label)}</div>
                     <h2>${formatText(question.q)}</h2>
                     <p class="cw-question-guide">둘 다 맞다면, 평소에 조금 더 자주 하는 쪽을 골라주세요.</p>
@@ -602,11 +648,44 @@
             'P>J': '평소보다 크레 앞에서는 가능성을 열어두기보다 순서와 기준을 먼저 정해요.'
         };
 
+        const MBTI_NATURAL_PROFILES = {
+            ISTJ: '혼자 사실을 차분히 확인하고, 정한 기준을 지키는 편인',
+            ISFJ: '주변을 세심하게 살피고, 익숙한 방식으로 책임을 다하는 편인',
+            INFJ: '사람의 마음과 앞으로의 흐름을 함께 읽는 편인',
+            INTJ: '큰 그림을 먼저 그린 뒤, 계획대로 밀고 가는 편인',
+            ISTP: '직접 확인하고 상황에 맞게 해결하는 편인',
+            ISFP: '자기 눈에 들어온 감각과 마음을 따라 움직이는 편인',
+            INFP: '자기만의 의미와 가능성을 오래 품는 편인',
+            INTP: '이유가 납득될 때까지 혼자 파고드는 편인',
+            ESTP: '현장에서 바로 보고 빠르게 대응하는 편인',
+            ESFP: '사람들과 순간의 즐거움과 감각을 나누는 편인',
+            ENFP: '사람들과 새로운 가능성을 나누며 길을 열어두는 편인',
+            ENTP: '사람들과 아이디어를 주고받으며 새 답을 찾는 편인',
+            ESTJ: '목표를 정하고 체계적으로 실행하는 편인',
+            ESFJ: '사람을 챙기며 모두가 편한 방향을 정하는 편인',
+            ENFJ: '사람의 마음을 살피며 함께 갈 방향을 정하는 편인',
+            ENTJ: '큰 목표를 세우고 결과까지 이끄는 편인'
+        };
+
         const HOUSE_PRESENTATION = {
             SF: { name: '감각 기숙사', seal: '◉', motto: '눈에 들어오는 데는 이유가 있다.', core: '지금 눈앞의 매력을 놓치지 않고, 오래 마음이 가는 개체를 고릅니다.' },
             ST: { name: '관리 기숙사', seal: '▦', motto: '잘 키우는 것이 최고의 퀄리티다.', core: '지금 확인되는 상태를 보고, 분명한 기준으로 결정합니다.' },
             NT: { name: '분석 기숙사', seal: '◇', motto: '좋은 결과에는 근거가 있다.', core: '앞으로의 가능성을 보면서도, 반드시 그 가능성의 근거를 찾습니다.' },
             NF: { name: '비전 기숙사', seal: '✦', motto: '아직 없는 결과를 먼저 본다.', core: '앞으로의 가능성을 보고, 그 개체와 함께 만들 이야기를 선택합니다.' }
+        };
+
+        const HOUSE_READINGS = {
+            SF: '남들이 지나친 작은 차이에서 매력을 발견하고, 한 번 마음이 머문 지점을 쉽게 잊지 않습니다.',
+            ST: '화려한 가능성보다 지금 잘 먹고 잘 자랄 수 있는지를 보며, 오래 책임질 수 있는 선택을 좋은 선택이라 여깁니다.',
+            NT: '눈앞의 한 개체보다 그 뒤에 이어질 흐름을 보고, 가능성에 끌려도 반드시 이유를 확인합니다.',
+            NF: '아직 완성되지 않은 모습에서도 다음 장면을 보며, 숫자보다 그 개체가 만들어갈 변화와 의미에 마음이 움직입니다.'
+        };
+
+        const STYLE_READINGS = {
+            EJ: '생각이 서면 주변과 나누고, 방향이 정해지면 빠르게 움직입니다. 모두가 납득할 답을 찾느라 자기 취향을 뒤늦게 확인할 때도 있습니다.',
+            EP: '사람과 반응을 주고받을수록 취향이 선명해지고, 예상 밖의 개체에서 기회를 발견합니다. 마음이 움직인 뒤 확인할 기준 하나가 있으면 선택이 더 단단해집니다.',
+            IJ: '겉으로 드러내기 전에 오래 관찰하고, 기준이 선 뒤에는 쉽게 흔들리지 않습니다. 충분한 확신을 기다리다 좋은 타이밍을 늦게 잡을 때도 있습니다.',
+            IP: '혼자 충분히 살핀 뒤 작은 변화에 맞춰 유연하게 움직입니다. 머릿속 기준은 분명하지만 다른 사람에게는 그 이유가 잘 보이지 않을 수 있습니다.'
         };
 
         const CREBTI_WAYS = {
@@ -687,7 +766,7 @@
             document.getElementById('mbti-step-panel').style.display = 'none';
             document.getElementById('sorting-panel').style.display = '';
             document.getElementById('sorting-copy').textContent = selectedMbti
-                ? `${selectedMbti}의 나와 크레 앞의 나를 겹쳐보는 중...`
+                ? '평소의 나와 크레 앞의 나를 겹쳐보는 중...'
                 : '12개의 선택에서 반복된 방향을 읽는 중...';
             document.getElementById('sorting-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
             setTimeout(renderFinalResult, 1300);
@@ -702,15 +781,17 @@
             const mainChange = comparison && comparison.changes.length
                 ? comparison.changes.slice().sort((a, b) => [2, 1, 3, 0].indexOf(a.index) - [2, 1, 3, 0].indexOf(b.index))[0]
                 : null;
-            const mainInsight = mainChange
-                ? `평소 ${comparison.knownType}인 당신은, ${mainChange.interpretation.replace(/^평소보다\s*/, '')}`
-                : (comparison
-                    ? `평소 ${comparison.knownType}의 모습이 크레 앞에서도 그대로 이어집니다.`
-                    : '크레 앞에서 반복되는 당신만의 선택 기준이 분명하게 드러났습니다.');
+            const naturalProfile = comparison ? MBTI_NATURAL_PROFILES[comparison.knownType] : '';
+            const mbtiBonus = comparison
+                ? (mainChange
+                    ? `평소 ${naturalProfile} 당신은, ${mainChange.interpretation.replace(/^평소보다\s*/, '')}`
+                    : `평소 ${naturalProfile} 당신은, 크레를 볼 때도 익숙한 기준을 그대로 유지하는 편이에요.`)
+                : '';
+            const styleKey = `${result.code[0]}${result.code[3]}`;
             const wayLetters = [result.code[1], result.code[2], result.code[3]];
             const detailChanges = comparison && comparison.changes.length ? `
                 <div class="cw-more-changes">
-                    ${comparison.changes.map(change => `<p><strong>${change.from} → ${change.to}</strong> ${escapeHtml(change.interpretation)}</p>`).join('')}
+                    ${comparison.changes.map(change => `<p><strong>${escapeHtml(change.axis)}</strong> ${escapeHtml(change.interpretation)}</p>`).join('')}
                 </div>` : '';
 
             document.getElementById('sorting-panel').style.display = 'none';
@@ -718,12 +799,16 @@
             document.getElementById('result-seal').textContent = house.seal;
             document.getElementById('result-house').textContent = house.name;
             document.getElementById('result-house').style.color = finalHouse?.accent || finalHouse?.color || 'var(--cw-gold)';
-            document.getElementById('result-copy').textContent = `${result.code} · ${result.type.name}`;
+            document.getElementById('result-copy').textContent = result.type.name;
             document.getElementById('trait-breakdown').innerHTML = `
                 <section class="cw-assignment-card">
                     <span>배정의 말</span>
                     <p class="cw-assignment-to">${escapeHtml(nickname)}님을 ${escapeHtml(house.name)}로 배정합니다.</p>
-                    <h2>${escapeHtml(mainInsight)}</h2>
+                    <div class="cw-personality-reading">
+                        <p>${escapeHtml(result.type.archetype)}</p>
+                        <p>${escapeHtml(HOUSE_READINGS[result.houseKey])} ${escapeHtml(STYLE_READINGS[styleKey])}</p>
+                    </div>
+                    ${mbtiBonus ? `<div class="cw-mbti-bonus"><b>평소의 나와 다른 한 가지</b><p>${escapeHtml(mbtiBonus)}</p></div>` : ''}
                     <p class="cw-house-core">${escapeHtml(house.core)}<br><strong>그래서 ${escapeHtml(house.name)}입니다.</strong></p>
                     <div class="cw-role-line">당신의 자리 <strong>${escapeHtml(role)}</strong></div>
                 </section>
