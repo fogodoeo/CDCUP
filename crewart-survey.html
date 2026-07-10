@@ -9,7 +9,7 @@
     <script src="event-modules.js?v=20260710-crebti4"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260710-crebti5">
+    <link rel="stylesheet" href="crewart.css?v=20260710-sorting6">
 </head>
 <body class="crewart-page">
     <nav class="cw-nav">
@@ -48,7 +48,10 @@
         </section>
 
         <section id="question-area" style="display:none;">
-            <div class="cw-note" id="progress" style="margin-bottom:10px;"></div>
+            <div class="cw-question-progress">
+                <span id="progress">문항 1 / 12</span>
+                <div class="cw-progress-track"><i id="progress-bar"></i></div>
+            </div>
             <div id="questions"></div>
             <div class="cw-actions" style="justify-content:space-between;margin-top:14px;">
                 <button class="cw-btn" type="button" onclick="prevQuestion()">이전</button>
@@ -56,19 +59,30 @@
             </div>
         </section>
 
-        <section class="cw-panel" id="result-panel" style="display:none;text-align:center;">
+        <section class="cw-panel cw-before-result" id="mbti-step-panel" style="display:none;">
+            <div class="cw-kicker">ONE LAST THING</div>
+            <h1>평소의 나를 알려주세요</h1>
+            <p>결과를 바꾸지는 않아요. 평소의 나와 크레 앞의 내가 어디서 달라지는지 읽는 데 사용합니다.</p>
+            <div class="cw-mbti-grid" id="mbti-options" aria-label="평소 MBTI 선택"></div>
+            <div class="cw-actions">
+                <button class="cw-btn" type="button" onclick="skipKnownMbti()">잘 모르겠어요</button>
+                <button class="cw-btn primary" id="reveal-button" type="button" onclick="beginAssignmentReveal()" disabled>배정 결과 보기</button>
+            </div>
+        </section>
+
+        <section class="cw-panel cw-sorting-stage" id="sorting-panel" style="display:none;" aria-live="polite">
+            <div class="cw-sorting-mark"><span>W</span></div>
+            <div class="cw-kicker">READING YOUR CHOICES</div>
+            <h2>당신의 선택이 향하는 곳을 찾고 있어요</h2>
+            <p id="sorting-copy">평소의 나와 크레 앞의 나를 겹쳐보는 중...</p>
+        </section>
+
+        <section class="cw-panel cw-final-result" id="result-panel" style="display:none;text-align:center;">
+            <div class="cw-house-seal" id="result-seal">W</div>
             <div class="cw-kicker">SORTING COMPLETE</div>
-            <h1 id="result-house" style="margin:10px 0 6px;font-size:clamp(40px,7vw,88px);"></h1>
-            <p id="result-copy" style="color:var(--cw-muted);font-weight:800;"></p>
-            <div class="cw-result-breakdown" id="result-breakdown"></div>
+            <h1 id="result-house"></h1>
+            <p id="result-copy"></p>
             <div class="cw-trait-breakdown" id="trait-breakdown"></div>
-            <section class="cw-mbti-panel" id="mbti-panel">
-                <div class="cw-kicker">MBTI COMPARISON</div>
-                <h2>평소 내 MBTI는? <small>(선택)</small></h2>
-                <p>하나를 고르면 크레비티와 달라진 글자를 바로 설명해드려요.</p>
-                <div class="cw-mbti-grid" id="mbti-options" aria-label="평소 MBTI 선택"></div>
-                <div class="cw-mbti-comparison" id="mbti-comparison" aria-live="polite" style="display:none;"></div>
-            </section>
             <div class="cw-actions" style="justify-content:center;margin-top:20px;">
                 <a class="cw-btn" href="crewart-ranking.html">점수표 보기</a>
                 <button class="cw-btn primary" type="button" onclick="submitSurvey()">배정 저장</button>
@@ -351,6 +365,7 @@
                 </article>
             `).join('');
             document.getElementById('progress').textContent = `문항 ${current + 1} / ${QUESTIONS.length}`;
+            document.getElementById('progress-bar').style.width = `${((current + 1) / QUESTIONS.length) * 100}%`;
             questionShownAt = performance.now();
         }
 
@@ -562,14 +577,30 @@
 
         const MBTI_AXIS_LABELS = ['에너지 방향', '정보를 보는 방식', '결정 기준', '운영 방식'];
         const MBTI_CHANGE_MESSAGES = {
-            'E>I': '이번 크레 응답에서는 대화보다 혼자 관찰하고 정리하는 쪽을 더 골랐어요.',
-            'I>E': '이번 크레 응답에서는 혼자 생각하기보다 사람과 이야기하며 풀어가는 쪽을 더 골랐어요.',
-            'S>N': '이번 크레 응답에서는 지금 보이는 모습보다 변화의 흐름과 가능성을 더 골랐어요.',
-            'N>S': '이번 크레 응답에서는 가능성보다 지금 확인되는 모습과 실제 사례를 더 골랐어요.',
-            'T>F': '이번 크레 응답에서는 일관된 기준보다 내 취향과 개체와의 맞음을 더 골랐어요.',
-            'F>T': '이번 크레 응답에서는 개인적인 끌림보다 기준과 역할이 분명한 쪽을 더 골랐어요.',
-            'J>P': '이번 크레 응답에서는 미리 정하기보다 반응을 보며 바꾸는 쪽을 더 골랐어요.',
-            'P>J': '이번 크레 응답에서는 열어두기보다 순서와 기준을 먼저 정하는 쪽을 더 골랐어요.'
+            'E>I': '평소보다 크레 앞에서는 혼자 관찰하고 생각을 정리하는 시간이 더 중요해져요.',
+            'I>E': '평소보다 크레 앞에서는 사람과 이야기를 나눌 때 생각이 더 선명해져요.',
+            'S>N': '평소보다 크레 앞에서는 지금의 모습보다 성장 흐름과 다음 가능성을 더 봐요.',
+            'N>S': '평소보다 크레 앞에서는 가능성보다 지금 확인되는 모습과 실제 사례를 더 봐요.',
+            'T>F': '평소보다 크레 앞에서는 기준보다 내 취향과 개체와의 맞음을 더 중요하게 여겨요.',
+            'F>T': '평소보다 크레 앞에서는 끌림보다 역할과 근거가 분명한 선택을 더 편하게 느껴요.',
+            'J>P': '평소보다 크레 앞에서는 계획을 확정하기보다 반응을 보며 바꾸는 편이에요.',
+            'P>J': '평소보다 크레 앞에서는 가능성을 열어두기보다 순서와 기준을 먼저 정해요.'
+        };
+
+        const HOUSE_PRESENTATION = {
+            SF: { name: '감각 기숙사', seal: '◉', motto: '눈에 들어오는 데는 이유가 있다.', assignment: '지금 눈앞의 작은 차이를 알아보고, 오래 마음이 머무는 개체를 선택하는 사람들의 자리입니다.' },
+            ST: { name: '관리 기숙사', seal: '▦', motto: '잘 키우는 것이 최고의 퀄리티다.', assignment: '확인되는 상태와 분명한 기준을 믿고, 좋은 하루를 꾸준히 만들어가는 사람들의 자리입니다.' },
+            NT: { name: '분석 기숙사', seal: '◇', motto: '좋은 결과에는 근거가 있다.', assignment: '변화의 흐름 속에서 근거를 찾고, 다음 결과의 구조를 설계하는 사람들의 자리입니다.' },
+            NF: { name: '비전 기숙사', seal: '✦', motto: '아직 없는 결과를 먼저 본다.', assignment: '아직 보이지 않는 가능성과 개체가 만들어갈 이야기를 먼저 보는 사람들의 자리입니다.' }
+        };
+
+        const CREBTI_WAYS = {
+            S: ['개체를 볼 때', '지금 보이는 표현과 컨디션부터 확인해요.'],
+            N: ['개체를 볼 때', '성장 흐름과 다음에 열릴 가능성부터 읽어요.'],
+            T: ['선택을 내릴 때', '역할과 근거가 분명한 쪽을 골라요.'],
+            F: ['선택을 내릴 때', '나와 잘 맞고 오래 마음이 가는 쪽을 골라요.'],
+            J: ['키우기 시작할 때', '세팅과 순서를 먼저 정해야 마음이 놓여요.'],
+            P: ['키우기 시작할 때', '반응을 보며 세팅과 계획을 바꿔가요.']
         };
 
         function buildMbtiComparison(knownType, crebtiType) {
@@ -601,32 +632,12 @@
         function selectKnownMbti(type) {
             selectedMbti = type;
             renderMbtiOptions();
-            renderMbtiComparison();
+            document.getElementById('reveal-button').disabled = false;
         }
 
-        function renderMbtiComparison() {
-            const wrap = document.getElementById('mbti-comparison');
-            if (!selectedMbti || !window.crebtiResult) {
-                wrap.style.display = 'none';
-                wrap.innerHTML = '';
-                return;
-            }
-            const comparison = buildMbtiComparison(selectedMbti, window.crebtiResult.code);
-            wrap.style.display = '';
-            wrap.innerHTML = `
-                <div class="cw-mbti-summary">
-                    <span>글자 일치 ${comparison.syncPercent}%</span>
-                    <strong>${comparison.knownType} → ${comparison.crebtiType}</strong>
-                </div>
-                ${comparison.changes.length ? `
-                    <div class="cw-mbti-differences">
-                        ${comparison.changes.map(change => `<article>
-                            <strong>${change.from} → ${change.to}</strong>
-                            <span>${escapeHtml(change.axis)}</span>
-                            <p>${escapeHtml(change.interpretation)}</p>
-                        </article>`).join('')}
-                    </div>` : '<p class="cw-mbti-same">네 글자가 모두 같아요. 크레 활동에서도 평소와 비슷한 선택 흐름이 나타났어요.</p>'}
-            `;
+        function skipKnownMbti() {
+            selectedMbti = '';
+            beginAssignmentReveal(true);
         }
 
         function finishSurvey() {
@@ -646,35 +657,79 @@
             window.crebtiResult = result;
 
             document.getElementById('question-area').style.display = 'none';
-            document.getElementById('result-panel').style.display = '';
-            document.getElementById('result-house').textContent = result.house.name;
-            document.getElementById('result-house').style.color = finalHouse?.accent || finalHouse?.color || 'var(--cw-gold)';
-            document.getElementById('result-copy').textContent = result.type.archetype;
-
-            const axisLabels = { EI: '에너지 방향', SN: '정보를 보는 방식', TF: '결정 기준', JP: '운영 방식' };
-            document.getElementById('result-breakdown').innerHTML = ['EI', 'SN', 'TF', 'JP'].map(axis => {
-                const selected = result.letters[axis[0]] > result.letters[axis[1]] ? axis[0] : axis[1];
-                return `<div class="cw-score-pill active">
-                    <span>${axisLabels[axis]}</span>
-                    <strong>${selected} <small>${result.letters[axis[0]]}:${result.letters[axis[1]]}</small></strong>
-                </div>`;
-            }).join('');
-
-            document.getElementById('trait-breakdown').innerHTML = `
-                <section class="cw-result-type-card">
-                    <span>MY CREBTI</span>
-                    <strong>${escapeHtml(result.code)} · ${escapeHtml(result.type.name)}</strong>
-                    <p>${escapeHtml(result.type.shareLine)}</p>
-                </section>
-                <section class="cw-result-sections">
-                    <article><h3>평소의 선택 패턴</h3><p>${escapeHtml(result.type.familiarPattern)}</p></article>
-                    <article><h3>내가 중요하게 보는 것</h3><p>${escapeHtml(result.type.hiddenMotivation)}</p></article>
-                    <article><h3>내 안의 두 가지 성향</h3><p>${escapeHtml(result.type.innerTension)}</p></article>
-                    <article class="caution"><h3>놓치기 쉬운 점</h3><p>${escapeHtml(result.type.blindSpot)}</p></article>
-                    <article class="wide"><h3>이 그룹에서 잘하는 역할</h3><strong>${escapeHtml(result.type.role)}</strong><p>${escapeHtml(result.house.talent)}</p></article>
-                </section>`;
+            document.getElementById('mbti-step-panel').style.display = '';
             renderMbtiOptions();
-            renderMbtiComparison();
+            document.getElementById('reveal-button').disabled = true;
+            document.getElementById('mbti-step-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function beginAssignmentReveal(skipped) {
+            if (!selectedMbti && !skipped) {
+                toast('평소 MBTI를 고르거나 잘 모르겠어요를 눌러주세요.', true);
+                return;
+            }
+            document.getElementById('mbti-step-panel').style.display = 'none';
+            document.getElementById('sorting-panel').style.display = '';
+            document.getElementById('sorting-copy').textContent = selectedMbti
+                ? `${selectedMbti}의 나와 크레 앞의 나를 겹쳐보는 중...`
+                : '12개의 선택에서 반복된 방향을 읽는 중...';
+            document.getElementById('sorting-panel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(renderFinalResult, 1300);
+        }
+
+        function renderFinalResult() {
+            const result = window.crebtiResult;
+            const house = HOUSE_PRESENTATION[result.houseKey];
+            const comparison = selectedMbti ? buildMbtiComparison(selectedMbti, result.code) : null;
+            const nickname = document.getElementById('nickname').value.trim();
+            const role = String(result.type.role || result.type.name).replace(/^.+?의\s*/, '');
+            const bridgeLine = comparison
+                ? (comparison.changes.length
+                    ? `평소와 달라진 ${comparison.changes.map(change => change.axis).join(', ')}까지 이곳으로 향하는 단서가 됐어요.`
+                    : '평소의 선택 방식이 크레 앞에서도 흔들리지 않고 이어졌어요.')
+                : '당신이 반복해서 고른 방향이 이곳의 기준과 가장 가까웠어요.';
+            const comparisonHtml = comparison ? `
+                <section class="cw-persona-bridge">
+                    <span>새로 알게 된 나</span>
+                    <h2>평소 ${comparison.knownType}, 크레 앞에서는 ${comparison.crebtiType}</h2>
+                    <div class="cw-sync-line">네 글자 중 ${comparison.syncPercent / 25}글자가 같아요</div>
+                    ${comparison.changes.length ? `<div class="cw-change-list">
+                        ${comparison.changes.map(change => `<article>
+                            <strong>${change.from} → ${change.to}</strong>
+                            <div><b>${escapeHtml(change.axis)}</b><p>${escapeHtml(change.interpretation)}</p></div>
+                        </article>`).join('')}
+                    </div>` : '<p class="cw-same-self">크레를 기를 때도 평소의 판단 방식과 에너지 흐름이 그대로 나타나요.</p>'}
+                </section>` : `
+                <section class="cw-persona-bridge">
+                    <span>새로 알게 된 나</span>
+                    <h2>크레 앞에서만 선명해지는 나만의 기준</h2>
+                    <p class="cw-same-self">${escapeHtml(result.type.shareLine)}</p>
+                </section>`;
+            const wayLetters = [result.code[1], result.code[2], result.code[3]];
+
+            document.getElementById('sorting-panel').style.display = 'none';
+            document.getElementById('result-panel').style.display = '';
+            document.getElementById('result-seal').textContent = house.seal;
+            document.getElementById('result-house').textContent = house.name;
+            document.getElementById('result-house').style.color = finalHouse?.accent || finalHouse?.color || 'var(--cw-gold)';
+            document.getElementById('result-copy').textContent = `${result.code} · ${result.type.name}`;
+            document.getElementById('trait-breakdown').innerHTML = `
+                <section class="cw-assignment-letter">
+                    <span>배정의 말</span>
+                    <h2>${escapeHtml(nickname)}님, ${escapeHtml(house.name)}가 당신을 선택했습니다.</h2>
+                    <p>${escapeHtml(house.assignment)} ${escapeHtml(bridgeLine)}</p>
+                    <strong>당신의 자리 · ${escapeHtml(role)}</strong>
+                </section>
+                ${comparisonHtml}
+                <section class="cw-crebti-way">
+                    <span>크레를 기를 때의 나는</span>
+                    <div>${wayLetters.map(letter => `<article><b>${escapeHtml(CREBTI_WAYS[letter][0])}</b><p>${escapeHtml(CREBTI_WAYS[letter][1])}</p></article>`).join('')}</div>
+                </section>
+                <section class="cw-final-whisper">
+                    <strong>“${escapeHtml(house.motto)}”</strong>
+                    <p>${escapeHtml(result.type.shareLine)}</p>
+                </section>`;
+            document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         load();
