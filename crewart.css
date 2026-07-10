@@ -747,6 +747,59 @@ body.crewart-broadcast {
 .cw-result-sections strong { display: block; margin-bottom: 7px; color: var(--cw-ink); font-size: 17px; }
 .cw-result-sections p { margin: 0; color: var(--cw-muted); font-size: 13px; line-height: 1.72; }
 
+.cw-mbti-panel {
+    margin-top: 18px;
+    padding: 22px;
+    border: 1px solid rgba(214,178,94,.3);
+    background: rgba(255,255,255,.025);
+    text-align: left;
+}
+
+.cw-mbti-panel h2 { margin: 7px 0 4px; font-size: 22px; }
+.cw-mbti-panel h2 small { color: var(--cw-dim); font-size: 11px; font-weight: 800; }
+.cw-mbti-panel > p { margin: 0; color: var(--cw-muted); font-size: 12px; line-height: 1.6; }
+
+.cw-mbti-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+    margin-top: 14px;
+}
+
+.cw-mbti-option {
+    min-height: 42px;
+    border: 1px solid var(--cw-line);
+    background: rgba(255,255,255,.035);
+    color: var(--cw-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 950;
+    cursor: pointer;
+}
+
+.cw-mbti-option:hover,
+.cw-mbti-option.selected {
+    border-color: var(--cw-gold);
+    background: var(--cw-gold-soft);
+    color: var(--cw-gold);
+}
+
+.cw-mbti-comparison {
+    margin-top: 14px;
+    border-top: 1px solid var(--cw-line);
+    padding-top: 14px;
+}
+
+.cw-mbti-summary { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.cw-mbti-summary span { color: var(--cw-gold); font-size: 11px; font-weight: 900; }
+.cw-mbti-summary strong { color: var(--cw-ink); font-size: clamp(19px, 3vw, 28px); }
+.cw-mbti-differences { display: grid; gap: 8px; margin-top: 12px; }
+.cw-mbti-differences article { padding: 13px; border: 1px solid var(--cw-line); background: rgba(255,255,255,.025); }
+.cw-mbti-differences strong { color: var(--cw-gold); font-size: 16px; }
+.cw-mbti-differences span { margin-left: 8px; color: var(--cw-dim); font-size: 11px; font-weight: 850; }
+.cw-mbti-differences p,
+.cw-mbti-same { margin: 7px 0 0; color: var(--cw-muted); font-size: 12px; line-height: 1.65; }
+
 .cw-trait-pill {
     display: inline-flex;
     align-items: center;
@@ -781,4 +834,5 @@ body.crewart-broadcast {
     .cw-result-breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .cw-result-sections { grid-template-columns: 1fr; }
     .cw-result-sections article.wide { grid-column: auto; }
+    .cw-mbti-panel { padding: 16px; }
 }
