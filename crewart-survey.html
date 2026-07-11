@@ -9,7 +9,7 @@
     <script src="event-modules.js?v=20260710-crebti4"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260711-choice-stage2">
+    <link rel="stylesheet" href="crewart.css?v=20260711-layered-scene2">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -164,11 +164,11 @@
 
         const QUESTIONS = [
           {
-                    "q": "경매 마감 5분 전. 두 개체 중 하나를 골라야 한다. 나는?",
-                    "label": "경매 마감 전",
+                    "q": "경매 마감 5분 전. 두 마리 중 하나를 고른다면?",
+                    "label": "경매 마감 5분 전",
                     "a": [
-                              "지인에게 말해보며 결정을 정리한다.",
-                              "사진을 혼자 다시 보며 결정한다."
+                              "친구와 이야기하며 생각을 정리한다.",
+                              "사진을 혼자 보며 생각을 정리한다."
                     ],
                     "scores": [
                               "E",
@@ -178,11 +178,11 @@
                     "axis": "EI"
           },
           {
-                    "q": "어린 개체를 볼 때, 무엇부터 확인할까?",
-                    "label": "어린 개체를 볼 때",
+                    "q": "어린 크레가 자란 모습을 예상할 때, 먼저 보는 것은?",
+                    "label": "어린 크레의 성장",
                     "a": [
-                              "지금 보이는 색·패턴·체형",
-                              "부모·형제가 자라며 바뀐 과정"
+                              "지금 보이는 색과 무늬",
+                              "부모와 형제가 자란 모습"
                     ],
                     "scores": [
                               "S",
@@ -192,11 +192,11 @@
                     "axis": "SN"
           },
           {
-                    "q": "원픽 말고 다른 개체가 눈에 들어왔다. 나는?",
-                    "label": "새 후보가 나타났을 때",
+                    "q": "마지막 순간, 다른 크레가 눈에 들어왔다. 어떻게 할까?",
+                    "label": "마지막에 나타난 선택",
                     "a": [
-                              "처음 정한 원픽과 예산을 지킨다.",
-                              "둘을 다시 비교해 원픽을 바꿀 수도 있다."
+                              "처음 고른 크레로 결정한다.",
+                              "두 크레를 다시 비교한다."
                     ],
                     "scores": [
                               "J",
@@ -206,11 +206,11 @@
                     "axis": "JP"
           },
           {
-                    "q": "가격과 건강이 비슷하다. 나는 어느 쪽을 고를까?",
-                    "label": "마지막 한 마리",
+                    "q": "가격과 건강 상태가 비슷하다. 어느 쪽을 고를까?",
+                    "label": "조건이 비슷한 두 크레",
                     "a": [
-                              "내 기준표에 더 잘 맞는 개체",
-                              "자꾸 눈이 가는 개체"
+                              "미리 정한 조건에 더 맞는 크레",
+                              "볼수록 마음이 더 가는 크레"
                     ],
                     "scores": [
                               "T",
@@ -220,11 +220,11 @@
                     "axis": "TF"
           },
           {
-                    "q": "키우던 개체의 색이 예상과 다르게 변했다. 나는?",
+                    "q": "키우던 크레의 색이 예상과 다르게 변했다. 먼저 하는 일은?",
                     "label": "예상 밖의 변화",
                     "a": [
-                              "바로 사진을 공유하고 이야기한다.",
-                              "예전 사진과 혼자 먼저 비교한다."
+                              "다른 사람에게 보여주며 이야기한다.",
+                              "예전 사진을 혼자 다시 살펴본다."
                     ],
                     "scores": [
                               "E",
@@ -234,11 +234,11 @@
                     "axis": "EI"
           },
           {
-                    "q": "성장 사진을 볼 때, 무엇부터 눈에 들어올까?",
-                    "label": "성장 사진을 볼 때",
+                    "q": "성장 사진에서 먼저 눈에 들어오는 것은?",
+                    "label": "성장 사진 속 변화",
                     "a": [
-                              "색·패턴·체형이 실제로 달라진 부분",
-                              "앞으로 어떤 모습으로 변할지"
+                              "실제로 달라진 부분",
+                              "앞으로 달라질 모습"
                     ],
                     "scores": [
                               "S",
@@ -248,11 +248,11 @@
                     "axis": "SN"
           },
           {
-                    "q": "판매자에게 하나만 물을 수 있다. 나는?",
-                    "label": "판매자에게 묻는다면",
+                    "q": "친구가 두 크레 중 고민하고 있다. 어떻게 도와줄까?",
+                    "label": "친구의 선택을 도울 때",
                     "a": [
-                              "“이 개체가 좋다고 보는 근거가 뭔가요?”",
-                              "“제 사육 환경에 잘 맞을까요?”"
+                              "두 크레의 장단점을 함께 비교한다.",
+                              "어느 크레가 더 마음에 남는지 묻는다."
                     ],
                     "scores": [
                               "T",
@@ -262,11 +262,11 @@
                     "axis": "TF"
           },
           {
-                    "q": "새 개체가 오기 전, 나는?",
-                    "label": "새 개체가 오기 전",
+                    "q": "새 크레가 오기 전, 사육장을 어떻게 준비할까?",
+                    "label": "새 크레가 오기 전",
                     "a": [
-                              "필요한 세팅과 확인 순서를 미리 정한다.",
-                              "기본 세팅만 하고, 반응에 맞춰 바꾼다."
+                              "필요한 것을 미리 정해 완성한다.",
+                              "기본부터 만들고 반응에 맞춰 바꾼다."
                     ],
                     "scores": [
                               "J",
@@ -276,11 +276,11 @@
                     "axis": "JP"
           },
           {
-                    "q": "행사에서 잠깐 쉬게 됐다. 나는?",
+                    "q": "행사에서 잠깐 쉬게 됐다. 나는 어떻게 보낼까?",
                     "label": "행사 쉬는 시간",
                     "a": [
-                              "사람들과 방금 본 개체 얘기를 한다.",
-                              "혼자 사진과 메모를 정리한다."
+                              "사람들과 방금 본 크레 이야기를 한다.",
+                              "혼자 사진을 보며 생각을 정리한다."
                     ],
                     "scores": [
                               "E",
@@ -290,11 +290,11 @@
                     "axis": "EI"
           },
           {
-                    "q": "처음 보는 라인을 알아보려면?",
-                    "label": "처음 보는 라인",
+                    "q": "처음 보는 크레 종류를 알아볼 때, 먼저 보는 것은?",
+                    "label": "처음 보는 크레 종류",
                     "a": [
-                              "현재 개체의 사진과 특징부터 본다.",
-                              "부모·형제의 성장 흐름부터 본다."
+                              "크레 한 마리씩 자세히 본다.",
+                              "이 종류에서 반복되는 특징을 본다."
                     ],
                     "scores": [
                               "S",
@@ -304,11 +304,11 @@
                     "axis": "SN"
           },
           {
-                    "q": "둘 중 한 마리만 남겨야 한다. 나는?",
-                    "label": "한 마리만 남긴다면",
+                    "q": "계획에 맞는 크레와 마음이 가는 크레가 다르다. 어느 쪽을 고를까?",
+                    "label": "계획과 마음이 다를 때",
                     "a": [
-                              "앞으로 브리딩 계획에 필요한 개체",
-                              "함께한 추억이 더 많은 개체"
+                              "앞으로의 계획에 더 맞는 크레",
+                              "오래 마음에 남은 크레"
                     ],
                     "scores": [
                               "T",
@@ -318,10 +318,10 @@
                     "axis": "TF"
           },
           {
-                    "q": "성장 기록을 오래 남긴다면?",
+                    "q": "성장 기록을 오래 남긴다면, 어떤 방식이 편할까?",
                     "label": "성장 기록",
                     "a": [
-                              "매주 같은 항목을 짧게 기록한다.",
+                              "매주 같은 내용을 짧게 기록한다.",
                               "변화가 보일 때 자세히 기록한다."
                     ],
                     "scores": [
@@ -388,6 +388,7 @@
         function prepareSurvey() {
             if (surveyPrepared) return;
             let ordered = QUESTIONS.slice();
+            const requestedMoment = new URLSearchParams(window.location.search).get('moment');
             let previousOrder = [];
             try {
                 previousOrder = JSON.parse(sessionStorage.getItem('crebti_last_question_order') || '[]');
@@ -407,11 +408,20 @@
                     break;
                 }
             }
+            if (requestedMoment) {
+                const normalizedMoment = requestedMoment.toUpperCase();
+                const requestedIndex = ordered.findIndex(question => question.id === normalizedMoment);
+                if (requestedIndex > 0) {
+                    ordered = [ordered[requestedIndex], ...ordered.slice(0, requestedIndex), ...ordered.slice(requestedIndex + 1)];
+                }
+            }
             QUESTIONS.splice(0, QUESTIONS.length, ...ordered);
             QUESTIONS.forEach(question => {
+                if (typeof question.visualFlipped !== 'boolean') question.visualFlipped = false;
                 if (randomIndex(2) === 0) {
                     [question.a[0], question.a[1]] = [question.a[1], question.a[0]];
                     [question.scores[0], question.scores[1]] = [question.scores[1], question.scores[0]];
+                    question.visualFlipped = !question.visualFlipped;
                 }
             });
             try {
@@ -424,22 +434,44 @@
 
         const QUESTION_ILLUSTRATIONS = {
             C01: ['question-c01.webp', '경매 마감 직전, 두 개체를 놓고 고민하는 모습'],
-            C02: ['question-c02.webp', '어린 개체의 현재 모습과 가족의 성장 기록을 비교하는 모습'],
+            C02: ['question-c02.webp', '어린 크레의 현재 모습과 가족의 성장 기록을 비교하는 모습'],
             C03: ['question-c03.webp', '원래 고른 개체와 새로 눈에 들어온 개체를 비교하는 모습'],
             C04: ['question-c04.webp', '기준표와 마음 사이에서 두 개체를 고르는 모습'],
             C05: ['question-c05.webp', '예상과 다르게 변한 개체를 예전 사진과 비교하는 모습'],
             C06: ['question-c06.webp', '한 개체의 성장 과정과 앞으로의 모습을 살피는 모습'],
-            C07: ['question-c07.webp', '판매자에게 물을 질문을 생각하는 행사 방문객의 모습'],
-            C08: ['question-c08.webp', '새 개체가 오기 전에 사육장을 준비하는 모습'],
+            C07: ['question-c07.webp', '두 크레 사이에서 고민하는 친구의 선택을 함께 살피는 모습'],
+            C08: ['question-c08.webp', '새 크레가 오기 전에 사육장을 준비하는 모습'],
             C09: ['question-c09.webp', '행사 쉬는 시간에 대화와 기록 사이에서 고민하는 모습'],
-            C10: ['question-c10.webp', '처음 보는 라인의 현재 특징과 가족 흐름을 살피는 모습'],
-            C11: ['question-c11.webp', '계획과 추억 사이에서 남길 한 마리를 고민하는 모습'],
+            C10: ['question-c10.webp', '처음 보는 크레 종류의 개별 특징과 공통점을 살피는 모습'],
+            C11: ['question-c11.webp', '앞으로의 계획과 마음이 가는 크레 사이에서 고민하는 모습'],
             C12: ['question-c12.webp', '개체의 성장 기록을 달력과 관찰 노트에 남기는 모습']
         };
 
-        function questionIllustration(questionId) {
-            const [filename, alt] = QUESTION_ILLUSTRATIONS[questionId] || QUESTION_ILLUSTRATIONS.C01;
-            return `<figure class="cw-question-illustration"><img src="assets/crewart-illustrations/${filename}" alt="${escapeHtml(alt)}" width="960" height="640" decoding="async"></figure>`;
+        const QUESTION_LAYERED_SCENES = {
+            C08: {
+                empty: 'question-c08-stage-empty-v2.webp',
+                populated: 'question-c08-stage-populated-v2.webp'
+            }
+        };
+
+        function questionIllustration(question) {
+            const [filename, alt] = QUESTION_ILLUSTRATIONS[question.id] || QUESTION_ILLUSTRATIONS.C01;
+            const layeredScene = QUESTION_LAYERED_SCENES[question.id];
+            if (!layeredScene) {
+                return `<figure class="cw-question-illustration"><img src="assets/crewart-illustrations/${filename}" alt="${escapeHtml(alt)}" width="960" height="640" decoding="async"></figure>`;
+            }
+            const mirrorClass = question.visualFlipped ? ' is-mirrored' : '';
+            const scenePath = 'assets/crewart-illustrations/';
+            return `
+                <figure class="cw-question-illustration cw-layered-scene${mirrorClass}" data-layered-scene="${escapeHtml(question.id)}">
+                    <img class="cw-scene-base" src="${scenePath}${layeredScene.empty}" alt="${escapeHtml(alt)}" width="1536" height="1024" decoding="async">
+                    <span class="cw-scene-slice cw-scene-slice-center" aria-hidden="true"><img src="${scenePath}${layeredScene.populated}" alt="" width="1536" height="1024" decoding="async"></span>
+                    <span class="cw-scene-slice cw-scene-slice-left" aria-hidden="true"><img src="${scenePath}${layeredScene.populated}" alt="" width="1536" height="1024" decoding="async"></span>
+                    <span class="cw-scene-slice cw-scene-slice-right" aria-hidden="true"><img src="${scenePath}${layeredScene.populated}" alt="" width="1536" height="1024" decoding="async"></span>
+                    <span class="cw-scene-curtain cw-scene-curtain-left" aria-hidden="true"></span>
+                    <span class="cw-scene-curtain cw-scene-curtain-right" aria-hidden="true"></span>
+                    <span class="cw-scene-seam" aria-hidden="true"></span>
+                </figure>`;
         }
 
         function startSurvey() {
@@ -470,16 +502,16 @@
             pendingAdvance = false;
             const wrap = document.getElementById('questions');
             wrap.innerHTML = QUESTIONS.map((question, index) => `
-                <article class="cw-question ${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
+                <article class="cw-question ${QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
                     <header class="cw-question-head">
                         <div class="cw-question-label">${escapeHtml(question.label)}</div>
                         <h2>${formatText(question.q)}</h2>
-                        <p class="cw-question-guide">생각을 오래 붙잡지 말고, 평소의 나와 더 가까운 쪽을 고르세요.</p>
+                        <p class="cw-question-guide">오래 고민하지 말고, 평소의 나와 가까운 쪽을 고르세요.</p>
                     </header>
                     <div class="cw-choice-stage">
-                        ${questionIllustration(question.id)}
+                        ${questionIllustration(question)}
                         <div class="cw-choice-grid">
-                            ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice cw-choice-${choiceIndex === 0 ? 'left' : 'right'} ${answers[index] === choiceIndex ? 'selected' : ''}" aria-pressed="${answers[index] === choiceIndex}" onmouseenter="setChoiceFocus(this, true)" onmouseleave="setChoiceFocus(this, false)" onfocus="setChoiceFocus(this, true)" onblur="setChoiceFocus(this, false)" onclick="chooseAnswer(${index}, ${choiceIndex})"><span class="cw-choice-number">${choiceIndex === 0 ? 'A' : 'B'}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
+                            ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice cw-choice-${choiceIndex === 0 ? 'left' : 'right'} ${answers[index] === choiceIndex ? 'selected' : ''}" aria-pressed="${answers[index] === choiceIndex}" onpointerenter="setChoiceFocus(this, true)" onpointerleave="setChoiceFocus(this, false)" onpointerdown="setChoiceFocus(this, true)" onpointercancel="setChoiceFocus(this, false)" onfocus="setChoiceFocus(this, true)" onblur="setChoiceFocus(this, false)" onclick="chooseAnswer(${index}, ${choiceIndex})"><span class="cw-choice-number">${choiceIndex === 0 ? 'A' : 'B'}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
                         </div>
                         <div class="cw-transition-orbit" aria-hidden="true"><i></i><i></i></div>
                     </div>
@@ -497,9 +529,21 @@
 
         function setChoiceFocus(button, focused) {
             const stage = button.closest('.cw-choice-stage');
-            if (!stage) return;
+            if (!stage || stage.classList.contains('is-committed')) return;
             button.classList.toggle('is-focused', focused);
-            stage.classList.toggle('choice-focused', focused);
+            if (focused) {
+                const direction = button.classList.contains('cw-choice-left') ? 'left' : 'right';
+                stage.querySelectorAll('.cw-choice').forEach(choice => choice.classList.toggle('is-focused', choice === button));
+                stage.classList.add('choice-focused');
+                stage.classList.toggle('focus-left', direction === 'left');
+                stage.classList.toggle('focus-right', direction === 'right');
+                return;
+            }
+            requestAnimationFrame(() => {
+                const nextFocused = stage.querySelector('.cw-choice:hover, .cw-choice:focus-visible, .cw-choice.is-focused');
+                if (nextFocused) return;
+                stage.classList.remove('choice-focused', 'focus-left', 'focus-right');
+            });
         }
 
         function chooseAnswer(index, choiceIndex) {
@@ -515,8 +559,14 @@
             pendingAdvance = true;
             const activeQuestion = document.querySelector('.cw-question.active');
             const momentShift = document.getElementById('moment-shift');
-            momentShift.hidden = false;
-            momentShift.className = `cw-moment-shift active ${choiceIndex === 0 ? 'toward-left' : 'toward-right'}`;
+            const choiceStage = activeQuestion?.querySelector('.cw-choice-stage');
+            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene');
+            choiceStage?.classList.remove('choice-focused', 'focus-left', 'focus-right');
+            choiceStage?.classList.add('is-committed', choiceIndex === 0 ? 'committed-left' : 'committed-right');
+            if (!usesLayeredScene) {
+                momentShift.hidden = false;
+                momentShift.className = `cw-moment-shift active ${choiceIndex === 0 ? 'toward-left' : 'toward-right'}`;
+            }
             activeQuestion?.classList.add('leaving', choiceIndex === 0 ? 'toward-left' : 'toward-right');
             const choices = activeQuestion?.querySelectorAll('.cw-choice') || [];
             choices.forEach((choice, buttonIndex) => {
@@ -533,7 +583,7 @@
                 }
                 momentShift.hidden = true;
                 momentShift.className = 'cw-moment-shift';
-            }, 720);
+            }, usesLayeredScene ? 920 : 720);
         }
 
         function prevQuestion() {

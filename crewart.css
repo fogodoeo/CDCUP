@@ -1491,3 +1491,213 @@ body.crewart-broadcast {
     .cw-moment-shift.active .cw-moment-shift-ring,
     .cw-moment-shift > span { animation: none; }
 }
+
+/* Layered decision scene: the unchosen half is removed, not merely faded. */
+.cw-layered-scene {
+    position: relative;
+    aspect-ratio: 3 / 2;
+    overflow: hidden;
+    isolation: isolate;
+    background: #e9e2d6;
+}
+.cw-question.has-layered-scene .cw-choice-stage { display: block; }
+.cw-layered-scene .cw-scene-base {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform-origin: 50% 50%;
+}
+.cw-layered-scene .cw-scene-slice {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .24s ease;
+}
+.cw-layered-scene .cw-scene-slice img {
+    position: absolute;
+    top: 0;
+    max-width: none;
+    height: 100%;
+    object-fit: fill;
+    transform-origin: 50% 50%;
+}
+.cw-layered-scene .cw-scene-slice-center {
+    left: 40%;
+    width: 20%;
+    opacity: 1;
+    visibility: visible;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 13%, #000 87%, transparent);
+}
+.cw-layered-scene .cw-scene-slice-center img {
+    left: -200%;
+    width: 500%;
+}
+.cw-layered-scene .cw-scene-slice-left {
+    left: 0;
+    width: 42%;
+    -webkit-mask-image: linear-gradient(90deg, #000 0 88%, transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0 88%, transparent 100%);
+}
+.cw-layered-scene .cw-scene-slice-left img {
+    left: 0;
+    width: 238.096%;
+}
+.cw-layered-scene .cw-scene-slice-right {
+    right: 0;
+    width: 42%;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12% 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 12% 100%);
+}
+.cw-layered-scene .cw-scene-slice-right img {
+    left: -138.096%;
+    width: 238.096%;
+}
+.cw-layered-scene.is-mirrored .cw-scene-base,
+.cw-layered-scene.is-mirrored .cw-scene-slice img {
+    transform: scaleX(-1);
+}
+.cw-layered-scene .cw-scene-curtain {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 4;
+    display: none;
+    width: calc(50% + 2px);
+    overflow: hidden;
+    border-left: 1px solid rgba(219,187,111,.36);
+    border-right: 1px solid rgba(219,187,111,.36);
+    background:
+        radial-gradient(circle at 22% 18%, rgba(232,199,119,.08) 0 2px, transparent 3px),
+        radial-gradient(circle at 78% 76%, rgba(232,199,119,.07) 0 1px, transparent 2px),
+        repeating-linear-gradient(88deg, rgba(255,255,255,.026) 0 2px, rgba(0,0,0,.025) 2px 18px),
+        linear-gradient(145deg, #34293a 0%, #201824 48%, #120e17 100%);
+    background-size: 58px 58px, 44px 44px, auto, auto;
+    box-shadow: inset 0 0 72px rgba(0,0,0,.48), inset 0 0 0 8px rgba(216,184,107,.045);
+    pointer-events: none;
+}
+.cw-layered-scene .cw-scene-curtain::before {
+    position: absolute;
+    inset: 8% 14%;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(222,190,111,.34);
+    border-radius: 48% 48% 8px 8px;
+    background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(0,0,0,.08));
+    box-shadow: inset 0 0 0 7px rgba(216,184,107,.035), 0 0 28px rgba(0,0,0,.2);
+    content: '';
+}
+.cw-layered-scene .cw-scene-curtain::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    width: clamp(54px, 28%, 104px);
+    aspect-ratio: 1;
+    place-items: center;
+    border: 1px solid rgba(235,204,126,.7);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, rgba(216,184,107,.18) 0 10%, transparent 11% 30%, rgba(216,184,107,.1) 31% 32%, transparent 33%),
+        conic-gradient(from 45deg, transparent 0 11%, rgba(216,184,107,.12) 12% 13%, transparent 14% 24%, rgba(216,184,107,.12) 25% 26%, transparent 27% 100%),
+        #211925;
+    box-shadow: 0 0 0 9px rgba(216,184,107,.055), 0 0 0 10px rgba(216,184,107,.24), 0 12px 30px rgba(0,0,0,.32);
+    color: #e0c071;
+    content: '✦';
+    font-family: var(--cw-serif);
+    font-size: clamp(15px, 4vw, 28px);
+    transform: translate(-50%,-50%);
+}
+.cw-layered-scene .cw-scene-curtain-left { left: -1px; }
+.cw-layered-scene .cw-scene-curtain-right { right: -1px; }
+.cw-layered-scene .cw-scene-seam {
+    position: absolute;
+    top: 5%;
+    bottom: 5%;
+    left: 50%;
+    z-index: 5;
+    width: 1px;
+    background: linear-gradient(transparent, rgba(216,184,107,.42), transparent);
+    opacity: .45;
+    pointer-events: none;
+    transform: translateX(-.5px);
+}
+.cw-choice-stage.focus-left .cw-layered-scene .cw-scene-slice-center,
+.cw-choice-stage.focus-right .cw-layered-scene .cw-scene-slice-center,
+.cw-choice-stage.is-committed .cw-layered-scene .cw-scene-slice-center {
+    opacity: 0;
+    visibility: hidden;
+}
+.cw-choice-stage.focus-left .cw-layered-scene .cw-scene-slice-left,
+.cw-choice-stage.committed-left .cw-layered-scene .cw-scene-slice-left,
+.cw-choice-stage.focus-right .cw-layered-scene .cw-scene-slice-right,
+.cw-choice-stage.committed-right .cw-layered-scene .cw-scene-slice-right {
+    opacity: 1;
+    visibility: visible;
+}
+.cw-choice-stage.focus-left .cw-layered-scene .cw-scene-slice-right,
+.cw-choice-stage.committed-left .cw-layered-scene .cw-scene-slice-right,
+.cw-choice-stage.focus-right .cw-layered-scene .cw-scene-slice-left,
+.cw-choice-stage.committed-right .cw-layered-scene .cw-scene-slice-left {
+    display: none;
+}
+.cw-choice-stage.focus-left .cw-layered-scene .cw-scene-curtain-right,
+.cw-choice-stage.committed-left .cw-layered-scene .cw-scene-curtain-right,
+.cw-choice-stage.focus-right .cw-layered-scene .cw-scene-curtain-left,
+.cw-choice-stage.committed-right .cw-layered-scene .cw-scene-curtain-left {
+    display: block;
+    animation: cw-scene-seal-awaken .62s ease both;
+}
+.cw-choice-stage.choice-focused .cw-layered-scene,
+.cw-choice-stage.is-committed .cw-layered-scene {
+    filter: none;
+    transform: scale(1.012);
+}
+.cw-choice-stage.focus-left .cw-layered-scene,
+.cw-choice-stage.committed-left .cw-layered-scene { transform-origin: 30% 50%; }
+.cw-choice-stage.focus-right .cw-layered-scene,
+.cw-choice-stage.committed-right .cw-layered-scene { transform-origin: 70% 50%; }
+.cw-choice-stage.focus-left .cw-layered-scene .cw-scene-seam,
+.cw-choice-stage.focus-right .cw-layered-scene .cw-scene-seam,
+.cw-choice-stage.is-committed .cw-layered-scene .cw-scene-seam {
+    opacity: .9;
+    box-shadow: 0 0 18px rgba(216,184,107,.4);
+}
+.cw-question.has-layered-scene.leaving::after { display: none; }
+.cw-question.has-layered-scene.leaving.toward-left,
+.cw-question.has-layered-scene.leaving.toward-right {
+    animation: cw-layered-moment-leave .92s cubic-bezier(.55,0,.2,1) both;
+}
+.cw-question.has-layered-scene.leaving .cw-layered-scene {
+    animation: cw-layered-scene-lock .92s cubic-bezier(.35,0,.15,1) both;
+}
+.cw-question.has-layered-scene.leaving .cw-question-head {
+    animation-delay: .48s;
+}
+@keyframes cw-layered-moment-leave {
+    0%, 63% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(.9); filter: blur(7px); }
+}
+@keyframes cw-layered-scene-lock {
+    0%, 62% { opacity: 1; filter: none; transform: scale(1.012); }
+    100% { opacity: 0; filter: brightness(.9) blur(3px); transform: scale(1.045); }
+}
+@keyframes cw-scene-seal-awaken {
+    0% { filter: brightness(.72); }
+    45% { filter: brightness(1.08); }
+    100% { filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cw-layered-scene .cw-scene-slice { transition: none; }
+    .cw-question.has-layered-scene.leaving,
+    .cw-question.has-layered-scene.leaving .cw-layered-scene { animation: none; }
+}
