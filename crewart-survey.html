@@ -479,8 +479,26 @@
             }
         };
 
+        const QUESTION_EXAM_SCENES = {
+            C05: {
+                background: 'question-c05-background-v1.webp',
+                avatar: 'avatar-exam-male-v1.png'
+            }
+        };
+
         function questionIllustration(question) {
             const [filename, alt] = QUESTION_ILLUSTRATIONS[question.id] || QUESTION_ILLUSTRATIONS.C01;
+            const examScene = QUESTION_EXAM_SCENES[question.id];
+            if (examScene) {
+                const scenePath = 'assets/crewart-illustrations/';
+                return `
+                    <figure class="cw-question-illustration cw-exam-scene" data-exam-scene="${escapeHtml(question.id)}">
+                        <img class="cw-exam-scene-background" src="${scenePath}${examScene.background}" alt="${escapeHtml(alt)}" width="1536" height="1024" decoding="async">
+                        <span class="cw-exam-scene-shade cw-exam-scene-shade-left" aria-hidden="true"></span>
+                        <span class="cw-exam-scene-shade cw-exam-scene-shade-right" aria-hidden="true"></span>
+                        <img class="cw-exam-scene-avatar" src="${scenePath}${examScene.avatar}" alt="" width="1024" height="1024" decoding="async" aria-hidden="true">
+                    </figure>`;
+            }
             const focusScene = QUESTION_FOCUS_SCENES[question.id];
             if (focusScene) {
                 const scenePath = 'assets/crewart-illustrations/';
@@ -541,7 +559,7 @@
             pendingAdvance = false;
             const wrap = document.getElementById('questions');
             wrap.innerHTML = QUESTIONS.map((question, index) => `
-                <article class="cw-question ${QUESTION_FOCUS_SCENES[question.id] ? 'has-focus-scene ' : QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
+                <article class="cw-question ${QUESTION_EXAM_SCENES[question.id] ? 'has-exam-scene ' : QUESTION_FOCUS_SCENES[question.id] ? 'has-focus-scene ' : QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
                     <header class="cw-question-head">
                         <div class="cw-question-label">${escapeHtml(question.label)}</div>
                         <h2>${formatText(question.q)}</h2>
@@ -613,7 +631,7 @@
             const activeQuestion = document.querySelector('.cw-question.active');
             const momentShift = document.getElementById('moment-shift');
             const choiceStage = activeQuestion?.querySelector('.cw-choice-stage');
-            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene') || activeQuestion?.classList.contains('has-focus-scene');
+            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene') || activeQuestion?.classList.contains('has-focus-scene') || activeQuestion?.classList.contains('has-exam-scene');
             choiceStage?.classList.remove('choice-focused', 'focus-left', 'focus-right');
             choiceStage?.classList.add('is-committed', choiceIndex === 0 ? 'committed-left' : 'committed-right');
             if (!usesLayeredScene) {

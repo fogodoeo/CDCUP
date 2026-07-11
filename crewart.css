@@ -1900,3 +1900,56 @@ body.crewart-broadcast {
         transform: none;
     }
 }
+
+/* 모의고사형 장면: 배경 한 장 위에서 공통 인물이 선택 방향으로 이동한다. */
+.cw-question.has-exam-scene .cw-choice-stage { display: block; }
+.cw-exam-scene { position: relative; overflow: hidden; isolation: isolate; }
+.cw-exam-scene-background { position: relative; z-index: 1; display: block; width: 100%; height: auto; }
+.cw-exam-scene-avatar {
+    position: absolute;
+    bottom: -8%;
+    left: 50%;
+    z-index: 3;
+    width: 25%;
+    height: auto;
+    pointer-events: none;
+    filter: drop-shadow(0 7px 8px rgba(25,20,18,.18));
+    transform: translateX(-50%);
+    transform-origin: 50% 100%;
+    transition: left .58s cubic-bezier(.2,.72,.2,1), transform .58s cubic-bezier(.2,.72,.2,1);
+}
+.cw-exam-scene-shade {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    width: 58%;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .42s ease;
+}
+.cw-exam-scene-shade-left {
+    left: 0;
+    background: linear-gradient(90deg, rgba(17,15,14,.62) 0%, rgba(17,15,14,.48) 70%, transparent 100%);
+}
+.cw-exam-scene-shade-right {
+    right: 0;
+    background: linear-gradient(270deg, rgba(17,15,14,.62) 0%, rgba(17,15,14,.48) 70%, transparent 100%);
+}
+.cw-choice-stage.committed-left .cw-exam-scene-avatar { left: 28%; transform: translateX(-50%) scale(1.025); }
+.cw-choice-stage.committed-right .cw-exam-scene-avatar { left: 72%; transform: translateX(-50%) scale(1.025); }
+.cw-choice-stage.committed-left .cw-exam-scene-shade-right,
+.cw-choice-stage.committed-right .cw-exam-scene-shade-left { opacity: 1; }
+.cw-question.has-exam-scene.leaving { animation: cw-layered-moment-leave .92s cubic-bezier(.55,0,.2,1) both; }
+
+@media (max-width: 560px) {
+    .cw-exam-scene-avatar { bottom: -7%; width: 27%; }
+    .cw-choice-stage.committed-left .cw-exam-scene-avatar { left: 27%; }
+    .cw-choice-stage.committed-right .cw-exam-scene-avatar { left: 73%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cw-exam-scene-avatar,
+    .cw-exam-scene-shade { transition-duration: .12s; }
+    .cw-question.has-exam-scene.leaving { animation: none; }
+}
