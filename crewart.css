@@ -280,6 +280,40 @@ body.crewart-page {
 
 .cw-toast.show { transform: translate(-50%, 0); }
 
+.cw-kakao-float {
+    position: fixed;
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(18px, env(safe-area-inset-bottom));
+    z-index: 120;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 48px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 999px;
+    background: #fee500;
+    color: #191919;
+    box-shadow: 0 10px 28px rgba(25, 25, 25, .24);
+    font: 800 14px/1 Pretendard, sans-serif;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease;
+}
+.cw-kakao-float:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(25, 25, 25, .3); }
+.cw-kakao-float:active { transform: translateY(0) scale(.97); }
+.cw-kakao-float span { font-size: 18px; }
+
+@media (max-width: 560px) {
+    .cw-kakao-float {
+        right: max(12px, env(safe-area-inset-right));
+        bottom: max(12px, env(safe-area-inset-bottom));
+        min-height: 44px;
+        padding: 0 14px;
+        font-size: 13px;
+    }
+}
+
 body.crewart-broadcast {
     width: 100vw;
     height: 100vh;

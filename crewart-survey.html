@@ -124,6 +124,9 @@
         </div>
     </section>
 
+    <button class="cw-kakao-float" type="button" onclick="shareKakaoResult()" aria-label="카카오톡으로 공유하기">
+        <span aria-hidden="true">💬</span> 카톡 공유
+    </button>
     <div class="cw-toast" id="toast"></div>
 
     <script>
@@ -1072,26 +1075,26 @@
 
         async function shareKakaoResult() {
             const result = window.crebtiResult;
-            if (!result) {
-                toast('공유할 결과가 없습니다.', true);
-                return;
-            }
-            if (!window.Kakao || !Kakao.Share) {
+            if (!window.Kakao) {
                 toast('카카오톡 공유를 불러오지 못해 링크를 복사합니다.', true);
                 copySurveyLink();
                 return;
             }
 
             const shareUrl = 'https://cdcup.onrender.com/crewart-survey.html';
-            const house = HOUSE_PRESENTATION[result.houseKey];
-            const [resultImage] = HOUSE_ILLUSTRATIONS[result.houseKey];
             try {
-                if (!Kakao.isInitialized()) Kakao.init('db7ffc8d6b9b7601b792ed69be4658fc');
-                await Kakao.Share.sendDefault({
+                if (!window.Kakao.isInitialized()) window.Kakao.init('db7ffc8d6b9b7601b792ed69be4658fc');
+                if (!window.Kakao.Share) throw new Error('Kakao.Share is unavailable after initialization');
+
+                const house = result ? HOUSE_PRESENTATION[result.houseKey] : null;
+                const resultImage = result ? HOUSE_ILLUSTRATIONS[result.houseKey][0] : 'question-c01.webp';
+                await window.Kakao.Share.sendDefault({
                     objectType: 'feed',
                     content: {
-                        title: `${house.name} · ${result.type.name}`,
-                        description: result.type.shareLine,
+                        title: result ? `${house.name} · ${result.type.name}` : '열두 번의 선택',
+                        description: result
+                            ? result.type.shareLine
+                            : '크레 앞에서 드러나는 나의 선택 기준과 기숙사를 확인해보세요.',
                         imageUrl: `https://cdcup.onrender.com/assets/crewart-illustrations/${resultImage}`,
                         link: { mobileWebUrl: shareUrl, webUrl: shareUrl }
                     },
