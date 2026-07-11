@@ -124,9 +124,10 @@
     function winnerNameCandidates(value) {
         const raw = String(value || '').trim();
         if (!raw) return [];
+        const phoneMatches = raw.match(/\d{2,4}[-\s.]?\d{3,4}[-\s.]?\d{4}/g) || [];
         const withoutPhone = raw.replace(/\d{2,4}[-\s.]?\d{3,4}[-\s.]?\d{4}/g, ' ');
         const firstChunk = raw.split(/[,(|/]/)[0];
-        const values = [raw, withoutPhone, firstChunk];
+        const values = [raw, withoutPhone, firstChunk, ...phoneMatches];
         return [...new Set(values.map(normalizePerson).filter(Boolean))];
     }
 

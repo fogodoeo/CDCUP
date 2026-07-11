@@ -1018,6 +1018,44 @@ async function setBannerHidden(hidden) {
     });
 }
 
+const CREWART_PARTICIPANT_ENTRY_PREFIX = 'crewart_participant_entry_';
+const CREWART_RESPONSE_ENTRY_PREFIX = 'crewart_survey_response_entry_';
+
+function _mergeCrewartSurveyEntries(map) {
+    const participantLines = new Map();
+    String(map.crewart_participants || '').split(/\r?\n/).filter(Boolean).forEach((line, index) => {
+        const identity = String(line.split(/[,\t|]/)[0] || `legacy-${index}`).trim().toLowerCase();
+        participantLines.set(identity, line);
+    });
+    Object.entries(map).forEach(([key, value]) => {
+        if (!key.startsWith(CREWART_PARTICIPANT_ENTRY_PREFIX) || !value) return;
+        const identity = String(value).split(/[,\t|]/)[0].trim().toLowerCase() || key;
+        participantLines.set(identity, String(value));
+    });
+    map.crewart_participants = Array.from(participantLines.values()).join('\n');
+
+    let legacyResponses = [];
+    try {
+        const parsed = JSON.parse(map.crewart_survey_responses || '[]');
+        legacyResponses = Array.isArray(parsed) ? parsed : [];
+    } catch (_) {}
+    const responses = new Map();
+    legacyResponses.forEach((response, index) => {
+        responses.set(response?.participantKey || `legacy-${index}`, response);
+    });
+    Object.entries(map).forEach(([key, value]) => {
+        if (!key.startsWith(CREWART_RESPONSE_ENTRY_PREFIX) || !value) return;
+        try {
+            const response = JSON.parse(value);
+            responses.set(response?.participantKey || key.slice(CREWART_RESPONSE_ENTRY_PREFIX.length), response);
+        } catch (_) {}
+    });
+    map.crewart_survey_responses = JSON.stringify(Array.from(responses.values())
+        .sort((a, b) => String(a?.createdAt || '').localeCompare(String(b?.createdAt || '')))
+        .slice(-500));
+    return map;
+}
+
 async function getConfigMap() {
     const rows = await _sbFetch('config?select=*');
     const map = {};
@@ -1026,7 +1064,7 @@ async function getConfigMap() {
             map[r.key] = r.value;
         });
     }
-    return map;
+    return _mergeCrewartSurveyEntries(map);
 }
 
 async function updateConfigs(configMap) {
@@ -1038,6 +1076,16 @@ async function updateConfigs(configMap) {
         method: 'POST',
         headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
         body: JSON.stringify(payloads),
+    });
+}
+
+async function saveCrewartSurveyEntry(participantKey, participantLine, response) {
+    const safeKey = String(participantKey || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 48);
+    if (!safeKey) throw new Error('참여자 식별값을 만들지 못했습니다.');
+    await updateConfigs({
+        active_event_module: 'crewart',
+        [`${CREWART_PARTICIPANT_ENTRY_PREFIX}${safeKey}`]: participantLine,
+        [`${CREWART_RESPONSE_ENTRY_PREFIX}${safeKey}`]: JSON.stringify(response)
     });
 }
 
