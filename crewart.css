@@ -1876,3 +1876,27 @@ body.crewart-broadcast {
     .cw-focus-scene-glow { transition: none; }
     .cw-question.has-focus-scene.leaving { animation: none; }
 }
+
+/* iOS와 터치 브라우저의 sticky hover가 다음 문항에 남지 않도록 한다. */
+@media (hover: none), (pointer: coarse) {
+    .cw-survey-shell .cw-choice:hover {
+        z-index: 5;
+        border-color: rgba(67,52,30,.25);
+        background: rgba(255,255,255,.42);
+        box-shadow: 0 18px 45px rgba(0,0,0,.28);
+        color: #2c261e;
+        outline: none;
+        transform: none;
+    }
+    .cw-survey-shell .cw-choice:hover::after { opacity: 0; transform: translateX(-7px); }
+    .cw-choice-stage:has(.cw-choice:hover) .cw-choice:not(:hover) {
+        z-index: 5;
+        opacity: 1;
+        filter: none;
+        transform: none;
+    }
+    .cw-choice-stage:has(.cw-choice:hover) .cw-question-illustration {
+        filter: none;
+        transform: none;
+    }
+}

@@ -550,7 +550,7 @@
                     <div class="cw-choice-stage">
                         ${questionIllustration(question)}
                         <div class="cw-choice-grid">
-                            ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice cw-choice-${choiceIndex === 0 ? 'left' : 'right'} ${answers[index] === choiceIndex ? 'selected' : ''}" aria-pressed="${answers[index] === choiceIndex}" onpointerenter="setChoiceFocus(this, true)" onpointerleave="setChoiceFocus(this, false)" onpointerdown="setChoiceFocus(this, true)" onpointercancel="setChoiceFocus(this, false)" onfocus="setChoiceFocus(this, true)" onblur="setChoiceFocus(this, false)" onclick="chooseAnswer(${index}, ${choiceIndex})"><span class="cw-choice-number">${choiceIndex === 0 ? 'A' : 'B'}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
+                            ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice cw-choice-${choiceIndex === 0 ? 'left' : 'right'} ${answers[index] === choiceIndex ? 'selected' : ''}" aria-pressed="${answers[index] === choiceIndex}" onpointerenter="setChoiceFocus(this, true, event)" onpointerleave="setChoiceFocus(this, false, event)" onpointerdown="setChoiceFocus(this, true, event)" onpointercancel="setChoiceFocus(this, false, event)" onfocus="setChoiceFocus(this, true, event)" onblur="setChoiceFocus(this, false, event)" onclick="chooseAnswer(${index}, ${choiceIndex})"><span class="cw-choice-number">${choiceIndex === 0 ? 'A' : 'B'}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
                         </div>
                         <div class="cw-transition-orbit" aria-hidden="true"><i></i><i></i></div>
                     </div>
@@ -564,6 +564,7 @@
             }
             document.getElementById('progress').textContent = `순간 ${current + 1} / ${QUESTIONS.length}`;
             document.getElementById('progress-bar').style.width = `${((current + 1) / QUESTIONS.length) * 100}%`;
+            if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
             questionShownAt = performance.now();
         }
 
@@ -572,9 +573,16 @@
             return Math.min(3000, Math.max(1800, 900 + (textLength * 10)));
         }
 
-        function setChoiceFocus(button, focused) {
+        function setChoiceFocus(button, focused, event) {
             const stage = button.closest('.cw-choice-stage');
             if (!stage || stage.classList.contains('is-committed')) return;
+            const isTouchPointer = event && event.pointerType === 'touch';
+            const isTouchFocus = event && event.type === 'focus' && window.matchMedia('(hover: none), (pointer: coarse)').matches;
+            if (isTouchPointer || isTouchFocus) {
+                stage.querySelectorAll('.cw-choice').forEach(choice => choice.classList.remove('is-focused'));
+                stage.classList.remove('choice-focused', 'focus-left', 'focus-right');
+                return;
+            }
             button.classList.toggle('is-focused', focused);
             if (focused) {
                 const direction = button.classList.contains('cw-choice-left') ? 'left' : 'right';
@@ -620,6 +628,7 @@
                 choice.setAttribute('aria-pressed', String(buttonIndex === choiceIndex));
             });
             setTimeout(() => {
+                if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                 if (current < QUESTIONS.length - 1) {
                     current += 1;
                     renderQuestions();
