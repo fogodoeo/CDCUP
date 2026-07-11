@@ -302,7 +302,12 @@ body.crewart-page {
 }
 .cw-kakao-float:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(25, 25, 25, .3); }
 .cw-kakao-float:active { transform: translateY(0) scale(.97); }
-.cw-kakao-float span { font-size: 18px; }
+.cw-kakao-float img {
+    display: block;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+}
 
 @media (max-width: 560px) {
     .cw-kakao-float {
