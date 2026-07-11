@@ -7,9 +7,10 @@
     <title>크레와트 선택의 순간</title>
     <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
     <script src="event-modules.js?v=20260710-crebti4"></script>
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.8.1/kakao.min.js" integrity="sha384-OL+ylM/iuPLtW5U3XcvLSGhE8JzReKDank5InqlHGWPhb4140/yrBw0bg0y7+C9J" crossorigin="anonymous"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260711-all-layered">
+    <link rel="stylesheet" href="crewart.css?v=20260711-half-avatar1">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -101,6 +102,7 @@
             <div class="cw-trait-breakdown" id="trait-breakdown"></div>
             <div class="cw-actions cw-result-actions">
                 <button class="cw-btn" type="button" onclick="rewindChoices()">다시 선택하기</button>
+                <button class="cw-btn cw-kakao-share" type="button" onclick="shareKakaoResult()">카카오톡 공유</button>
                 <a class="cw-btn" href="https://www.band.us/band/101005857/post" target="_blank" rel="noopener noreferrer">BAND에서 이야기하기</a>
                 <button class="cw-btn primary" type="button" onclick="submitSurvey()">결과 저장</button>
             </div>
@@ -462,8 +464,34 @@
             C12: { empty: 'question-c12-stage-empty.webp', populated: 'question-c12-stage-populated.webp' },
         };
 
+        const QUESTION_FOCUS_SCENES = {
+            C01: { neutral: 'question-c01-neutral-half-v1.webp', left: 'question-c01-left-half-v1.webp', right: 'question-c01-right-half-v1.webp', avatar: true },
+            C02: { neutral: 'question-c02-neutral-half-v1.webp', left: 'question-c02-left-half-v1.webp', right: 'question-c02-right-half-v1.webp', avatar: true },
+            C03: { neutral: 'question-c03-neutral-half-v1.webp', left: 'question-c03-left-half-v1.webp', right: 'question-c03-right-half-v1.webp', avatar: true },
+            C04: { neutral: 'question-c04-neutral-half-v1.webp', left: 'question-c04-left-half-v1.webp', right: 'question-c04-right-half-v1.webp', avatar: true },
+            C08: {
+                neutral: 'question-c08-neutral-v3.webp',
+                left: 'question-c08-left-centered-v4.webp',
+                right: 'question-c08-right-centered-v4.webp'
+            }
+        };
+
         function questionIllustration(question) {
             const [filename, alt] = QUESTION_ILLUSTRATIONS[question.id] || QUESTION_ILLUSTRATIONS.C01;
+            const focusScene = QUESTION_FOCUS_SCENES[question.id];
+            if (focusScene) {
+                const scenePath = 'assets/crewart-illustrations/';
+                const mirrorClass = question.visualFlipped ? ' is-mirrored' : '';
+                const leftScene = question.visualFlipped ? focusScene.right : focusScene.left;
+                const rightScene = question.visualFlipped ? focusScene.left : focusScene.right;
+                return `
+                    <figure class="cw-question-illustration cw-focus-scene${mirrorClass}" data-focus-scene="${escapeHtml(question.id)}">
+                        <img class="cw-focus-scene-image cw-focus-scene-neutral" src="${scenePath}${focusScene.neutral}" alt="${escapeHtml(alt)}" width="1536" height="1024" decoding="async">
+                        <img class="cw-focus-scene-image cw-focus-scene-left" src="${scenePath}${leftScene}" alt="" width="1536" height="1024" decoding="async" aria-hidden="true">
+                        <img class="cw-focus-scene-image cw-focus-scene-right" src="${scenePath}${rightScene}" alt="" width="1536" height="1024" decoding="async" aria-hidden="true">
+                        ${focusScene.avatar ? `<img class="cw-focus-avatar" src="${scenePath}blank-half-neutral-v1.webp" alt="" width="1240" height="1240" decoding="async" aria-hidden="true">` : ''}
+                    </figure>`;
+            }
             const layeredScene = QUESTION_LAYERED_SCENES[question.id];
             if (!layeredScene) {
                 return `<figure class="cw-question-illustration"><img src="assets/crewart-illustrations/${filename}" alt="${escapeHtml(alt)}" width="960" height="640" decoding="async"></figure>`;
@@ -510,7 +538,7 @@
             pendingAdvance = false;
             const wrap = document.getElementById('questions');
             wrap.innerHTML = QUESTIONS.map((question, index) => `
-                <article class="cw-question ${QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
+                <article class="cw-question ${QUESTION_FOCUS_SCENES[question.id] ? 'has-focus-scene ' : QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
                     <header class="cw-question-head">
                         <div class="cw-question-label">${escapeHtml(question.label)}</div>
                         <h2>${formatText(question.q)}</h2>
@@ -525,6 +553,12 @@
                     </div>
                 </article>
             `).join('');
+            const debugFocus = new URLSearchParams(window.location.search).get('focus');
+            if (debugFocus === 'left' || debugFocus === 'right') {
+                const debugStage = wrap.querySelector('.cw-question.active .cw-choice-stage');
+                debugStage?.classList.add('choice-focused', `focus-${debugFocus}`);
+                debugStage?.querySelector(`.cw-choice-${debugFocus}`)?.classList.add('is-focused');
+            }
             document.getElementById('progress').textContent = `순간 ${current + 1} / ${QUESTIONS.length}`;
             document.getElementById('progress-bar').style.width = `${((current + 1) / QUESTIONS.length) * 100}%`;
             questionShownAt = performance.now();
@@ -568,7 +602,7 @@
             const activeQuestion = document.querySelector('.cw-question.active');
             const momentShift = document.getElementById('moment-shift');
             const choiceStage = activeQuestion?.querySelector('.cw-choice-stage');
-            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene');
+            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene') || activeQuestion?.classList.contains('has-focus-scene');
             choiceStage?.classList.remove('choice-focused', 'focus-left', 'focus-right');
             choiceStage?.classList.add('is-committed', choiceIndex === 0 ? 'committed-left' : 'committed-right');
             if (!usesLayeredScene) {
@@ -1024,6 +1058,53 @@
                     </div>
                 </details>`;
             document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        async function copySurveyLink() {
+            const shareUrl = 'https://cdcup.onrender.com/crewart-survey.html';
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                toast('테스트 링크를 복사했습니다.');
+            } catch (error) {
+                window.prompt('아래 링크를 복사해주세요.', shareUrl);
+            }
+        }
+
+        async function shareKakaoResult() {
+            const result = window.crebtiResult;
+            if (!result) {
+                toast('공유할 결과가 없습니다.', true);
+                return;
+            }
+            if (!window.Kakao || !Kakao.Share) {
+                toast('카카오톡 공유를 불러오지 못해 링크를 복사합니다.', true);
+                copySurveyLink();
+                return;
+            }
+
+            const shareUrl = 'https://cdcup.onrender.com/crewart-survey.html';
+            const house = HOUSE_PRESENTATION[result.houseKey];
+            const [resultImage] = HOUSE_ILLUSTRATIONS[result.houseKey];
+            try {
+                if (!Kakao.isInitialized()) Kakao.init('db7ffc8d6b9b7601b792ed69be4658fc');
+                await Kakao.Share.sendDefault({
+                    objectType: 'feed',
+                    content: {
+                        title: `${house.name} · ${result.type.name}`,
+                        description: result.type.shareLine,
+                        imageUrl: `https://cdcup.onrender.com/assets/crewart-illustrations/${resultImage}`,
+                        link: { mobileWebUrl: shareUrl, webUrl: shareUrl }
+                    },
+                    buttons: [{
+                        title: '나도 기숙사 배정받기',
+                        link: { mobileWebUrl: shareUrl, webUrl: shareUrl }
+                    }]
+                });
+            } catch (error) {
+                console.error('[CREBTI Kakao Share]', error);
+                toast('공유 설정을 확인해주세요. 링크를 대신 복사합니다.', true);
+                copySurveyLink();
+            }
         }
 
         function rewindChoices() {
