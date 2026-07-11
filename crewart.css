@@ -1918,6 +1918,73 @@ body.crewart-broadcast {
     transform-origin: 50% 100%;
     transition: left .58s cubic-bezier(.2,.72,.2,1), transform .58s cubic-bezier(.2,.72,.2,1);
 }
+
+/* v2 선택 장면: 3구역 비교 이미지에서 양쪽 통합 결과 이미지로 전환한다. */
+.cw-question.has-v2-scene .cw-choice-stage { display: block; }
+.cw-v2-scene { position: relative; overflow: hidden; isolation: isolate; }
+.cw-v2-scene-choice,
+.cw-v2-scene-outcomes { display: block; width: 100%; height: auto; }
+.cw-v2-scene-choice {
+    position: relative;
+    z-index: 1;
+    opacity: 1;
+    transition: opacity .24s ease, transform .42s cubic-bezier(.2,.72,.2,1);
+}
+.cw-v2-scene-outcomes {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity .24s ease, transform .58s cubic-bezier(.2,.72,.2,1);
+}
+.cw-v2-scene-fog {
+    position: absolute;
+    top: -3%;
+    bottom: -3%;
+    z-index: 3;
+    width: 58%;
+    opacity: 0;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(9px) saturate(.45) brightness(.62);
+    backdrop-filter: blur(9px) saturate(.45) brightness(.62);
+    transition: opacity .32s ease;
+}
+.cw-v2-scene-fog-left {
+    left: -2%;
+    background:
+        linear-gradient(90deg, rgba(12,11,12,.96), rgba(18,16,18,.84) 72%, transparent),
+        repeating-linear-gradient(92deg, rgba(255,255,255,.025) 0 2px, rgba(0,0,0,.025) 2px 14px);
+}
+.cw-v2-scene-fog-right {
+    right: -2%;
+    background:
+        linear-gradient(270deg, rgba(12,11,12,.96), rgba(18,16,18,.84) 72%, transparent),
+        repeating-linear-gradient(88deg, rgba(255,255,255,.025) 0 2px, rgba(0,0,0,.025) 2px 14px);
+}
+.cw-choice-stage.is-committed .cw-v2-scene-choice { opacity: 0; transform: scale(1.03); }
+.cw-choice-stage.is-committed .cw-v2-scene-outcomes { opacity: 1; }
+.cw-choice-stage.outcome-left .cw-v2-scene-outcomes { transform: translateX(7%) scale(1.15); transform-origin: 25% 50%; }
+.cw-choice-stage.outcome-right .cw-v2-scene-outcomes { transform: translateX(-7%) scale(1.15); transform-origin: 75% 50%; }
+.cw-choice-stage.outcome-left .cw-v2-scene-fog-right,
+.cw-choice-stage.outcome-right .cw-v2-scene-fog-left { opacity: 1; }
+.cw-question.has-v2-scene.leaving::after { display: none; }
+.cw-question.has-v2-scene.leaving .cw-question-illustration { animation: none; }
+.cw-question.has-v2-scene.leaving { animation: cw-layered-moment-leave .92s cubic-bezier(.55,0,.2,1) both; }
+
+@media (max-width: 560px) {
+    .cw-v2-scene-fog { width: 62%; }
+    .cw-choice-stage.outcome-left .cw-v2-scene-outcomes { transform: translateX(6%) scale(1.13); }
+    .cw-choice-stage.outcome-right .cw-v2-scene-outcomes { transform: translateX(-6%) scale(1.13); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cw-v2-scene-choice,
+    .cw-v2-scene-outcomes,
+    .cw-v2-scene-fog { transition-duration: .12s; }
+    .cw-choice-stage.outcome-left .cw-v2-scene-outcomes,
+    .cw-choice-stage.outcome-right .cw-v2-scene-outcomes { transform: none; }
+    .cw-question.has-v2-scene.leaving { animation: none; }
+}
 .cw-exam-scene-shade {
     position: absolute;
     top: 0;

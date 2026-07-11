@@ -486,8 +486,27 @@
             }
         };
 
+        const QUESTION_V2_SCENES = {
+            C01: {
+                choice: 'question-c01-choice-v2.webp',
+                outcomes: 'question-c01-outcomes-v2.webp',
+                outcomeByLetter: { E: 'left', I: 'right' }
+            }
+        };
+
         function questionIllustration(question) {
             const [filename, alt] = QUESTION_ILLUSTRATIONS[question.id] || QUESTION_ILLUSTRATIONS.C01;
+            const v2Scene = QUESTION_V2_SCENES[question.id];
+            if (v2Scene) {
+                const scenePath = 'assets/crewart-illustrations/';
+                return `
+                    <figure class="cw-question-illustration cw-v2-scene" data-v2-scene="${escapeHtml(question.id)}">
+                        <img class="cw-v2-scene-choice" src="${scenePath}${v2Scene.choice}" alt="${escapeHtml(alt)}" width="1536" height="1024" decoding="async">
+                        <img class="cw-v2-scene-outcomes" src="${scenePath}${v2Scene.outcomes}" alt="" width="1536" height="1024" decoding="async" aria-hidden="true">
+                        <span class="cw-v2-scene-fog cw-v2-scene-fog-left" aria-hidden="true"></span>
+                        <span class="cw-v2-scene-fog cw-v2-scene-fog-right" aria-hidden="true"></span>
+                    </figure>`;
+            }
             const examScene = QUESTION_EXAM_SCENES[question.id];
             if (examScene) {
                 const scenePath = 'assets/crewart-illustrations/';
@@ -559,7 +578,7 @@
             pendingAdvance = false;
             const wrap = document.getElementById('questions');
             wrap.innerHTML = QUESTIONS.map((question, index) => `
-                <article class="cw-question ${QUESTION_EXAM_SCENES[question.id] ? 'has-exam-scene ' : QUESTION_FOCUS_SCENES[question.id] ? 'has-focus-scene ' : QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
+                <article class="cw-question ${QUESTION_V2_SCENES[question.id] ? 'has-v2-scene ' : QUESTION_EXAM_SCENES[question.id] ? 'has-exam-scene ' : QUESTION_FOCUS_SCENES[question.id] ? 'has-focus-scene ' : QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
                     <header class="cw-question-head">
                         <div class="cw-question-label">${escapeHtml(question.label)}</div>
                         <h2>${formatText(question.q)}</h2>
@@ -631,9 +650,11 @@
             const activeQuestion = document.querySelector('.cw-question.active');
             const momentShift = document.getElementById('moment-shift');
             const choiceStage = activeQuestion?.querySelector('.cw-choice-stage');
-            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene') || activeQuestion?.classList.contains('has-focus-scene') || activeQuestion?.classList.contains('has-exam-scene');
+            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene') || activeQuestion?.classList.contains('has-focus-scene') || activeQuestion?.classList.contains('has-exam-scene') || activeQuestion?.classList.contains('has-v2-scene');
+            const v2Scene = QUESTION_V2_SCENES[QUESTIONS[index].id];
+            const outcomeSide = v2Scene?.outcomeByLetter?.[QUESTIONS[index].scores[choiceIndex]] || (choiceIndex === 0 ? 'left' : 'right');
             choiceStage?.classList.remove('choice-focused', 'focus-left', 'focus-right');
-            choiceStage?.classList.add('is-committed', choiceIndex === 0 ? 'committed-left' : 'committed-right');
+            choiceStage?.classList.add('is-committed', choiceIndex === 0 ? 'committed-left' : 'committed-right', `outcome-${outcomeSide}`);
             if (!usesLayeredScene) {
                 momentShift.hidden = false;
                 momentShift.className = `cw-moment-shift active ${choiceIndex === 0 ? 'toward-left' : 'toward-right'}`;
