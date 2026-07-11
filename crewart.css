@@ -1741,7 +1741,7 @@ body.crewart-broadcast {
     .cw-question.has-layered-scene.leaving .cw-layered-scene { animation: none; }
 }
 
-/* Focus decision scene: show one coherent action scene and optically suppress the other side. */
+/* Focus decision scene: one comparison image switches to the selected full-frame result. */
 .cw-question.has-focus-scene .cw-choice-stage { display: block; }
 .cw-focus-scene {
     --cw-scene-mirror: 1;
@@ -1769,62 +1769,6 @@ body.crewart-broadcast {
     opacity: 0;
     transform: scaleX(var(--cw-scene-mirror)) scale(1.055);
 }
-.cw-focus-avatar {
-    position: absolute;
-    bottom: -19%;
-    left: 50%;
-    z-index: 5;
-    width: clamp(150px, 28%, 270px);
-    height: auto;
-    pointer-events: none;
-    filter: drop-shadow(0 8px 10px rgba(35,30,29,.18));
-    transform: translateX(-50%) scale(1);
-    transform-origin: 50% 100%;
-    transition: transform .48s cubic-bezier(.2,.72,.2,1), opacity .28s ease;
-}
-.cw-choice-stage.choice-focused .cw-focus-avatar { transform: translateX(-50%) scale(1.035); }
-.cw-choice-stage.is-committed .cw-focus-avatar { transform: translateX(-50%) scale(1.06); }
-.cw-focus-scene-dim {
-    position: absolute;
-    top: -5%;
-    bottom: -5%;
-    z-index: 3;
-    width: 56%;
-    opacity: 0;
-    pointer-events: none;
-    background:
-        linear-gradient(90deg, rgba(29,25,30,.52), rgba(43,37,43,.28)),
-        repeating-linear-gradient(92deg, rgba(255,255,255,.025) 0 2px, rgba(0,0,0,.02) 2px 14px);
-    -webkit-backdrop-filter: blur(11px) saturate(.45) brightness(.72);
-    backdrop-filter: blur(11px) saturate(.45) brightness(.72);
-    transition: opacity .32s ease, width .58s cubic-bezier(.2,.7,.2,1), filter .32s ease;
-}
-.cw-focus-scene-dim-left {
-    left: -3%;
-    -webkit-mask-image: linear-gradient(90deg, #000 0 82%, transparent 100%);
-    mask-image: linear-gradient(90deg, #000 0 82%, transparent 100%);
-}
-.cw-focus-scene-dim-right {
-    right: -3%;
-    background:
-        linear-gradient(270deg, rgba(29,25,30,.52), rgba(43,37,43,.28)),
-        repeating-linear-gradient(88deg, rgba(255,255,255,.025) 0 2px, rgba(0,0,0,.02) 2px 14px);
-    -webkit-mask-image: linear-gradient(270deg, #000 0 82%, transparent 100%);
-    mask-image: linear-gradient(270deg, #000 0 82%, transparent 100%);
-}
-.cw-focus-scene-glow {
-    position: absolute;
-    top: 4%;
-    bottom: 4%;
-    left: 50%;
-    z-index: 4;
-    width: 1px;
-    opacity: 0;
-    pointer-events: none;
-    background: linear-gradient(transparent, rgba(236,210,149,.68), transparent);
-    box-shadow: 0 0 26px rgba(220,191,120,.46);
-    transition: opacity .3s ease;
-}
 .cw-choice-stage.focus-left .cw-focus-scene-neutral,
 .cw-choice-stage.focus-right .cw-focus-scene-neutral,
 .cw-choice-stage.is-committed .cw-focus-scene-neutral {
@@ -1848,32 +1792,17 @@ body.crewart-broadcast {
     opacity: 1;
     transition-delay: .13s;
 }
-.cw-choice-stage.focus-left .cw-focus-scene-dim-right,
-.cw-choice-stage.committed-left .cw-focus-scene-dim-right,
-.cw-choice-stage.focus-right .cw-focus-scene-dim-left,
-.cw-choice-stage.committed-right .cw-focus-scene-dim-left { opacity: 1; }
-.cw-choice-stage.choice-focused .cw-focus-scene-glow,
-.cw-choice-stage.is-committed .cw-focus-scene-glow { opacity: .86; }
 .cw-choice-stage.focus-left .cw-focus-scene-left,
 .cw-choice-stage.committed-left .cw-focus-scene-left { transform: scaleX(var(--cw-scene-mirror)) scale(1); transform-origin: 50% 50%; }
 .cw-choice-stage.focus-right .cw-focus-scene-right,
 .cw-choice-stage.committed-right .cw-focus-scene-right { transform: scaleX(var(--cw-scene-mirror)) scale(1); transform-origin: 50% 50%; }
-.cw-choice-stage.is-committed .cw-focus-scene-dim { width: 60%; filter: brightness(.72); }
 .cw-choice-stage.is-committed .cw-focus-scene-left,
 .cw-choice-stage.is-committed .cw-focus-scene-right { transform: scaleX(var(--cw-scene-mirror)) scale(1.025); }
 .cw-question.has-focus-scene.leaving::after { display: none; }
 .cw-question.has-focus-scene.leaving { animation: cw-layered-moment-leave .92s cubic-bezier(.55,0,.2,1) both; }
 
-@media (max-width: 560px) {
-    .cw-focus-avatar { bottom: -20%; width: 31%; min-width: 108px; }
-    .cw-focus-scene-dim { width: 59%; }
-    .cw-choice-stage.is-committed .cw-focus-scene-dim { width: 64%; }
-}
-
 @media (prefers-reduced-motion: reduce) {
-    .cw-focus-scene-image,
-    .cw-focus-scene-dim,
-    .cw-focus-scene-glow { transition: none; }
+    .cw-focus-scene-image { transition: none; }
     .cw-question.has-focus-scene.leaving { animation: none; }
 }
 
@@ -1899,124 +1828,4 @@ body.crewart-broadcast {
         filter: none;
         transform: none;
     }
-}
-
-/* 모의고사형 장면: 배경 한 장 위에서 공통 인물이 선택 방향으로 이동한다. */
-.cw-question.has-exam-scene .cw-choice-stage { display: block; }
-.cw-exam-scene { position: relative; overflow: hidden; isolation: isolate; }
-.cw-exam-scene-background { position: relative; z-index: 1; display: block; width: 100%; height: auto; }
-.cw-exam-scene-avatar {
-    position: absolute;
-    bottom: -8%;
-    left: 50%;
-    z-index: 3;
-    width: 25%;
-    height: auto;
-    pointer-events: none;
-    filter: drop-shadow(0 7px 8px rgba(25,20,18,.18));
-    transform: translateX(-50%);
-    transform-origin: 50% 100%;
-    transition: left .58s cubic-bezier(.2,.72,.2,1), transform .58s cubic-bezier(.2,.72,.2,1);
-}
-
-/* v2 선택 장면: 3구역 비교 이미지에서 양쪽 통합 결과 이미지로 전환한다. */
-.cw-question.has-v2-scene .cw-choice-stage { display: block; }
-.cw-v2-scene { position: relative; overflow: hidden; isolation: isolate; }
-.cw-v2-scene-choice,
-.cw-v2-scene-outcomes { display: block; width: 100%; height: auto; }
-.cw-v2-scene-choice {
-    position: relative;
-    z-index: 1;
-    opacity: 1;
-    transition: opacity .24s ease, transform .42s cubic-bezier(.2,.72,.2,1);
-}
-.cw-v2-scene-outcomes {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    opacity: 0;
-    transition: opacity .24s ease, transform .58s cubic-bezier(.2,.72,.2,1);
-}
-.cw-v2-scene-fog {
-    position: absolute;
-    top: -3%;
-    bottom: -3%;
-    z-index: 3;
-    width: 58%;
-    opacity: 0;
-    pointer-events: none;
-    -webkit-backdrop-filter: blur(9px) saturate(.45) brightness(.62);
-    backdrop-filter: blur(9px) saturate(.45) brightness(.62);
-    transition: opacity .32s ease;
-}
-.cw-v2-scene-fog-left {
-    left: -2%;
-    background:
-        linear-gradient(90deg, rgba(12,11,12,.96), rgba(18,16,18,.84) 72%, transparent),
-        repeating-linear-gradient(92deg, rgba(255,255,255,.025) 0 2px, rgba(0,0,0,.025) 2px 14px);
-}
-.cw-v2-scene-fog-right {
-    right: -2%;
-    background:
-        linear-gradient(270deg, rgba(12,11,12,.96), rgba(18,16,18,.84) 72%, transparent),
-        repeating-linear-gradient(88deg, rgba(255,255,255,.025) 0 2px, rgba(0,0,0,.025) 2px 14px);
-}
-.cw-choice-stage.is-committed .cw-v2-scene-choice { opacity: 0; transform: scale(1.03); }
-.cw-choice-stage.is-committed .cw-v2-scene-outcomes { opacity: 1; }
-.cw-choice-stage.outcome-left .cw-v2-scene-outcomes { transform: translateX(7%) scale(1.15); transform-origin: 25% 50%; }
-.cw-choice-stage.outcome-right .cw-v2-scene-outcomes { transform: translateX(-7%) scale(1.15); transform-origin: 75% 50%; }
-.cw-choice-stage.outcome-left .cw-v2-scene-fog-right,
-.cw-choice-stage.outcome-right .cw-v2-scene-fog-left { opacity: 1; }
-.cw-question.has-v2-scene.leaving::after { display: none; }
-.cw-question.has-v2-scene.leaving .cw-question-illustration { animation: none; }
-.cw-question.has-v2-scene.leaving { animation: cw-layered-moment-leave .92s cubic-bezier(.55,0,.2,1) both; }
-
-@media (max-width: 560px) {
-    .cw-v2-scene-fog { width: 62%; }
-    .cw-choice-stage.outcome-left .cw-v2-scene-outcomes { transform: translateX(6%) scale(1.13); }
-    .cw-choice-stage.outcome-right .cw-v2-scene-outcomes { transform: translateX(-6%) scale(1.13); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .cw-v2-scene-choice,
-    .cw-v2-scene-outcomes,
-    .cw-v2-scene-fog { transition-duration: .12s; }
-    .cw-choice-stage.outcome-left .cw-v2-scene-outcomes,
-    .cw-choice-stage.outcome-right .cw-v2-scene-outcomes { transform: none; }
-    .cw-question.has-v2-scene.leaving { animation: none; }
-}
-.cw-exam-scene-shade {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    z-index: 2;
-    width: 58%;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity .42s ease;
-}
-.cw-exam-scene-shade-left {
-    left: 0;
-    background: linear-gradient(90deg, rgba(17,15,14,.62) 0%, rgba(17,15,14,.48) 70%, transparent 100%);
-}
-.cw-exam-scene-shade-right {
-    right: 0;
-    background: linear-gradient(270deg, rgba(17,15,14,.62) 0%, rgba(17,15,14,.48) 70%, transparent 100%);
-}
-.cw-choice-stage.committed-left .cw-exam-scene-avatar { left: 28%; transform: translateX(-50%) scale(1.025); }
-.cw-choice-stage.committed-right .cw-exam-scene-avatar { left: 72%; transform: translateX(-50%) scale(1.025); }
-.cw-choice-stage.committed-left .cw-exam-scene-shade-right,
-.cw-choice-stage.committed-right .cw-exam-scene-shade-left { opacity: 1; }
-.cw-question.has-exam-scene.leaving { animation: cw-layered-moment-leave .92s cubic-bezier(.55,0,.2,1) both; }
-
-@media (max-width: 560px) {
-    .cw-exam-scene-avatar { bottom: -7%; width: 27%; }
-    .cw-choice-stage.committed-left .cw-exam-scene-avatar { left: 27%; }
-    .cw-choice-stage.committed-right .cw-exam-scene-avatar { left: 73%; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .cw-exam-scene-avatar,
-    .cw-exam-scene-shade { transition-duration: .12s; }
-    .cw-question.has-exam-scene.leaving { animation: none; }
 }

@@ -10,7 +10,7 @@
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260711-half-avatar1">
+    <link rel="stylesheet" href="crewart.css?v=20260711-focus-v3">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -468,56 +468,26 @@
         };
 
         const QUESTION_FOCUS_SCENES = {
-            C01: { neutral: 'question-c01-neutral-half-v1.webp', left: 'question-c01-left-half-v1.webp', right: 'question-c01-right-half-v1.webp', avatar: true },
-            C02: { neutral: 'question-c02-neutral-half-v1.webp', left: 'question-c02-left-half-v1.webp', right: 'question-c02-right-half-v1.webp', avatar: true },
-            C03: { neutral: 'question-c03-neutral-half-v1.webp', left: 'question-c03-left-half-v1.webp', right: 'question-c03-right-half-v1.webp', avatar: true },
-            C04: { neutral: 'question-c04-neutral-half-v1.webp', left: 'question-c04-left-half-v1.webp', right: 'question-c04-right-half-v1.webp', avatar: true },
+            C01: { neutral: 'question-c01-neutral-half-v1.webp', left: 'question-c01-left-half-v1.webp', right: 'question-c01-right-half-v1.webp' },
+            C02: { neutral: 'question-c02-neutral-half-v1.webp', left: 'question-c02-left-half-v1.webp', right: 'question-c02-right-half-v1.webp' },
+            C03: { neutral: 'question-c03-neutral-half-v1.webp', left: 'question-c03-left-half-v1.webp', right: 'question-c03-right-half-v1.webp' },
+            C04: { neutral: 'question-c04-neutral-half-v1.webp', left: 'question-c04-left-half-v1.webp', right: 'question-c04-right-half-v1.webp' },
+            C05: { neutral: 'question-c05-neutral-v3.webp', left: 'question-c05-left-v3.webp', right: 'question-c05-right-v3.webp' },
+            C06: { neutral: 'question-c06-neutral-v3.webp', left: 'question-c06-left-v3.webp', right: 'question-c06-right-v3.webp' },
+            C07: { neutral: 'question-c07-neutral-v3.webp', left: 'question-c07-left-v3.webp', right: 'question-c07-right-v3.webp' },
             C08: {
                 neutral: 'question-c08-neutral-v3.webp',
                 left: 'question-c08-left-centered-v4.webp',
                 right: 'question-c08-right-centered-v4.webp'
-            }
-        };
-
-        const QUESTION_EXAM_SCENES = {
-            C05: {
-                background: 'question-c05-background-v1.webp',
-                avatar: 'avatar-exam-male-v1.png'
-            }
-        };
-
-        const QUESTION_V2_SCENES = {
-            C01: {
-                choice: 'question-c01-choice-v2.webp',
-                outcomes: 'question-c01-outcomes-v2.webp',
-                outcomeByLetter: { E: 'left', I: 'right' }
-            }
+            },
+            C09: { neutral: 'question-c09-neutral-v3.webp', left: 'question-c09-left-v3.webp', right: 'question-c09-right-v3.webp' },
+            C10: { neutral: 'question-c10-neutral-v3.webp', left: 'question-c10-left-v3.webp', right: 'question-c10-right-v3.webp' },
+            C11: { neutral: 'question-c11-neutral-v3.webp', left: 'question-c11-left-v3.webp', right: 'question-c11-right-v3.webp' },
+            C12: { neutral: 'question-c12-neutral-v3.webp', left: 'question-c12-left-v3.webp', right: 'question-c12-right-v3.webp' }
         };
 
         function questionIllustration(question) {
             const [filename, alt] = QUESTION_ILLUSTRATIONS[question.id] || QUESTION_ILLUSTRATIONS.C01;
-            const v2Scene = QUESTION_V2_SCENES[question.id];
-            if (v2Scene) {
-                const scenePath = 'assets/crewart-illustrations/';
-                return `
-                    <figure class="cw-question-illustration cw-v2-scene" data-v2-scene="${escapeHtml(question.id)}">
-                        <img class="cw-v2-scene-choice" src="${scenePath}${v2Scene.choice}" alt="${escapeHtml(alt)}" width="1536" height="1024" decoding="async">
-                        <img class="cw-v2-scene-outcomes" src="${scenePath}${v2Scene.outcomes}" alt="" width="1536" height="1024" decoding="async" aria-hidden="true">
-                        <span class="cw-v2-scene-fog cw-v2-scene-fog-left" aria-hidden="true"></span>
-                        <span class="cw-v2-scene-fog cw-v2-scene-fog-right" aria-hidden="true"></span>
-                    </figure>`;
-            }
-            const examScene = QUESTION_EXAM_SCENES[question.id];
-            if (examScene) {
-                const scenePath = 'assets/crewart-illustrations/';
-                return `
-                    <figure class="cw-question-illustration cw-exam-scene" data-exam-scene="${escapeHtml(question.id)}">
-                        <img class="cw-exam-scene-background" src="${scenePath}${examScene.background}" alt="${escapeHtml(alt)}" width="1536" height="1024" decoding="async">
-                        <span class="cw-exam-scene-shade cw-exam-scene-shade-left" aria-hidden="true"></span>
-                        <span class="cw-exam-scene-shade cw-exam-scene-shade-right" aria-hidden="true"></span>
-                        <img class="cw-exam-scene-avatar" src="${scenePath}${examScene.avatar}" alt="" width="1024" height="1024" decoding="async" aria-hidden="true">
-                    </figure>`;
-            }
             const focusScene = QUESTION_FOCUS_SCENES[question.id];
             if (focusScene) {
                 const scenePath = 'assets/crewart-illustrations/';
@@ -529,7 +499,6 @@
                         <img class="cw-focus-scene-image cw-focus-scene-neutral" src="${scenePath}${focusScene.neutral}" alt="${escapeHtml(alt)}" width="1536" height="1024" decoding="async">
                         <img class="cw-focus-scene-image cw-focus-scene-left" src="${scenePath}${leftScene}" alt="" width="1536" height="1024" decoding="async" aria-hidden="true">
                         <img class="cw-focus-scene-image cw-focus-scene-right" src="${scenePath}${rightScene}" alt="" width="1536" height="1024" decoding="async" aria-hidden="true">
-                        ${focusScene.avatar ? `<img class="cw-focus-avatar" src="${scenePath}blank-half-neutral-v1.webp" alt="" width="1240" height="1240" decoding="async" aria-hidden="true">` : ''}
                     </figure>`;
             }
             const layeredScene = QUESTION_LAYERED_SCENES[question.id];
@@ -578,7 +547,7 @@
             pendingAdvance = false;
             const wrap = document.getElementById('questions');
             wrap.innerHTML = QUESTIONS.map((question, index) => `
-                <article class="cw-question ${QUESTION_V2_SCENES[question.id] ? 'has-v2-scene ' : QUESTION_EXAM_SCENES[question.id] ? 'has-exam-scene ' : QUESTION_FOCUS_SCENES[question.id] ? 'has-focus-scene ' : QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
+                <article class="cw-question ${QUESTION_FOCUS_SCENES[question.id] ? 'has-focus-scene ' : QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active' : ''}" data-question-id="${escapeHtml(question.id)}">
                     <header class="cw-question-head">
                         <div class="cw-question-label">${escapeHtml(question.label)}</div>
                         <h2>${formatText(question.q)}</h2>
@@ -650,11 +619,9 @@
             const activeQuestion = document.querySelector('.cw-question.active');
             const momentShift = document.getElementById('moment-shift');
             const choiceStage = activeQuestion?.querySelector('.cw-choice-stage');
-            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene') || activeQuestion?.classList.contains('has-focus-scene') || activeQuestion?.classList.contains('has-exam-scene') || activeQuestion?.classList.contains('has-v2-scene');
-            const v2Scene = QUESTION_V2_SCENES[QUESTIONS[index].id];
-            const outcomeSide = v2Scene?.outcomeByLetter?.[QUESTIONS[index].scores[choiceIndex]] || (choiceIndex === 0 ? 'left' : 'right');
+            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene') || activeQuestion?.classList.contains('has-focus-scene');
             choiceStage?.classList.remove('choice-focused', 'focus-left', 'focus-right');
-            choiceStage?.classList.add('is-committed', choiceIndex === 0 ? 'committed-left' : 'committed-right', `outcome-${outcomeSide}`);
+            choiceStage?.classList.add('is-committed', choiceIndex === 0 ? 'committed-left' : 'committed-right');
             if (!usesLayeredScene) {
                 momentShift.hidden = false;
                 momentShift.className = `cw-moment-shift active ${choiceIndex === 0 ? 'toward-left' : 'toward-right'}`;
