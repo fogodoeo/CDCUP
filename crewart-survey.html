@@ -10,7 +10,7 @@
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260712-flow-v1">
+    <link rel="stylesheet" href="crewart.css?v=20260712-line-art-v1">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -471,19 +471,58 @@
             C12: { neutral: 'question-c12-neutral-v3.webp', left: 'question-c12-left-v3.webp', right: 'question-c12-right-v3.webp' }
         };
 
+        const CREWART_SURVEY_CONTENT_KEY = 'crewart_survey_content_v1';
+
+        function managedImageSource(value) {
+            const source = String(value || '').trim();
+            if (/^(?:https?:|data:|blob:)/i.test(source)) return source;
+            return `assets/crewart-illustrations/${source}`;
+        }
+
+        function applyManagedSurveyContent(raw) {
+            if (!raw) return;
+            try {
+                const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+                const items = Array.isArray(parsed) ? parsed : parsed?.questions;
+                if (!Array.isArray(items)) return;
+                items.forEach(item => {
+                    const id = String(item?.id || '').toUpperCase();
+                    const question = QUESTIONS.find(entry => entry.id === id);
+                    if (!question) return;
+                    if (String(item.q || '').trim()) question.q = String(item.q).trim();
+                    if (String(item.label || '').trim()) question.label = String(item.label).trim();
+                    if (Array.isArray(item.a) && item.a.length >= 2) {
+                        const left = String(item.a[0] || '').trim();
+                        const right = String(item.a[1] || '').trim();
+                        if (left && right) question.a = [left, right];
+                    }
+                    if (String(item.alt || '').trim() && QUESTION_ILLUSTRATIONS[id]) {
+                        QUESTION_ILLUSTRATIONS[id][1] = String(item.alt).trim();
+                    }
+                    const images = item.images || {};
+                    const scene = QUESTION_FOCUS_SCENES[id];
+                    if (!scene) return;
+                    ['neutral', 'left', 'right'].forEach(state => {
+                        if (String(images[state] || '').trim()) scene[state] = String(images[state]).trim();
+                    });
+                });
+            } catch (error) {
+                console.warn('[CREWART survey content]', error);
+            }
+        }
+
         function questionIllustration(question) {
             const [filename, alt] = QUESTION_ILLUSTRATIONS[question.id] || QUESTION_ILLUSTRATIONS.C01;
             const focusScene = QUESTION_FOCUS_SCENES[question.id];
             if (focusScene) {
-                const scenePath = 'assets/crewart-illustrations/';
                 const mirrorClass = question.visualFlipped ? ' is-mirrored' : '';
                 const leftScene = question.visualFlipped ? focusScene.right : focusScene.left;
                 const rightScene = question.visualFlipped ? focusScene.left : focusScene.right;
                 return `
                     <figure class="cw-question-illustration cw-focus-scene${mirrorClass}" data-focus-scene="${escapeHtml(question.id)}">
-                        <img class="cw-focus-scene-image cw-focus-scene-neutral" src="${scenePath}${focusScene.neutral}" alt="${escapeHtml(alt)}" width="1536" height="1024" decoding="async">
-                        <img class="cw-focus-scene-image cw-focus-scene-left" src="${scenePath}${leftScene}" alt="" width="1536" height="1024" decoding="async" aria-hidden="true">
-                        <img class="cw-focus-scene-image cw-focus-scene-right" src="${scenePath}${rightScene}" alt="" width="1536" height="1024" decoding="async" aria-hidden="true">
+                        <img class="cw-focus-scene-image cw-focus-scene-neutral" src="${escapeHtml(managedImageSource(focusScene.neutral))}" alt="${escapeHtml(alt)}" width="1024" height="683" decoding="async">
+                        <img class="cw-focus-scene-image cw-focus-scene-left" src="${escapeHtml(managedImageSource(leftScene))}" alt="" width="1024" height="683" decoding="async" aria-hidden="true">
+                        <img class="cw-focus-scene-image cw-focus-scene-right" src="${escapeHtml(managedImageSource(rightScene))}" alt="" width="1024" height="683" decoding="async" aria-hidden="true">
                     </figure>`;
             }
             const layeredScene = QUESTION_LAYERED_SCENES[question.id];
@@ -722,7 +761,7 @@
                     traitScores: window.crebtiResult
                         ? Object.entries(window.crebtiResult.letters).map(([letter, score]) => ({ letter, score }))
                         : [],
-                    questionVersion: 'content-v0.7',
+                    questionVersion: config.crewart_survey_content_updated_at || 'content-v0.7',
                     createdAt: new Date().toISOString()
                 };
                 await saveCrewartSurveyEntry(
@@ -745,6 +784,7 @@
         async function load() {
             try {
                 config = await getConfigMap() || {};
+                applyManagedSurveyContent(config[CREWART_SURVEY_CONTENT_KEY]);
                 applyAuctionEventModule({ ...config, active_event_module: 'crewart' });
                 houses = parseCrewartHouses(config.crewart_houses);
             } catch (error) {
