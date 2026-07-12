@@ -10,7 +10,7 @@
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260712-band-funnel-v1">
+    <link rel="stylesheet" href="crewart.css?v=20260713-mobile-response-v1">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -102,18 +102,11 @@
                 </div>
                 <figure class="cw-result-illustration"><img id="result-illustration" alt=""></figure>
             </div>
-            <aside class="cw-band-bridge" aria-labelledby="band-bridge-title">
-                <div class="cw-band-bridge-copy">
-                    <span>CREWART AUCTION BAND</span>
-                    <h2 id="band-bridge-title">내 취향과 닮은 크레를<br>실제 경매에서 만나보세요</h2>
-                    <p>크레와트는 브리더와 입찰자가 만나는 크레스티드게코 경매 BAND입니다.</p>
-                </div>
-                <a class="cw-band-cta" href="https://www.band.us/band/101005857/post" target="_blank" rel="noopener noreferrer">
-                    <span><strong>내 취향 크레 경매 보러가기</strong><small>BAND에서 열립니다</small></span>
-                    <b aria-hidden="true">→</b>
-                </a>
-            </aside>
             <div class="cw-trait-breakdown" id="trait-breakdown"></div>
+            <a class="cw-band-result-link" href="https://www.band.us/band/101005857/post" target="_blank" rel="noopener noreferrer">
+                <span><small>크레스티드게코 경매 BAND</small><strong>크레와트 보러가기</strong></span>
+                <b aria-hidden="true">↗</b>
+            </a>
             <div class="cw-actions cw-result-actions">
                 <button class="cw-btn cw-kakao-share" type="button" onclick="shareKakaoResult()">카카오톡으로 결과 공유</button>
                 <button class="cw-btn primary" id="save-result-button" type="button" onclick="submitSurvey()">결과 저장</button>
@@ -156,6 +149,7 @@
         let selectedMbti = '';
         let openingInProgress = false;
         let choiceUnlockTimer = null;
+        let choiceConfirmTimer = null;
         let participantAlias = '';
         let participantIdentity = '';
         let isSaving = false;
@@ -352,7 +346,12 @@
         }
 
         function formatText(value) {
-            return escapeHtml(value).replace(/\n/g, '<br>');
+            return String(value || '').split('\n').map(line => {
+                const escaped = escapeHtml(line);
+                const match = escaped.match(/^(.*?)(\S+)\s+(\S+)$/);
+                if (!match || `${match[2]}${match[3]}`.length > 12) return escaped;
+                return `${match[1]}<span class="cw-no-orphan">${match[2]} ${match[3]}</span>`;
+            }).join('<br>');
         }
 
         function toast(message, isError) {
@@ -606,6 +605,7 @@
         function renderQuestions() {
             pendingAdvance = false;
             if (choiceUnlockTimer) clearTimeout(choiceUnlockTimer);
+            if (choiceConfirmTimer) clearTimeout(choiceConfirmTimer);
             const wrap = document.getElementById('questions');
             wrap.innerHTML = QUESTIONS.map((question, index) => `
                 <article class="cw-question ${QUESTION_FOCUS_SCENES[question.id] ? 'has-focus-scene ' : QUESTION_LAYERED_SCENES[question.id] ? 'has-layered-scene ' : ''}${index === current ? 'active is-reading' : ''}" data-question-id="${escapeHtml(question.id)}">
@@ -619,10 +619,9 @@
                         <div class="cw-choice-grid">
                             ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice cw-choice-${choiceIndex === 0 ? 'left' : 'right'} ${answers[index] === choiceIndex ? 'selected' : ''}" aria-describedby="choice-guide-${index}" aria-pressed="${answers[index] === choiceIndex}" onpointerenter="setChoiceFocus(this, true, event)" onpointerleave="setChoiceFocus(this, false, event)" onpointerdown="setChoiceFocus(this, true, event)" onpointercancel="setChoiceFocus(this, false, event)" onfocus="setChoiceFocus(this, true, event)" onblur="setChoiceFocus(this, false, event)" onclick="chooseAnswer(${index}, ${choiceIndex})" disabled><span class="cw-choice-number">${choiceIndex === 0 ? 'A' : 'B'}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
                         </div>
-                        <div class="cw-choice-lock" role="status" aria-live="polite">
-                            <span aria-hidden="true">✓</span>
-                            <strong>선택 완료</strong>
-                            <small>선택한 장면을 잠그고 있어요</small>
+                        <div class="cw-choice-confirm">
+                            <span class="cw-choice-confirm-status" role="status" aria-live="polite"><i aria-hidden="true">✓</i><strong>선택 후 내용을 확인하세요</strong></span>
+                            <button class="cw-choice-next" type="button" onclick="advanceAnswer(${index})" disabled>다음 질문</button>
                         </div>
                         <div class="cw-transition-orbit" aria-hidden="true"><i></i><i></i></div>
                     </div>
@@ -685,15 +684,9 @@
             answers[index] = choiceIndex;
             pendingAdvance = true;
             const activeQuestion = document.querySelector('.cw-question.active');
-            const momentShift = document.getElementById('moment-shift');
             const choiceStage = activeQuestion?.querySelector('.cw-choice-stage');
-            const usesLayeredScene = activeQuestion?.classList.contains('has-layered-scene') || activeQuestion?.classList.contains('has-focus-scene');
             choiceStage?.classList.remove('choice-focused', 'focus-left', 'focus-right');
-            choiceStage?.classList.add('is-committed', choiceIndex === 0 ? 'committed-left' : 'committed-right');
-            if (!usesLayeredScene) {
-                momentShift.hidden = false;
-                momentShift.className = `cw-moment-shift active ${choiceIndex === 0 ? 'toward-left' : 'toward-right'}`;
-            }
+            choiceStage?.classList.add('is-committed', 'is-locked', choiceIndex === 0 ? 'committed-left' : 'committed-right');
             const choices = activeQuestion?.querySelectorAll('.cw-choice') || [];
             choices.forEach((choice, buttonIndex) => {
                 choice.disabled = true;
@@ -701,17 +694,27 @@
                 choice.setAttribute('aria-pressed', String(buttonIndex === choiceIndex));
             });
             const activeGuide = activeQuestion?.querySelector('.cw-question-guide');
-            if (activeGuide) activeGuide.textContent = `${choiceIndex === 0 ? 'A' : 'B'}를 선택했습니다`;
+            const confirmation = activeQuestion?.querySelector('.cw-choice-confirm-status strong');
+            const nextButton = activeQuestion?.querySelector('.cw-choice-next');
+            const selectedLabel = choiceIndex === 0 ? 'A' : 'B';
+            if (activeGuide) activeGuide.textContent = `${selectedLabel}를 선택했습니다. 장면을 확인한 뒤 넘어가세요`;
+            if (confirmation) confirmation.textContent = `${selectedLabel} 선택 완료`;
+            if (nextButton) nextButton.textContent = index === QUESTIONS.length - 1 ? '마지막 선택 확인' : '다음 질문';
             const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            const lockDelay = reducedMotion ? 0 : 320;
-            const leaveDelay = reducedMotion ? 100 : 1220;
-            const advanceDelay = reducedMotion ? 180 : 2180;
-            setTimeout(() => {
-                choiceStage?.classList.add('is-locked');
-            }, lockDelay);
-            setTimeout(() => {
-                activeQuestion?.classList.add('leaving', choiceIndex === 0 ? 'toward-left' : 'toward-right');
-            }, leaveDelay);
+            choiceConfirmTimer = setTimeout(() => {
+                choiceStage?.classList.add('is-confirmed');
+                if (nextButton) nextButton.disabled = false;
+            }, reducedMotion ? 0 : 420);
+        }
+
+        function advanceAnswer(index) {
+            if (index !== current || answers[index] === undefined) return;
+            const activeQuestion = document.querySelector('.cw-question.active');
+            const nextButton = activeQuestion?.querySelector('.cw-choice-next');
+            if (!nextButton || nextButton.disabled) return;
+            nextButton.disabled = true;
+            activeQuestion.classList.add('is-advancing');
+            const advanceDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 160;
             setTimeout(() => {
                 if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                 if (current < QUESTIONS.length - 1) {
@@ -720,8 +723,6 @@
                 } else {
                     finishSurvey();
                 }
-                momentShift.hidden = true;
-                momentShift.className = 'cw-moment-shift';
             }, advanceDelay);
         }
 
