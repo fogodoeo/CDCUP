@@ -4,31 +4,26 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>열두 번의 선택</title>
+    <title>나의 크레 취향 기숙사는? | 크레와트</title>
     <script src="supabase-bridge.js?v=20260712-crewart-entry-v1"></script>
     <script src="event-modules.js?v=20260712-phone-match-v1"></script>
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260712-line-art-v1">
+    <link rel="stylesheet" href="crewart.css?v=20260712-band-funnel-v1">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
 
     <main class="cw-shell cw-survey-shell">
-        <header class="cw-page-head">
-            <div>
-                <div class="cw-kicker">12 MOMENTS · ONE HIDDEN PATTERN</div>
-                <h1>열두 번의 선택</h1>
-                <p>크레스티드게코와 함께 마주치는 12가지 순간에서, 평소에는 몰랐던 나의 기준을 발견합니다.</p>
-            </div>
-        </header>
-
         <section class="cw-panel cw-exam-intro" id="intro-panel">
-            <div class="cw-intro-emblem" aria-hidden="true"><span>W</span></div>
-            <div class="cw-kicker">A RECORD OF YOUR CHOICES</div>
-            <h2>크레 앞에서 드러나는<br>나를 만나보세요</h2>
-            <p class="cw-intro-copy">입찰, 성장, 사육, 기록의 순간마다 고민하지 않고 더 자연스럽게 끌리는 쪽을 고르면 됩니다.</p>
+            <div class="cw-intro-brand" aria-label="크레스티드게코 경매 밴드 크레와트">
+                <span class="cw-intro-emblem" aria-hidden="true">W</span>
+                <span><strong>크레와트</strong><small>크레스티드게코 경매 BAND</small></span>
+            </div>
+            <div class="cw-kicker">CREWART AUCTION BAND PRESENTS</div>
+            <h2>나의 크레 취향<br>기숙사는?</h2>
+            <p class="cw-intro-copy">경매와 사육의 12가지 순간에서, 고민하지 않고 더 자연스럽게 끌리는 쪽을 골라보세요.</p>
             <div class="cw-exam-facts" aria-label="선택 여정 안내">
                 <span><b>12</b> 순간</span>
                 <span><b>약 2분</b> 소요</span>
@@ -70,9 +65,8 @@
                 <div class="cw-progress-track"><i id="progress-bar"></i></div>
             </div>
             <div id="questions"></div>
-            <div class="cw-actions" style="justify-content:space-between;margin-top:14px;">
+            <div class="cw-actions cw-question-actions">
                 <button class="cw-btn" type="button" onclick="prevQuestion()">이전 선택</button>
-                <span class="cw-note">고르면 다음 순간이 바로 이어집니다.</span>
             </div>
         </section>
 
@@ -108,12 +102,22 @@
                 </div>
                 <figure class="cw-result-illustration"><img id="result-illustration" alt=""></figure>
             </div>
+            <aside class="cw-band-bridge" aria-labelledby="band-bridge-title">
+                <div class="cw-band-bridge-copy">
+                    <span>CREWART AUCTION BAND</span>
+                    <h2 id="band-bridge-title">내 취향과 닮은 크레를<br>실제 경매에서 만나보세요</h2>
+                    <p>크레와트는 브리더와 입찰자가 만나는 크레스티드게코 경매 BAND입니다.</p>
+                </div>
+                <a class="cw-band-cta" href="https://www.band.us/band/101005857/post" target="_blank" rel="noopener noreferrer">
+                    <span><strong>내 취향 크레 경매 보러가기</strong><small>BAND에서 열립니다</small></span>
+                    <b aria-hidden="true">→</b>
+                </a>
+            </aside>
             <div class="cw-trait-breakdown" id="trait-breakdown"></div>
             <div class="cw-actions cw-result-actions">
-                <button class="cw-btn" type="button" onclick="rewindChoices()">다시 선택하기</button>
-                <button class="cw-btn cw-kakao-share" type="button" onclick="shareKakaoResult()">카카오톡 공유</button>
-                <a class="cw-btn" href="https://www.band.us/band/101005857/post" target="_blank" rel="noopener noreferrer">BAND에서 이야기하기</a>
+                <button class="cw-btn cw-kakao-share" type="button" onclick="shareKakaoResult()">카카오톡으로 결과 공유</button>
                 <button class="cw-btn primary" id="save-result-button" type="button" onclick="submitSurvey()">결과 저장</button>
+                <button class="cw-btn" type="button" onclick="rewindChoices()">다시 선택하기</button>
             </div>
         </section>
     </main>
@@ -155,6 +159,8 @@
         let participantAlias = '';
         let participantIdentity = '';
         let isSaving = false;
+        const CREWART_SURVEY_URL = 'https://cdcup.onrender.com/crewart-survey.html';
+        const CREWART_BAND_URL = 'https://www.band.us/band/101005857/post';
 
         const QUESTIONS = [
           {
@@ -606,12 +612,17 @@
                     <header class="cw-question-head">
                         <div class="cw-question-label">${escapeHtml(question.label)}</div>
                         <h2>${formatText(question.q)}</h2>
-                        <p class="cw-question-guide" id="choice-guide-${index}" aria-live="polite">질문과 선택지를 읽는 중...</p>
+                        <p class="cw-question-guide" id="choice-guide-${index}" aria-live="polite">잠시 후 선택할 수 있어요</p>
                     </header>
                     <div class="cw-choice-stage">
                         ${questionIllustration(question)}
                         <div class="cw-choice-grid">
                             ${question.a.map((label, choiceIndex) => `<button type="button" class="cw-choice cw-choice-${choiceIndex === 0 ? 'left' : 'right'} ${answers[index] === choiceIndex ? 'selected' : ''}" aria-describedby="choice-guide-${index}" aria-pressed="${answers[index] === choiceIndex}" onpointerenter="setChoiceFocus(this, true, event)" onpointerleave="setChoiceFocus(this, false, event)" onpointerdown="setChoiceFocus(this, true, event)" onpointercancel="setChoiceFocus(this, false, event)" onfocus="setChoiceFocus(this, true, event)" onblur="setChoiceFocus(this, false, event)" onclick="chooseAnswer(${index}, ${choiceIndex})" disabled><span class="cw-choice-number">${choiceIndex === 0 ? 'A' : 'B'}</span><span class="cw-choice-copy">${formatText(label)}</span></button>`).join('')}
+                        </div>
+                        <div class="cw-choice-lock" role="status" aria-live="polite">
+                            <span aria-hidden="true">✓</span>
+                            <strong>선택 완료</strong>
+                            <small>선택한 장면을 잠그고 있어요</small>
                         </div>
                         <div class="cw-transition-orbit" aria-hidden="true"><i></i><i></i></div>
                     </div>
@@ -623,7 +634,7 @@
                 debugStage?.classList.add('choice-focused', `focus-${debugFocus}`);
                 debugStage?.querySelector(`.cw-choice-${debugFocus}`)?.classList.add('is-focused');
             }
-            document.getElementById('progress').textContent = `순간 ${current + 1} / ${QUESTIONS.length}`;
+            document.getElementById('progress').textContent = `${current + 1} / ${QUESTIONS.length}`;
             document.getElementById('progress-bar').style.width = `${((current + 1) / QUESTIONS.length) * 100}%`;
             if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
             questionShownAt = performance.now();
@@ -632,7 +643,7 @@
             choiceUnlockTimer = setTimeout(() => {
                 activeQuestion?.classList.remove('is-reading');
                 activeQuestion?.querySelectorAll('.cw-choice').forEach(choice => { choice.disabled = false; });
-                if (activeGuide) activeGuide.textContent = '오래 고민하지 말고, 평소의 나와 가까운 쪽을 고르세요.';
+                if (activeGuide) activeGuide.textContent = '둘 중 하나를 선택하세요';
             }, requiredReadTime(QUESTIONS[current]));
         }
 
@@ -683,13 +694,24 @@
                 momentShift.hidden = false;
                 momentShift.className = `cw-moment-shift active ${choiceIndex === 0 ? 'toward-left' : 'toward-right'}`;
             }
-            activeQuestion?.classList.add('leaving', choiceIndex === 0 ? 'toward-left' : 'toward-right');
             const choices = activeQuestion?.querySelectorAll('.cw-choice') || [];
             choices.forEach((choice, buttonIndex) => {
                 choice.disabled = true;
                 choice.classList.toggle('selected', buttonIndex === choiceIndex);
                 choice.setAttribute('aria-pressed', String(buttonIndex === choiceIndex));
             });
+            const activeGuide = activeQuestion?.querySelector('.cw-question-guide');
+            if (activeGuide) activeGuide.textContent = `${choiceIndex === 0 ? 'A' : 'B'}를 선택했습니다`;
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const lockDelay = reducedMotion ? 0 : 320;
+            const leaveDelay = reducedMotion ? 100 : 1220;
+            const advanceDelay = reducedMotion ? 180 : 2180;
+            setTimeout(() => {
+                choiceStage?.classList.add('is-locked');
+            }, lockDelay);
+            setTimeout(() => {
+                activeQuestion?.classList.add('leaving', choiceIndex === 0 ? 'toward-left' : 'toward-right');
+            }, leaveDelay);
             setTimeout(() => {
                 if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
                 if (current < QUESTIONS.length - 1) {
@@ -700,7 +722,7 @@
                 }
                 momentShift.hidden = true;
                 momentShift.className = 'cw-moment-shift';
-            }, usesLayeredScene ? 920 : 720);
+            }, advanceDelay);
         }
 
         function prevQuestion() {
@@ -1065,12 +1087,11 @@
         }
 
         async function copySurveyLink() {
-            const shareUrl = 'https://cdcup.onrender.com/crewart-survey.html';
             try {
-                await navigator.clipboard.writeText(shareUrl);
+                await navigator.clipboard.writeText(CREWART_SURVEY_URL);
                 toast('테스트 링크를 복사했습니다.');
             } catch (error) {
-                window.prompt('아래 링크를 복사해주세요.', shareUrl);
+                window.prompt('아래 링크를 복사해주세요.', CREWART_SURVEY_URL);
             }
         }
 
@@ -1082,7 +1103,6 @@
                 return;
             }
 
-            const shareUrl = 'https://cdcup.onrender.com/crewart-survey.html';
             try {
                 if (!window.Kakao.isInitialized()) window.Kakao.init('db7ffc8d6b9b7601b792ed69be4658fc');
                 if (!window.Kakao.Share) throw new Error('Kakao.Share is unavailable after initialization');
@@ -1092,17 +1112,23 @@
                 await window.Kakao.Share.sendDefault({
                     objectType: 'feed',
                     content: {
-                        title: result ? `${house.name} · ${result.type.name}` : '열두 번의 선택',
+                        title: result ? `[크레와트] 나는 ${house.name} · ${result.type.name}` : '[크레와트] 나의 크레 취향 기숙사는?',
                         description: result
-                            ? result.type.shareLine
-                            : '크레 앞에서 드러나는 나의 선택 기준과 기숙사를 확인해보세요.',
+                            ? `${result.type.shareLine}\n크레스티드게코 경매 BAND 크레와트에서 만든 취향 테스트`
+                            : '12번의 선택으로 알아보는 크레 취향 테스트 · 크레스티드게코 경매 BAND 크레와트 제작',
                         imageUrl: `https://cdcup.onrender.com/assets/crewart-illustrations/${resultImage}`,
-                        link: { mobileWebUrl: shareUrl, webUrl: shareUrl }
+                        link: { mobileWebUrl: CREWART_SURVEY_URL, webUrl: CREWART_SURVEY_URL }
                     },
-                    buttons: [{
-                        title: '나도 기숙사 배정받기',
-                        link: { mobileWebUrl: shareUrl, webUrl: shareUrl }
-                    }]
+                    buttons: [
+                        {
+                            title: '나도 테스트하기',
+                            link: { mobileWebUrl: CREWART_SURVEY_URL, webUrl: CREWART_SURVEY_URL }
+                        },
+                        {
+                            title: '크레와트 경매 보기',
+                            link: { mobileWebUrl: CREWART_BAND_URL, webUrl: CREWART_BAND_URL }
+                        }
+                    ]
                 });
             } catch (error) {
                 console.error('[CREBTI Kakao Share]', error);
