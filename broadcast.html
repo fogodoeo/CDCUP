@@ -2885,6 +2885,7 @@
             grid-template-columns: minmax(0, 1fr) auto;
             gap: calc(var(--blind-total-fs) * 0.3);
             align-items: center;
+            background: rgba(8, 13, 24, 0.94);
         }
         .blind-total-row[data-rank="2"] {
             --rank-text-opacity: 0.78;
@@ -2938,30 +2939,36 @@
             text-overflow: ellipsis;
         }
         .bidders-row .blind-total-main {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: calc(var(--blind-total-fs) * 0.08);
+            flex-direction: row;
+            align-items: baseline;
+            gap: calc(var(--blind-total-fs) * 0.28);
             overflow: visible;
+            white-space: nowrap;
         }
         .bidders-row .blind-total-team {
-            width: 100%;
-            line-height: 1.08;
-            white-space: normal;
+            width: auto;
+            flex: 0 1 auto;
+            font-size: calc(var(--blind-total-fs) * 0.8);
+            line-height: 1;
+            white-space: nowrap;
             overflow: visible;
             text-overflow: clip;
-            overflow-wrap: anywhere;
-            word-break: keep-all;
+            overflow-wrap: normal;
+            word-break: normal;
         }
         .blind-bidder-region {
-            display: block;
-            max-width: 100%;
-            color: #94a3b8;
-            font-size: calc(var(--blind-total-fs) * 0.56);
-            font-weight: 760;
-            line-height: 1.15;
-            white-space: normal;
-            overflow-wrap: anywhere;
-            word-break: keep-all;
+            display: inline-block;
+            flex: 0 0 auto;
+            color: #67e8f9;
+            font-size: calc(var(--blind-total-fs) * 0.8);
+            font-weight: 950;
+            line-height: 1;
+            white-space: nowrap;
+            text-shadow: 0 1px 8px rgba(34, 211, 238, 0.42);
+        }
+        .bidders-row .blind-total-amount {
+            font-size: calc(var(--blind-total-fs) * 0.8);
+            line-height: 1;
         }
         .blind-total-progress {
             min-width: 0;
@@ -3403,6 +3410,19 @@
         @keyframes sold-ring-expand { from { opacity: 0; transform: scale(.52); } to { opacity: 1; transform: scale(1); } }
 
         @media (max-width: 760px) {
+            .blind-total-row.bidders-row {
+                gap: clamp(6px, 1.5vw, 8px);
+                padding-left: clamp(6px, 2vw, 10px);
+                padding-right: clamp(6px, 2vw, 10px);
+            }
+            .bidders-row .blind-total-main {
+                gap: clamp(4px, 1.2vw, 6px);
+            }
+            .bidders-row .blind-total-team,
+            .bidders-row .blind-bidder-region,
+            .bidders-row .blind-total-amount {
+                font-size: clamp(11px, 3.6vw, 14px);
+            }
             .auction-motion-overlay.is-sold .auction-sold-content {
                 grid-template-columns: 1fr 2.4fr 1fr;
                 gap: 10px;
