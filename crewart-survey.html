@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>나의 크레 취향 기숙사는? | 크레와트</title>
-    <script src="supabase-bridge.js?v=20260712-crewart-entry-v1"></script>
+    <script src="supabase-bridge.js?v=20260713-event-isolation-v1"></script>
     <script src="event-modules.js?v=20260712-phone-match-v1"></script>
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260713-mobile-response-v1">
+    <link rel="stylesheet" href="crewart.css?v=20260713-choice-review-v1">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -621,7 +621,8 @@
                         </div>
                         <div class="cw-choice-confirm">
                             <span class="cw-choice-confirm-status" role="status" aria-live="polite"><i aria-hidden="true">✓</i><strong>선택 후 내용을 확인하세요</strong></span>
-                            <button class="cw-choice-next" type="button" onclick="advanceAnswer(${index})" disabled>다음 질문</button>
+                            <button class="cw-choice-next" type="button" onclick="advanceAnswer(${index})" disabled>선택 대기</button>
+                            <span class="cw-choice-auto-track" aria-hidden="true"><i></i></span>
                         </div>
                         <div class="cw-transition-orbit" aria-hidden="true"><i></i><i></i></div>
                     </div>
@@ -682,14 +683,14 @@
             const remaining = requiredReadTime(QUESTIONS[index]) - (performance.now() - questionShownAt);
             if (remaining > 0) return;
             answers[index] = choiceIndex;
-            pendingAdvance = true;
             const activeQuestion = document.querySelector('.cw-question.active');
             const choiceStage = activeQuestion?.querySelector('.cw-choice-stage');
             choiceStage?.classList.remove('choice-focused', 'focus-left', 'focus-right');
+            choiceStage?.classList.remove('committed-left', 'committed-right', 'is-confirmed');
             choiceStage?.classList.add('is-committed', 'is-locked', choiceIndex === 0 ? 'committed-left' : 'committed-right');
             const choices = activeQuestion?.querySelectorAll('.cw-choice') || [];
             choices.forEach((choice, buttonIndex) => {
-                choice.disabled = true;
+                choice.disabled = false;
                 choice.classList.toggle('selected', buttonIndex === choiceIndex);
                 choice.setAttribute('aria-pressed', String(buttonIndex === choiceIndex));
             });
@@ -697,21 +698,29 @@
             const confirmation = activeQuestion?.querySelector('.cw-choice-confirm-status strong');
             const nextButton = activeQuestion?.querySelector('.cw-choice-next');
             const selectedLabel = choiceIndex === 0 ? 'A' : 'B';
-            if (activeGuide) activeGuide.textContent = `${selectedLabel}를 선택했습니다. 장면을 확인한 뒤 넘어가세요`;
-            if (confirmation) confirmation.textContent = `${selectedLabel} 선택 완료`;
-            if (nextButton) nextButton.textContent = index === QUESTIONS.length - 1 ? '마지막 선택 확인' : '다음 질문';
+            if (activeGuide) activeGuide.textContent = `${selectedLabel} 선택 · 다른 답을 누르면 바로 바꿀 수 있어요`;
+            if (confirmation) confirmation.textContent = `${selectedLabel} 선택 · 잠시 후 자동 이동`;
+            if (nextButton) {
+                nextButton.textContent = index === QUESTIONS.length - 1 ? '결과 바로 보기' : '바로 다음';
+                nextButton.disabled = false;
+            }
             const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            const confirmDelay = reducedMotion ? 1200 : 2400;
+            if (choiceConfirmTimer) clearTimeout(choiceConfirmTimer);
             choiceConfirmTimer = setTimeout(() => {
-                choiceStage?.classList.add('is-confirmed');
-                if (nextButton) nextButton.disabled = false;
-            }, reducedMotion ? 0 : 420);
+                advanceAnswer(index);
+            }, confirmDelay);
+            requestAnimationFrame(() => choiceStage?.classList.add('is-confirmed'));
         }
 
         function advanceAnswer(index) {
-            if (index !== current || answers[index] === undefined) return;
+            if (pendingAdvance || index !== current || answers[index] === undefined) return;
             const activeQuestion = document.querySelector('.cw-question.active');
             const nextButton = activeQuestion?.querySelector('.cw-choice-next');
             if (!nextButton || nextButton.disabled) return;
+            pendingAdvance = true;
+            if (choiceConfirmTimer) clearTimeout(choiceConfirmTimer);
+            activeQuestion?.querySelectorAll('.cw-choice').forEach(choice => { choice.disabled = true; });
             nextButton.disabled = true;
             activeQuestion.classList.add('is-advancing');
             const advanceDelay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 160;

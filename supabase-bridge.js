@@ -1083,7 +1083,6 @@ async function saveCrewartSurveyEntry(participantKey, participantLine, response)
     const safeKey = String(participantKey || '').toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 48);
     if (!safeKey) throw new Error('참여자 식별값을 만들지 못했습니다.');
     await updateConfigs({
-        active_event_module: 'crewart',
         [`${CREWART_PARTICIPANT_ENTRY_PREFIX}${safeKey}`]: participantLine,
         [`${CREWART_RESPONSE_ENTRY_PREFIX}${safeKey}`]: JSON.stringify(response)
     });

@@ -25,7 +25,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260708-event-fallback"></script>
+    <script src="supabase-bridge.js?v=20260713-event-isolation-v1"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
@@ -3315,7 +3315,15 @@
 
         function getCleanCode(item) {
             if (!item) return '';
-            const metaCode = String(item.tournamentCode || getItemAuctionMeta(item).tournamentCode || '').trim().toUpperCase();
+            const meta = getItemAuctionMeta(item);
+            const metaCode = String(item.tournamentCode || meta.tournamentCode || '').trim().toUpperCase();
+            // 라운드가 바뀌면 같은 업체의 팀 문자가 달라질 수 있다.
+            // 저장된 과거 코드보다 현재 활성 대진표의 업체→팀 매핑을 우선한다.
+            const activeTeamLetter = meta.auctionType === AUCTION_TYPES.TOURNAMENT
+                ? getActiveBracketTeamLetter(item.company)
+                : '';
+            const storedRound = (metaCode.match(/(\d+)$/) || [])[1];
+            if (activeTeamLetter && storedRound) return activeTeamLetter + storedRound;
             if (/^[A-P][1-9]\d*$/.test(metaCode)) return metaCode;
             const numStr = String(item.num || '').trim().toUpperCase();
             if (numStr.match(/^[A-Z]\d+$/)) {
@@ -3360,6 +3368,15 @@
             // publicName은 팀 코드(A1/C2 등)를 제거한 이름이므로 우선 사용한다.
             const rawName = String(meta.publicName || item.displayName || item.name || '').trim();
             return rawName || String(meta.publicNumber || item.num || '').trim();
+        }
+
+        function getCurrentTournamentItemLabel(item) {
+            if (!item) return '';
+            const meta = getItemAuctionMeta(item);
+            if (meta.auctionType !== AUCTION_TYPES.TOURNAMENT) return auctionItemLabel(item);
+            const code = getCleanCode(item);
+            const name = getAuctionItemDisplayLabel(item);
+            return [code, name].filter(Boolean).join(' · ');
         }
 
         function findItemByCode(items, code) {
@@ -4433,7 +4450,7 @@
             document.getElementById("info-sub").textContent = item.auctionType === 'tournament' ? '' : auctionTypeLabel(item);
 
             // 호스트 카드 데이터 렌더링
-            document.getElementById("hc-name").textContent = auctionItemLabel(item, { includeTeam: true });
+            document.getElementById("hc-name").textContent = getCurrentTournamentItemLabel(item);
             const subParts = [];
             if (item.company) subParts.push(item.company);
             document.getElementById("hc-sub").textContent = subParts.join(' · ');
@@ -5057,10 +5074,10 @@
         }
 
         function getBlindPreferredScale(items, map) {
-            const configured = Number.parseInt(map?.blind_totals_stage || '', 10);
-            if ([16, 8, 4, 2].includes(configured)) return configured;
             const active = Number.parseInt(map?.active_tournament || '', 10);
             if ([16, 8, 4, 2].includes(active)) return active;
+            const configured = Number.parseInt(map?.blind_totals_stage || '', 10);
+            if ([16, 8, 4, 2].includes(configured)) return configured;
 
             const counts = {};
             (items || []).forEach(item => {
@@ -5075,22 +5092,24 @@
             const companyKey = normalizeBlindTeamKey(item.company);
             if (!companyKey) return '';
             const meta = getItemAuctionMeta(item);
-            const scale = Number(meta.tournamentStage) || Number(preferredScale) || 0;
-            if (scale && teamIndex.byScale?.[scale]?.[companyKey]) return teamIndex.byScale[scale][companyKey];
+            const currentScale = Number(preferredScale) || 0;
+            if (currentScale && teamIndex.byScale?.[currentScale]?.[companyKey]) return teamIndex.byScale[currentScale][companyKey];
+            const storedScale = Number(meta.tournamentStage) || 0;
+            if (storedScale && teamIndex.byScale?.[storedScale]?.[companyKey]) return teamIndex.byScale[storedScale][companyKey];
             return teamIndex.anyScale?.[companyKey] || '';
         }
 
         function resolveBlindTeamLetter(item, teamIndex, fallbackByCompany, preferredScale) {
             const meta = getItemAuctionMeta(item);
+            // 현재 라운드의 대진표 매핑이 있으면 과거 _team/_slot보다 우선한다.
+            const bracketTeam = getBracketTeamLetterForItem(item, teamIndex, preferredScale);
+            if (bracketTeam) return bracketTeam;
             const metaTeam = String(meta.teamCode || '').trim().toUpperCase();
             if (/^[A-Z]$/.test(metaTeam)) return metaTeam;
             const codeTeam = String(meta.tournamentCode || '').trim().toUpperCase().charAt(0);
             if (/^[A-Z]$/.test(codeTeam)) return codeTeam;
 
             const companyKey = normalizeBlindTeamKey(item.company);
-            const bracketTeam = getBracketTeamLetterForItem(item, teamIndex, preferredScale);
-            if (bracketTeam) return bracketTeam;
-
             if (!fallbackByCompany[companyKey]) {
                 fallbackByCompany[companyKey] = String.fromCharCode(65 + Object.keys(fallbackByCompany).length);
             }
@@ -5101,7 +5120,9 @@
             const teamIndex = makeBlindBracketTeamIndex(map || {});
             const preferredScale = getBlindPreferredScale(items, map || {});
             const fallbackByCompany = {};
-            const tournamentItems = (items || [])
+            // 현재 라운드 개체만 합산한다. 과거 라운드의 같은 팀 문자가 현재 팀에 합쳐지면 안 된다.
+            const scopedItems = preferredScale ? scopeTournamentItems(items, preferredScale) : (items || []);
+            const tournamentItems = scopedItems
                 .filter(item => {
                     const meta = getItemAuctionMeta(item);
                     return meta.auctionType === AUCTION_TYPES.TOURNAMENT
@@ -6226,6 +6247,10 @@
             }
             }
             if (renderId !== bracketFullRenderId) return;
+            const displayScale = getBracketViewRound(scale, map);
+            // 전체 대진 점수도 현재 표시 라운드 데이터만 사용한다.
+            // 결승 편성 전에는 과거 4강 낙찰액을 결승 점수로 재사용하지 않는다.
+            items = scopeTournamentItems(items, displayScale);
             tree.innerHTML = '';
             const activeAuctionItem = items.find(item => isAuctionActiveItem(item));
             const activeAuctionCode = getCleanCode(activeAuctionItem) || '';
@@ -6309,7 +6334,7 @@
             }
             
             // 실시간 대진과 동일한 기준으로 현재 표시 라운드를 결정한다.
-            const round = getBracketViewRound(scale, map);
+            const round = displayScale;
             const rMatchCount = round / 2;
             const roundTitle = round === 2 ? '결승' : `${round}강`;
             const board = document.createElement('section');

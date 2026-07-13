@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>방송 화면 제어 - CREO</title>
-    <script src="supabase-bridge.js?v=20260708-event-fallback"></script>
+    <script src="supabase-bridge.js?v=20260713-event-isolation-v1"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
@@ -322,7 +322,7 @@
                 <button onclick="switchPreview(2,this)">2P 개체용</button>
                 <button onclick="switchPreview(3,this)">3P 종합용</button>
             </div>
-            <div class="preview-wrap"><iframe id="preview-frame" src="broadcast.html?page=1&amp;v=20260708-hide-team-code"></iframe></div>
+            <div class="preview-wrap"><iframe id="preview-frame" src="broadcast.html?page=1&amp;v=20260713-round-code-map-v1"></iframe></div>
         </div>
 
         <!-- ══ 빠른 제어 ══ -->
@@ -478,7 +478,7 @@
             const p = ['1', '2', '3'].includes(String(page)) ? String(page) : '1';
             return moduleId === 'crewart'
                 ? `crewart-broadcast.html?page=${p}`
-                    : `broadcast.html?page=${p}&v=20260708-hide-team-code`;
+                    : `broadcast.html?page=${p}&v=20260713-round-code-map-v1`;
         }
 
         function updatePreviewPageLinks(moduleId) {
