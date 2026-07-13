@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>종합 순위표 | CDCUP</title>
-    <script src="supabase-bridge.js?v=20260708-event-fallback"></script>
+    <script src="supabase-bridge.js?v=20260714-medal-day-v2"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -78,6 +78,36 @@
         .podium-amount { position: absolute; left: 24px; bottom: 12px; color: var(--rank-text); font-size: 13px; font-weight: 820; font-variant-numeric: tabular-nums; }
         .podium-amount small { margin-left: 4px; color: var(--rank-muted); font-size: 10px; }
 
+        body.ceremony-mode {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 50% 8%, rgba(195,154,74,.25), transparent 36%),
+                linear-gradient(180deg, #090d14, #05070b 74%);
+        }
+        body.ceremony-mode .ranking-main { max-width: 1500px; min-height: 100vh; padding: clamp(32px,5vw,76px); }
+        body.ceremony-mode .hero { margin-bottom: clamp(72px,10vh,130px); }
+        body.ceremony-mode .hero-kicker { font-size: 13px; letter-spacing: .28em; }
+        body.ceremony-mode .hero h1 { font-size: clamp(50px,7vw,94px) !important; }
+        body.ceremony-mode .download-btn,
+        body.ceremony-mode .stat-strip,
+        body.ceremony-mode .round-nav,
+        body.ceremony-mode .survivors-panel,
+        body.ceremony-mode .board,
+        body.ceremony-mode .side-auction-panel,
+        body.ceremony-mode .app-bottom-nav { display: none !important; }
+        body.ceremony-mode .podium { align-items: stretch; gap: clamp(18px,2.4vw,36px); margin: 0; }
+        body.ceremony-mode .podium-card { min-height: clamp(230px,28vh,360px); padding: clamp(24px,3vw,44px); background: linear-gradient(155deg, rgba(255,255,255,.055), rgba(13,19,29,.96)); box-shadow: 0 30px 80px rgba(0,0,0,.32); }
+        body.ceremony-mode .podium-card:nth-child(1) { order: 2; transform: translateY(-38px); }
+        body.ceremony-mode .podium-card:nth-child(2) { order: 1; }
+        body.ceremony-mode .podium-card:nth-child(3) { order: 3; }
+        body.ceremony-mode .podium-rank { color: var(--rank-gold-light); font-size: 13px; }
+        body.ceremony-mode .podium-team { margin-top: 28px; gap: 20px; }
+        body.ceremony-mode .podium-team .team-logo { width: 82px; height: 82px; flex-basis: 82px; }
+        body.ceremony-mode .podium-team-name strong { font-size: clamp(23px,2.2vw,34px); }
+        body.ceremony-mode .podium-team-name span { font-size: 13px; }
+        body.ceremony-mode .podium-team-name small { margin-top: 10px; font-size: 13px; }
+        body.ceremony-mode .podium-amount { left: clamp(24px,3vw,44px); bottom: clamp(22px,3vw,38px); font-size: 19px; }
+
         .survivors-panel { margin-bottom: 20px; border: 1px solid rgba(52,201,143,.24); background: linear-gradient(110deg, rgba(52,201,143,.075), rgba(13,19,29,.96) 40%); }
         .survivors-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 11px 14px; border-bottom: 1px solid rgba(52,201,143,.16); }
         .survivors-title { display: flex; align-items: center; gap: 9px; }
@@ -106,7 +136,7 @@
         .round-nav-btn:hover { color: var(--rank-text); }
         .round-nav-btn.active { border-color: var(--rank-gold); background: var(--rank-gold); color: #090c11; }
         .round-stage-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-        .round-stage-grid.final-grid { grid-template-columns: minmax(0, 680px); justify-content: center; }
+        .round-stage-grid.final-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .qualified-strip { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 12px 14px; border: 1px solid var(--rank-line); background: rgba(255,255,255,.018); overflow-x: auto; scrollbar-width: none; }
         .qualified-strip::-webkit-scrollbar { display: none; }
         .qualified-strip-label { flex: 0 0 auto; margin-right: 4px; color: var(--rank-dim); font-size: 9px; font-weight: 900; letter-spacing: .1em; }
@@ -196,6 +226,7 @@
         .round-badge { display: inline-flex; align-items: center; min-height: 26px; padding: 0 9px; border: 1px solid rgba(255,255,255,.09); border-radius: 2px; background: rgba(255,255,255,.035); color: var(--rank-muted); font-size: 10px; font-weight: 800; }
         .round-badge.champion { border-color: rgba(195,154,74,.45); background: rgba(195,154,74,.12); color: var(--rank-gold-light); }
         .round-badge.runner { border-color: rgba(79,140,255,.35); background: rgba(79,140,255,.1); color: #8fb5ff; }
+        .round-badge.bronze { border-color: rgba(205,127,50,.42); background: rgba(205,127,50,.1); color: #e3aa71; }
         .download-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 30px; padding: 0 12px; border: 1px solid var(--rank-gold); background: rgba(195, 154, 74, 0.08); color: var(--rank-gold-light); font-family: inherit; font-size: 11px; font-weight: 850; cursor: pointer; transition: all 0.2s ease; border-radius: 3px; }
         .download-btn:hover { background: var(--rank-gold); color: #0a0d12; }
         body { padding-bottom:calc(60px + env(safe-area-inset-bottom)); }
@@ -272,9 +303,17 @@
             .board-head { align-items: flex-start; flex-direction: column; }
             .bracket-scroll { padding: 12px; }
             .round-stage-grid { grid-template-columns: 1fr; }
+            .round-stage-grid.final-grid { grid-template-columns: 1fr; }
             .survivors-grid { grid-template-columns: repeat(2, 1fr); }
             .survivor-card:nth-child(2) { border-right: 0; }
             .survivor-card:nth-child(-n+2) { border-bottom: 1px solid rgba(52,201,143,.13); }
+            body.ceremony-mode .ranking-main { padding: 26px 12px 40px; }
+            body.ceremony-mode .hero { margin-bottom: 30px; }
+            body.ceremony-mode .hero h1 { font-size: 38px !important; }
+            body.ceremony-mode .podium { grid-template-columns: 1fr; gap: 12px; }
+            body.ceremony-mode .podium-card:nth-child(n) { order: initial; min-height: 150px; transform: none; }
+            body.ceremony-mode .podium-team { margin-top: 16px; }
+            body.ceremony-mode .podium-team .team-logo { width: 56px; height: 56px; flex-basis: 56px; }
 
             /* 820px 이하에서 테이블 가로폭 모바일 맞춤 및 스크롤 방지 */
             .ranking-table { min-width: 0; }
@@ -354,7 +393,7 @@
             <button class="round-nav-btn" type="button" onclick="setRoundView('16', this)">16강</button>
             <button class="round-nav-btn" type="button" onclick="setRoundView('8', this)">8강</button>
             <button class="round-nav-btn" type="button" onclick="setRoundView('4', this)">4강</button>
-            <button class="round-nav-btn" type="button" onclick="setRoundView('2', this)">결승</button>
+            <button class="round-nav-btn" type="button" onclick="setRoundView('2', this)">결승·3위전</button>
         </div>
 
         <div class="main-view active" id="summary-view">
@@ -375,7 +414,7 @@
                 <footer class="board-foot"><span>※ 최종 도달 라운드 → 토너먼트 낙찰금 순 · 일반 경매는 순위 미반영</span><span>2026 CDCUP OFFICIAL STANDINGS</span></footer>
             </section>
             <section class="side-auction-panel" id="side-auction-panel" aria-label="별도 경매 결과">
-                <header class="side-auction-head"><strong>일반/이벤트 경매</strong><span>팀 순위에 반영되지 않는 별도 경매 결과</span></header>
+                <header class="side-auction-head"><strong>단독/일반/이벤트 경매</strong><span>팀 순위에 반영되지 않는 별도 경매 결과</span></header>
                 <div class="side-auction-list" id="side-auction-list"></div>
             </section>
         </div>
@@ -409,9 +448,9 @@
 
         <div class="main-view" id="2-view">
             <section class="bracket-panel">
-                <header class="bracket-panel-head"><div class="stage-heading"><span class="stage-number">04</span><div class="stage-heading-copy"><small>TOURNAMENT STAGE</small><strong>결승</strong><span>GRAND FINAL</span></div></div><span class="bracket-status is-pending" id="round-status-2">대진 · 일정 미정</span></header>
+                <header class="bracket-panel-head"><div class="stage-heading"><span class="stage-number">04</span><div class="stage-heading-copy"><small>MEDAL STAGE</small><strong>결승·3·4위전</strong><span>FINAL &amp; BRONZE MATCH</span></div></div><span class="bracket-status is-pending" id="round-status-2">대진 · 일정 미정</span></header>
                 <div class="bracket-scroll"><div class="round-stage-grid final-grid" id="round-content-2"></div></div>
-                <div class="bracket-note" id="round-note-2">4강 승자가 확정되면 결승 슬롯에 자동으로 반영됩니다.</div>
+                <div class="bracket-note" id="round-note-2">4강 승자는 결승, 패자는 3·4위전 슬롯에 자동 반영됩니다.</div>
             </section>
         </div>
     </main>
@@ -433,6 +472,8 @@
     </div>
 
     <script>
+        const ceremonyMode = new URLSearchParams(location.search).get('ceremony') === '1';
+        if (ceremonyMode) document.body.classList.add('ceremony-mode');
         let allRows = [];
         let sideAuctionRows = [];
         let tournamentStageAmounts = {};
@@ -521,6 +562,10 @@
             return { key: (round / 2) + '_' + Math.ceil(index / 2), slot: index % 2 ? 'left' : 'right' };
         }
 
+        function stageMatchCount(round) {
+            return Number(round) === 2 ? 2 : Number(round) / 2;
+        }
+
         function matchWinner(bracket, round, index, match) {
             if (match.winner === 'left' || match.winner === 'right') return match[match.winner] || '';
             const parent = parentMatch(round, index);
@@ -538,21 +583,30 @@
             const ensure = team => {
                 const name = String(team || '').trim();
                 if (!name) return null;
-                return state[name] || (state[name] = { participated: true, reached: scale, eliminated: null, champion: false });
+                return state[name] || (state[name] = { participated: true, reached: scale, eliminated: null, champion: false, bronzeMatch: false, thirdPlace: false, fourthPlace: false });
             };
 
             for (let round = scale; round >= 2; round /= 2) {
-                for (let index = 1; index <= round / 2; index++) {
+                for (let index = 1; index <= stageMatchCount(round); index++) {
                     const match = matches[round + '_' + index] || {};
                     const left = ensure(match.left);
                     const right = ensure(match.right);
+                    if (round === 2 && index === 2) {
+                        if (left) left.bronzeMatch = true;
+                        if (right) right.bronzeMatch = true;
+                    }
                     if (left) left.reached = Math.min(left.reached, round);
                     if (right) right.reached = Math.min(right.reached, round);
                     const winner = matchWinner(bracket, round, index, match);
                     if (!winner) continue;
                     const loser = winner === match.left ? match.right : match.left;
-                    if (loser) ensure(loser).eliminated = round;
-                    if (round === 2) ensure(winner).champion = true;
+                    if (round === 2 && index === 2) {
+                        ensure(winner).thirdPlace = true;
+                        if (loser) ensure(loser).fourthPlace = true;
+                    } else {
+                        if (loser) ensure(loser).eliminated = round;
+                        if (round === 2) ensure(winner).champion = true;
+                    }
                 }
             }
             return state;
@@ -565,6 +619,9 @@
         function phaseLabel(result, scale) {
             if (!result) return '-';
             if (result.champion) return '우승';
+            if (result.thirdPlace) return '3위';
+            if (result.fourthPlace) return '4위';
+            if (result.bronzeMatch) return '3·4위전 진행 중';
             if (result.eliminated === 2) return '준우승';
             if (result.eliminated) return roundDisplayName(result.eliminated) + ' 탈락';
             if (result.reached < scale) return roundDisplayName(result.reached) + ' 진출';
@@ -576,7 +633,7 @@
             const amount = row.phaseAmounts?.[scale];
             let label = phaseLabel(result, scale);
             if (scale === 8 && amount !== undefined && amount !== null && label === '8강 참가') label = '8강 결과';
-            return `<span class="phase-result ${label === '우승' ? 'best' : !result ? 'none' : ''}">${escapeHtml(label)}</span>` +
+            return `<span class="phase-result ${['우승','3위'].includes(label) ? 'best' : !result ? 'none' : ''}">${escapeHtml(label)}</span>` +
                 (amount !== undefined && amount !== null
                     ? `<span class="phase-amount">${formatAmount(amount)}<small>만원</small></span>`
                     : '');
@@ -586,6 +643,9 @@
             if (!result) return 0;
             if (result.champion) return 1000;
             if (result.eliminated === 2) return 900;
+            if (result.thirdPlace) return 850;
+            if (result.fourthPlace) return 825;
+            if (result.bronzeMatch) return 825;
             if (!result.eliminated && result.reached === 2) return 900;
             const round = result.eliminated || result.reached;
             return ({4: 800, 8: 700, 16: 600})[round] || 500;
@@ -648,6 +708,11 @@
                 };
             });
             const semifinalWinners = semifinals.map(match => stageWinner(match, 4));
+            const semifinalLosers = semifinals.map((match, index) => {
+                const winner = semifinalWinners[index];
+                if (!winner) return '';
+                return winner === match.left ? match.right : match.left;
+            });
             const finalCandidate = storedFinalStage['2_1'] || {};
             const semifinalFinalCandidate = storedSemifinal['2_1'] || {};
             const savedFinal = (validQualifiedMatch(finalCandidate) ? finalCandidate : null) || (validQualifiedMatch(semifinalFinalCandidate) ? semifinalFinalCandidate : null) || stored['2_1'] || {};
@@ -655,6 +720,19 @@
                 ...savedFinal,
                 left: savedFinal.left || semifinalWinners[0] || '결승 진출팀 미정',
                 right: savedFinal.right || semifinalWinners[1] || '결승 진출팀 미정'
+            };
+            const inferredThirdTeams = semifinalLosers.filter(Boolean).length === 2
+                ? semifinalLosers
+                : qfWinners.filter(team => team && team !== finalMatch.left && team !== finalMatch.right).slice(0, 2);
+            const thirdCandidate = storedFinalStage['2_2'] || {};
+            const semifinalThirdCandidate = storedSemifinal['2_2'] || {};
+            const thirdTeams = inferredThirdTeams.filter(Boolean);
+            const validThirdMatch = match => match && [match.left, match.right].filter(Boolean).every(team => thirdTeams.includes(team));
+            const savedThird = (validThirdMatch(thirdCandidate) ? thirdCandidate : null) || (validThirdMatch(semifinalThirdCandidate) ? semifinalThirdCandidate : null) || {};
+            const thirdMatch = {
+                ...savedThird,
+                left: savedThird.left || inferredThirdTeams[0] || '3·4위전 진출팀 미정',
+                right: savedThird.right || inferredThirdTeams[1] || '3·4위전 진출팀 미정'
             };
 
             const priceFor = (name, round) => {
@@ -685,12 +763,12 @@
                         ${isWinner ? '<span class="winner-chip">WIN</span>' : '<span></span>'}
                     </div>`;
                 };
-                const stageName = round === 2 ? '결승' : round + '강';
+                const stageName = round === 2 ? (index === 1 ? '3·4위전' : '결승전') : round + '강 ' + (index + 1) + '경기';
                 const isComplete = Boolean(winner);
                 const isReady = !isPlaceholder(match.left) && !isPlaceholder(match.right);
                 const status = isComplete ? '경기 종료' : (isReady ? '진행 예정' : '대진 미정');
                 return `<article class="bracket-match ${isComplete ? 'is-complete' : 'is-pending'}">
-                    <div class="bracket-match-head"><span>${stageName} ${index + 1}경기</span><span>${status}</span></div>
+                    <div class="bracket-match-head"><span>${stageName}</span><span>${status}</span></div>
                     ${teamRow(match.left)}${teamRow(match.right)}
                 </article>`;
             };
@@ -698,11 +776,13 @@
             document.getElementById('round-content-16').innerHTML = ROUND_OF_16_MATCHUPS.map((match, index) => stageMatchMarkup(match, 16, index)).join('');
             document.getElementById('round-content-8').innerHTML = quarterfinals.map((match, index) => stageMatchMarkup(match, 8, index)).join('');
             document.getElementById('round-content-4').innerHTML = `<div class="qualified-strip"><span class="qualified-strip-label">4강 진출 확정</span>${qfWinners.map(name => `<span class="qualified-team">${escapeHtml(name)} · ${escapeHtml(englishName(name))}</span>`).join('')}</div>` + semifinals.map((match, index) => stageMatchMarkup(match, 4, index)).join('');
-            document.getElementById('round-content-2').innerHTML = stageMatchMarkup(finalMatch, 2, 0);
+            document.getElementById('round-content-2').innerHTML = stageMatchMarkup(finalMatch, 2, 0) + stageMatchMarkup(thirdMatch, 2, 1);
             const semifinalReady = semifinals.every(match => !isPlaceholder(match.left) && !isPlaceholder(match.right));
             const semifinalDone = semifinalWinners.filter(Boolean).length === semifinals.length;
             const finalReady = !isPlaceholder(finalMatch.left) && !isPlaceholder(finalMatch.right);
             const finalDone = Boolean(stageWinner(finalMatch, 2));
+            const thirdReady = !isPlaceholder(thirdMatch.left) && !isPlaceholder(thirdMatch.right);
+            const thirdDone = Boolean(stageWinner(thirdMatch, 2));
             const setStageStatus = (id, ready, done, pendingText) => {
                 const element = document.getElementById(id);
                 if (!element) return;
@@ -711,9 +791,11 @@
                 element.classList.toggle('is-pending', !done);
             };
             setStageStatus('round-status-4', semifinalReady, semifinalDone, '대진 · 일정 미정');
-            setStageStatus('round-status-2', finalReady, finalDone, '대진 · 일정 미정');
+            setStageStatus('round-status-2', finalReady && thirdReady, finalDone && thirdDone, '대진 · 일정 미정');
             document.getElementById('round-note-4').textContent = semifinalReady ? '4강 전용 경매 결과가 팀별 낙찰금과 함께 자동 반영됩니다.' : '4강 진출팀은 확정되었으며, 대진 상대와 경기 일정은 아직 미정입니다.';
-            document.getElementById('round-note-2').textContent = finalReady ? '결승 전용 경매 결과가 완료되면 최종 순위가 확정됩니다.' : '4강 승자가 확정되면 결승 슬롯에 자동으로 반영됩니다.';
+            document.getElementById('round-note-2').textContent = finalReady && thirdReady
+                ? '3·4위전을 먼저 진행한 뒤 결승이 이어지며, 두 경기 완료 시 최종 1·2·3위가 확정됩니다.'
+                : '4강 승자는 결승, 패자는 3·4위전 슬롯에 자동으로 반영됩니다.';
         }
 
         function showTeamJourney(name) {
@@ -742,6 +824,26 @@
                 };
             }
             const finalWinner = stageWinner(finalMatch, 2);
+            let thirdMatch = finalStageBracket['2_2'] || semifinalBracket['2_2'] || null;
+            if ((!thirdMatch || !thirdMatch.left || !thirdMatch.right) && semifinalBracket['4_1'] && semifinalBracket['4_2']) {
+                const semifinalLoser = match => {
+                    const winner = stageWinner(match, 4);
+                    return winner ? (winner === match.left ? match.right : match.left) : '';
+                };
+                thirdMatch = {
+                    left: semifinalLoser(semifinalBracket['4_1']),
+                    right: semifinalLoser(semifinalBracket['4_2']),
+                    winner: ''
+                };
+            }
+            if (!thirdMatch || !thirdMatch.left || !thirdMatch.right) {
+                const medalTeams = QUARTERFINAL_MATCHUPS.map(match => winnerByOfficialPrice(match, 8)).filter(Boolean);
+                const finalists = [finalMatch?.left, finalMatch?.right].filter(Boolean);
+                const remaining = medalTeams.filter(team => !finalists.includes(team));
+                if (remaining.length >= 2) thirdMatch = { left: remaining[0], right: remaining[1], winner: '' };
+            }
+            const thirdWinner = stageWinner(thirdMatch, 2);
+            const inThirdMatch = thirdMatch && (thirdMatch.left === name || thirdMatch.right === name);
             const final = finalLabel(row);
 
             const stages = [
@@ -761,7 +863,8 @@
                     state: semifinalWinner ? (passed4 ? 'is-win' : 'is-loss') : 'is-pending'
                 } : { dot: '4', label: 'SEMI FINAL', title: '진출 전', detail: passed16 ? '8강에서 여정 종료' : '대기', state: 'is-locked' },
                 passed4 ? { dot: 'F', label: 'GRAND FINAL', title: finalMatch ? `vs ${opponent(finalMatch, name)}` : '결승 상대 미정', detail: finalWinner ? (finalWinner === name ? '최종 우승' : '준우승') : '결승 진행 예정', state: finalWinner ? (finalWinner === name ? 'is-win' : 'is-loss') : 'is-pending' }
-                    : passed8 ? { dot: 'F', label: 'GRAND FINAL', title: '결승 진출 전', detail: semifinalWinner ? '4강에서 여정 종료' : '4강 승리 시 진출', state: 'is-locked' }
+                    : passed8 && semifinalWinner && inThirdMatch ? { dot: '3', label: 'BRONZE MATCH', title: `vs ${opponent(thirdMatch, name)}`, detail: thirdWinner ? (thirdWinner === name ? '최종 3위' : '최종 4위') : '3·4위전 진행 예정', state: thirdWinner ? (thirdWinner === name ? 'is-win' : 'is-loss') : 'is-pending' }
+                    : passed8 ? { dot: '3', label: 'BRONZE MATCH', title: '3·4위전 진출 전', detail: semifinalWinner ? '3·4위전 상대 확인 중' : '4강 결과 후 대진 확정', state: 'is-locked' }
                     : { dot: 'F', label: 'GRAND FINAL', title: '진출 전', detail: '대기', state: 'is-locked' }
             ];
 
@@ -789,6 +892,9 @@
             if (!best) return { text: '참가', kind: '' };
             if (best.result.champion) return { text: 'CHAMPION', kind: 'champion' };
             if (best.result.eliminated === 2) return { text: '준우승', kind: 'runner' };
+            if (best.result.thirdPlace) return { text: '3위', kind: 'bronze' };
+            if (best.result.fourthPlace) return { text: '4위', kind: '' };
+            if (best.result.bronzeMatch) return { text: '3·4위전 진행 중', kind: '' };
             if (best.result.eliminated) return { text: roundDisplayName(best.result.eliminated) + ' 탈락', kind: '' };
             if (best.result.reached < best.scale) return { text: roundDisplayName(best.result.reached) + ' 진출', kind: '' };
             return { text: roundDisplayName(best.scale) + ' 진행 중', kind: '' };
@@ -909,22 +1015,35 @@
                 };
                 const stage4Bracket = cleanStageBracket(4);
                 const stage4Finalists = ['4_1', '4_2'].map(key => matchWinnerName(stage4Bracket.matches[key]) || winnerByStageAmount(stage4Bracket.matches[key], 4));
+                const stage4ThirdPlaceTeams = ['4_1', '4_2'].map((key, index) => {
+                    const match = stage4Bracket.matches[key] || {};
+                    const winner = stage4Finalists[index];
+                    return winner ? (winner === match.left ? match.right : match.left) : '';
+                });
                 if (stage4Finalists.some(Boolean)) {
                     const finalMatch = { ...(stage4Bracket.matches['2_1'] || {}) };
                     finalMatch.left = finalMatch.left || stage4Finalists[0] || '';
                     finalMatch.right = finalMatch.right || stage4Finalists[1] || '';
                     stage4Bracket.matches['2_1'] = finalMatch;
                 }
-                const stage2Bracket = cleanStageBracket(2);
-                if ((!stage2Bracket.matches['2_1'] || !stage2Bracket.matches['2_1'].left || !stage2Bracket.matches['2_1'].right) && stage4Bracket.matches['2_1']) {
-                    const current = stage2Bracket.matches['2_1'] || {};
-                    stage2Bracket.matches['2_1'] = {
-                        ...stage4Bracket.matches['2_1'],
-                        ...current,
-                        left: current.left || stage4Bracket.matches['2_1'].left || '',
-                        right: current.right || stage4Bracket.matches['2_1'].right || ''
-                    };
+                if (stage4ThirdPlaceTeams.some(Boolean)) {
+                    const thirdMatch = { ...(stage4Bracket.matches['2_2'] || {}) };
+                    thirdMatch.left = thirdMatch.left || stage4ThirdPlaceTeams[0] || '';
+                    thirdMatch.right = thirdMatch.right || stage4ThirdPlaceTeams[1] || '';
+                    stage4Bracket.matches['2_2'] = thirdMatch;
                 }
+                const stage2Bracket = cleanStageBracket(2);
+                ['2_1', '2_2'].forEach(key => {
+                    if ((!stage2Bracket.matches[key] || !stage2Bracket.matches[key].left || !stage2Bracket.matches[key].right) && stage4Bracket.matches[key]) {
+                        const current = stage2Bracket.matches[key] || {};
+                        stage2Bracket.matches[key] = {
+                            ...stage4Bracket.matches[key],
+                            ...current,
+                            left: current.left || stage4Bracket.matches[key].left || '',
+                            right: current.right || stage4Bracket.matches[key].right || ''
+                        };
+                    }
+                });
                 const phases = { 16: phaseResults(parseBracket(map || {}, 16), 16), 8: phaseResults(parseBracket(map || {}, 8), 8), 4: phaseResults(stage4Bracket, 4), 2: phaseResults(stage2Bracket, 2) };
 
                 // 공식 기록을 대진표 데이터와 합친다. 8강 금액이 있는 팀은 16강 통과 팀이다.
@@ -974,6 +1093,11 @@
 
         function renderPage() {
             const now = new Date();
+            if (ceremonyMode) {
+                document.querySelector('.hero-kicker').textContent = 'CDCUP AWARDS CEREMONY';
+                document.querySelector('.hero h1').textContent = '최종 시상식';
+                document.title = '최종 시상식 | CDCUP';
+            }
             document.getElementById('season-year').textContent = now.getFullYear() + ' CDCUP';
             document.getElementById('stat-teams').innerHTML = `${allRows.length}<span class="stat-unit">팀</span>`;
             document.getElementById('stat-amount').innerHTML = `${formatAmount(allRows.reduce((sum, row) => sum + row.amount, 0))}<span class="stat-unit">만원</span>`;
@@ -988,8 +1112,10 @@
             });
             const finalStageMatches = parseBracket(latestRankingMap, 2).matches || {};
             const finalMatch = isOfficialStageMatch(finalStageMatches['2_1']) ? finalStageMatches['2_1'] : (isOfficialStageMatch(semifinalMatches['2_1']) ? semifinalMatches['2_1'] : null);
+            const thirdMatch = isOfficialStageMatch(finalStageMatches['2_2']) ? finalStageMatches['2_2'] : (isOfficialStageMatch(semifinalMatches['2_2']) ? semifinalMatches['2_2'] : null);
             const finalFinished = ['left','right'].includes(finalMatch?.winner) || Boolean(winnerByStageAmount(finalMatch, 2));
-            document.getElementById('stat-events').innerHTML = `${finalFinished ? 4 : ((semifinalDone || semifinalStarted) ? 3 : 2)}<span class="stat-unit">/ 4</span>`;
+            const thirdFinished = ['left','right'].includes(thirdMatch?.winner) || Boolean(winnerByStageAmount(thirdMatch, 2));
+            document.getElementById('stat-events').innerHTML = `${finalFinished && thirdFinished ? 4 : ((semifinalDone || semifinalStarted) ? 3 : 2)}<span class="stat-unit">/ 4</span>`;
             renderPodium();
             renderSurvivors();
             renderTable();
@@ -1013,7 +1139,7 @@
             podium.innerHTML = allRows.slice(0, 3).map((row, index) => {
                 const result = finalLabel(row);
                 return `<article class="podium-card ${index === 0 ? 'first' : ''}">
-                    <div class="podium-rank">${index === 0 ? 'LEADER' : 'RANK ' + (index + 1)}</div>
+                    <div class="podium-rank">${index + 1}위 · RANK ${index + 1}</div>
                     <div class="podium-team">${logoMarkup(row)}<div class="podium-team-name"><strong>${escapeHtml(row.name)}</strong><span>${escapeHtml(englishName(row.name))}</span><small>${escapeHtml(result.text)}</small></div></div>
                     <div class="podium-amount">${formatAmount(row.amount)}<small>만원</small></div>
                 </article>`;

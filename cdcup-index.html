@@ -7,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260713-event-isolation-v1"></script>
+    <script src="supabase-bridge.js?v=20260714-medal-day-v2"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <script src="assets/vendor/xlsx.mini.min.js?v=0.18.5"></script>
     <link rel="stylesheet" as="style" crossorigin
@@ -2444,10 +2444,11 @@
         .archive-hero { background:linear-gradient(135deg,#111827,#1F2937);color:#fff;border-radius:16px;padding:20px;margin-bottom:16px; }
         .archive-hero h2 { margin:0 0 6px;font-size:20px; }
         .archive-hero p { margin:0;color:#CBD5E1;font-size:13px;line-height:1.6; }
-        .archive-create { display:grid;grid-template-columns:minmax(220px,1fr) auto auto;gap:8px;margin-top:16px; }
+        .archive-create { display:grid;grid-template-columns:minmax(220px,1fr) auto auto auto;gap:8px;margin-top:16px; }
         .archive-create input { min-width:0;border:1px solid #475569;background:#fff;color:#111827;border-radius:10px;padding:11px 12px;font-size:14px; }
         .archive-action { border:0;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:750;cursor:pointer;white-space:nowrap; }
         .archive-action.save { background:#E5E7EB;color:#111827; }
+        .archive-action.medal { background:#C39A4A;color:#111827; }
         .archive-action.reset { background:#2563EB;color:#fff; }
         .archive-action:disabled { opacity:.55;cursor:wait; }
         .archive-guide { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px; }
@@ -2481,6 +2482,7 @@
             .archive-create { grid-template-columns:1fr 1fr; }
             .archive-create input { grid-column:1/-1; }
             .archive-action { padding:10px 8px;font-size:12px; }
+            .archive-action.reset { grid-column:1/-1; }
             .archive-guide { grid-template-columns:1fr; }
             .archive-card { padding:13px; }
         }
@@ -2521,6 +2523,7 @@
                 <label for="f-auction-type">경매 구분</label>
                 <select id="f-auction-type" aria-label="경매 구분">
                     <option value="tournament">토너먼트 후보</option>
+                    <option value="solo">단독 경매</option>
                     <option value="crewart">크레와트 경매</option>
                     <option value="extra">일반 경매</option>
                 </select>
@@ -2564,11 +2567,12 @@
                 <div class="archive-create">
                     <input id="archive-title" type="text" maxlength="80" placeholder="예: CDCUP 1회차 · 8강 종료">
                     <button class="archive-action save" type="button" onclick="saveCurrentArchive(false,this)">현재 상태 저장</button>
+                    <button class="archive-action medal" type="button" onclick="prepareMedalDay(this)">결승일 목록 준비</button>
                     <button class="archive-action reset" type="button" onclick="saveCurrentArchive(true,this)">저장 후 새 회차</button>
                 </div>
             </div>
             <div class="archive-guide">
-                <div><strong>라운드가 바뀔 때</strong>현재 상태 저장만 누른 뒤 4강·결승 개체를 이어서 편성합니다.</div>
+                <div><strong>결승일로 넘어갈 때</strong>결승일 목록 준비를 누르면 현재 기록을 저장하고 개체 목록만 비웁니다. 4강 대진은 유지됩니다.</div>
                 <div><strong>대회가 끝났을 때</strong>저장 후 새 회차를 누르면 기록을 남긴 뒤 개체 목록과 대진 진행값만 초기화합니다.</div>
             </div>
             <div id="archive-list" class="archive-list"><div class="archive-empty">기록을 불러오는 중입니다.</div></div>
@@ -2977,6 +2981,34 @@
                 activeArchiveId = '';
                 document.getElementById('archive-detail').classList.remove('show');
                 await loadArchiveList();
+            } catch (error) {
+                toast(error.message, true);
+            } finally {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        }
+
+        async function prepareMedalDay(button) {
+            const titleInput = document.getElementById('archive-title');
+            const title = (titleInput.value || 'CDCUP 1회차 · 4강 및 이벤트 종료').trim();
+            if (!confirm('현재 4강·이벤트 개체와 낙찰·배송 내역을 먼저 저장한 뒤 현재 개체 목록만 비웁니다.\n\n· 4강 대진과 결과는 유지\n· 결승·3·4위전 대진은 새로 생성\n· 개체 수는 새로 편성한 실제 목록을 기준으로 자동 인식\n· 기존 이벤트 매치 노출은 OFF\n\n계속할까요?')) return;
+            const pw = getAdminPw();
+            if (!pw) return;
+            button.disabled = true;
+            const original = button.textContent;
+            button.textContent = '기록·정리 중...';
+            try {
+                const result = await archiveAndPrepareMedalDay(title, pw);
+                if (!result || result.success === false) {
+                    if (String(result?.error || '').includes('비밀번호')) clearAdminPw();
+                    throw new Error(result?.error || '결승일 목록을 준비하지 못했습니다.');
+                }
+                toast('4강 기록 저장 완료 · 결승일 개체 목록 준비 완료');
+                titleInput.value = 'CDCUP 1회차 · 결승 및 3·4위전';
+                activeArchiveId = '';
+                document.getElementById('archive-detail').classList.remove('show');
+                await Promise.all([loadArchiveList(), loadList()]);
             } catch (error) {
                 toast(error.message, true);
             } finally {
@@ -4093,7 +4125,7 @@
 
             const cl = parseChecklist(it.checklist || '');
             const currentAuctionType = it.auctionType || getItemAuctionMeta(it).auctionType;
-            const isExtraAuctionType = currentAuctionType !== 'tournament' && currentAuctionType !== 'crewart';
+            const isExtraAuctionType = currentAuctionType !== 'tournament' && currentAuctionType !== 'crewart' && currentAuctionType !== 'solo';
             var birthY = '', birthM = '';
             if (cl.birth) { var bp = cl.birth.split('-'); birthY = bp[0] || ''; birthM = bp[1] || ''; }
             var yearOpts = '<option value="">년도</option>';
@@ -4112,7 +4144,7 @@
                 '<div class="item-entry" style="margin:0;">' +
                 '<div style="font-size:16px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:6px;margin-bottom:12px;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg> 정보 수정</div>' +
                 '<div class="entry-fields"><div class="ef" style="flex:1"><label>업체명</label><input type="text" id="ed-c-' + row + '" value="' + esc(it.company) + '"></div><div class="ef" style="flex:1"><label>개체명 *</label><input type="text" id="ed-n-' + row + '" value="' + esc(it.name) + '"></div></div>' +
-                '<div class="entry-fields"><div class="ef"><label>경매 구분</label><select id="ed-auction-' + row + '"><option value="tournament"' + (currentAuctionType === 'tournament' ? ' selected' : '') + '>토너먼트</option><option value="crewart"' + (currentAuctionType === 'crewart' ? ' selected' : '') + '>크레와트 경매</option><option value="extra"' + (isExtraAuctionType ? ' selected' : '') + '>일반 경매</option></select></div></div>' +
+                '<div class="entry-fields"><div class="ef"><label>경매 구분</label><select id="ed-auction-' + row + '"><option value="tournament"' + (currentAuctionType === 'tournament' ? ' selected' : '') + '>토너먼트</option><option value="solo"' + (currentAuctionType === 'solo' ? ' selected' : '') + '>단독 경매</option><option value="crewart"' + (currentAuctionType === 'crewart' ? ' selected' : '') + '>크레와트 경매</option><option value="extra"' + (isExtraAuctionType ? ' selected' : '') + '>일반 경매</option></select></div></div>' +
                 '<div class="entry-fields"><div class="ef" style="flex:1"><label>시작가</label><input type="text" id="ed-p-' + row + '" value="' + esc(it.startPrice) + '" placeholder="미입력 시 1만" inputmode="numeric"></div><div class="ef" style="flex:1"><label>특이사항</label><input type="text" id="ed-note-' + row + '" value="' + esc(it.note || '') + '" placeholder="특이사항"></div></div>' +
                 '<div class="entry-fields"><div class="ef"><label>안내문구</label><input type="text" id="ed-ann-' + row + '" value="' + esc(it.announce || '') + '" placeholder="경매 시 안내할 문구"></div></div>' +
                 '<div class="photo-row-mini">' +

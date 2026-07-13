@@ -14,7 +14,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>방송 미리보기 - CREO</title>
-    <script src="supabase-bridge.js?v=20260713-event-isolation-v1"></script>
+    <script src="supabase-bridge.js?v=20260714-medal-day-v2"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
@@ -780,7 +780,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260713-round-code-map-v1"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260714-medal-day-v2"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -920,7 +920,7 @@
                             <option value="16">16강</option>
                             <option value="8">8강</option>
                             <option value="4">4강</option>
-                            <option value="2">결승</option>
+                            <option value="2">결승·3·4위전</option>
                         </select>
                     </div>
                     <div class="switch-container" id="toggle-bracket-full-font-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
@@ -955,7 +955,7 @@
                             <option value="16">16강 대진표 송출</option>
                             <option value="8">8강 대진표 송출</option>
                             <option value="4">4강 대진표 송출</option>
-                            <option value="2">결승 대진표 송출</option>
+                            <option value="2">결승·3·4위전 송출</option>
                         </select>
                     </div>
                 </div>
@@ -992,7 +992,7 @@
                     <button class="t-btn active" id="t-btn-16" onclick="tChangeScale(16)">16강</button>
                     <button class="t-btn" id="t-btn-8" onclick="tChangeScale(8)">8강</button>
                     <button class="t-btn" id="t-btn-4" onclick="tChangeScale(4)">4강</button>
-                    <button class="t-btn" id="t-btn-2" onclick="tChangeScale(2)">결승</button>
+                    <button class="t-btn" id="t-btn-2" onclick="tChangeScale(2)">결승·3·4위전</button>
                 </div>
                 <div class="t-controls">
                     <span class="t-label">방송 송출:</span>
@@ -1001,7 +1001,7 @@
                         <option value="16">16강 송출</option>
                         <option value="8">8강 송출</option>
                         <option value="4">4강 송출</option>
-                        <option value="2">결승 송출</option>
+                        <option value="2">결승·3·4위전 송출</option>
                     </select>
                 </div>
 
@@ -1009,6 +1009,7 @@
                     <button class="t-btn danger" onclick="tReset()">초기화</button>
                     <button class="t-btn success" onclick="tRandomFill()">랜덤 배치</button>
                     <button class="t-btn save" onclick="tSave()">대진표 저장</button>
+                    <a class="t-btn" href="ranking.html?ceremony=1" target="_blank" rel="noopener" style="text-decoration:none;">시상식 화면</a>
                 </div>
             </div>
 
@@ -1119,7 +1120,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260713-round-code-map-v1';
+        const broadcastAssetVersion = '20260714-medal-day-v2';
         let previewConfigMap = {};
 
         function requestedModuleId() {
@@ -2564,6 +2565,16 @@
         let tItemSelections = {};
         let tItemsPerTeam = { 16: 4, 8: 4, 4: 3, 2: 3 };
 
+        function tStageMatchCount(round) {
+            return Number(round) === 2 ? 2 : Number(round) / 2;
+        }
+
+        function tMatchTitle(round, index) {
+            if (Number(round) === 2) return Number(index) === 2 ? '3·4위전' : '결승전';
+            if (Number(round) === 4) return '준결승 ' + index + '조';
+            return round + '강 ' + index + '조';
+        }
+
 
         function tEsc(s) {
             if (!s) return '';
@@ -2577,11 +2588,9 @@
 
         function tIsCurrentStageItem(item) {
             const meta = getItemAuctionMeta(item);
-            // 다른 라운드에 이미 명시적으로 편성되어 있는 토너먼트 개체만 제외
-            if (meta.auctionType === 'tournament' && meta.tournamentStage && meta.tournamentStage !== Number(tScale)) {
-                return false;
-            }
-            return true;
+            // 단독/이벤트/일반 경매 업체는 토너먼트 팀 풀과 일괄삭제 대상에 절대 섞지 않는다.
+            if (meta.auctionType !== 'tournament') return false;
+            return !meta.tournamentStage || meta.tournamentStage === Number(tScale);
         }
 
         async function tInit() {
@@ -2597,7 +2606,7 @@
                     if (map.active_tournament) {
                         tActiveTournament = map.active_tournament;
                         document.getElementById('t-active-select').value = tActiveTournament;
-                        if (['16','8','4'].includes(tActiveTournament)) {
+                        if (['16','8','4','2'].includes(tActiveTournament)) {
                             tScale = parseInt(tActiveTournament);
                         }
                     }
@@ -2747,7 +2756,8 @@
         async function tDeleteAllTournamentItems() {
             const targets = tAllItems.filter(tIsCurrentStageItem);
             if (!targets.length) { toast('현재 단계에서 삭제할 토너먼트 개체가 없습니다.'); tToggleQuickRegister(true); return; }
-            if (!confirm(`현재 ${tScale}강 토너먼트 개체 ${targets.length}건을 삭제합니다.\n\n이전 라운드 기록과 일반 경매는 유지됩니다. 이 작업은 되돌릴 수 없습니다.\n\n계속할까요?`)) return;
+            const stageName = tScale === 2 ? '결승·3·4위전' : `${tScale}강`;
+            if (!confirm(`현재 ${stageName} 토너먼트 개체 ${targets.length}건을 삭제합니다.\n\n이전 라운드 기록과 일반 경매는 유지됩니다. 이 작업은 되돌릴 수 없습니다.\n\n계속할까요?`)) return;
             const pw = prompt('관리자 비밀번호를 입력하세요.');
             if (pw === null) return;
 
@@ -2772,6 +2782,7 @@
 
         function tChangeScale(scale) {
             tScale = scale;
+            if (scale === 2) tSyncMedalMatchesFromSemifinals();
             [16, 8, 4, 2].forEach(s => {
                 const btn = document.getElementById('t-btn-' + s);
                 if (btn) btn.classList.toggle('active', s === scale);
@@ -2793,7 +2804,8 @@
             const desc = document.getElementById('t-item-setup-desc');
             const auto = document.getElementById('t-item-auto-all');
             if (input) input.value = count;
-            if (desc) desc.textContent = `${tScale}강은 팀당 ${count}마리를 내부 슬롯에 연결합니다. 공개 번호는 팀 정보와 분리해 자동 배치됩니다.`;
+            const stageName = tScale === 2 ? '결승·3·4위전' : `${tScale}강`;
+            if (desc) desc.textContent = `${stageName}은 팀당 ${count}마리를 내부 슬롯에 연결합니다. 공개 번호는 팀 정보와 분리해 자동 배치됩니다.`;
             if (auto) auto.textContent = `업체별 앞 ${count}개`;
         }
 
@@ -2810,7 +2822,7 @@
             if (count === previous) return;
             try {
                 await updateConfigs({ ['tournament_items_per_team_' + tScale]: count });
-                toast(`${tScale}강 팀당 ${count}마리로 저장했습니다.`);
+                toast(`${tScale === 2 ? '결승·3·4위전' : tScale + '강'} 팀당 ${count}마리로 저장했습니다.`);
             } catch (error) {
                 tItemsPerTeam[tScale] = previous;
                 tSyncItemCountUi();
@@ -2832,14 +2844,50 @@
             return { key: pr + '_' + Math.ceil(idx / 2), slot: (idx % 2 === 1) ? 'left' : 'right' };
         }
 
-        function tPropagate(scale, key, team) {
-            const parts = key.split('_');
-            const p = tGetParentSlot(parseInt(parts[0]), parseInt(parts[1]));
-            if (p) {
-                const pm = tGetMatch(scale, p.key);
-                pm[p.slot] = team;
-                if (pm.winner) { pm.winner = ''; tPropagate(scale, p.key, ''); }
+        function tSetPropagatedSlot(scale, matchKey, slot, team) {
+            const match = tGetMatch(scale, matchKey);
+            if (match[slot] === team) return;
+            match[slot] = team;
+            if (match.winner) {
+                match.winner = '';
+                tPropagate(scale, matchKey);
             }
+        }
+
+        function tPropagate(scale, key) {
+            const parts = key.split('_');
+            const round = parseInt(parts[0], 10);
+            const index = parseInt(parts[1], 10);
+            const match = tGetMatch(scale, key);
+            const winner = match.winner ? match[match.winner] : '';
+            const loserSlot = match.winner === 'left' ? 'right' : (match.winner === 'right' ? 'left' : '');
+            const loser = loserSlot ? match[loserSlot] : '';
+
+            // 준결승 승자는 결승으로, 패자는 3·4위전으로 같은 좌우 위치를 유지해 보낸다.
+            if (round === 4) {
+                const slot = index % 2 === 1 ? 'left' : 'right';
+                tSetPropagatedSlot(scale, '2_1', slot, winner || '');
+                tSetPropagatedSlot(scale, '2_2', slot, loser || '');
+                return;
+            }
+
+            const p = tGetParentSlot(round, index);
+            if (p) {
+                tSetPropagatedSlot(scale, p.key, p.slot, winner || '');
+            }
+        }
+
+        function tSyncMedalMatchesFromSemifinals() {
+            const semifinals = tBrackets[4]?.matches || {};
+            ['4_1', '4_2'].forEach((key, idx) => {
+                const match = semifinals[key];
+                if (!match || !['left', 'right'].includes(match.winner) || !match.left || !match.right) return;
+                const slot = idx === 0 ? 'left' : 'right';
+                const winner = match[match.winner] || '';
+                const loser = match[match.winner === 'left' ? 'right' : 'left'] || '';
+                tSetPropagatedSlot(2, '2_1', slot, winner);
+                tSetPropagatedSlot(2, '2_2', slot, loser);
+            });
         }
 
         function tRenderTree() {
@@ -2852,7 +2900,7 @@
             rounds.forEach(round => {
                 const col = document.createElement('div');
                 col.className = 't-round-col';
-                const mc = round / 2;
+                const mc = tStageMatchCount(round);
                 for (let i = 1; i <= mc; i++) {
                     const mk = round + '_' + i;
                     const m = tGetMatch(tScale, mk);
@@ -2861,7 +2909,7 @@
                     node.id = 't-node-' + mk;
                     if (tEditingMatch === mk) node.classList.add('active-match');
 
-                    const tt = (round === 2) ? '결승전' : (round === 4 ? '준결승 ' + i + '조' : (round === 8 ? '8강 ' + i + '조' : '16강 ' + i + '조'));
+                    const tt = tMatchTitle(round, i);
                     let lp = '', rp = '';
                     if (round === tScale) {
                         lp = `[${String.fromCharCode(65 + (i-1)*2)}팀] `;
@@ -2898,7 +2946,7 @@
 
         function tGetSeedTeams() {
             const seeds = [];
-            const matchCount = tScale / 2;
+            const matchCount = tStageMatchCount(tScale);
             for (let i = 1; i <= matchCount; i++) {
                 const match = tGetMatch(tScale, tScale + '_' + i);
                 const leftLetter = String.fromCharCode(65 + (i - 1) * 2);
@@ -2969,8 +3017,9 @@
             }).join('');
 
             const duplicateCompanies = new Set(seeds.map(seed => seed.company)).size !== seeds.length;
-            progress.textContent = duplicateCompanies ? '같은 업체가 중복 배치됨' : `${readyCount}/${seeds.length} 업체 준비`;
-            applyBtn.disabled = duplicateCompanies || readyCount !== seeds.length;
+            const medalTeamsMissing = tScale === 2 && seeds.length !== 4;
+            progress.textContent = duplicateCompanies ? '같은 업체가 중복 배치됨' : (medalTeamsMissing ? `메달 결정전 ${seeds.length}/4팀 배치` : `${readyCount}/${seeds.length} 업체 준비`);
+            applyBtn.disabled = duplicateCompanies || medalTeamsMissing || readyCount !== seeds.length;
         }
 
         function tToggleItemSelection(letter, row) {
@@ -3003,6 +3052,10 @@
 
         async function tApplyTournamentItems() {
             const seeds = tGetSeedTeams();
+            if (tScale === 2 && seeds.length !== 4) {
+                toast('결승 2팀과 3·4위전 2팀, 총 4팀을 모두 배치해주세요.');
+                return;
+            }
             const requiredCount = tRequiredItemCount();
             const assignments = [];
             const usedRows = new Set();
@@ -3025,7 +3078,10 @@
             if (!assignments.length) { toast('편성할 개체가 없습니다.'); return; }
 
             const generalCount = tAllItems.filter(item => !isTournamentAuctionItem(item)).length;
-            const confirmed = confirm(`선택한 ${assignments.length}개체를 ${tScale}강 토너먼트에 편성합니다.\n\n· ${seeds.length}팀 × 팀당 ${requiredCount}마리\n· 공개 번호는 001부터 팀 정보와 분리해 자동 배치\n· 팀/라운드 코드는 내부 데이터로만 저장\n· 일반 경매 ${generalCount}개와 이전 라운드 데이터 유지\n· 선택된 토너먼트 개체의 낙찰/배송 상태 초기화\n\n계속할까요?`);
+            const soloCount = tAllItems.filter(item => getItemAuctionMeta(item).auctionType === 'solo').length;
+            const stageName = tScale === 2 ? '결승·3·4위전' : `${tScale}강`;
+            const sequenceLine = tScale === 2 ? `\n· 운영 순서: 3·4위전 → 단독 경매 ${soloCount}개체 → 결승 → 시상식` : '';
+            const confirmed = confirm(`선택한 ${assignments.length}개체를 ${stageName} 토너먼트에 편성합니다.\n\n· ${seeds.length}팀 × 팀당 ${requiredCount}마리\n· 결승은 A·B팀, 3·4위전은 C·D팀으로 내부 분리${sequenceLine}\n· 공개 번호는 001부터 팀 정보와 분리해 자동 배치\n· 팀/라운드 코드는 내부 데이터로만 저장\n· 일반 경매 ${generalCount}개와 이전 라운드 데이터 유지\n· 선택된 토너먼트 개체의 낙찰/배송 상태 초기화\n\n계속할까요?`);
             if (!confirmed) return;
             const pw = prompt('관리자 비밀번호를 입력하세요.');
             if (pw === null) return;
@@ -3044,7 +3100,8 @@
                 if (!result || result.success === false) throw new Error(result?.error || '목록 재구성 실패');
                 tItemSelections = {};
                 await tLoadTeams();
-                toast(result.count + '개체 편성 완료 · 기존 데이터 ' + (result.preserved || 0) + '개 유지');
+                const sequenceDone = result.sequence?.length ? ' · 3·4위전 → 단독 경매 → 결승 순서 적용' : '';
+                toast(result.count + '개체 편성 완료 · 기존 데이터 ' + (result.preserved || 0) + '개 유지' + sequenceDone);
             } catch (err) {
                 toast('개체 편성 실패: ' + err.message);
             } finally {
@@ -3060,14 +3117,16 @@
             if (!team) return;
             const m = tGetMatch(tScale, mk);
             m[slot] = team;
-            if (m.winner) { m.winner = ''; tPropagate(tScale, mk, ''); }
+            if (m.winner) m.winner = '';
+            tPropagate(tScale, mk);
             tRenderTree();
         }
 
         function tClearSlot(mk, slot) {
             const m = tGetMatch(tScale, mk);
             m[slot] = '';
-            if (m.winner) { m.winner = ''; tPropagate(tScale, mk, ''); }
+            if (m.winner) m.winner = '';
+            tPropagate(tScale, mk);
             tRenderTree();
         }
 
@@ -3075,7 +3134,7 @@
             const m = tGetMatch(tScale, mk);
             if (!m[slot]) return;
             m.winner = (m.winner === slot) ? '' : slot;
-            tPropagate(tScale, mk, m.winner ? m[slot] : '');
+            tPropagate(tScale, mk);
             tRenderTree();
 
         }
@@ -3086,14 +3145,14 @@
             try {
                 tActiveTournament = val;
                 await updateConfigs({ active_tournament: val });
-                toast('송출 모드 변경: ' + (val === 'none' ? '비송출' : val + '강 송출'));
+                toast('송출 모드 변경: ' + (val === 'none' ? '비송출' : (val === '2' ? '결승·3·4위전 송출' : val + '강 송출')));
             } catch (err) { toast('송출 모드 갱신 실패: ' + err.message); }
         }
 
 
 
         function tReset() {
-            if (!confirm('현재 ' + tScale + '강 대진표를 초기화합니까?')) return;
+            if (!confirm('현재 ' + (tScale === 2 ? '결승·3·4위전' : tScale + '강') + ' 대진표를 초기화합니까?')) return;
             tBrackets[tScale] = { matches: {} };
             tEditingMatch = null;
 
@@ -3103,14 +3162,14 @@
         async function tRandomFill() {
             try {
                 const items = await getItems();
-                const teams = [...new Set((items || []).map(i => i.company).filter(Boolean))];
+                const teams = [...new Set((items || []).filter(tIsCurrentStageItem).map(i => i.company).filter(Boolean))];
                 if (!teams.length) { alert('등록된 업체가 없습니다.'); return; }
                 for (let i = teams.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [teams[i], teams[j]] = [teams[j], teams[i]];
                 }
                 tBrackets[tScale] = { matches: {} };
-                const mc = tScale / 2;
+                const mc = tStageMatchCount(tScale);
                 for (let i = 1; i <= mc; i++) {
                     const m = tGetMatch(tScale, tScale + '_' + i);
                     m.left = teams.pop() || '';

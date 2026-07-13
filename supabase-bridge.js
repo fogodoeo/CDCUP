@@ -15,8 +15,8 @@ const _sbHeaders = {
 
 // ── 경매 개체 분류/블라인드 메타데이터 ──
 // DB 스키마를 바꾸지 않고 checklist의 숨김 키로 보관한다.
-// _auction: tournament | event | extra | crewart, _stage: 8, _slot: A1, _team: A, _label: 1
-const AUCTION_TYPES = Object.freeze({ TOURNAMENT: 'tournament', EVENT: 'event', EXTRA: 'extra', CREWART: 'crewart' });
+// _auction: tournament | solo | event | extra | crewart, _stage: 8, _slot: A1, _team: A, _label: 1
+const AUCTION_TYPES = Object.freeze({ TOURNAMENT: 'tournament', SOLO: 'solo', EVENT: 'event', EXTRA: 'extra', CREWART: 'crewart' });
 
 function _checklistPairs(raw) {
     const result = {};
@@ -34,7 +34,7 @@ function getItemAuctionMeta(itemOrChecklist, fallbackName) {
     const pairs = _checklistPairs(checklist);
     const storedType = String(pairs._auction || '').toLowerCase();
     // 일반 경매의 E2 같은 실제 개체명을 예전 팀 코드로 오인하지 않는다.
-    const legacy = [AUCTION_TYPES.EVENT, AUCTION_TYPES.EXTRA, AUCTION_TYPES.CREWART].includes(storedType)
+    const legacy = [AUCTION_TYPES.SOLO, AUCTION_TYPES.EVENT, AUCTION_TYPES.EXTRA, AUCTION_TYPES.CREWART].includes(storedType)
         ? null
         : name.toUpperCase().match(/^([A-P])\s*[-_]?\s*([1-9]\d*)(?=\s|[-·:]|$)/);
     const tournamentCode = String(pairs._slot || (legacy ? legacy[1] + legacy[2] : '')).toUpperCase();
@@ -79,6 +79,7 @@ function isTournamentAuctionItem(item) {
 function auctionTypeLabel(itemOrType) {
     const type = typeof itemOrType === 'string' ? itemOrType : getItemAuctionMeta(itemOrType).auctionType;
     if (type === AUCTION_TYPES.TOURNAMENT) return '토너먼트';
+    if (type === AUCTION_TYPES.SOLO) return '단독 경매';
     if (type === AUCTION_TYPES.CREWART) return '크레와트';
     if (type === AUCTION_TYPES.EVENT) return '이벤트 경매';
     return '일반 경매';
@@ -86,8 +87,12 @@ function auctionTypeLabel(itemOrType) {
 
 function auctionStageLabel(item) {
     const meta = getItemAuctionMeta(item);
-    if (meta.auctionType === AUCTION_TYPES.TOURNAMENT) return meta.tournamentStage ? meta.tournamentStage + '강' : '토너먼트';
+    if (meta.auctionType === AUCTION_TYPES.TOURNAMENT) {
+        if (meta.tournamentStage === 2) return '결승·3·4위전';
+        return meta.tournamentStage ? meta.tournamentStage + '강' : '토너먼트';
+    }
     if (meta.auctionType === AUCTION_TYPES.CREWART) return '크레와트';
+    if (meta.auctionType === AUCTION_TYPES.SOLO) return '단독 경매';
     if (meta.auctionType === AUCTION_TYPES.EVENT) return '이벤트 경매';
     return '일반 경매';
 }
@@ -826,18 +831,49 @@ async function rebuildTournamentItems(assignments, pw) {
     const rounds = Math.max(...assignmentRows.map(item => Number(item.code.slice(1)) || 1));
     const matchCount = Math.ceil(letters.length / 2);
     const publicOrder = [];
-    for (let round = 1; round <= rounds; round++) {
-        const startGroup = matchCount ? ((round - 1) % matchCount) : 0;
-        for (let offset = 0; offset < matchCount; offset++) {
-            const group = (startGroup + offset) % matchCount;
-            const left = letters[group * 2];
-            const right = letters[group * 2 + 1];
-            if (left && byCode[left + round]) publicOrder.push(byCode[left + round]);
-            if (right && byCode[right + round]) publicOrder.push(byCode[right + round]);
+    if (tournamentStage === 2 && matchCount === 2) {
+        // 메달 결정전은 3·4위전(C·D)을 먼저 끝낸 뒤 결승(A·B)을 진행한다.
+        [1, 0].forEach(group => {
+            for (let round = 1; round <= rounds; round++) {
+                const left = letters[group * 2];
+                const right = letters[group * 2 + 1];
+                if (left && byCode[left + round]) publicOrder.push(byCode[left + round]);
+                if (right && byCode[right + round]) publicOrder.push(byCode[right + round]);
+            }
+        });
+    } else {
+        for (let round = 1; round <= rounds; round++) {
+            const startGroup = matchCount ? ((round - 1) % matchCount) : 0;
+            for (let offset = 0; offset < matchCount; offset++) {
+                const group = (startGroup + offset) % matchCount;
+                const left = letters[group * 2];
+                const right = letters[group * 2 + 1];
+                if (left && byCode[left + round]) publicOrder.push(byCode[left + round]);
+                if (right && byCode[right + round]) publicOrder.push(byCode[right + round]);
+            }
         }
     }
 
+    const extras = (allExisting || []).filter(item => !seenIds.has(Number(item.id)));
+    const soloExtras = tournamentStage === 2
+        ? extras.filter(item => getItemAuctionMeta({ name: item.name, checklist: item.checklist, num: item.num }).auctionType === AUCTION_TYPES.SOLO)
+        : [];
+    const soloIds = new Set(soloExtras.map(item => Number(item.id)));
+    const preservedExtras = extras.filter(item => !soloIds.has(Number(item.id)));
     const maxExistingNum = Math.max(0, ...(allExisting || []).map(item => Number.parseInt(item.num, 10) || 0));
+    const assignmentNum = new Map();
+    const soloNum = new Map();
+
+    if (tournamentStage === 2 && matchCount === 2) {
+        // 실제 운영 큐: 3·4위전(C·D) → 단독 경매 → 결승(A·B).
+        let nextNum = Math.max(0, ...preservedExtras.map(item => Number.parseInt(item.num, 10) || 0));
+        publicOrder.filter(item => /^[CD]/.test(item.code)).forEach(item => assignmentNum.set(item.id, ++nextNum));
+        soloExtras.forEach(item => soloNum.set(Number(item.id), ++nextNum));
+        publicOrder.filter(item => /^[AB]/.test(item.code)).forEach(item => assignmentNum.set(item.id, ++nextNum));
+    } else {
+        publicOrder.forEach((item, index) => assignmentNum.set(item.id, maxExistingNum + index + 1));
+    }
+
     const payloads = publicOrder.map((assignment, index) => {
         const original = existingMap[assignment.id];
         const checklist = mergeItemAuctionMeta(original.checklist || '', {
@@ -850,7 +886,7 @@ async function rebuildTournamentItems(assignments, pw) {
         return {
             id: assignment.id,
             company: assignment.company,
-            num: maxExistingNum + index + 1,
+            num: assignmentNum.get(assignment.id) || maxExistingNum + index + 1,
             checklist,
             checklist_parsed: formatChecklist(checklist),
             status: '대기', sold_price: null, winner: '', winner_phone: '', start_time: null, bid_log: '',
@@ -858,7 +894,6 @@ async function rebuildTournamentItems(assignments, pw) {
         };
     });
 
-    const extras = (allExisting || []).filter(item => !seenIds.has(Number(item.id)));
     const legacyLetters = [...new Set(extras.map(item => getItemAuctionMeta({ name: item.name, checklist: item.checklist, num: item.num })).filter(meta => meta.auctionType === AUCTION_TYPES.TOURNAMENT && !meta.tournamentStage && meta.teamCode).map(meta => meta.teamCode))];
     const legacyScale = [2, 4, 8, 16].find(scale => legacyLetters.length <= scale) || 16;
 
@@ -870,20 +905,31 @@ async function rebuildTournamentItems(assignments, pw) {
     });
     for (const item of extras) {
         const meta = getItemAuctionMeta({ name: item.name, checklist: item.checklist, num: item.num });
-        if (meta.auctionType !== AUCTION_TYPES.TOURNAMENT || meta.tournamentStage || !meta.tournamentCode) continue;
-        const checklist = mergeItemAuctionMeta(item.checklist || '', {
-            auctionType: AUCTION_TYPES.TOURNAMENT,
-            tournamentCode: meta.tournamentCode,
-            teamCode: meta.teamCode,
-            tournamentStage: legacyScale,
-            publicNumber: meta.publicNumber || item.num
-        });
+        const patch = {};
+        if (soloNum.has(Number(item.id))) patch.num = soloNum.get(Number(item.id));
+        if (meta.auctionType === AUCTION_TYPES.TOURNAMENT && !meta.tournamentStage && meta.tournamentCode) {
+            const checklist = mergeItemAuctionMeta(item.checklist || '', {
+                auctionType: AUCTION_TYPES.TOURNAMENT,
+                tournamentCode: meta.tournamentCode,
+                teamCode: meta.teamCode,
+                tournamentStage: legacyScale,
+                publicNumber: meta.publicNumber || item.num
+            });
+            patch.checklist = checklist;
+            patch.checklist_parsed = formatChecklist(checklist);
+        }
+        if (!Object.keys(patch).length) continue;
         await _sbFetch(`items?id=eq.${item.id}`, {
             method: 'PATCH', headers: { ..._sbHeaders, 'Prefer': 'return=minimal' },
-            body: JSON.stringify({ checklist, checklist_parsed: formatChecklist(checklist) })
+            body: JSON.stringify(patch)
         });
     }
-    return { success: true, count: publicOrder.length, preserved: extras.length };
+    return {
+        success: true,
+        count: publicOrder.length,
+        preserved: extras.length,
+        sequence: tournamentStage === 2 && matchCount === 2 ? ['third_place', 'solo', 'final'] : []
+    };
 }
 
 /**
@@ -1116,7 +1162,7 @@ function _archiveSummary(snapshot) {
     items.forEach(item => {
         const meta = getItemAuctionMeta(item);
         const key = meta.auctionType === AUCTION_TYPES.TOURNAMENT
-            ? (meta.tournamentStage ? meta.tournamentStage + '강' : '토너먼트')
+            ? (meta.tournamentStage === 2 ? '결승·3·4위전' : (meta.tournamentStage ? meta.tournamentStage + '강' : '토너먼트'))
             : auctionTypeLabel(meta.auctionType);
         stageCounts[key] = (stageCounts[key] || 0) + 1;
     });
@@ -1192,6 +1238,32 @@ async function createAuctionArchive(title, pw) {
     } catch (error) {
         console.error('createAuctionArchive error:', error);
         return { success: false, error: '아카이브 저장 중 오류가 발생했습니다: ' + error.message };
+    }
+}
+
+async function archiveAndPrepareMedalDay(title, pw) {
+    if (!(await verifyAdmin(pw))) return { success: false, error: '비밀번호 불일치' };
+    const active = await _sbFetch('items?status=eq.진행중&select=id&limit=1');
+    if (active && active.length) return { success: false, error: '진행 중인 경매를 먼저 종료해주세요.' };
+    try {
+        // 4강 낙찰·배송 기록은 먼저 보관하고 현재 경매 목록만 비운다.
+        // 4강 대진표는 결승·3·4위전 자동 편성에 필요하므로 유지한다.
+        const archive = await _createAuctionArchive(title);
+        await _sbFetch('items?id=gt.0', {
+            method: 'DELETE',
+            headers: { ..._sbHeaders, 'Prefer': 'return=minimal' }
+        });
+        await updateConfigs({
+            active_tournament: 'none',
+            tournament_bracket_2: JSON.stringify({ matches: {} }),
+            event_match_show: '0',
+            battle_current_match: '',
+            battle_state: ''
+        });
+        return { success: true, archive };
+    } catch (error) {
+        console.error('archiveAndPrepareMedalDay error:', error);
+        return { success: false, error: '결승일 목록 준비 중 오류가 발생했습니다: ' + error.message };
     }
 }
 
