@@ -2884,6 +2884,7 @@
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
             gap: calc(var(--blind-total-fs) * 0.3);
+            align-items: center;
         }
         .blind-total-row[data-rank="2"] {
             --rank-text-opacity: 0.78;
@@ -2935,6 +2936,32 @@
             min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        .bidders-row .blind-total-main {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: calc(var(--blind-total-fs) * 0.08);
+            overflow: visible;
+        }
+        .bidders-row .blind-total-team {
+            width: 100%;
+            line-height: 1.08;
+            white-space: normal;
+            overflow: visible;
+            text-overflow: clip;
+            overflow-wrap: anywhere;
+            word-break: keep-all;
+        }
+        .blind-bidder-region {
+            display: block;
+            max-width: 100%;
+            color: #94a3b8;
+            font-size: calc(var(--blind-total-fs) * 0.56);
+            font-weight: 760;
+            line-height: 1.15;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: keep-all;
         }
         .blind-total-progress {
             min-width: 0;
@@ -5964,11 +5991,173 @@
         function cleanBidderName(name) {
             return String(name || '알 수 없음')
                 .replace(/\s*[\(\[-]?\s*010[-]?\d{3,4}[-]?\d{4}[\)\]-]?/g, '')
+                .replace(/(^|[\s\/／\(\)\[\]-])\d{6,13}(?=$|[\s\/／\(\)\[\]-])/g, '$1')
                 .replace(/\s*[\(\[-]\d{2,4}[\)\]-]/g, '')
                 .replace(/\s+\d{2,4}$/g, '')
                 .replace(/[\/／]+/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim() || '알 수 없음';
+        }
+
+        // BAND 프로필 이름은 "이름/지역/번호", "이름 지역", "(지역)이름" 등으로
+        // 제각각이다. 읍·면·동 전체 목록을 하드코딩하지 않고 광역 단위, 실제로
+        // 자주 쓰이는 도시 별칭, 행정구역 접미사를 조합해 보수적으로 분리한다.
+        const BIDDER_PROVINCE_ALIASES = new Map(Object.entries({
+            '서울특별시': '서울', '서울': '서울',
+            '부산광역시': '부산', '부산': '부산',
+            '대구광역시': '대구', '대구': '대구',
+            '인천광역시': '인천', '인천': '인천',
+            '광주광역시': '광주', '광주': '광주',
+            '대전광역시': '대전', '대전': '대전',
+            '울산광역시': '울산', '울산': '울산',
+            '세종특별자치시': '세종', '세종': '세종',
+            '경기도': '경기', '경기': '경기',
+            '강원특별자치도': '강원', '강원도': '강원', '강원': '강원',
+            '충청북도': '충북', '충북': '충북',
+            '충청남도': '충남', '충남': '충남',
+            '전북특별자치도': '전북', '전라북도': '전북', '전북': '전북',
+            '전라남도': '전남', '전남': '전남',
+            '경상북도': '경북', '경북': '경북',
+            '경상남도': '경남', '경남': '경남',
+            '제주특별자치도': '제주', '제주도': '제주', '제주': '제주'
+        }));
+        const BIDDER_PROVINCE_PREFIXES = Array.from(BIDDER_PROVINCE_ALIASES.keys())
+            .sort((a, b) => b.length - a.length);
+        const BIDDER_LOCAL_REGION_NAMES = new Set(`
+            강남 강동 강북 강서 관악 광진 구로 금천 노원 도봉 동대문 동작 마포
+            서대문 서초 성동 성북 송파 양천 영등포 용산 은평 종로 중랑 부평
+            수원 성남 고양 용인 부천 안산 안양 남양주 화성 평택 의정부 시흥
+            파주 김포 광명 군포 이천 오산 하남 양주 구리 안성 포천 의왕 여주 광주
+            춘천 원주 강릉 속초 동해 삼척 청주 충주 제천 천안 공주 보령 아산
+            서산 논산 계룡 당진 전주 군산 익산 정읍 남원 김제 목포 여수 순천
+            나주 광양 포항 경주 김천 안동 구미 영주 영천 상주 문경 경산 창원
+            진주 통영 사천 김해 밀양 거제 양산 제주 서귀포
+        `.trim().split(/\s+/));
+
+        function stripBidderRegionSuffix(value) {
+            return String(value || '').replace(/(?:특별자치시|특별자치도|특별시|광역시|자치시|자치도|시|군|구|읍|면|동)$/u, '');
+        }
+
+        function normalizeBidderRegionPart(value) {
+            const original = String(value || '').normalize('NFKC').trim();
+            const compact = original
+                .replace(/[\(\)\[\]{}（）]/g, '')
+                .replace(/\s+/g, '')
+                .trim();
+            if (!compact) return '';
+            if (BIDDER_PROVINCE_ALIASES.has(compact)) {
+                return BIDDER_PROVINCE_ALIASES.get(compact);
+            }
+
+            for (const prefix of BIDDER_PROVINCE_PREFIXES) {
+                if (!compact.startsWith(prefix) || compact.length <= prefix.length) continue;
+                const localRaw = compact.slice(prefix.length);
+                const local = stripBidderRegionSuffix(localRaw);
+                const isKnownLocal = BIDDER_LOCAL_REGION_NAMES.has(local);
+                const hasAdminSuffix = /^[가-힣]{1,8}(?:시|군|구|읍|면|동)$/u.test(localRaw);
+                if (isKnownLocal || hasAdminSuffix) {
+                    return `${BIDDER_PROVINCE_ALIASES.get(prefix)} · ${local || localRaw}`;
+                }
+            }
+
+            const local = stripBidderRegionSuffix(compact);
+            if (BIDDER_LOCAL_REGION_NAMES.has(local)) return local;
+            // "아이동" 같은 이름을 행정동으로 오인하지 않도록 단독 토큰에서는
+            // 시·군·구까지만 일반 규칙으로 인정한다. 읍·면·동은 상위 지역과
+            // 함께 입력됐을 때 위의 prefix 분기에서만 세부 지역으로 처리한다.
+            if (!/\s/u.test(original) && /^[가-힣]{3,8}(?:시|군|구)$/u.test(compact)) return local || compact;
+            return '';
+        }
+
+        function isBidderNoisePart(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return true;
+            if (!/^[+\d\s().-]+$/.test(raw)) return false;
+            const digits = raw.replace(/\D/g, '');
+            return digits.length >= 1 && digits.length <= 13;
+        }
+
+        function splitAttachedProvince(value) {
+            const raw = String(value || '').trim();
+            if (!/^[가-힣A-Za-z&]+$/u.test(raw)) return null;
+            for (const alias of BIDDER_PROVINCE_PREFIXES) {
+                const region = BIDDER_PROVINCE_ALIASES.get(alias);
+                if (raw.endsWith(alias) && raw.length - alias.length >= 2) {
+                    return { name: raw.slice(0, -alias.length), region };
+                }
+                if (raw.startsWith(alias) && raw.length - alias.length >= 2) {
+                    return { name: raw.slice(alias.length), region };
+                }
+            }
+            return null;
+        }
+
+        function parseBidderIdentity(rawName, explicitRegion = '') {
+            const raw = String(rawName || '').normalize('NFKC').replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+            const regions = [];
+            const names = [];
+            const addRegion = value => {
+                const normalized = normalizeBidderRegionPart(value) || cleanBidderName(value);
+                if (normalized && normalized !== '알 수 없음' && !regions.includes(normalized)) regions.push(normalized);
+            };
+            if (explicitRegion) addRegion(explicitRegion);
+
+            let working = raw.replace(/[\(\[（]\s*([^\)\]）]+)\s*[\)\]）]/g, (all, inner) => {
+                const region = normalizeBidderRegionPart(inner);
+                if (region) {
+                    addRegion(region);
+                    return ' ';
+                }
+                return ` ${inner} `;
+            });
+
+            const segments = working.split(/[\/／|｜,，·]+/).map(part => part.trim()).filter(Boolean);
+            segments.forEach(segment => {
+                if (isBidderNoisePart(segment)) return;
+                const wholeRegion = normalizeBidderRegionPart(segment);
+                if (wholeRegion) {
+                    addRegion(wholeRegion);
+                    return;
+                }
+
+                let tokens = segment.split(/\s+/).filter(token => token && !isBidderNoisePart(token));
+                const trailingRegions = [];
+                while (tokens.length > 1) {
+                    const firstRegion = normalizeBidderRegionPart(tokens[0]);
+                    if (firstRegion) {
+                        addRegion(firstRegion);
+                        tokens.shift();
+                        continue;
+                    }
+                    const lastRegion = normalizeBidderRegionPart(tokens[tokens.length - 1]);
+                    if (lastRegion) {
+                        trailingRegions.unshift(lastRegion);
+                        tokens.pop();
+                        continue;
+                    }
+                    break;
+                }
+                trailingRegions.forEach(addRegion);
+
+                if (tokens.length === 1) {
+                    const attached = splitAttachedProvince(tokens[0]);
+                    if (attached) {
+                        tokens[0] = attached.name;
+                        addRegion(attached.region);
+                    }
+                }
+
+                const namePart = cleanBidderName(tokens.join(' '));
+                if (namePart !== '알 수 없음' && /[0-9A-Za-z가-힣]/u.test(namePart)) names.push(namePart);
+            });
+
+            const fallback = cleanBidderName(raw);
+            const name = names.join(' · ') || (/[0-9A-Za-z가-힣]/u.test(fallback) ? fallback : '알 수 없음');
+            return {
+                name,
+                region: names.length ? regions.join(' · ') : '',
+                raw
+            };
         }
 
         function formatLiveBidAmount(amount) {
@@ -5993,6 +6182,7 @@
                         topBidsMap.set(key, {
                             key,
                             name: rawName,
+                            region: bid.region || bid.location || bid.area || '',
                             amount,
                             sortTime,
                             index
@@ -6012,6 +6202,7 @@
                 return {
                     key: String(bid.bidder_key || bid.key || rawName || 'bidder') + '|' + index,
                     name: rawName,
+                    region: bid.region || bid.location || bid.area || '',
                     amount: normalizeBidAmount(bid.amount !== undefined && bid.amount !== null ? bid.amount : bid.price),
                     sortTime: bidSortTime(bid, index),
                     index
@@ -6080,9 +6271,9 @@
                 }
                 rowEl.dataset.rank = String(rank);
 
-                const cleanName = cleanBidderName(bid.name);
+                const identity = parseBidderIdentity(bid.name, bid.region);
                 const formattedAmount = formatLiveBidAmount(bid.amount);
-                const cacheKey = `${cleanName}|${formattedAmount}|${rank}`;
+                const cacheKey = `${identity.name}|${identity.region}|${formattedAmount}|${rank}`;
                 if (rowEl.dataset.lastCache === cacheKey) {
                     // 스킵
                 } else {
@@ -6090,7 +6281,8 @@
                     rowEl.innerHTML = `
                         <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
                         <div class="blind-total-main">
-                            <strong class="blind-total-team">${esc(cleanName)}</strong>
+                            <strong class="blind-total-team">${esc(identity.name)}</strong>
+                            ${identity.region ? `<span class="blind-bidder-region">${esc(identity.region)}</span>` : ''}
                         </div>
                         <strong class="blind-total-amount">${formattedAmount}</strong>
                     `;
