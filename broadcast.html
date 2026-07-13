@@ -5994,7 +5994,7 @@
                 .replace(/(^|[\s\/／\(\)\[\]-])\d{6,13}(?=$|[\s\/／\(\)\[\]-])/g, '$1')
                 .replace(/\s*[\(\[-]\d{2,4}[\)\]-]/g, '')
                 .replace(/\s+\d{2,4}$/g, '')
-                .replace(/[\/／]+/g, ' ')
+                .replace(/[\/\\／]+/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim() || '알 수 없음';
         }
@@ -6031,7 +6031,9 @@
             춘천 원주 강릉 속초 동해 삼척 청주 충주 제천 천안 공주 보령 아산
             서산 논산 계룡 당진 전주 군산 익산 정읍 남원 김제 목포 여수 순천
             나주 광양 포항 경주 김천 안동 구미 영주 영천 상주 문경 경산 창원
-            진주 통영 사천 김해 밀양 거제 양산 제주 서귀포
+            진주 통영 사천 김해 밀양 거제 양산 제주 서귀포 분당 일산 동탄 병점
+            과천 동두천 영광 진천 홍성 남지 양평 오남 완도 잠실 진해 광혜원 하단
+            전라광주 브뤼셀
         `.trim().split(/\s+/));
 
         function stripBidderRegionSuffix(value) {
@@ -6060,6 +6062,9 @@
                 }
             }
 
+            // 안동·강동처럼 이름 자체가 "동"으로 끝나는 실제 지역명은 접미사를
+            // 제거하기 전에 먼저 확인한다.
+            if (BIDDER_LOCAL_REGION_NAMES.has(compact)) return compact;
             const local = stripBidderRegionSuffix(compact);
             if (BIDDER_LOCAL_REGION_NAMES.has(local)) return local;
             // "아이동" 같은 이름을 행정동으로 오인하지 않도록 단독 토큰에서는
@@ -6072,9 +6077,14 @@
         function isBidderNoisePart(value) {
             const raw = String(value || '').trim();
             if (!raw) return true;
-            if (!/^[+\d\s().-]+$/.test(raw)) return false;
-            const digits = raw.replace(/\D/g, '');
-            return digits.length >= 1 && digits.length <= 13;
+            if (!/^[+\d공영일이삼사오육칠팔구\s().-]+$/u.test(raw)) return false;
+            const arabicDigits = (raw.match(/\d/g) || []).length;
+            const koreanDigits = (raw.match(/[공영일이삼사오육칠팔구]/g) || []).length;
+            if (koreanDigits) {
+                const totalDigits = arabicDigits + koreanDigits;
+                return arabicDigits >= 4 && totalDigits >= 7 && totalDigits <= 15;
+            }
+            return arabicDigits >= 1 && arabicDigits <= 13;
         }
 
         function splitAttachedProvince(value) {
@@ -6111,7 +6121,12 @@
                 return ` ${inner} `;
             });
 
-            const segments = working.split(/[\/／|｜,，·]+/).map(part => part.trim()).filter(Boolean);
+            // 일부 BAND 프로필은 "이름.지역.전화번호" 또는 역슬래시를 구분자로 쓴다.
+            // 점은 전화번호가 함께 있는 구조형 프로필에서만 구분자로 취급해 상호의
+            // 일반적인 점 표기를 최대한 보존한다.
+            const hasStructuredNumber = /(?:\d[.\s-]?){6,}/u.test(raw);
+            if (hasStructuredNumber) working = working.replace(/\./g, '/');
+            const segments = working.split(/[\/\\／|｜,，·]+/).map(part => part.trim()).filter(Boolean);
             segments.forEach(segment => {
                 if (isBidderNoisePart(segment)) return;
                 const wholeRegion = normalizeBidderRegionPart(segment);
@@ -6140,10 +6155,16 @@
                 trailingRegions.forEach(addRegion);
 
                 if (tokens.length === 1) {
-                    const attached = splitAttachedProvince(tokens[0]);
-                    if (attached) {
-                        tokens[0] = attached.name;
-                        addRegion(attached.region);
+                    const remainingRegion = normalizeBidderRegionPart(tokens[0]);
+                    if (remainingRegion) {
+                        addRegion(remainingRegion);
+                        tokens = [];
+                    } else {
+                        const attached = splitAttachedProvince(tokens[0]);
+                        if (attached) {
+                            tokens[0] = attached.name;
+                            addRegion(attached.region);
+                        }
                     }
                 }
 
