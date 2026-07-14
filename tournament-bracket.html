@@ -158,13 +158,6 @@
       ['r8-3','비송','r4-2','비송',2],['r8-4','자몽','r4-2','자몽',2],
       ['r4-1','베누스','final-1','베누스',3],['r4-2','비송','final-1','비송',3]
     ];
-    const SURVIVORS_BY_STAGE={
-      '16':new Set(ROUNDS[0].matches.flatMap(match=>[match.a,match.b])),
-      '8':new Set(ROUNDS[1].matches.flatMap(match=>[match.a,match.b])),
-      '4':new Set(ROUNDS[2].matches.flatMap(match=>[match.a,match.b])),
-      final:new Set(ROUNDS[3].matches.flatMap(match=>[match.a,match.b])),
-      all:new Set(ROUNDS[3].matches.flatMap(match=>[match.a,match.b]))
-    };
     const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     function teamRow(name,price,winner,match){
       const meta=TEAM[name]||[name,''];
@@ -193,23 +186,23 @@
       const y=column.offsetTop+card.offsetTop+row.offsetTop+row.offsetHeight/2;
       return {x,y};
     }
-    function drawConnectors(maxRound,survivors,animateRound=-1){
+    function drawConnectors(maxRound,animateRound=-1){
       const svg=document.getElementById('connectors');
       svg.setAttribute('viewBox',`0 0 ${svg.clientWidth} ${svg.clientHeight}`);
-      svg.innerHTML=LINKS.filter(link=>link[4]<=maxRound&&survivors.has(link[1])).map((link,index)=>{
+      svg.innerHTML=LINKS.filter(link=>link[4]<=maxRound).map((link,index)=>{
         const [fromId,fromTeam,toId,toTeam,stage]=link;
         const from=pointFor(fromId,fromTeam,'right');
         const to=pointFor(toId,toTeam,'left');
         const middle=from.x+(to.x-from.x)*.5;
         const entering=stage===animateRound;
-        return `<path class="connector active${entering?' entering':''}" data-stage="${stage}" data-team="${escapeHtml(fromTeam)}" style="animation-delay:${(index%4)*90}ms" d="M ${from.x} ${from.y} H ${middle} V ${to.y} H ${to.x}"/>`;
+        return `<path class="connector active${entering?' entering':''}" data-stage="${stage}" data-match="${fromId}" data-team="${escapeHtml(fromTeam)}" style="animation-delay:${(index%4)*90}ms" d="M ${from.x} ${from.y} H ${middle} V ${to.y} H ${to.x}"/>`;
       }).join('');
     }
     const stageMap={all:3,'16':0,'8':1,'4':2,final:3};
     function setStage(stage,animate=false){
       const maxRound=stageMap[stage]??3;
       document.querySelectorAll('.match').forEach(card=>card.classList.toggle('future',Number(card.dataset.round)>maxRound));
-      drawConnectors(maxRound,SURVIVORS_BY_STAGE[stage]||SURVIVORS_BY_STAGE.all,animate?maxRound:-1);
+      drawConnectors(maxRound,animate?maxRound:-1);
       document.getElementById('progress-note').textContent=stage==='all'?'':`${stage==='final'?'결승':stage+'강'} 진행 화면`;
     }
     function fitCanvas(){
