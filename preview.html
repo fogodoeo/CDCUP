@@ -781,7 +781,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260714-presentation-v1"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260714-presentation-v2"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -878,8 +878,8 @@
                         <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-bracket-live-show" class="switch-input" onchange="toggleShowState('bracket_live')">
                     </div>
-                    <div class="switch-container" id="toggle-bracket-full-blind-group" style="display:none;" title="ON이면 토너먼트 방송 전체에서 업체명과 로고를 숨깁니다">
-                        <span>토너먼트 업체 숨김</span>
+                    <div class="switch-container" id="toggle-bracket-full-blind-group" style="display:none;" title="ON이면 전체 대진표에서 업체명과 로고를 숨깁니다. 개체 경매 화면은 이 설정과 별도로 블라인드 처리됩니다">
+                        <span>전체대진 업체 숨김</span>
                         <input type="checkbox" id="toggle-bracket-full-blind" class="switch-input" checked onchange="toggleFullBracketBlind()">
                     </div>
                     <div class="switch-container" id="toggle-bracket-title-show-group" style="display:none;">
@@ -1122,7 +1122,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260714-presentation-v1';
+        const broadcastAssetVersion = '20260714-presentation-v2';
         let previewConfigMap = {};
 
         function requestedModuleId() {
@@ -1505,7 +1505,7 @@
             try {
                 await updateConfigs({ bracket_full_blind: requested });
                 frame.contentWindow.postMessage({ type: 'forceRefresh' }, '*');
-                toast(requested === '1' ? '토너먼트 업체명 숨김' : '토너먼트 업체명 공개');
+                toast(requested === '1' ? '전체대진 업체명 숨김' : '전체대진 업체명 공개');
             } catch (err) {
                 checkbox.checked = requested !== '1';
                 toast('블라인드 설정 저장 실패: ' + err.message);

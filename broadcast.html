@@ -5674,7 +5674,7 @@
             const preferredScale = getBlindPreferredScale([], map || {});
             const fallback = {};
             const letter = resolveBlindTeamLetter(item, teamIndex, fallback, preferredScale);
-            const isBlind = String(map?.bracket_full_blind ?? '1') !== '0';
+            const isBlind = getBroadcastPresentation(item, map).visibility === 'blind';
             if (isBlind) return letter + '팀';
             const companyName = String(item?.company || '').trim();
             return companyName || (letter + '팀');
@@ -6013,7 +6013,7 @@
                 container.classList.toggle('has-result', hasWinner);
                 document.getElementById('sale-mode-kicker').textContent = hasWinner ? 'QUIZ RESULT' : 'EVENT QUIZ';
                 document.getElementById('sale-mode-title').textContent = hasWinner
-                    ? `정답! ${meta.config.answer || ''}`
+                    ? `정답! ${winner?.answer || meta.config.answer || ''}`
                     : (meta.config.question || '문제 준비 중');
                 document.getElementById('sale-mode-subtitle').textContent = hasWinner
                     ? `${identity.name}${identity.region ? ' - ' + identity.region : ''}`
@@ -6056,12 +6056,9 @@
                 ? 'tournament'
                 : 'single';
             const explicitVisibility = String(auctionMeta.visibilityMode || '').toLowerCase();
-            const tournamentFallback = String(map?.bracket_full_blind ?? '1') !== '0'
-                ? 'blind'
-                : 'public';
             const visibility = ['public', 'blind'].includes(explicitVisibility)
                 ? explicitVisibility
-                : (competition === 'tournament' ? tournamentFallback : 'public');
+                : (competition === 'tournament' ? 'blind' : 'public');
             const isQuiz = saleMeta.mode === 'quiz';
             let label = '';
             if (competition === 'tournament') {
@@ -6974,9 +6971,9 @@
             const isAuctionDone = item => item && ['완료', 'sold', '낙찰', '유찰'].includes(item.status);
             const toPrice = item => Number.parseFloat(item?.sold_price || item?.soldPrice || 0) || 0;
             const matchCount = tournamentStageMatchCount(scale);
-            const fullBracketBlind = activeAuctionItem
-                ? getBroadcastPresentation(activeAuctionItem, map).visibility === 'blind'
-                : String(map.bracket_full_blind ?? '1') !== '0';
+            // 개체 경매 화면의 블라인드 정책과 분리한다. 전체 대진은
+            // 운영자가 이 전용 토글로 업체 공개 여부를 결정한다.
+            const fullBracketBlind = String(map.bracket_full_blind ?? '1') !== '0';
 
             let schedule = [];
             try { if (map.battle_schedule) schedule = JSON.parse(map.battle_schedule); } catch (e) {}
