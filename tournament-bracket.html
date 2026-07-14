@@ -60,12 +60,13 @@
     .team-logo{width:22px;height:22px;display:grid;place-items:center;overflow:hidden;background:#f5f5f3;border:1px solid rgba(255,255,255,.18)}
     .team-logo img{width:100%;height:100%;object-fit:contain}
     .team-main{min-width:0;display:flex;align-items:baseline;gap:7px}
+    .team-name{min-width:0;display:inline-flex;align-items:center;gap:5px;max-width:100%}
     .team-main strong{font-size:12px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .team-main small{color:var(--muted);font-size:7px;font-weight:800;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .amount{white-space:nowrap;font-size:8px;font-weight:850;font-variant-numeric:tabular-nums}
     .amount b{font-size:12px;color:inherit}
     .team.win .amount{color:var(--gold-soft)}
-    .advance{margin-left:3px;padding:1px 4px;border:1px solid rgba(34,201,141,.42);color:var(--green);font-size:6px;font-style:normal;font-weight:950;letter-spacing:.08em}
+    .advance{flex:0 0 auto;padding:1px 4px;border:1px solid rgba(34,201,141,.42);color:var(--green);font-size:6px;font-style:normal;font-weight:950;letter-spacing:.08em}
     .r16 .match{height:79px}.r16 .m1{top:52px}.r16 .m2{top:147px}.r16 .m3{top:242px}.r16 .m4{top:337px}.r16 .m5{top:432px}.r16 .m6{top:527px}.r16 .m7{top:622px}.r16 .m8{top:717px}
     .r8 .match{height:101px}.r8 .match-label{height:25px;font-size:9px}.r8 .team{height:37px;grid-template-columns:31px minmax(0,1fr) auto;gap:10px}.r8 .team-logo{width:27px;height:27px}.r8 .team-main strong{font-size:14px}.r8 .team-main small{font-size:8px}.r8 .amount b{font-size:15px}.r8 .m1{top:78px}.r8 .m2{top:268px}.r8 .m3{top:458px}.r8 .m4{top:648px}
     .r4 .match{height:125px}.r4 .match-label{height:29px;font-size:10px}.r4 .team{height:47px;grid-template-columns:39px minmax(0,1fr) auto;gap:12px;padding:0 13px}.r4 .team-logo{width:34px;height:34px}.r4 .team-main{display:block}.r4 .team-main strong{display:block;font-size:17px}.r4 .team-main small{display:block;margin-top:2px;font-size:8px}.r4 .amount{font-size:9px}.r4 .amount b{font-size:13px}.r4 .m1{top:165px}.r4 .m2{top:545px}
@@ -166,7 +167,7 @@
       let status='';
       if(price!==undefined&&price!==null) status=`<span class="amount"><b>${Number(price).toLocaleString('ko-KR')}</b>만원</span>`;
       else status=`<span class="amount">${escapeHtml(isWinner?match.wa:match.la)}</span>`;
-      return `<div class="team${isWinner?' win':''}${isFinal?' finalist':''}" data-team="${escapeHtml(name)}"><span class="team-logo"><img src="${meta[1]}" alt=""></span><span class="team-main"><strong>${escapeHtml(name)}</strong><small>${escapeHtml(meta[0])}</small>${isWinner?'<i class="advance">WIN</i>':''}</span>${status}</div>`;
+      return `<div class="team${isWinner?' win':''}${isFinal?' finalist':''}" data-team="${escapeHtml(name)}"><span class="team-logo"><img src="${meta[1]}" alt=""></span><span class="team-main"><span class="team-name"><strong>${escapeHtml(name)}</strong>${isWinner?'<i class="advance">WIN</i>':''}</span><small>${escapeHtml(meta[0])}</small></span>${status}</div>`;
     }
     function matchCard(match,index,round){
       const status=match.id==='final-1'?'진행 예정':'경기 종료';
