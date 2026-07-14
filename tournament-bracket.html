@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#050911">
+  <title>2026 CDCUP 공식 토너먼트 대진표</title>
+  <style>
+    @font-face{font-family:Pretendard;src:local("Pretendard");font-weight:100 900}
+    :root{
+      --bg:#050911;--panel:#0b1420;--panel-2:#101b29;--line:#263343;
+      --gold:#cda548;--gold-soft:#f0d07b;--green:#22c98d;
+      --white:#f7f8fa;--muted:#8491a3;--dim:#566274;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;min-width:100%;min-height:100%;background:#02050a;overflow:hidden}
+    body{font-family:Pretendard,"Noto Sans KR",Arial,sans-serif;color:var(--white)}
+    .viewport{position:relative;overflow:hidden}
+    .canvas{
+      position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;
+      transform-origin:left top;background:
+        radial-gradient(circle at 82% -12%,rgba(205,165,72,.10),transparent 32%),
+        radial-gradient(circle at 49% 58%,rgba(34,201,141,.035),transparent 28%),
+        linear-gradient(rgba(255,255,255,.013) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.013) 1px,transparent 1px),
+        var(--bg);
+      background-size:auto,auto,64px 64px,64px 64px,auto;
+    }
+    .canvas:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.34),transparent 14%,transparent 86%,rgba(0,0,0,.34))}
+    .header{position:absolute;left:55px;right:55px;top:34px;height:108px;border-bottom:1px solid rgba(205,165,72,.30);display:grid;grid-template-columns:1fr auto 1fr;align-items:start}
+    .brand-kicker{display:flex;align-items:center;gap:13px;color:var(--gold-soft);font-size:13px;font-weight:900;letter-spacing:.22em}
+    .brand-kicker:before{content:"";width:33px;height:2px;background:var(--gold)}
+    .brand-title{margin-top:13px;font-size:33px;line-height:1;font-weight:950;letter-spacing:-.035em}
+    .title{text-align:center}
+    .title small{display:block;color:var(--gold);font-size:12px;font-weight:900;letter-spacing:.24em}
+    .title h1{margin:8px 0 0;font-size:34px;line-height:1;font-weight:950;letter-spacing:-.035em}
+    .season{justify-self:end;display:flex;align-items:center;gap:14px;text-align:right}
+    .season img{width:72px;height:72px;object-fit:contain;filter:sepia(1) saturate(.72) brightness(.95)}
+    .season span{display:block;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.19em}
+    .season strong{display:block;margin-top:7px;color:var(--gold-soft);font-size:20px;font-weight:950}
+    .board{position:absolute;left:55px;right:55px;top:162px;height:840px}
+    .connectors{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:1}
+    .connector{fill:none;stroke:#263343;stroke-width:2;vector-effect:non-scaling-stroke;transition:stroke .45s ease,filter .45s ease,opacity .45s ease}
+    .connector.active{stroke:var(--gold);filter:drop-shadow(0 0 4px rgba(205,165,72,.28))}
+    .connector.entering{stroke-dasharray:1300;stroke-dashoffset:1300;animation:drawLine .85s ease forwards}
+    @keyframes drawLine{to{stroke-dashoffset:0}}
+    .round{position:absolute;top:0;height:100%;width:390px;z-index:2}
+    .round.r16{left:0}.round.r8{left:465px}.round.r4{left:930px}.round.final{left:1395px}
+    .round-title{position:absolute;top:0;left:0;right:0;height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 4px 0 1px;color:var(--muted);font-size:11px;font-weight:850;letter-spacing:.12em}
+    .round-title strong{color:var(--white);font-size:17px;font-weight:950;letter-spacing:0}
+    .round-title em{font-style:normal;color:var(--gold);font-size:10px;letter-spacing:.16em}
+    .match{position:absolute;left:0;width:390px;border:1px solid rgba(205,165,72,.28);background:linear-gradient(135deg,rgba(15,26,40,.98),rgba(7,14,24,.98));box-shadow:inset 0 0 0 1px rgba(255,255,255,.018);transition:opacity .45s ease,filter .45s ease,transform .45s ease,border-color .45s ease}
+    .match:before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.32}
+    .match.future{opacity:.12;filter:saturate(.2);transform:scale(.975)}
+    .match-label{height:21px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:var(--muted);font-size:8px;font-weight:850;letter-spacing:.11em;border-bottom:1px solid rgba(132,145,163,.11)}
+    .match-label span:last-child{color:var(--green)}
+    .team{height:29px;display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:8px;padding:0 10px;color:var(--dim);border-bottom:1px solid rgba(132,145,163,.09);transition:color .4s ease,background .4s ease,opacity .4s ease}
+    .team:last-child{border-bottom:0}
+    .team.win{color:var(--white);background:linear-gradient(90deg,rgba(34,201,141,.10),transparent 72%)}
+    .team-logo{width:22px;height:22px;display:grid;place-items:center;overflow:hidden;background:#f5f5f3;border:1px solid rgba(255,255,255,.18)}
+    .team-logo img{width:100%;height:100%;object-fit:contain}
+    .team-main{min-width:0;display:flex;align-items:baseline;gap:7px}
+    .team-main strong{font-size:12px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .team-main small{color:var(--muted);font-size:7px;font-weight:800;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .amount{white-space:nowrap;font-size:8px;font-weight:850;font-variant-numeric:tabular-nums}
+    .amount b{font-size:12px;color:inherit}
+    .team.win .amount{color:var(--gold-soft)}
+    .advance{margin-left:3px;padding:1px 4px;border:1px solid rgba(34,201,141,.42);color:var(--green);font-size:6px;font-style:normal;font-weight:950;letter-spacing:.08em}
+    .r16 .match{height:79px}.r16 .m1{top:52px}.r16 .m2{top:147px}.r16 .m3{top:242px}.r16 .m4{top:337px}.r16 .m5{top:432px}.r16 .m6{top:527px}.r16 .m7{top:622px}.r16 .m8{top:717px}
+    .r8 .match{height:101px}.r8 .match-label{height:25px;font-size:9px}.r8 .team{height:37px;grid-template-columns:31px minmax(0,1fr) auto;gap:10px}.r8 .team-logo{width:27px;height:27px}.r8 .team-main strong{font-size:14px}.r8 .team-main small{font-size:8px}.r8 .amount b{font-size:15px}.r8 .m1{top:78px}.r8 .m2{top:268px}.r8 .m3{top:458px}.r8 .m4{top:648px}
+    .r4 .match{height:125px}.r4 .match-label{height:29px;font-size:10px}.r4 .team{height:47px;grid-template-columns:39px minmax(0,1fr) auto;gap:12px;padding:0 13px}.r4 .team-logo{width:34px;height:34px}.r4 .team-main{display:block}.r4 .team-main strong{display:block;font-size:17px}.r4 .team-main small{display:block;margin-top:2px;font-size:8px}.r4 .amount{font-size:9px}.r4 .amount b{font-size:13px}.r4 .m1{top:165px}.r4 .m2{top:545px}
+    .final .match{height:181px;top:326px;border-color:rgba(205,165,72,.52);background:linear-gradient(135deg,rgba(18,30,44,.99),rgba(9,16,26,.99))}.final .match-label{height:36px;padding:0 15px;font-size:11px;color:var(--gold-soft)}.final .team{height:72px;grid-template-columns:54px minmax(0,1fr) auto;gap:15px;padding:0 16px}.final .team-logo{width:47px;height:47px}.final .team-main{display:block}.final .team-main strong{display:block;font-size:23px;color:var(--white)}.final .team-main small{display:block;margin-top:4px;font-size:10px}.final .amount{font-size:10px;color:var(--muted)}.final .amount b{font-size:15px}.final .team.finalist{background:linear-gradient(90deg,rgba(205,165,72,.09),transparent 78%)}
+    .legend{position:absolute;left:0;right:0;bottom:3px;display:flex;align-items:center;justify-content:space-between;color:#4c5868;font-size:9px;font-weight:850;letter-spacing:.09em;z-index:3}
+    .legend div{display:flex;align-items:center;gap:18px}.legend i{display:inline-block;width:16px;height:2px;background:var(--gold);margin-right:6px;vertical-align:middle}.legend b{color:#718096;font-weight:900}
+    .champion-placeholder{position:absolute;right:0;top:519px;width:390px;text-align:center;color:#344052;font-size:9px;font-weight:900;letter-spacing:.17em;z-index:2}
+    .progress-note{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);color:rgba(205,165,72,.42);font-size:9px;font-weight:900;letter-spacing:.18em;white-space:nowrap}
+    @media (prefers-reduced-motion:reduce){.connector.entering{animation:none;stroke-dashoffset:0}.match{transition:none}}
+  </style>
+</head>
+<body>
+  <div class="viewport" id="viewport">
+    <main class="canvas" id="canvas">
+      <header class="header">
+        <div>
+          <div class="brand-kicker">CDCUP OFFICIAL TOURNAMENT</div>
+          <div class="brand-title">2026 CDCUP</div>
+        </div>
+        <div class="title">
+          <small>OFFICIAL BRACKET</small>
+          <h1>토너먼트 대진표</h1>
+        </div>
+        <div class="season">
+          <div><span>TOURNAMENT SEASON</span><strong>ROAD TO THE FINAL</strong></div>
+          <img src="assets/cdcup-official-emblem.png" alt="CDCUP 공식 트로피 로고">
+        </div>
+      </header>
+      <section class="board" id="board" aria-label="2026 CDCUP 16강부터 결승까지 토너먼트 대진표">
+        <svg class="connectors" id="connectors" aria-hidden="true"></svg>
+        <div class="round r16" data-round="0"><div class="round-title"><strong>16강</strong><em>ROUND OF 16 · 16 TEAMS</em></div></div>
+        <div class="round r8" data-round="1"><div class="round-title"><strong>8강</strong><em>QUARTER FINAL · 8 TEAMS</em></div></div>
+        <div class="round r4" data-round="2"><div class="round-title"><strong>4강</strong><em>SEMI FINAL · 4 TEAMS</em></div></div>
+        <div class="round final" data-round="3"><div class="round-title"><strong>결승</strong><em>THE FINAL · 2 TEAMS</em></div></div>
+        <div class="legend"><div><span><i></i>승리팀 진출 경로</span><span>금액 단위: 만원</span></div><b>16강 → 8강 → 4강 → 결승</b></div>
+      </section>
+      <div class="progress-note" id="progress-note"></div>
+    </main>
+  </div>
+  <script>
+    const TEAM={
+      '베누스':['VENUS GECKO','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614024896_myoy5t.png'],
+      '크레빌딩':['CREBUILDING','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614039839_1zapyu.png'],
+      '니코게코':['NIKO GECKO','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614045636_l4j9h8.png'],
+      '어비스':['ABYSS','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614053967_e2r308.png'],
+      '미야게코':['MIYA GECKO','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614062614_7q4w8m.png'],
+      '헤넥톤':['HENEKTON','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614068383_ajajil.png'],
+      '아틀리에':['ATELIER TRI','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614076171_7233s4.png'],
+      '크레용':['CREYON','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614082189_4ch940.png'],
+      '자몽':['ZAMONG CRE','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782673018185_ho06c0.jpg'],
+      '비송':['BSONG','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782673024625_4qnd6z.png'],
+      '렙타일갤러리':['REPTILE GALLERY','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782673030103_eurlfj.png'],
+      '히꼬':['HIKKO','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782673035472_cz1i7k.jpg'],
+      '아쿠':['ACU','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782932057655_m0f98s.jpg'],
+      '앙크레':['ANCRE','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782932058677_v24mn4.jpg'],
+      '해치랩':['HATCH LAB STUDIO','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782932059436_58i7f8.jpg'],
+      '라이카':['LAIKA','https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782933522030_612nnq.png']
+    };
+    const ROUNDS=[
+      {key:'r16',round:0,label:'16강',matches:[
+        {id:'r16-1',a:'베누스',ap:321,b:'라이카',bp:40,w:'베누스'},
+        {id:'r16-2',a:'렙타일갤러리',ap:155,b:'크레빌딩',bp:72,w:'렙타일갤러리'},
+        {id:'r16-3',a:'히꼬',ap:175,b:'크레용',bp:51,w:'히꼬'},
+        {id:'r16-4',a:'앙크레',ap:23,b:'어비스',bp:100,w:'어비스'},
+        {id:'r16-5',a:'비송',ap:175,b:'미야게코',bp:87,w:'비송'},
+        {id:'r16-6',a:'해치랩',ap:24,b:'헤넥톤',bp:60,w:'헤넥톤'},
+        {id:'r16-7',a:'자몽',ap:67,b:'아틀리에',bp:54,w:'자몽'},
+        {id:'r16-8',a:'니코게코',ap:60,b:'아쿠',bp:16,w:'니코게코'}
+      ]},
+      {key:'r8',round:1,label:'8강',matches:[
+        {id:'r8-1',a:'베누스',ap:165,b:'렙타일갤러리',bp:122,w:'베누스'},
+        {id:'r8-2',a:'히꼬',ap:174,b:'어비스',bp:91,w:'히꼬'},
+        {id:'r8-3',a:'비송',ap:252,b:'헤넥톤',bp:74,w:'비송'},
+        {id:'r8-4',a:'자몽',ap:101,b:'니코게코',bp:67,w:'자몽'}
+      ]},
+      {key:'r4',round:2,label:'4강',matches:[
+        {id:'r4-1',a:'베누스',b:'히꼬',w:'베누스',wa:'결승 진출',la:'4강 종료'},
+        {id:'r4-2',a:'비송',b:'자몽',w:'비송',wa:'결승 진출',la:'4강 종료'}
+      ]},
+      {key:'final',round:3,label:'결승',matches:[
+        {id:'final-1',a:'베누스',b:'비송',w:'',wa:'진행 예정',la:'진행 예정'}
+      ]}
+    ];
+    const LINKS=[
+      ['r16-1','베누스','r8-1','베누스',1],['r16-2','렙타일갤러리','r8-1','렙타일갤러리',1],
+      ['r16-3','히꼬','r8-2','히꼬',1],['r16-4','어비스','r8-2','어비스',1],
+      ['r16-5','비송','r8-3','비송',1],['r16-6','헤넥톤','r8-3','헤넥톤',1],
+      ['r16-7','자몽','r8-4','자몽',1],['r16-8','니코게코','r8-4','니코게코',1],
+      ['r8-1','베누스','r4-1','베누스',2],['r8-2','히꼬','r4-1','히꼬',2],
+      ['r8-3','비송','r4-2','비송',2],['r8-4','자몽','r4-2','자몽',2],
+      ['r4-1','베누스','final-1','베누스',3],['r4-2','비송','final-1','비송',3]
+    ];
+    const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    function teamRow(name,price,winner,match){
+      const meta=TEAM[name]||[name,''];
+      const isFinal=match.id==='final-1';
+      const isWinner=winner===name;
+      let status='';
+      if(price!==undefined&&price!==null) status=`<span class="amount"><b>${Number(price).toLocaleString('ko-KR')}</b>만원</span>`;
+      else status=`<span class="amount">${escapeHtml(isWinner?match.wa:match.la)}</span>`;
+      return `<div class="team${isWinner?' win':''}${isFinal?' finalist':''}" data-team="${escapeHtml(name)}"><span class="team-logo"><img src="${meta[1]}" alt=""></span><span class="team-main"><strong>${escapeHtml(name)}</strong><small>${escapeHtml(meta[0])}</small>${isWinner?'<i class="advance">WIN</i>':''}</span>${status}</div>`;
+    }
+    function matchCard(match,index,round){
+      const status=match.id==='final-1'?'진행 예정':'경기 종료';
+      return `<article class="match m${index+1}" id="${match.id}" data-round="${round.round}"><div class="match-label"><span>${round.label} ${index+1}경기</span><span>${status}</span></div>${teamRow(match.a,match.ap,match.w,match)}${teamRow(match.b,match.bp,match.w,match)}</article>`;
+    }
+    function renderMatches(){
+      for(const round of ROUNDS){
+        const target=document.querySelector('.round.'+round.key);
+        target.insertAdjacentHTML('beforeend',round.matches.map((match,index)=>matchCard(match,index,round)).join(''));
+      }
+    }
+    function pointFor(matchId,teamName,side){
+      const card=document.getElementById(matchId);
+      const column=card.parentElement;
+      const row=card.querySelector(`.team[data-team="${CSS.escape(teamName)}"]`);
+      const x=column.offsetLeft+card.offsetLeft+row.offsetLeft+(side==='right'?row.offsetWidth:0);
+      const y=column.offsetTop+card.offsetTop+row.offsetTop+row.offsetHeight/2;
+      return {x,y};
+    }
+    function drawConnectors(maxRound,animateRound=-1){
+      const svg=document.getElementById('connectors');
+      svg.setAttribute('viewBox',`0 0 ${svg.clientWidth} ${svg.clientHeight}`);
+      svg.innerHTML=LINKS.map((link,index)=>{
+        const [fromId,fromTeam,toId,toTeam,stage]=link;
+        const from=pointFor(fromId,fromTeam,'right');
+        const to=pointFor(toId,toTeam,'left');
+        const middle=from.x+(to.x-from.x)*.5;
+        const active=stage<=maxRound;
+        const entering=stage===animateRound;
+        return `<path class="connector${active?' active':''}${entering?' entering':''}" data-stage="${stage}" style="animation-delay:${(index%4)*90}ms" d="M ${from.x} ${from.y} H ${middle} V ${to.y} H ${to.x}"/>`;
+      }).join('');
+    }
+    const stageMap={all:3,'16':0,'8':1,'4':2,final:3};
+    function setStage(stage,animate=false){
+      const maxRound=stageMap[stage]??3;
+      document.querySelectorAll('.match').forEach(card=>card.classList.toggle('future',Number(card.dataset.round)>maxRound));
+      drawConnectors(maxRound,animate?maxRound:-1);
+      document.getElementById('progress-note').textContent=stage==='all'?'':`${stage==='final'?'결승':stage+'강'} 진행 화면`;
+    }
+    function fitCanvas(){
+      const viewport=document.getElementById('viewport');
+      const canvas=document.getElementById('canvas');
+      const width=window.innerWidth,height=window.innerHeight;
+      const scale=Math.min(width/1920,height/1080);
+      viewport.style.width=`${1920*scale}px`;viewport.style.height=`${1080*scale}px`;
+      viewport.style.marginLeft=`${Math.max(0,(width-1920*scale)/2)}px`;
+      viewport.style.marginTop=`${Math.max(0,(height-1080*scale)/2)}px`;
+      canvas.style.transform=`scale(${scale})`;
+    }
+    renderMatches();
+    const params=new URLSearchParams(location.search);
+    const requested=String(params.get('stage')||'all').toLowerCase();
+    const autoplay=params.get('animate')==='1';
+    setStage(autoplay?'16':requested);
+    fitCanvas();
+    window.addEventListener('resize',fitCanvas,{passive:true});
+    if(autoplay){
+      const sequence=['16','8','4','final'];let index=0;
+      const advance=()=>{index+=1;if(index>=sequence.length)return;setStage(sequence[index],true);setTimeout(advance,2200)};
+      setTimeout(advance,1800);
+    }
+  </script>
+</body>
+</html>
