@@ -231,6 +231,87 @@
             border-color: rgba(220, 193, 127, 0.42);
         }
 
+        /* 판매 방식별 중앙 안내 레이어. 새 방식은 같은 컨테이너와 렌더러를 재사용한다. */
+        .sale-mode-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 80;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(72px, 11vh, 130px) clamp(36px, 8vw, 140px);
+            pointer-events: none;
+        }
+        .sale-mode-overlay.visible { display: flex; }
+        .sale-mode-card {
+            position: relative;
+            isolation: isolate;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: min(920px, 76vw);
+            min-height: min(430px, 52vh);
+            padding: clamp(34px, 5vh, 66px) clamp(38px, 5vw, 78px);
+            overflow: hidden;
+            border: 1px solid rgba(229, 204, 145, 0.5);
+            border-radius: 22px;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(209, 174, 91, 0.2), transparent 44%),
+                linear-gradient(145deg, rgba(6, 10, 18, 0.94), rgba(17, 24, 39, 0.92));
+            box-shadow: 0 32px 90px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(255,255,255,0.1);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            text-align: center;
+            animation: saleModeCardIn 0.45s cubic-bezier(.16,1,.3,1) both;
+        }
+        .sale-mode-card::before {
+            content: '';
+            position: absolute;
+            z-index: -1;
+            inset: 10px;
+            border: 1px solid rgba(229, 204, 145, 0.12);
+            border-radius: 15px;
+        }
+        .sale-mode-kicker {
+            color: #d9b05c;
+            font-size: clamp(14px, 1.5vw, 20px);
+            font-weight: 900;
+            letter-spacing: .24em;
+        }
+        .sale-mode-title {
+            margin-top: clamp(20px, 3vh, 34px);
+            color: #ffffff;
+            font-size: clamp(34px, 5.2vw, 72px);
+            font-weight: 950;
+            line-height: 1.18;
+            letter-spacing: -.045em;
+            word-break: keep-all;
+            text-wrap: balance;
+            text-shadow: 0 8px 30px rgba(0,0,0,.48);
+        }
+        .sale-mode-subtitle {
+            margin-top: clamp(22px, 3vh, 34px);
+            color: #cbd5e1;
+            font-size: clamp(18px, 2vw, 28px);
+            font-weight: 760;
+            line-height: 1.35;
+            word-break: keep-all;
+        }
+        .sale-mode-overlay.has-result .sale-mode-kicker { color: #6ee7b7; }
+        .sale-mode-overlay.has-result .sale-mode-title { color: #fff7df; }
+        .sale-mode-overlay.has-result .sale-mode-subtitle {
+            color: #ffffff;
+            font-size: clamp(22px, 2.8vw, 38px);
+            font-weight: 900;
+        }
+        body.host-mode .sale-mode-overlay,
+        body.bracket-page .sale-mode-overlay { display: none !important; }
+        @keyframes saleModeCardIn {
+            from { opacity: 0; transform: translateY(24px) scale(.96); }
+            to { opacity: 1; transform: none; }
+        }
+
         /* sub 클래스는 더 이상 사용하지 않지만 호환성을 위해 숨김 */
         .top-bar .sub {
             display: none;
@@ -3489,6 +3570,14 @@
             </div>
         </div>
 
+        <section class="sale-mode-overlay" id="sale-mode-overlay" aria-live="polite">
+            <div class="sale-mode-card">
+                <span class="sale-mode-kicker" id="sale-mode-kicker"></span>
+                <strong class="sale-mode-title" id="sale-mode-title"></strong>
+                <span class="sale-mode-subtitle" id="sale-mode-subtitle"></span>
+            </div>
+        </section>
+
         <div class="photo-stack" id="photo-stack">
             <div class="sub-photo" id="slot-sire">
                 <span class="label">부</span>
@@ -3649,7 +3738,15 @@
             return round + '강 ' + index + '조';
         }
 
-        function tournamentRoundsPerMatch(map, scale) {
+        function tournamentRoundsPerMatch(map, scale, matchIndex) {
+            if (matchIndex) {
+                try {
+                    const overrides = JSON.parse(map?.['tournament_match_rounds_' + scale] || '{}');
+                    const matchKey = scale + '_' + matchIndex;
+                    const override = Number.parseInt(overrides?.[matchKey] ?? overrides?.[matchIndex], 10);
+                    if (Number.isInteger(override) && override > 0) return override;
+                } catch (error) {}
+            }
             const stageCount = Number.parseInt(map?.['tournament_items_per_team_' + scale], 10);
             if (Number.isInteger(stageCount) && stageCount > 0) return stageCount;
             const fallback = Number.parseInt(map?.battle_rounds_per_match, 10);
@@ -4876,7 +4973,7 @@
                 };
                 const quizMeta = getQuizItemMeta(item);
                 if (quizMeta.isQuiz) {
-                    addPill(track, 'Q. ' + (quizMeta.question || '문제 준비 중'), 'quiz');
+                    addPill(track, 'EVENT QUIZ', 'quiz');
                 } else {
                     // 기본 정보 (악센트 컬러)
                     if (cl.gender) addPill(track, gm[cl.gender] || cl.gender, 'accent');
@@ -4951,6 +5048,7 @@
             hasActive = !!item;
             lastRenderedItem = item ? JSON.parse(JSON.stringify(item)) : null;
             _origRender(item);
+            renderSaleModeOverlay(item);
         };
 
         // 경매 활동 기반 적응형 폴링
@@ -5995,7 +6093,7 @@
             return (items || []).find(i => isAuctionActiveItem(i)) || null;
         }
 
-        function decodeQuizChecklistText(value) {
+        function decodeChecklistPayload(value) {
             const raw = String(value || '').trim();
             if (!raw) return '';
             try {
@@ -6007,12 +6105,122 @@
             }
         }
 
-        function getQuizItemMeta(item) {
+        const SALE_MODE_PRESENTERS = {
+            quiz(container, item, meta) {
+                const rows = getBidLogRows(item);
+                const winner = rows.find(row => row?.entry_type === 'quiz_winner') || rows[0] || null;
+                const hasWinner = Boolean(winner?.name || item?.winner);
+                const rawWinner = winner?.name || item?.winner || '';
+                const identity = parseBidderIdentity(rawWinner, winner?.region || '');
+
+                container.classList.toggle('has-result', hasWinner);
+                document.getElementById('sale-mode-kicker').textContent = hasWinner ? 'QUIZ RESULT' : 'EVENT QUIZ';
+                document.getElementById('sale-mode-title').textContent = hasWinner
+                    ? `정답! ${meta.config.answer || ''}`
+                    : (meta.config.question || '문제 준비 중');
+                document.getElementById('sale-mode-subtitle').textContent = hasWinner
+                    ? `${identity.name}${identity.region ? ' - ' + identity.region : ''}`
+                    : '밴드 채팅으로 정답을 정확히 입력해주세요';
+            }
+        };
+
+        function decodeSaleConfig(value) {
+            const decoded = decodeChecklistPayload(value);
+            if (!decoded) return {};
+            try {
+                const parsed = JSON.parse(decoded);
+                return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function getSaleModeMeta(item) {
             const checklist = parseChecklist(item?.checklist || '');
+            const mode = String(checklist.sale_mode || 'auction').trim().toLowerCase();
+            const config = decodeSaleConfig(checklist.sale_config_b64);
+            if (mode === 'quiz') {
+                if (!config.question) config.question = decodeChecklistPayload(checklist.quiz_question_b64);
+                if (!config.answer) config.answer = decodeChecklistPayload(checklist.quiz_answer_b64);
+                if (config.settlement_amount === undefined || config.settlement_amount === '') {
+                    config.settlement_amount = checklist.quiz_price || '';
+                }
+            }
             return {
-                isQuiz: checklist.sale_mode === 'quiz',
-                question: decodeQuizChecklistText(checklist.quiz_question_b64),
+                mode: SALE_MODE_PRESENTERS[mode] ? mode : 'auction',
+                config,
             };
+        }
+
+        function getQuizItemMeta(item) {
+            const meta = getSaleModeMeta(item);
+            return {
+                isQuiz: meta.mode === 'quiz',
+                question: String(meta.config.question || ''),
+                answer: String(meta.config.answer || ''),
+                settlementAmount: meta.config.settlement_amount || '',
+            };
+        }
+
+        const _saleModeOverlayState = {
+            activeKey: '',
+            resultUntil: 0,
+        };
+
+        function saleModeItemKey(item) {
+            return String(item?.row || item?.id || item?.num || item?.name || '').trim();
+        }
+
+        function hideSaleModeOverlay() {
+            const container = document.getElementById('sale-mode-overlay');
+            if (!container) return;
+            container.classList.remove('visible', 'has-result');
+        }
+
+        function renderSaleModeOverlay(item) {
+            const container = document.getElementById('sale-mode-overlay');
+            if (!container || document.body.classList.contains('host-mode') || document.body.classList.contains('bracket-page')) {
+                hideSaleModeOverlay();
+                return;
+            }
+
+            let displayItem = item;
+            let meta = getSaleModeMeta(displayItem);
+            if (displayItem && meta.mode !== 'auction') {
+                _saleModeOverlayState.activeKey = saleModeItemKey(displayItem);
+                _saleModeOverlayState.resultUntil = 0;
+            } else if (displayItem) {
+                _saleModeOverlayState.activeKey = '';
+                _saleModeOverlayState.resultUntil = 0;
+            } else if (!displayItem && _saleModeOverlayState.activeKey) {
+                const soldItem = (window.latestItemsList || []).find(candidate =>
+                    saleModeItemKey(candidate) === _saleModeOverlayState.activeKey
+                    && String(candidate?.winner || '').trim()
+                    && ['낙찰', '완료', 'sold'].includes(String(candidate?.status || '').trim())
+                );
+                if (soldItem) {
+                    if (!_saleModeOverlayState.resultUntil) {
+                        _saleModeOverlayState.resultUntil = Date.now() + 4500;
+                    }
+                    if (Date.now() < _saleModeOverlayState.resultUntil) {
+                        displayItem = soldItem;
+                        meta = getSaleModeMeta(displayItem);
+                    }
+                }
+            }
+
+            const presenter = displayItem ? SALE_MODE_PRESENTERS[meta.mode] : null;
+            if (!presenter) {
+                if (_saleModeOverlayState.resultUntil && Date.now() >= _saleModeOverlayState.resultUntil) {
+                    _saleModeOverlayState.activeKey = '';
+                    _saleModeOverlayState.resultUntil = 0;
+                }
+                hideSaleModeOverlay();
+                return;
+            }
+
+            presenter(container, displayItem, meta);
+            container.classList.add('visible');
         }
 
         function getBidLogRows(item) {
@@ -6919,7 +7127,8 @@
                 
                 const leftL = teamToLetter[match.left?.trim()] || String.fromCharCode(65 + (i - 1) * 2);
                 const rightL = teamToLetter[match.right?.trim()] || String.fromCharCode(65 + (i - 1) * 2 + 1);
-                const roundsPerMatch = roundsByMatch[matchKey] || tournamentRoundsPerMatch(map, round);
+                const roundsPerMatch = roundsByMatch[matchKey]
+                    || getTournamentMatchRoundCount(items, i, tournamentRoundsPerMatch(map, round, i));
                 let ls = 0, rs = 0, draws = 0, completedRounds = 0;
                 let leftTotal = 0, rightTotal = 0;
 
@@ -7117,13 +7326,25 @@
             return window._liveAuctionState;
         }
 
+        function resolveScheduleRoundCount(roundsPerMatch, group) {
+            if (roundsPerMatch && typeof roundsPerMatch === 'object') {
+                return Math.max(1, Number.parseInt(roundsPerMatch[group], 10) || 1);
+            }
+            return Math.max(1, Number.parseInt(roundsPerMatch, 10) || 1);
+        }
+
         function buildRotatingAuctionSchedule(matchCount, roundsPerMatch) {
             const steps = [];
-            for (let round = 1; round <= roundsPerMatch; round++) {
+            const maxRounds = Math.max(...Array.from({ length: matchCount }, (_, index) =>
+                resolveScheduleRoundCount(roundsPerMatch, index + 1)
+            ));
+            for (let round = 1; round <= maxRounds; round++) {
                 const startGroup = ((round - 1) % matchCount) + 1;
                 for (let index = 0; index < matchCount; index++) {
+                    const group = ((startGroup - 1 + index) % matchCount) + 1;
+                    if (round > resolveScheduleRoundCount(roundsPerMatch, group)) continue;
                     steps.push({
-                        group: ((startGroup - 1 + index) % matchCount) + 1,
+                        group,
                         round
                     });
                 }
@@ -7135,7 +7356,8 @@
             const steps = [];
             // 2조(C·D) 3·4위전을 먼저 끝낸 뒤 1조(A·B) 결승으로 전환한다.
             [2, 1].forEach(group => {
-                for (let round = 1; round <= roundsPerMatch; round++) steps.push({ group, round });
+                const count = resolveScheduleRoundCount(roundsPerMatch, group);
+                for (let round = 1; round <= count; round++) steps.push({ group, round });
             });
             return steps;
         }
@@ -7145,6 +7367,18 @@
                 const code = String(getItemAuctionMeta(item).tournamentCode || getCleanCode(item) || '').toUpperCase();
                 const match = code.match(/^[A-Z]([1-9]\d*)$/);
                 return match ? Math.max(highest, Number.parseInt(match[1], 10) || 0) : highest;
+            }, 0);
+            return actualCount || Math.max(1, Number.parseInt(fallback, 10) || 1);
+        }
+
+        function getTournamentMatchRoundCount(items, matchIndex, fallback) {
+            const left = String.fromCharCode(65 + (Number(matchIndex) - 1) * 2);
+            const right = String.fromCharCode(left.charCodeAt(0) + 1);
+            const actualCount = (items || []).reduce((highest, item) => {
+                const code = String(getItemAuctionMeta(item).tournamentCode || getCleanCode(item) || '').toUpperCase();
+                const match = code.match(/^([A-Z])([1-9]\d*)$/);
+                if (!match || (match[1] !== left && match[1] !== right)) return highest;
+                return Math.max(highest, Number.parseInt(match[2], 10) || 0);
             }, 0);
             return actualCount || Math.max(1, Number.parseInt(fallback, 10) || 1);
         }
@@ -7239,7 +7473,15 @@
             }
             const revealCompany = String(map.bracket_full_blind ?? '1') === '0';
             const displayTeam = letter => revealCompany && letterToTeam[letter] ? letterToTeam[letter] : letter + '팀';
-            const rpm = getTournamentRoundCount(items, tournamentRoundsPerMatch(map, scale));
+            const roundsByGroup = {};
+            for (let group = 1; group <= matchCount; group++) {
+                roundsByGroup[group] = getTournamentMatchRoundCount(
+                    items,
+                    group,
+                    tournamentRoundsPerMatch(map, scale, group),
+                );
+            }
+            let rpm = Math.max(...Object.values(roundsByGroup));
 
             const doneStatuses = new Set(['완료', 'sold', '낙찰', '유찰']);
             const isDone = item => Boolean(item && doneStatuses.has(item.status));
@@ -7294,8 +7536,8 @@
             // 라운드가 바뀔 때 시작 조를 한 칸씩 민다.
             // 저장된 과거 스케줄 순서와 무관하게 1R=1조, 2R=2조, 3R=3조...를 보장한다.
             const scheduleSteps = scale === 2 && matchCount === 2
-                ? buildMedalAuctionSchedule(rpm)
-                : buildRotatingAuctionSchedule(matchCount, rpm);
+                ? buildMedalAuctionSchedule(roundsByGroup)
+                : buildRotatingAuctionSchedule(matchCount, roundsByGroup);
 
             function getPendingAuctionStep() {
                 for (const step of scheduleSteps) {
@@ -7379,7 +7621,7 @@
                 const currentMatch = getCurrentMatchContext(map);
                 if (currentMatch.group > 0 && currentMatch.group <= matchCount) {
                     detectedGroup = currentMatch.group;
-                    detectedRound = rpm;
+                    detectedRound = roundsByGroup[currentMatch.group] || rpm;
                 }
             }
             if (!detectedGroup && !pendingStep) {
@@ -7413,6 +7655,7 @@
             }
 
             if (detectedGroup > 0) {
+                rpm = roundsByGroup[detectedGroup] || rpm;
                 leftTeamLetter = String.fromCharCode(65 + (detectedGroup - 1) * 2);
                 rightTeamLetter = String.fromCharCode(65 + (detectedGroup - 1) * 2 + 1);
             }
@@ -7609,7 +7852,6 @@
                 }
                 
                 const scale = parseInt(active, 10);
-                const roundsPerMatch = tournamentRoundsPerMatch(map, scale);
                 const bracketKey = 'tournament_bracket_' + scale;
                 if (!map[bracketKey]) return;
                 
@@ -7703,6 +7945,12 @@
                 
                 const teamLetter = itemName.charAt(0); // 'A', 'B' 등
                 const roundNum = parseInt(itemName.substring(1), 10); // 1, 2, 3, 4
+                const teamMatchIndex = Math.floor((teamLetter.charCodeAt(0) - 65) / 2) + 1;
+                const roundsPerMatch = getTournamentMatchRoundCount(
+                    items,
+                    teamMatchIndex,
+                    tournamentRoundsPerMatch(map, scale, teamMatchIndex),
+                );
                 if (isNaN(roundNum) || roundNum < 1 || roundNum > roundsPerMatch) return;
                 
                 // 현재 팀 알파벳에 매핑된 실제 업체명 찾기
@@ -7856,7 +8104,11 @@
             const doneStatuses = new Set(['완료', 'sold', '낙찰', '유찰']);
             let leftTotal = 0;
             let rightTotal = 0;
-            const roundsPerMatch = tournamentRoundsPerMatch(map, scale);
+            const roundsPerMatch = getTournamentMatchRoundCount(
+                items,
+                Number(matchIdx),
+                tournamentRoundsPerMatch(map, scale, Number(matchIdx)),
+            );
             for (let r = 1; r <= roundsPerMatch; r++) {
                 const leftItem = findItemByCode(items, leftL + r);
                 const rightItem = findItemByCode(items, rightL + r);

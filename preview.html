@@ -544,6 +544,7 @@
             width:54px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:#0f172a;
             color:#fff;text-align:center;font-size:12px;font-weight:900;
         }
+        .t-match-count-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
         .t-item-progress {
             padding: 9px 12px; border-radius: 8px; background: rgba(59,130,246,.1);
             border: 1px solid rgba(59,130,246,.22); color: #93c5fd;
@@ -780,7 +781,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260714-quiz-v1"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260714-quiz-v2"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -1052,6 +1053,7 @@
                     </div>
                     <div class="t-item-setup-actions">
                         <label class="t-item-count-control">팀당 <input id="t-items-per-team" type="number" min="1" max="99" value="4" onchange="tSetItemsPerTeam(this.value)">마리</label>
+                        <span class="t-match-count-controls" id="t-match-count-controls"></span>
                         <span class="t-item-progress" id="t-item-progress">배치를 먼저 완료해주세요</span>
                         <button class="t-btn" id="t-item-auto-all" type="button" onclick="tAutoSelectAllItems()">업체별 자동 선택</button>
                         <button class="t-btn save" id="t-item-apply" type="button" onclick="tApplyTournamentItems()" disabled>토너먼트 개체 편성</button>
@@ -1120,7 +1122,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260714-quiz-v1';
+        const broadcastAssetVersion = '20260714-quiz-v2';
         let previewConfigMap = {};
 
         function requestedModuleId() {
@@ -2564,6 +2566,7 @@
         let tAllItems = [];
         let tItemSelections = {};
         let tItemsPerTeam = { 16: 4, 8: 4, 4: 3, 2: 3 };
+        let tMatchItemsPerTeam = { 16: {}, 8: {}, 4: {}, 2: {} };
 
         function tStageMatchCount(round) {
             return Number(round) === 2 ? 2 : Number(round) / 2;
@@ -2602,6 +2605,12 @@
                         if (map[k]) try { tBrackets[s] = JSON.parse(map[k]); } catch(e){}
                         const count = Number.parseInt(map['tournament_items_per_team_' + s], 10);
                         if (Number.isInteger(count) && count > 0 && count <= 99) tItemsPerTeam[s] = count;
+                        try {
+                            const matchCounts = JSON.parse(map['tournament_match_rounds_' + s] || '{}');
+                            if (matchCounts && typeof matchCounts === 'object' && !Array.isArray(matchCounts)) {
+                                tMatchItemsPerTeam[s] = matchCounts;
+                            }
+                        } catch (error) {}
                     });
                     if (map.active_tournament) {
                         tActiveTournament = map.active_tournament;
@@ -2798,15 +2807,44 @@
             return Number.isInteger(value) && value > 0 ? Math.min(value, 99) : 1;
         }
 
+        function tRequiredItemCountForMatch(scale, matchIndex) {
+            const matchKey = scale + '_' + matchIndex;
+            const override = Number.parseInt(tMatchItemsPerTeam[scale]?.[matchKey], 10);
+            if (Number.isInteger(override) && override > 0) return Math.min(override, 99);
+            const fallback = Number.parseInt(tItemsPerTeam[scale], 10);
+            return Number.isInteger(fallback) && fallback > 0 ? Math.min(fallback, 99) : 1;
+        }
+
+        function tMatchIndexForLetter(letter) {
+            const code = String(letter || '').trim().toUpperCase().charCodeAt(0) - 65;
+            return code >= 0 ? Math.floor(code / 2) + 1 : 1;
+        }
+
+        function tRequiredItemCountForSeed(seed) {
+            return tRequiredItemCountForMatch(tScale, tMatchIndexForLetter(seed?.letter));
+        }
+
         function tSyncItemCountUi() {
             const count = tRequiredItemCount();
             const input = document.getElementById('t-items-per-team');
             const desc = document.getElementById('t-item-setup-desc');
             const auto = document.getElementById('t-item-auto-all');
+            const matchControls = document.getElementById('t-match-count-controls');
             if (input) input.value = count;
             const stageName = tScale === 2 ? '결승·3·4위전' : `${tScale}강`;
-            if (desc) desc.textContent = `${stageName}은 팀당 ${count}마리를 내부 슬롯에 연결합니다. 공개 번호는 팀 정보와 분리해 자동 배치됩니다.`;
-            if (auto) auto.textContent = `업체별 앞 ${count}개`;
+            if (desc) desc.textContent = `${stageName}은 경기별 설정 수만큼 내부 슬롯에 연결합니다. 공개 번호는 팀 정보와 분리해 자동 배치됩니다.`;
+            if (auto) auto.textContent = '업체별 자동 선택';
+            if (matchControls) {
+                const shouldShowOverrides = tScale === 2 || Object.keys(tMatchItemsPerTeam[tScale] || {}).length > 0;
+                matchControls.innerHTML = shouldShowOverrides
+                    ? Array.from({ length: tStageMatchCount(tScale) }, (_, offset) => {
+                        const index = offset + 1;
+                        const matchKey = tScale + '_' + index;
+                        const value = tRequiredItemCountForMatch(tScale, index);
+                        return `<label class="t-item-count-control">${tEsc(tMatchTitle(tScale, index))} 팀당 <input type="number" min="1" max="99" value="${value}" data-match-key="${matchKey}" onchange="tSetMatchItemsPerTeam(this.dataset.matchKey,this.value)">마리</label>`;
+                    }).join('')
+                    : '';
+            }
         }
 
         async function tSetItemsPerTeam(rawValue) {
@@ -2851,6 +2889,33 @@
             if (match.winner) {
                 match.winner = '';
                 tPropagate(scale, matchKey);
+            }
+        }
+
+        async function tSetMatchItemsPerTeam(matchKey, rawValue) {
+            const match = String(matchKey || '').match(/^(16|8|4|2)_(\d+)$/);
+            if (!match || Number(match[1]) !== Number(tScale)) return;
+            const requested = Number.parseInt(rawValue, 10);
+            const previousMap = { ...(tMatchItemsPerTeam[tScale] || {}) };
+            const count = Math.max(1, Math.min(99, Number.isInteger(requested) ? requested : tRequiredItemCount()));
+            tMatchItemsPerTeam[tScale] = { ...previousMap, [matchKey]: count };
+            tGetSeedTeams().forEach(seed => {
+                const required = tRequiredItemCountForSeed(seed);
+                const selection = tGetSelection(seed);
+                selection.rows = selection.rows.slice(0, required);
+            });
+            tSyncItemCountUi();
+            tRenderItemSetup();
+            try {
+                await updateConfigs({
+                    ['tournament_match_rounds_' + tScale]: JSON.stringify(tMatchItemsPerTeam[tScale]),
+                });
+                toast(`${tMatchTitle(tScale, Number(match[2]))} 팀당 ${count}마리로 저장했습니다.`);
+            } catch (error) {
+                tMatchItemsPerTeam[tScale] = previousMap;
+                tSyncItemCountUi();
+                tRenderItemSetup();
+                toast('경기별 개체 수 저장 실패: ' + error.message);
             }
         }
 
@@ -2976,7 +3041,6 @@
             const progress = document.getElementById('t-item-progress');
             const applyBtn = document.getElementById('t-item-apply');
             if (!grid || !progress || !applyBtn) return;
-            const requiredCount = tRequiredItemCount();
             tSyncItemCountUi();
 
             const seeds = tGetSeedTeams();
@@ -2989,6 +3053,7 @@
 
             let readyCount = 0;
             grid.innerHTML = seeds.map(seed => {
+                const requiredCount = tRequiredItemCountForSeed(seed);
                 const selection = tGetSelection(seed);
                 const items = tCompanyItems(seed.company);
                 selection.rows = selection.rows.filter(row => items.some(item => String(item.row) === String(row))).slice(0, requiredCount);
@@ -3024,19 +3089,20 @@
         function tToggleItemSelection(letter, row) {
             const seed = tGetSeedTeams().find(item => item.letter === letter);
             if (!seed) return;
+            const requiredCount = tRequiredItemCountForSeed(seed);
             const selection = tGetSelection(seed);
             const rowKey = String(row);
             const selectedIndex = selection.rows.indexOf(rowKey);
             if (selectedIndex >= 0) selection.rows.splice(selectedIndex, 1);
-            else if (selection.rows.length < tRequiredItemCount()) selection.rows.push(rowKey);
-            else { toast(seed.letter + '팀은 ' + tRequiredItemCount() + '개체까지 선택할 수 있습니다.'); return; }
+            else if (selection.rows.length < requiredCount) selection.rows.push(rowKey);
+            else { toast(seed.letter + '팀은 ' + requiredCount + '개체까지 선택할 수 있습니다.'); return; }
             tRenderItemSetup();
         }
 
         function tAutoSelectTeamItems(letter) {
             const seed = tGetSeedTeams().find(item => item.letter === letter);
             if (!seed) return;
-            tGetSelection(seed).rows = tCompanyItems(seed.company).slice(0, tRequiredItemCount()).map(item => String(item.row));
+            tGetSelection(seed).rows = tCompanyItems(seed.company).slice(0, tRequiredItemCountForSeed(seed)).map(item => String(item.row));
             tRenderItemSetup();
         }
 
@@ -3044,7 +3110,7 @@
             const seeds = tGetSeedTeams();
             if (!seeds.length) { toast('참가 팀 배치를 먼저 완료해주세요.'); return; }
             seeds.forEach(seed => {
-                tGetSelection(seed).rows = tCompanyItems(seed.company).slice(0, tRequiredItemCount()).map(item => String(item.row));
+                tGetSelection(seed).rows = tCompanyItems(seed.company).slice(0, tRequiredItemCountForSeed(seed)).map(item => String(item.row));
             });
             tRenderItemSetup();
         }
@@ -3055,13 +3121,13 @@
                 toast('결승 2팀과 3·4위전 2팀, 총 4팀을 모두 배치해주세요.');
                 return;
             }
-            const requiredCount = tRequiredItemCount();
             const assignments = [];
             const usedRows = new Set();
             const companies = new Set();
             for (const seed of seeds) {
                 if (companies.has(seed.company)) { toast('같은 업체가 두 슬롯에 배치되어 있습니다.'); return; }
                 companies.add(seed.company);
+                const requiredCount = tRequiredItemCountForSeed(seed);
                 const selection = tGetSelection(seed);
                 if (selection.rows.length !== requiredCount) { toast(seed.letter + '팀에서 ' + requiredCount + '개체를 선택해주세요.'); return; }
                 for (let idx = 0; idx < selection.rows.length; idx++) {
@@ -3080,7 +3146,11 @@
             const soloCount = tAllItems.filter(item => getItemAuctionMeta(item).auctionType === 'solo').length;
             const stageName = tScale === 2 ? '결승·3·4위전' : `${tScale}강`;
             const sequenceLine = tScale === 2 ? `\n· 운영 순서: 3·4위전 → 단독 경매 ${soloCount}개체 → 결승 → 시상식` : '';
-            const confirmed = confirm(`선택한 ${assignments.length}개체를 ${stageName} 토너먼트에 편성합니다.\n\n· ${seeds.length}팀 × 팀당 ${requiredCount}마리\n· 결승은 A·B팀, 3·4위전은 C·D팀으로 내부 분리${sequenceLine}\n· 공개 번호는 001부터 팀 정보와 분리해 자동 배치\n· 팀/라운드 코드는 내부 데이터로만 저장\n· 일반 경매 ${generalCount}개와 이전 라운드 데이터 유지\n· 선택된 토너먼트 개체의 낙찰/배송 상태 초기화\n\n계속할까요?`);
+            const countSummary = Array.from({ length: tStageMatchCount(tScale) }, (_, offset) => {
+                const index = offset + 1;
+                return `${tMatchTitle(tScale, index)} 팀당 ${tRequiredItemCountForMatch(tScale, index)}마리`;
+            }).join(' · ');
+            const confirmed = confirm(`선택한 ${assignments.length}개체를 ${stageName} 토너먼트에 편성합니다.\n\n· ${countSummary}\n· 결승은 A·B팀, 3·4위전은 C·D팀으로 내부 분리${sequenceLine}\n· 공개 번호는 001부터 팀 정보와 분리해 자동 배치\n· 팀/라운드 코드는 내부 데이터로만 저장\n· 일반 경매 ${generalCount}개와 이전 라운드 데이터 유지\n· 선택된 토너먼트 개체의 낙찰/배송 상태 초기화\n\n계속할까요?`);
             if (!confirmed) return;
             const pw = prompt('관리자 비밀번호를 입력하세요.');
             if (pw === null) return;
@@ -3093,7 +3163,8 @@
                 [16, 8, 4, 2].forEach(scale => {
                     bracketPayload['tournament_bracket_' + scale] = JSON.stringify(tBrackets[scale]);
                 });
-                bracketPayload['tournament_items_per_team_' + tScale] = requiredCount;
+                bracketPayload['tournament_items_per_team_' + tScale] = tRequiredItemCount();
+                bracketPayload['tournament_match_rounds_' + tScale] = JSON.stringify(tMatchItemsPerTeam[tScale] || {});
                 await updateConfigs(bracketPayload);
                 const result = await rebuildTournamentItems(assignments, pw);
                 if (!result || result.success === false) throw new Error(result?.error || '목록 재구성 실패');
