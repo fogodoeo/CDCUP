@@ -14,7 +14,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>방송 미리보기 - CREO</title>
-    <script src="supabase-bridge.js?v=20260714-medal-day-v2"></script>
+    <script src="supabase-bridge.js?v=20260714-presentation-v1"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
@@ -781,7 +781,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260714-quiz-v2"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260714-presentation-v1"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -878,8 +878,8 @@
                         <small class="layout-target-badge">배치 선택됨</small>
                         <input type="checkbox" id="toggle-bracket-live-show" class="switch-input" onchange="toggleShowState('bracket_live')">
                     </div>
-                    <div class="switch-container" id="toggle-bracket-full-blind-group" style="display:none;" title="ON이면 업체명과 로고를 A팀/B팀 코드로 가립니다">
-                        <span>전체결과 블라인드</span>
+                    <div class="switch-container" id="toggle-bracket-full-blind-group" style="display:none;" title="ON이면 토너먼트 방송 전체에서 업체명과 로고를 숨깁니다">
+                        <span>토너먼트 업체 숨김</span>
                         <input type="checkbox" id="toggle-bracket-full-blind" class="switch-input" checked onchange="toggleFullBracketBlind()">
                     </div>
                     <div class="switch-container" id="toggle-bracket-title-show-group" style="display:none;">
@@ -1122,7 +1122,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260714-quiz-v2';
+        const broadcastAssetVersion = '20260714-presentation-v1';
         let previewConfigMap = {};
 
         function requestedModuleId() {
@@ -1505,7 +1505,7 @@
             try {
                 await updateConfigs({ bracket_full_blind: requested });
                 frame.contentWindow.postMessage({ type: 'forceRefresh' }, '*');
-                toast(requested === '1' ? '전체결과 블라인드 적용' : '전체결과 업체명 공개');
+                toast(requested === '1' ? '토너먼트 업체명 숨김' : '토너먼트 업체명 공개');
             } catch (err) {
                 checkbox.checked = requested !== '1';
                 toast('블라인드 설정 저장 실패: ' + err.message);

@@ -25,7 +25,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260714-medal-day-v2"></script>
+    <script src="supabase-bridge.js?v=20260714-presentation-v1"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
@@ -147,7 +147,9 @@
         /* 이름 영역 (어두운 배경) */
         .top-bar .name-section {
             display: flex;
-            align-items: center;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
             padding: 10px 14px;
             flex: 0 0 auto;
             background: rgba(10, 15, 28, 0.88);
@@ -312,9 +314,19 @@
             to { opacity: 1; transform: none; }
         }
 
-        /* sub 클래스는 더 이상 사용하지 않지만 호환성을 위해 숨김 */
+        /* 업체명과 현재 진행 유형 */
         .top-bar .sub {
-            display: none;
+            display: block;
+            max-width: 58vw;
+            margin-top: 3px;
+            overflow: hidden;
+            color: rgba(245, 241, 232, 0.72);
+            font-size: clamp(13px, 1.45vw, 18px);
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         /* ── 우측 사진 스택 ── */
@@ -1599,76 +1611,12 @@
             font-weight: 850;
             letter-spacing: 0;
         }
-        .live-next-panel {
-            display: flex;
-            min-height: 108px;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            background: linear-gradient(90deg, rgba(15,23,42,0.18), rgba(37,99,235,0.2), rgba(15,23,42,0.18));
-            text-align: center;
-            animation: live-next-in 0.32s cubic-bezier(0.16,1,0.3,1) both;
-        }
-        .live-next-label {
-            color: #60a5fa;
-            font-size: 26px;
-            font-weight: 950;
-            letter-spacing: 0.18em;
-        }
-        .live-next-code {
-            color: #fff;
-            font-size: 64px;
-            font-weight: 950;
-            letter-spacing: -0.02em;
-            line-height: 1;
-        }
-        .live-next-note {
-            color: #cbd5e1;
-            font-size: 20px;
-            font-weight: 900;
-        }
-        @keyframes live-next-peek-cycle {
-            0%, 84% { opacity: 0; transform: translateY(8px); }
-            86%, 97% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-6px); }
-        }
-        .live-periodic-next {
-            position: absolute;
-            inset: 34px 0 0;
-            z-index: 5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 18px;
-            background: rgba(14,15,17,0.97);
-            color: var(--cdcup-ivory, #f5f1e8);
-            pointer-events: none;
-            opacity: 0;
-            animation: live-next-peek-cycle 20s linear infinite;
-        }
-        .live-periodic-next span {
-            color: var(--cdcup-muted, #aaa59b);
-            font-size: 22px;
-            font-weight: 850;
-            letter-spacing: 0.18em;
-        }
-        .live-periodic-next strong {
-            color: var(--cdcup-gold-light, #dcc17f);
-            font-size: 62px;
-            font-weight: 950;
-            letter-spacing: -0.04em;
-            line-height: 1;
-        }
         @media (max-width: 720px) {
             .live-round-board { min-width: min(480px, 100%); }
             .blind-live-match { gap: 12px; padding-inline: 18px; }
             .blind-live-team { font-size: 44px; }
             .blind-live-score { min-width: 132px; font-size: 54px; }
             .blind-live-score.is-total { min-width: 188px; font-size: 46px; }
-            .live-next-panel { min-height: 100px; gap: 13px; }
-            .live-next-label { font-size: 24px; }
-            .live-next-code { font-size: 58px; }
-            .live-next-note { font-size: 18px; }
         }
         .auction-motion-overlay {
             position: fixed;
@@ -1877,10 +1825,6 @@
             .auction-result-amount { gap: 6px; font-size: 18px; }
             .auction-result-amount-label { font-size: 9px; }
         }
-        @keyframes live-next-in {
-            from { opacity: 0; transform: translateY(-6px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
         @keyframes sports-board-in {
             from { opacity: 0; transform: translateY(16px) scale(0.985); }
             to { opacity: 1; transform: translateY(0) scale(1); }
@@ -2077,10 +2021,6 @@
             box-shadow: none;
         }
         .blind-live-score i { color: #6b7684; }
-        .live-next-panel { background: transparent; }
-        .live-next-label { color: #90c2ff; }
-        .live-next-note { color: #8b95a1; }
-
         .auction-motion-overlay {
             background: rgba(10,13,18,0.78);
             backdrop-filter: blur(14px);
@@ -2221,28 +2161,6 @@
         }
         .live-round-header strong { font-weight: 760; }
         .live-round-number { font-weight: 720; }
-        .live-next-panel {
-            display: grid;
-            grid-template-columns: auto auto auto;
-            min-height: 112px;
-            padding: 8px 24px 20px;
-            gap: 16px;
-        }
-        .live-next-label {
-            letter-spacing: 0.12em;
-            line-height: 1;
-        }
-        .live-next-code {
-            font-size: 70px;
-            font-variant-numeric: tabular-nums;
-            letter-spacing: -0.055em;
-        }
-        .live-next-note {
-            padding-left: 16px;
-            border-left: 1px solid rgba(255,255,255,0.1);
-            line-height: 1.25;
-            letter-spacing: -0.035em;
-        }
         .blind-live-score {
             padding: 8px 16px 10px;
             border: 1px solid rgba(255,255,255,0.07);
@@ -2299,17 +2217,6 @@
         }
         #battle-ann-content { text-shadow: none !important; }
         #battle-ann-sub { color: #90c2ff !important; }
-
-        @media (max-width: 720px) {
-            .live-next-panel {
-                grid-template-columns: auto auto auto;
-                min-height: 104px;
-                padding: 6px 18px 16px;
-                gap: 12px;
-            }
-            .live-next-code { font-size: 62px; }
-            .live-next-note { padding-left: 12px; }
-        }
 
         /* ── CDCUP Championship identity: trophy gold / ivory / charcoal ── */
         body {
@@ -2493,8 +2400,7 @@
             color: #111214;
         }
         .blind-live-team { color: #d9d4ca; }
-        .blind-live-team.is-active,
-        .live-next-label { color: var(--cdcup-gold-light); }
+        .blind-live-team.is-active { color: var(--cdcup-gold-light); }
         .blind-live-team strong::after { background: var(--cdcup-gold); }
         .blind-live-score {
             border-color: rgba(195,154,74,0.2);
@@ -2502,10 +2408,7 @@
             background: rgba(195,154,74,0.055);
             color: var(--cdcup-ivory);
         }
-        .blind-live-score i,
-        .live-next-note { color: var(--cdcup-muted); }
-        .live-next-code { color: var(--cdcup-ivory); }
-        .live-next-note { border-left-color: rgba(195,154,74,0.25); }
+        .blind-live-score i { color: var(--cdcup-muted); }
 
         .auction-motion-overlay {
             background: rgba(8,9,10,0.84);
@@ -2557,13 +2460,6 @@
         #battle-ann-content { color: var(--cdcup-ivory) !important; }
         #battle-ann-sub { color: var(--cdcup-gold-light) !important; }
 
-        /* ── 배틀 모드 금액 가림용 클래스 ── */
-        body.battle-hide-prices #info-sub,
-        body.battle-hide-prices .hc-sub {
-            filter: blur(8px) !important;
-            pointer-events: none;
-            user-select: none;
-        }
         /* ── 승자 중심 결과 연출 / 전체 테마형 진행 번호 ── */
         #auction-progress.auction-progress {
             display: inline-flex;
@@ -3490,8 +3386,6 @@
         }
 
         .live-round-board.is-special-auction { border-color: rgba(220,193,127,.4); }
-        .live-round-board.is-special-auction .live-next-panel { background: linear-gradient(120deg, rgba(195,154,74,.12), transparent); }
-        .live-round-board.is-special-auction .live-next-label { color: var(--cdcup-gold-light); }
 
         @keyframes sold-watermark-in { from { opacity: 0; transform: scale(.72); } to { opacity: .055; transform: scale(1); } }
         @keyframes sold-light-sweep { from { transform: rotate(-8deg) translateX(-80%); } to { transform: rotate(-8deg) translateX(80%); } }
@@ -3560,13 +3454,13 @@
             <div class="top-bar" id="top-bar">
                 <div class="name-section">
                     <span class="name" id="info-name"></span>
+                    <span class="sub" id="info-sub"></span>
                 </div>
                 <span class="sep"></span>
                 <div class="traits" id="info-traits">
                     <div class="traits-track" id="traits-track"></div>
                 </div>
                 <div class="accent-bar"></div>
-                <span class="sub" id="info-sub" style="display:none;"></span>
             </div>
         </div>
 
@@ -4873,6 +4767,7 @@
             // 공개 화면에는 업체를 특정할 수 있는 팀 코드(A1/C2 등)를 노출하지 않는다.
             let cleanInfoName = getAuctionItemDisplayLabel(item) || origName;
             const publicCompanyName = String(item.company || '').trim();
+            const presentation = getBroadcastPresentation(item, window.latestConfigMap || {});
             if (publicCompanyName) {
                 const escapedCompany = publicCompanyName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                 const regex = new RegExp(escapedCompany, 'gi');
@@ -4886,13 +4781,15 @@
             }
             // 공개 화면은 팀 슬롯과 분리된 숫자 라벨만 사용한다.
             document.getElementById("info-name").textContent = cleanInfoName;
-            // 토너먼트 외 경매만 구분을 표시하고 업체명은 낙찰 전까지 노출하지 않는다.
-            document.getElementById("info-sub").textContent = item.auctionType === 'tournament' ? '' : auctionTypeLabel(item);
+            const publicInfoParts = [];
+            if (presentation.showCompany && publicCompanyName) publicInfoParts.push(publicCompanyName);
+            publicInfoParts.push(presentation.label);
+            document.getElementById("info-sub").textContent = publicInfoParts.filter(Boolean).join(' · ');
 
             // 호스트 카드 데이터 렌더링
             document.getElementById("hc-name").textContent = getCurrentTournamentItemLabel(item);
             const subParts = [];
-            if (item.company) subParts.push(item.company);
+            if (presentation.showCompany && item.company) subParts.push(item.company);
             document.getElementById("hc-sub").textContent = subParts.join(' · ');
 
             // 서버에서 받은 개별 사진 숨김 플래그
@@ -6152,6 +6049,37 @@
             };
         }
 
+        function getBroadcastPresentation(item, map = {}) {
+            const auctionMeta = getItemAuctionMeta(item || {});
+            const saleMeta = getSaleModeMeta(item || {});
+            const competition = auctionMeta.auctionType === AUCTION_TYPES.TOURNAMENT
+                ? 'tournament'
+                : 'single';
+            const explicitVisibility = String(auctionMeta.visibilityMode || '').toLowerCase();
+            const tournamentFallback = String(map?.bracket_full_blind ?? '1') !== '0'
+                ? 'blind'
+                : 'public';
+            const visibility = ['public', 'blind'].includes(explicitVisibility)
+                ? explicitVisibility
+                : (competition === 'tournament' ? tournamentFallback : 'public');
+            const isQuiz = saleMeta.mode === 'quiz';
+            let label = '';
+            if (competition === 'tournament') {
+                label = visibility === 'blind' ? '블라인드 토너먼트' : '공개 토너먼트';
+            } else if (isQuiz) {
+                label = visibility === 'blind' ? '블라인드 퀴즈' : '퀴즈 이벤트';
+            } else {
+                label = visibility === 'blind' ? '블라인드 경매' : '공개 경매';
+            }
+            return {
+                saleMode: saleMeta.mode,
+                competition,
+                visibility,
+                label,
+                showCompany: visibility === 'public',
+            };
+        }
+
         function getQuizItemMeta(item) {
             const meta = getSaleModeMeta(item);
             return {
@@ -6768,6 +6696,7 @@
             const liveShow = (map.bracket_live_show !== undefined ? String(map.bracket_live_show) : '0') === '1';
             const bShow = map.bracket_show !== undefined ? String(map.bracket_show) : '1';
             const active = map.active_tournament || 'none';
+            const liveMatchupEligible = Number.parseInt(active, 10) !== 2;
             const activeItems = active !== 'none' ? scopeTournamentItems(window.latestItemsList || [], Number(active)) : [];
             
             // Apply bracket positioning & size
@@ -6837,7 +6766,7 @@
                 }
             }
             if (treeLive) {
-                if (masterShow && liveShow) {
+                if (masterShow && liveShow && liveMatchupEligible) {
                     treeLive.classList.add('visible');
                 } else {
                     treeLive.classList.remove('visible');
@@ -6855,7 +6784,6 @@
                 if (ann) ann.style.display = 'none';
                 const matchupCard = document.getElementById('battle-matchup-card');
                 if (matchupCard) matchupCard.style.display = 'none';
-                document.body.classList.remove('battle-hide-prices');
                 if (treeFull) {
                     treeFull.innerHTML = renderCrewartHouseBoardHTML(window.latestItemsList || [], map);
                     treeFull.classList.toggle('visible', masterShow && fullShow);
@@ -6898,7 +6826,6 @@
                 if (ann) ann.style.setProperty('display', 'none', 'important');
                 const matchupCard = document.getElementById('battle-matchup-card');
                 if (matchupCard) matchupCard.style.setProperty('display', 'none', 'important');
-                document.body.classList.remove('battle-hide-prices');
                 clearAuctionMotionPortal();
                 return;
             }
@@ -6932,7 +6859,7 @@
             if (masterShow && fullShow) {
                 renderBracketPageTree(parseInt(active), bracket, map, window.latestItemsList || []);
             }
-            if (masterShow && liveShow) {
+            if (masterShow && liveShow && liveMatchupEligible) {
                 renderBracketLiveView(parseInt(active), bracket, map);
             }
         }
@@ -7047,7 +6974,9 @@
             const isAuctionDone = item => item && ['완료', 'sold', '낙찰', '유찰'].includes(item.status);
             const toPrice = item => Number.parseFloat(item?.sold_price || item?.soldPrice || 0) || 0;
             const matchCount = tournamentStageMatchCount(scale);
-            const fullBracketBlind = String(map.bracket_full_blind ?? '1') !== '0';
+            const fullBracketBlind = activeAuctionItem
+                ? getBroadcastPresentation(activeAuctionItem, map).visibility === 'blind'
+                : String(map.bracket_full_blind ?? '1') !== '0';
 
             let schedule = [];
             try { if (map.battle_schedule) schedule = JSON.parse(map.battle_schedule); } catch (e) {}
@@ -7352,16 +7281,6 @@
             return steps;
         }
 
-        function buildMedalAuctionSchedule(roundsPerMatch) {
-            const steps = [];
-            // 2조(C·D) 3·4위전을 먼저 끝낸 뒤 1조(A·B) 결승으로 전환한다.
-            [2, 1].forEach(group => {
-                const count = resolveScheduleRoundCount(roundsPerMatch, group);
-                for (let round = 1; round <= count; round++) steps.push({ group, round });
-            });
-            return steps;
-        }
-
         function getTournamentRoundCount(items, fallback) {
             const actualCount = (items || []).reduce((highest, item) => {
                 const code = String(getItemAuctionMeta(item).tournamentCode || getCleanCode(item) || '').toUpperCase();
@@ -7381,30 +7300,6 @@
                 return Math.max(highest, Number.parseInt(match[2], 10) || 0);
             }, 0);
             return actualCount || Math.max(1, Number.parseInt(fallback, 10) || 1);
-        }
-
-        function getMedalDayAuctionPhase(allItems, stageItems, isDone) {
-            const everyItem = allItems || [];
-            const tournamentItems = stageItems || [];
-            const soloItems = everyItem.filter(item => getItemAuctionMeta(item).auctionType === AUCTION_TYPES.SOLO);
-            const activeItem = everyItem.find(item => isAuctionActiveItem(item));
-
-            // 운영자가 실제로 시작한 개체가 있으면 저장된 개체 수나 예상 순서보다 그 상태를 우선한다.
-            if (activeItem) {
-                const activeMeta = getItemAuctionMeta(activeItem);
-                const activeCode = String(activeMeta.tournamentCode || getCleanCode(activeItem) || '').toUpperCase();
-                if (activeMeta.auctionType === AUCTION_TYPES.SOLO) return { phase: 'solo', soloItems, activeItem };
-                if (activeMeta.auctionType === AUCTION_TYPES.TOURNAMENT && tournamentItems.includes(activeItem)) {
-                    if (/^[CD]/.test(activeCode)) return { phase: 'third_place', soloItems, activeItem };
-                    if (/^[AB]/.test(activeCode)) return { phase: 'final', soloItems, activeItem };
-                }
-            }
-
-            // 진행중 개체가 없는 대기 구간에는 실제로 등록된 미완료 개체만 보고 다음 화면을 고른다.
-            const thirdPlacePending = tournamentItems.some(item => /^[CD]/.test(String(getItemAuctionMeta(item).tournamentCode || getCleanCode(item) || '').toUpperCase()) && !isDone(item));
-            if (thirdPlacePending) return { phase: 'third_place', soloItems, activeItem: null };
-            if (soloItems.some(item => !isDone(item))) return { phase: 'solo', soloItems, activeItem: null };
-            return { phase: 'final', soloItems, activeItem: null };
         }
 
         function finishAuctionMotion() {
@@ -7451,11 +7346,20 @@
             const tree = document.getElementById('bracket-page-tree-live');
             const titleEl = document.getElementById('bracket-page-title');
 
-            let allItems = [];
+            // 결승/3·4위전은 한 경기당 두 업체뿐이라 별도 실시간 대진판을
+            // 반복 노출하지 않는다. 현재 경기 정보는 전체 결과판이 담당한다.
+            if (Number(scale) === 2) {
+                if (tree) {
+                    tree.innerHTML = '';
+                    tree.dataset.liveRenderKey = '';
+                }
+                clearAuctionMotionPortal();
+                return;
+            }
+
             let items = [];
             try {
-                allItems = await getBattleItemsCached();
-                items = scopeTournamentItems(allItems, scale);
+                items = scopeTournamentItems(await getBattleItemsCached(), scale);
             } catch(e){}
             if (renderId !== window._bracketLiveRenderId) return;
 
@@ -7471,8 +7375,6 @@
                 if (m.left) { letterToTeam[lL] = m.left.trim(); letterToGroup[lL] = i; }
                 if (m.right) { letterToTeam[rL] = m.right.trim(); letterToGroup[rL] = i; }
             }
-            const revealCompany = String(map.bracket_full_blind ?? '1') === '0';
-            const displayTeam = letter => revealCompany && letterToTeam[letter] ? letterToTeam[letter] : letter + '팀';
             const roundsByGroup = {};
             for (let group = 1; group <= matchCount; group++) {
                 roundsByGroup[group] = getTournamentMatchRoundCount(
@@ -7514,30 +7416,9 @@
             let detectedRound = 0, detectedGroup = 0, detectedLetter = '';
             let leftTeamLetter = '', rightTeamLetter = '';
 
-            // 메달 결정전 사이의 단독 경매가 끝나기 전에는 결승 대기 화면으로 넘어가지 않는다.
-            const medalDayPhase = Number(scale) === 2
-                ? getMedalDayAuctionPhase(allItems, items, isDone)
-                : { phase: 'tournament', soloItems: [] };
-            const soloItems = medalDayPhase.soloItems;
-            const soloPhase = medalDayPhase.phase === 'solo' && !newestSoldItem && !auctionState.motion;
-            if (soloPhase) {
-                const activeSolo = soloItems.find(item => isAuctionActiveItem(item));
-                const completedSolo = soloItems.filter(isDone).length;
-                const soloNote = activeSolo ? auctionItemLabel(activeSolo) + ' 진행 중' : '다음 단독 경매 대기';
-                const renderKey = ['medal-solo', completedSolo, soloItems.length, activeSolo?.row || activeSolo?.name || ''].join('|');
-                if (tree.dataset.liveRenderKey !== renderKey) {
-                    tree.dataset.liveRenderKey = renderKey;
-                    tree.innerHTML = '<section class="live-round-board is-special-auction"><header class="live-round-header"><span class="live-round-chip is-standby">PARTNER</span><strong>SPECIAL AUCTION</strong><span class="live-round-number">' + completedSolo + ' / ' + soloItems.length + '</span></header><div class="live-next-panel"><span class="live-next-label">DINO MARKET</span><strong class="live-next-code">다이노마켓</strong><span class="live-next-note">' + esc(soloNote) + '</span></div></section>';
-                }
-                if (titleEl) titleEl.textContent = '다이노마켓 단독 경매';
-                return;
-            }
-
             // 라운드가 바뀔 때 시작 조를 한 칸씩 민다.
             // 저장된 과거 스케줄 순서와 무관하게 1R=1조, 2R=2조, 3R=3조...를 보장한다.
-            const scheduleSteps = scale === 2 && matchCount === 2
-                ? buildMedalAuctionSchedule(roundsByGroup)
-                : buildRotatingAuctionSchedule(matchCount, roundsByGroup);
+            const scheduleSteps = buildRotatingAuctionSchedule(matchCount, roundsByGroup);
 
             function getPendingAuctionStep() {
                 for (const step of scheduleSteps) {
@@ -7563,35 +7444,12 @@
 
             const pendingStep = getPendingAuctionStep();
 
-            function getNextCodeAfterActive(item) {
-                const activeCode = getCleanCode(item) || '';
-                if (!activeCode) return '';
-                const orderedCodes = [];
-                for (const step of scheduleSteps) {
-                    const left = String.fromCharCode(65 + (step.group - 1) * 2);
-                    const right = String.fromCharCode(65 + (step.group - 1) * 2 + 1);
-                    let first = left;
-                    if (step.round > 1) {
-                        const previousLeft = findItemByCode(items, left + (step.round - 1));
-                        const previousRight = findItemByCode(items, right + (step.round - 1));
-                        const leftPrice = parseFloat(previousLeft?.sold_price || previousLeft?.soldPrice || 0) || 0;
-                        const rightPrice = parseFloat(previousRight?.sold_price || previousRight?.soldPrice || 0) || 0;
-                        first = leftPrice >= rightPrice ? left : right;
-                    }
-                    const second = first === left ? right : left;
-                    orderedCodes.push(first + step.round, second + step.round);
-                }
-                const activeIndex = orderedCodes.indexOf(activeCode);
-                if (activeIndex < 0) return '';
-                for (let index = activeIndex + 1; index < orderedCodes.length; index++) {
-                    const code = orderedCodes[index];
-                    if (!isDone(findItemByCode(items, code))) return code;
-                }
-                return '';
-            }
-            const activeNextCode = activeItem ? getNextCodeAfterActive(activeItem) : '';
-
             const contextItem = activeItem || newestSoldItem;
+            const presentationItem = contextItem || [...items].reverse().find(isDone) || items[0];
+            const revealCompany = presentationItem
+                ? getBroadcastPresentation(presentationItem, map).visibility === 'public'
+                : String(map.bracket_full_blind ?? '1') === '0';
+            const displayTeam = letter => revealCompany && letterToTeam[letter] ? letterToTeam[letter] : letter + '팀';
             if (contextItem) {
                 const code = (getCleanCode(contextItem) || (contextItem.name || '').trim().toUpperCase());
                 if (code && code.length >= 2) {
@@ -7608,8 +7466,6 @@
                 detectedLetter = motion.side === 'left' ? motion.leftTeamLetter : motion.rightTeamLetter;
             }
 
-            // 활성 경매가 없으면 완료 여부를 건너뛰어 실제 다음 순번을 바로 가리킨다.
-            let waitingNextCode = !activeItem ? (pendingStep?.code || '경기 종료') : '';
             if (!detectedGroup && pendingStep) {
                 detectedGroup = pendingStep.group;
                 detectedRound = pendingStep.round;
@@ -7669,7 +7525,7 @@
 
             const isChamp = (detectedRound === rpm);
 
-            // 진행중인 팀 판별 (업체명은 숨기고 실제 대진 코드만 표시)
+            // 진행중인 팀 판별 (공개 범위 정책에 따라 업체명 또는 팀 코드 표시)
             const activeSide = detectedLetter === leftTeamLetter ? 'left' : (detectedLetter === rightTeamLetter ? 'right' : '');
 
             // 라운드별 데이터
@@ -7783,9 +7639,17 @@
             const leftActive = activeItem && activeSide === 'left' ? ' is-active' : '';
             const rightActive = activeItem && activeSide === 'right' ? ' is-active' : '';
             const isWaiting = !activeItem && Boolean(pendingStep);
+            if (isWaiting) {
+                tree.innerHTML = '';
+                tree.dataset.liveRenderKey = '';
+                clearAuctionMotionPortal();
+                return;
+            }
             const isFinalTotals = !activeItem && !pendingStep && matchComplete;
             const finalLeftWin = isFinalTotals && matchWinner === 'left' ? ' is-active' : '';
             const finalRightWin = isFinalTotals && matchWinner === 'right' ? ' is-active' : '';
+            const leftDisplayTeam = displayTeam(leftTeamLetter);
+            const rightDisplayTeam = displayTeam(rightTeamLetter);
             const displayRound = getBracketViewRound(scale, map);
             const displayGroup = isWaiting ? pendingStep.group : detectedGroup;
             const displayAuctionRound = isWaiting ? pendingStep.round : detectedRound;
@@ -7803,24 +7667,17 @@
                 }
             }
 
-            const nextNote = '다음 경매 개체';
-            const nextHtml = isWaiting
-                ? '<div class="live-next-panel"><span class="live-next-label">NEXT</span><strong class="live-next-code">다음 개체</strong><span class="live-next-note">' + nextNote + '</span></div>'
-                : '';
             const scoreHtml = isFinalTotals
-                ? '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + finalLeftWin + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score is-total" aria-label="합산 낙찰금액 ' + leftAuctionTotal + ' 대 ' + rightAuctionTotal + '"><strong>' + leftAuctionTotal + '</strong><i>:</i><strong>' + rightAuctionTotal + '</strong><em class="blind-live-score-unit">만원</em></div><div class="blind-live-team' + finalRightWin + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>'
-                : '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftTeamLetter) + '팀</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightTeamLetter) + '팀</strong></div></div></div>';
-            const liveBodyHtml = isWaiting ? nextHtml : scoreHtml;
-            const periodicNextHtml = activeItem && activeNextCode && !mot
-                ? '<div class="live-periodic-next" aria-label="다음 경매 개체"><span>NEXT</span><strong>다음 개체</strong></div>'
-                : '';
-            const chipClass = isWaiting ? 'live-round-chip is-standby' : 'live-round-chip';
-            const chipText = isFinalTotals ? 'FINAL' : (isWaiting ? 'STANDBY' : 'LIVE');
-            const roundText = isFinalTotals ? 'TOTAL AUCTION' : (isWaiting ? 'NEXT AUCTION' : (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY')));
-            const renderKey = [displayRound, displayGroup, displayAuctionRound, leftRoundWins, rightRoundWins, leftAuctionTotal, rightAuctionTotal, activeSide, waitingNextCode, activeNextCode, isFinalTotals, mot?.eventKey || '', mot?.phase || ''].join('|');
+                ? '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + finalLeftWin + '"><strong>' + esc(leftDisplayTeam) + '</strong></div><div class="blind-live-score is-total" aria-label="합산 낙찰금액 ' + leftAuctionTotal + ' 대 ' + rightAuctionTotal + '"><strong>' + leftAuctionTotal + '</strong><i>:</i><strong>' + rightAuctionTotal + '</strong><em class="blind-live-score-unit">만원</em></div><div class="blind-live-team' + finalRightWin + '"><strong>' + esc(rightDisplayTeam) + '</strong></div></div></div>'
+                : '<div class="live-board-body"><div class="blind-live-match"><div class="blind-live-team' + leftActive + '"><strong>' + esc(leftDisplayTeam) + '</strong></div><div class="blind-live-score" aria-label="' + leftRoundWins + ' 대 ' + rightRoundWins + '"><strong>' + leftRoundWins + '</strong><i>:</i><strong>' + rightRoundWins + '</strong></div><div class="blind-live-team' + rightActive + '"><strong>' + esc(rightDisplayTeam) + '</strong></div></div></div>';
+            const liveBodyHtml = scoreHtml;
+            const chipClass = 'live-round-chip';
+            const chipText = isFinalTotals ? 'FINAL' : 'LIVE';
+            const roundText = isFinalTotals ? 'TOTAL AUCTION' : (isChamp ? '대장전' : (detectedRound > 0 ? detectedRound + ' ROUND' : 'STANDBY'));
+            const renderKey = [displayRound, displayGroup, displayAuctionRound, leftRoundWins, rightRoundWins, leftAuctionTotal, rightAuctionTotal, activeSide, isFinalTotals, mot?.eventKey || '', mot?.phase || ''].join('|');
             if (tree.dataset.liveRenderKey !== renderKey) {
                 tree.dataset.liveRenderKey = renderKey;
-                tree.innerHTML = '<section class="live-round-board"><header class="live-round-header"><span class="' + chipClass + '">' + chipText + '</span><strong>' + scaleLabel + '</strong><span class="live-round-number">' + roundText + '</span></header>' + liveBodyHtml + periodicNextHtml + '</section>';
+                tree.innerHTML = '<section class="live-round-board"><header class="live-round-header"><span class="' + chipClass + '">' + chipText + '</span><strong>' + scaleLabel + '</strong><span class="live-round-number">' + roundText + '</span></header>' + liveBodyHtml + '</section>';
             }
         }
 
@@ -7838,7 +7695,6 @@
                     if (ann) ann.style.setProperty('display', 'none', 'important');
                     const matchupCard = document.getElementById('battle-matchup-card');
                     if (matchupCard) matchupCard.style.setProperty('display', 'none', 'important');
-                    document.body.classList.remove('battle-hide-prices');
                     return;
                 }
                 
@@ -7847,7 +7703,6 @@
                     document.getElementById('battle-announcement-overlay').style.display = 'none';
                     const matchupCard = document.getElementById('battle-matchup-card');
                     if (matchupCard) matchupCard.style.display = 'none';
-                    document.body.classList.remove('battle-hide-prices');
                     return;
                 }
                 
@@ -7933,7 +7788,6 @@
                         showFinalRevealUI(scale, curMatchKey, bracket, map, items);
                     } else {
                         if (ann) ann.style.setProperty('display', 'none', 'important');
-                        document.body.classList.remove('battle-hide-prices');
                     }
                     const matchupCard = document.getElementById('battle-matchup-card');
                     if (matchupCard) matchupCard.style.setProperty('display', 'none', 'important');
@@ -8033,14 +7887,6 @@
                 let displayContent = '';
                 let displaySub = '';
                 
-                // 금액 감춤 활성화
-                const isFinalReveal = (roundNum === roundsPerMatch && (activeItem.status === '완료' || activeItem.status === 'sold' || activeItem.status === '낙찰' || activeItem.status === '유찰'));
-                if (!isFinalReveal) {
-                    document.body.classList.add('battle-hide-prices');
-                } else {
-                    document.body.classList.remove('battle-hide-prices');
-                }
-                
                 if (roundNum === roundsPerMatch) {
                     displayContent = `대장전(${roundsPerMatch}라운드) 진행 중!`;
                     displaySub = `${leftLetter}팀 VS ${rightLetter}팀<br>운명의 최종 승부 (현재 스코어 ${leftScore} : ${rightScore})`;
@@ -8125,7 +7971,6 @@
             if (ann) {
                 ann.style.setProperty('display', 'none', 'important');
             }
-            document.body.classList.remove('battle-hide-prices');
         }
 
         function esc(s) {

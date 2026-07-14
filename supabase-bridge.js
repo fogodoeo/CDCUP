@@ -15,8 +15,10 @@ const _sbHeaders = {
 
 // ── 경매 개체 분류/블라인드 메타데이터 ──
 // DB 스키마를 바꾸지 않고 checklist의 숨김 키로 보관한다.
-// _auction: tournament | solo | event | extra | crewart, _stage: 8, _slot: A1, _team: A, _label: 1
+// _auction: tournament | solo | event | extra | crewart, _visibility: public | blind
+// _stage: 8, _slot: A1, _team: A, _label: 1
 const AUCTION_TYPES = Object.freeze({ TOURNAMENT: 'tournament', SOLO: 'solo', EVENT: 'event', EXTRA: 'extra', CREWART: 'crewart' });
+const VISIBILITY_MODES = Object.freeze({ PUBLIC: 'public', BLIND: 'blind' });
 
 function _checklistPairs(raw) {
     const result = {};
@@ -41,20 +43,25 @@ function getItemAuctionMeta(itemOrChecklist, fallbackName) {
     const teamCode = String(pairs._team || (tournamentCode ? tournamentCode.charAt(0) : '')).toUpperCase();
     const tournamentStage = Number.parseInt(pairs._stage, 10) || 0;
     const publicNumber = Number.parseInt(pairs._label || (item ? item.num : ''), 10) || 0;
+    const visibilityMode = Object.values(VISIBILITY_MODES).includes(String(pairs._visibility || '').toLowerCase())
+        ? String(pairs._visibility).toLowerCase()
+        : '';
     const auctionType = Object.values(AUCTION_TYPES).includes(storedType)
         ? storedType
         : (tournamentCode ? AUCTION_TYPES.TOURNAMENT : AUCTION_TYPES.EXTRA);
     const publicName = legacy ? name.slice(legacy[0].length).replace(/^\s*[-·:]?\s*/, '').trim() : name;
-    return { auctionType, tournamentCode, teamCode, tournamentStage, publicNumber, publicName: publicName || (legacy ? '개체' : (name || '이름 없음')) };
+    return { auctionType, visibilityMode, tournamentCode, teamCode, tournamentStage, publicNumber, publicName: publicName || (legacy ? '개체' : (name || '이름 없음')) };
 }
 
 function mergeItemAuctionMeta(rawChecklist, meta) {
     const previous = _checklistPairs(rawChecklist);
-    const visible = String(rawChecklist || '').split('|').filter(Boolean).filter(part => !/^_(auction|slot|team|stage|label):/.test(part));
+    const visible = String(rawChecklist || '').split('|').filter(Boolean).filter(part => !/^_(auction|visibility|slot|team|stage|label):/.test(part));
     const auctionType = Object.values(AUCTION_TYPES).includes(String(meta?.auctionType || '').toLowerCase())
         ? String(meta.auctionType).toLowerCase()
         : AUCTION_TYPES.EXTRA;
     visible.push('_auction:' + auctionType);
+    const visibilityMode = String(meta?.visibilityMode ?? previous._visibility ?? '').toLowerCase();
+    if (Object.values(VISIBILITY_MODES).includes(visibilityMode)) visible.push('_visibility:' + visibilityMode);
     const publicNumber = Number.parseInt(meta?.publicNumber ?? previous._label, 10) || 0;
     if (publicNumber) visible.push('_label:' + publicNumber);
     if (auctionType === AUCTION_TYPES.TOURNAMENT) {
