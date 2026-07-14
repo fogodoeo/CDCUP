@@ -219,6 +219,18 @@
             border-color: rgba(56, 189, 248, 0.15);
         }
 
+        .top-bar .pill.pill-quiz {
+            max-width: 64vw;
+            white-space: normal;
+            word-break: keep-all;
+            font-size: max(var(--sb-pill-size, 17px), 20px);
+            font-weight: 850;
+            line-height: 1.25;
+            background: rgba(195, 154, 74, 0.18);
+            color: #f5f1e8;
+            border-color: rgba(220, 193, 127, 0.42);
+        }
+
         /* sub 클래스는 더 이상 사용하지 않지만 호환성을 위해 숨김 */
         .top-bar .sub {
             display: none;
@@ -4857,28 +4869,33 @@
                     container.appendChild(el);
                 }
 
-                // 기본 정보 (악센트 컬러)
-                if (cl.gender) addPill(track, gm[cl.gender] || cl.gender, 'accent');
-                if (cl.weight) addPill(track, cl.weight + 'g', 'accent');
-                // 출생일 (info 컬러)
-                if (cl.birth) addPill(track, cl.birth, 'info');
-                // 체크 항목들 (기본 컬러)
-                if (cl.spot) addPill(track, '점:' + (yn[cl.spot] || cl.spot), '');
-                if (cl.pin) addPill(track, '풀핀:' + (yn[cl.pin] || cl.pin), '');
-                if (cl.size) addPill(track, '도살:' + (GRADE[cl.size] || cl.size), '');
-                if (cl.wall) addPill(track, '월높이:' + (GRADE[cl.wall] || cl.wall), '');
-                if (cl.color) addPill(track, '색감:' + (GRADE[cl.color] || cl.color), '');
-                if (cl.activity) addPill(track, '활동성:' + (GRADE[cl.activity] || cl.activity), '');
-                if (cl.feed) addPill(track, '먹이:' + (GRADE[cl.feed] || cl.feed), '');
-                if (cl.structure) addPill(track, '체형:' + (GRADE[cl.structure] || cl.structure), '');
                 const isCleanNote = (txt) => {
                     if (!txt) return false;
                     const clean = String(txt).trim().toLowerCase();
                     return clean !== '' && clean !== 'none' && clean !== 'null' && clean !== 'undefined';
                 };
-                if (isCleanNote(cl.memo)) addPill(track, cl.memo, '');
-                if (isCleanNote(item.note) && item.note !== cl.memo) {
-                    addPill(track, item.note, '');
+                const quizMeta = getQuizItemMeta(item);
+                if (quizMeta.isQuiz) {
+                    addPill(track, 'Q. ' + (quizMeta.question || '문제 준비 중'), 'quiz');
+                } else {
+                    // 기본 정보 (악센트 컬러)
+                    if (cl.gender) addPill(track, gm[cl.gender] || cl.gender, 'accent');
+                    if (cl.weight) addPill(track, cl.weight + 'g', 'accent');
+                    // 출생일 (info 컬러)
+                    if (cl.birth) addPill(track, cl.birth, 'info');
+                    // 체크 항목들 (기본 컬러)
+                    if (cl.spot) addPill(track, '점:' + (yn[cl.spot] || cl.spot), '');
+                    if (cl.pin) addPill(track, '풀핀:' + (yn[cl.pin] || cl.pin), '');
+                    if (cl.size) addPill(track, '도살:' + (GRADE[cl.size] || cl.size), '');
+                    if (cl.wall) addPill(track, '월높이:' + (GRADE[cl.wall] || cl.wall), '');
+                    if (cl.color) addPill(track, '색감:' + (GRADE[cl.color] || cl.color), '');
+                    if (cl.activity) addPill(track, '활동성:' + (GRADE[cl.activity] || cl.activity), '');
+                    if (cl.feed) addPill(track, '먹이:' + (GRADE[cl.feed] || cl.feed), '');
+                    if (cl.structure) addPill(track, '체형:' + (GRADE[cl.structure] || cl.structure), '');
+                    if (isCleanNote(cl.memo)) addPill(track, cl.memo, '');
+                    if (isCleanNote(item.note) && item.note !== cl.memo) {
+                        addPill(track, item.note, '');
+                    }
                 }
 
                 // 호스트 모드 특성 트랙 (page 1 용) — 비워두기
@@ -5978,6 +5995,26 @@
             return (items || []).find(i => isAuctionActiveItem(i)) || null;
         }
 
+        function decodeQuizChecklistText(value) {
+            const raw = String(value || '').trim();
+            if (!raw) return '';
+            try {
+                const base64 = raw.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - raw.length % 4) % 4);
+                const bytes = Uint8Array.from(atob(base64), char => char.charCodeAt(0));
+                return new TextDecoder('utf-8').decode(bytes);
+            } catch (error) {
+                return '';
+            }
+        }
+
+        function getQuizItemMeta(item) {
+            const checklist = parseChecklist(item?.checklist || '');
+            return {
+                isQuiz: checklist.sale_mode === 'quiz',
+                question: decodeQuizChecklistText(checklist.quiz_question_b64),
+            };
+        }
+
         function getBidLogRows(item) {
             if (!item || !item.bid_log) return [];
             try {
@@ -6209,6 +6246,7 @@
         function buildLiveBidRows(map, activeItem) {
             const bids = getBidLogRows(activeItem);
             const mode = map?.live_bidders_mode || 'top';
+            const isQuiz = getQuizItemMeta(activeItem).isQuiz;
             if (!activeItem || bids.length === 0) return [];
 
             if (mode === 'top') {
@@ -6225,6 +6263,7 @@
                             name: rawName,
                             region: bid.region || bid.location || bid.area || '',
                             amount,
+                            isQuiz,
                             sortTime,
                             index
                         });
@@ -6245,6 +6284,7 @@
                     name: rawName,
                     region: bid.region || bid.location || bid.area || '',
                     amount: normalizeBidAmount(bid.amount !== undefined && bid.amount !== null ? bid.amount : bid.price),
+                    isQuiz,
                     sortTime: bidSortTime(bid, index),
                     index
                 };
@@ -6313,8 +6353,8 @@
                 rowEl.dataset.rank = String(rank);
 
                 const identity = parseBidderIdentity(bid.name, bid.region);
-                const formattedAmount = formatLiveBidAmount(bid.amount);
-                const cacheKey = `${identity.name}|${identity.region}|${formattedAmount}|${rank}`;
+                const formattedAmount = bid.isQuiz ? '정답!' : formatLiveBidAmount(bid.amount);
+                const cacheKey = `${identity.name}|${identity.region}|${formattedAmount}|${rank}|${bid.isQuiz ? 'quiz' : 'bid'}`;
                 if (rowEl.dataset.lastCache === cacheKey) {
                     // 스킵
                 } else {
@@ -6333,7 +6373,7 @@
 
                 const previousAmount = Number(_liveBiddersRankState.prevAmounts[bid.key] || 0);
                 const delta = Number(bid.amount) - previousAmount;
-                if (animate && delta > 0) {
+                if (animate && !bid.isQuiz && delta > 0) {
                     showLeaderboardDelta(rowEl, formatLeaderboardDelta(delta));
                 }
 
@@ -6360,11 +6400,12 @@
 
             const activeItem = getActiveAuctionItem(items);
             const bidRows = Array.isArray(prebuiltRows) ? prebuiltRows : buildLiveBidRows(map, activeItem);
-            const signature = bidRows.map(row => [row.key, row.amount, row.sortTime].join(':')).join('|');
+            const isQuiz = getQuizItemMeta(activeItem).isQuiz;
+            const signature = bidRows.map(row => [row.key, row.amount, row.sortTime, row.isQuiz ? 'quiz' : 'bid'].join(':')).join('|');
             const hasBidUpdate = _liveBiddersRankState.initialized && signature && signature !== _liveBiddersRankState.prevSignature;
             _liveBiddersRankState.initialized = true;
             _liveBiddersRankState.prevSignature = signature;
-            ensureP3PanelHeader(panel, '실시간 입찰 내역', `
+            ensureP3PanelHeader(panel, isQuiz ? '정답!' : '실시간 입찰 내역', `
                 <span class="blind-total-counter">
                     <span class="blind-total-counter-num">${bidRows.length}</span>
                     <span class="blind-total-counter-sep">명</span>

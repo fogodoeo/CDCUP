@@ -560,8 +560,8 @@
             return ph;
         }
 
-        var headersAll = '<th>번호</th><th>구분</th><th>이름</th><th>업체</th><th>시작가</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
-        var headersList = '<th>번호</th><th>구분</th><th>이름</th><th>업체</th><th>시작가</th><th>정보</th>';
+        var headersAll = '<th>번호</th><th>구분</th><th>이름</th><th>업체</th><th>낙찰가</th><th>낙찰자</th><th>연락처</th><th>배송</th><th>상태</th>';
+        var headersList = '<th>번호</th><th>구분</th><th>이름</th><th>업체</th><th>정보</th>';
 
         function buildResultRow(it, showCompany) {
             var st = it.status || '';
@@ -577,7 +577,6 @@
             r += '<td>' + auctionStageLabel(it) + '</td>';
             r += '<td class="col-name-sm">' + shortName + '</td>';
             if (showCompany) r += '<td class="col-company">' + (it.company || '') + '</td>';
-            r += '<td class="col-price">' + fmtPrice(it.startPrice) + '</td>';
             r += '<td class="col-result-price">' + (it.soldPrice ? fmtPrice(it.soldPrice) : '') + '</td>';
             r += '<td class="col-winner">' + w.name + '</td>';
             r += '<td class="col-phone">' + fmtPhone(w.phone) + '</td>';
@@ -612,7 +611,6 @@
                 lhtml += '<td>' + auctionStageLabel(it) + '</td>';
                 lhtml += '<td class="col-name">' + shortName + '</td>';
                 lhtml += '<td class="col-company">' + (it.company || '') + '</td>';
-                lhtml += '<td class="col-price">' + fmtPrice(it.startPrice) + '</td>';
                 lhtml += '<td class="col-info">' + info + '</td>';
                 lhtml += '</tr>';
             });

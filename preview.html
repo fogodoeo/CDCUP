@@ -780,7 +780,7 @@
         <!-- 16:9 OBS screen simulation -->
         <div class="screen-container" id="screen-container">
             <!-- Actual broadcast page inside -->
-            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260714-medal-day-v2"></iframe>
+            <iframe class="broadcast-iframe" id="broadcast-frame" src="broadcast.html?page=2&amp;module=cdcup&amp;v=20260714-quiz-v1"></iframe>
             
             <!-- Draggable wrapper layer -->
             <div class="drag-overlay" id="drag-overlay">
@@ -1120,7 +1120,7 @@
         }
 
         const pageNum = normalizePreviewPage(params.get('page')); // Default: page=2 (개체용)
-        const broadcastAssetVersion = '20260714-medal-day-v2';
+        const broadcastAssetVersion = '20260714-quiz-v1';
         let previewConfigMap = {};
 
         function requestedModuleId() {
@@ -2999,10 +2999,9 @@
                     const rowKey = String(item.row);
                     const code = codeByRow[rowKey] || '';
                     const photo = item.photoItem || '';
-                    const price = item.startPrice || item.price || '';
                     return `<button type="button" class="t-item-choice ${code ? 'selected' : ''}" data-letter="${tEsc(seed.letter)}" data-row="${tEsc(rowKey)}" onclick="tToggleItemSelection(this.dataset.letter,this.dataset.row)">
                         <span class="t-item-thumb">${photo ? `<img src="${tEsc(photo)}" alt="">` : 'NO'}</span>
-                        <span class="t-item-copy"><strong>${tEsc(item.name || '이름 없음')}</strong><span>${auctionNumber(item)} · 시작가 ${tEsc(price || '-')}</span></span>
+                        <span class="t-item-copy"><strong>${tEsc(item.name || '이름 없음')}</strong><span>${auctionNumber(item)}</span></span>
                         <span class="t-item-code">${code ? seed.letter + '팀 · 슬롯 ' + code.slice(1) : '선택'}</span>
                     </button>`;
                 }).join('') : '<div class="t-item-empty">이 업체에 등록된 개체가 없습니다.</div>';
