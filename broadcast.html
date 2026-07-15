@@ -25,7 +25,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260715-page2-photo-layout"></script>
+    <script src="supabase-bridge.js?v=20260715-medal-open-auction"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
@@ -4812,6 +4812,10 @@
             let cleanInfoName = getAuctionItemDisplayLabel(item) || origName;
             const publicCompanyName = String(item.company || '').trim();
             const presentation = getBroadcastPresentation(item, window.latestConfigMap || {});
+            const presentationMeta = getItemAuctionMeta(item);
+            const isMedalOpenAuction = presentation.competition === 'tournament'
+                && Number(presentationMeta.tournamentStage) === 2
+                && presentation.showCompany;
             if (publicCompanyName) {
                 const escapedCompany = publicCompanyName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                 const regex = new RegExp(escapedCompany, 'gi');
@@ -4824,16 +4828,19 @@
                 if (withoutCompany) cleanInfoName = withoutCompany;
             }
             // 공개 화면은 팀 슬롯과 분리된 숫자 라벨만 사용한다.
-            document.getElementById("info-name").textContent = cleanInfoName;
+            const medalOpenName = [cleanInfoName, publicCompanyName].filter(Boolean).join(' · ');
+            document.getElementById("info-name").textContent = isMedalOpenAuction ? medalOpenName : cleanInfoName;
             const publicInfoParts = [];
-            if (presentation.showCompany && publicCompanyName) publicInfoParts.push(publicCompanyName);
+            if (!isMedalOpenAuction && presentation.showCompany && publicCompanyName) publicInfoParts.push(publicCompanyName);
             publicInfoParts.push(presentation.label);
             document.getElementById("info-sub").textContent = publicInfoParts.filter(Boolean).join(' · ');
 
             // 호스트 카드 데이터 렌더링
-            document.getElementById("hc-name").textContent = getCurrentTournamentItemLabel(item);
+            document.getElementById("hc-name").textContent = isMedalOpenAuction
+                ? medalOpenName
+                : getCurrentTournamentItemLabel(item);
             const subParts = [];
-            if (presentation.showCompany && item.company) subParts.push(item.company);
+            if (!isMedalOpenAuction && presentation.showCompany && item.company) subParts.push(item.company);
             document.getElementById("hc-sub").textContent = subParts.join(' · ');
 
             // 서버에서 받은 개별 사진 숨김 플래그
@@ -6104,9 +6111,13 @@
                 ? 'tournament'
                 : 'single';
             const explicitVisibility = String(auctionMeta.visibilityMode || '').toLowerCase();
-            const visibility = ['public', 'blind'].includes(explicitVisibility)
-                ? explicitVisibility
-                : (competition === 'tournament' ? 'blind' : 'public');
+            const isMedalOpenTournament = competition === 'tournament'
+                && Number(auctionMeta.tournamentStage) === 2;
+            const visibility = isMedalOpenTournament
+                ? 'public'
+                : (['public', 'blind'].includes(explicitVisibility)
+                    ? explicitVisibility
+                    : (competition === 'tournament' ? 'blind' : 'public'));
             const isQuiz = saleMeta.mode === 'quiz';
             let label = '';
             if (competition === 'tournament') {
@@ -7021,7 +7032,9 @@
             const matchCount = tournamentStageMatchCount(scale);
             // 개체 경매 화면의 블라인드 정책과 분리한다. 전체 대진은
             // 운영자가 이 전용 토글로 업체 공개 여부를 결정한다.
-            const fullBracketBlind = String(map.bracket_full_blind ?? '1') !== '0';
+            const fullBracketBlind = Number(displayScale) === 2
+                ? false
+                : String(map.bracket_full_blind ?? '1') !== '0';
 
             let schedule = [];
             try { if (map.battle_schedule) schedule = JSON.parse(map.battle_schedule); } catch (e) {}

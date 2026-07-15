@@ -885,6 +885,7 @@ async function rebuildTournamentItems(assignments, pw) {
         const original = existingMap[assignment.id];
         const checklist = mergeItemAuctionMeta(original.checklist || '', {
             auctionType: AUCTION_TYPES.TOURNAMENT,
+            visibilityMode: tournamentStage === 2 ? VISIBILITY_MODES.PUBLIC : undefined,
             tournamentCode: assignment.code,
             teamCode: assignment.code.charAt(0),
             tournamentStage,
