@@ -484,10 +484,15 @@
         .sub-photo.photo-only img {
             border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 26px;
+            object-fit: contain;
+            background: rgba(5, 8, 14, 0.72);
             box-shadow:
                 0 28px 70px -18px rgba(0, 0, 0, 0.86),
                 0 10px 26px rgba(0, 0, 0, 0.34),
                 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+        .photo-stack.photo-disabled {
+            display: none !important;
         }
 
         .photo-stack.two-photos .sub-photo .label {
@@ -4156,6 +4161,7 @@
             const right = normalizeCssLength(cfg.page2_photo_right);
             const top = normalizeCssLength(cfg.page2_photo_top);
             const bottom = normalizeCssLength(cfg.page2_photo_bottom);
+            const show = String(cfg.page2_photo_show ?? cfg.p2_photo_show ?? '1') !== '0';
 
             stack.style.setProperty('--page2-photo-max-width', maxW);
             stack.style.setProperty('--page2-photo-max-height', maxH);
@@ -4164,6 +4170,7 @@
             stack.style.setProperty('--page2-photo-three-max-width', threeMaxW);
             stack.style.setProperty('--page2-photo-three-max-height', threeMaxH);
             stack.style.setProperty('--page2-photo-peek', peek);
+            stack.classList.toggle('photo-disabled', !show);
             stack.style.left = 'auto';
             stack.style.right = 'auto';
             stack.style.top = 'auto';

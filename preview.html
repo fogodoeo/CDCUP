@@ -179,7 +179,8 @@
             inset: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            background: rgba(5, 8, 14, 0.72);
             pointer-events: none;
             opacity: 0.84;
         }
@@ -902,6 +903,10 @@
                         <span>배너</span>
                         <input type="checkbox" id="toggle-banner-show" class="switch-input" checked onchange="toggleShowState('banner')">
                     </div>
+                    <div class="switch-container" id="toggle-photo-show-group" style="display:none;">
+                        <span>경매 사진</span>
+                        <input type="checkbox" id="toggle-photo-show" class="switch-input" checked onchange="toggleShowState('photo')">
+                    </div>
                     <div class="switch-container" id="toggle-nametag1-group" style="display:none;">
                         <span>네임택 1</span>
                         <input type="checkbox" id="toggle-nametag1-show" class="switch-input" checked onchange="toggleShowState('nametag1')">
@@ -1337,6 +1342,7 @@
         if (pageNum === '2') {
             document.getElementById('draggable-info').style.display = '';
             document.getElementById('draggable-photo').style.display = '';
+            document.getElementById('toggle-photo-show-group').style.display = '';
             document.getElementById('info-coords').style.display = '';
             document.getElementById('photo-coords').style.display = '';
         }
@@ -1627,6 +1633,9 @@
                     elements.photo.bottom = cfg.page2_photo_bottom || '5%';
                     elements.photo.width = cfg.page2_photo_width || '34vw';
                     elements.photo.height = cfg.page2_photo_height || '60vh';
+                    elements.photo.show = cfg.page2_photo_show !== undefined
+                        ? String(cfg.page2_photo_show)
+                        : (cfg.p2_photo_show !== undefined ? String(cfg.p2_photo_show) : '1');
                 }
 
                 // Load Nametag 1 & 2 values (PAGE1 only)
@@ -1763,6 +1772,7 @@
                 document.getElementById('toggle-ticker-show').checked = elements.ticker.show === "1";
                 if (elements.nametag1) document.getElementById('toggle-nametag1-show').checked = elements.nametag1.show === "1";
                 if (elements.nametag2) document.getElementById('toggle-nametag2-show').checked = elements.nametag2.show === "1";
+                if (elements.photo) document.getElementById('toggle-photo-show').checked = elements.photo.show === "1";
                 if (elements.bracket_full) document.getElementById('toggle-bracket-full-show').checked = elements.bracket_full.show === "1";
                 if (elements.bracket_live) document.getElementById('toggle-bracket-live-show').checked = elements.bracket_live.show === "1";
                 const fullBlindToggle = document.getElementById('toggle-bracket-full-blind');
@@ -2354,9 +2364,11 @@
             applyVisualState(key);
 
             const page3StandaloneKeys = ['bracket_full', 'bracket_live', 'bracket_title', 'battle_ann', 'blind_totals'];
-            const configKey = pageNum === '3' && page3StandaloneKeys.includes(key)
-                ? `${key}_show`
-                : `${cfgPrefix}${key}_show`;
+            const configKey = key === 'photo'
+                ? 'page2_photo_show'
+                : (pageNum === '3' && page3StandaloneKeys.includes(key)
+                    ? `${key}_show`
+                    : `${cfgPrefix}${key}_show`);
             checkbox.disabled = true;
 
             visibilitySaveQueue = visibilitySaveQueue.then(async () => {
@@ -2417,6 +2429,7 @@
                 configMap.page2_photo_bottom = elements.photo.bottom;
                 configMap.page2_photo_width = elements.photo.width;
                 configMap.page2_photo_height = elements.photo.height;
+                configMap.page2_photo_show = elements.photo.show;
                 configMap.page2_photo_maxwidth = elements.photo.width;
                 configMap.page2_photo_maxheight = elements.photo.height;
                 configMap.page2_photo_peek = '0';
@@ -2571,8 +2584,10 @@
                 elements.photo.bottom = '5%';
                 elements.photo.width = '34vw';
                 elements.photo.height = '60vh';
+                elements.photo.show = '1';
                 elements.photo.el.style.width = '34%';
                 elements.photo.el.style.height = '60%';
+                document.getElementById('toggle-photo-show').checked = true;
                 applyVisualState('photo');
             }
 
