@@ -1049,7 +1049,21 @@ async function uploadPhotos(photos) {
             const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/auction-photos/${name}`;
             results.push(publicUrl);
         } else {
-            results.push('');
+            // Storage 버킷이 없는 배포에서도 사진 등록이 가능하도록
+            // 작은 WebP data URL로 압축해 DB 사진 필드에 직접 저장한다.
+            try {
+                const bitmap = await createImageBitmap(blob);
+                const canvas = document.createElement('canvas');
+                canvas.width = bitmap.width;
+                canvas.height = bitmap.height;
+                const context = canvas.getContext('2d');
+                context.drawImage(bitmap, 0, 0);
+                if (typeof bitmap.close === 'function') bitmap.close();
+                results.push(canvas.toDataURL('image/webp', 0.75));
+            } catch (fallbackError) {
+                console.error('inline photo fallback failed', fallbackError);
+                results.push('');
+            }
         }
     }
     return results;

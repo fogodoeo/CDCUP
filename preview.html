@@ -159,6 +159,41 @@
             background: rgba(14, 165, 233, 0.23);
         }
 
+        .draggable-photo {
+            width: 34%;
+            height: 60%;
+            overflow: hidden;
+            background:
+                linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.03)),
+                rgba(15, 23, 42, 0.58);
+            border: 2px dashed rgba(125, 211, 252, 0.95);
+            border-radius: 18px;
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255,255,255,0.08);
+        }
+        .draggable-photo:hover {
+            border-color: #e0f2fe;
+            box-shadow: 0 22px 52px rgba(0, 0, 0, 0.5), 0 0 22px rgba(56, 189, 248, 0.22);
+        }
+        .draggable-photo-preview {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            opacity: 0.84;
+        }
+        .draggable-photo .element-label {
+            position: absolute;
+            left: 10px;
+            bottom: 10px;
+            z-index: 2;
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.78);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.28);
+        }
+
         /* Draggable Bracket */
         .draggable-bracket {
             width: 80%;
@@ -816,6 +851,13 @@
                     <div class="element-label">개체정보</div>
                 </div>
 
+                <!-- PAGE2 경매 사진 위치/크기 -->
+                <div class="draggable-element draggable-photo" id="draggable-photo" data-type="photo" style="display:none;">
+                    <img class="draggable-photo-preview" id="draggable-photo-preview" alt="">
+                    <div class="element-label" id="draggable-photo-label">경매 사진</div>
+                    <div class="resize-handle resize-handle-se" id="resize-photo" title="드래그로 사진 크기 조절"></div>
+                </div>
+
                 <!-- 5. Draggable Full Bracket (PAGE3 only) -->
                 <div class="draggable-element draggable-bracket" id="draggable-bracket-full" data-type="bracket_full" style="display:none; z-index:20;">
                     <div class="element-label">전체 결과</div>
@@ -973,6 +1015,7 @@
                     <span id="nametag1-coords" style="display:none;"> | 네임택1: <strong id="nametag1-val-top">0%</strong>, <strong id="nametag1-val-left">0%</strong></span>
                     <span id="nametag2-coords" style="display:none;"> | 네임택2: <strong id="nametag2-val-top">0%</strong>, <strong id="nametag2-val-left">0%</strong></span>
                     <span id="info-coords" style="display:none;"> | 개체정보: <strong id="info-val-top">0%</strong>, <strong id="info-val-left">0%</strong></span>
+                    <span id="photo-coords" style="display:none;"> | 사진: <strong id="photo-val-top">0%</strong>, <strong id="photo-val-left">0%</strong></span>
                     <span id="bracket-coords" style="display:none;">전체결과: Top <strong id="bracket-val-top">0%</strong>, Left <strong id="bracket-val-left">0%</strong></span>
                     <span id="bracket-live-coords" style="display:none;"> | 실시간대진: Top <strong id="bracket-live-val-top">0%</strong>, Left <strong id="bracket-live-val-left">0%</strong></span>
                     <span id="bracket-title-coords" style="display:none;"> | 타이틀: <strong id="bracket-title-val-top">0%</strong>, <strong id="bracket-title-val-left">0%</strong></span>
@@ -1293,7 +1336,9 @@
 
         if (pageNum === '2') {
             document.getElementById('draggable-info').style.display = '';
+            document.getElementById('draggable-photo').style.display = '';
             document.getElementById('info-coords').style.display = '';
+            document.getElementById('photo-coords').style.display = '';
         }
 
         // PAGE3 전용 요소 표시 + 배너/자막 숨김 (3P는 오버레이 전용)
@@ -1359,6 +1404,11 @@
                 el: document.getElementById('draggable-info'),
                 top: '3%', left: 'auto', right: '2%', bottom: 'auto',
                 show: '1', width: '42%', height: '16%'
+            };
+            elements.photo = {
+                el: document.getElementById('draggable-photo'),
+                top: 'auto', left: '3%', right: 'auto', bottom: '5%',
+                show: '1', width: '34vw', height: '60vh'
             };
         }
 
@@ -1570,6 +1620,14 @@
                     elements.info.right = cfg.p2_info_right || '2%';
                     elements.info.bottom = cfg.p2_info_bottom || 'auto';
                 }
+                if (elements.photo) {
+                    elements.photo.top = cfg.page2_photo_top || 'auto';
+                    elements.photo.left = cfg.page2_photo_left || '3%';
+                    elements.photo.right = cfg.page2_photo_right || 'auto';
+                    elements.photo.bottom = cfg.page2_photo_bottom || '5%';
+                    elements.photo.width = cfg.page2_photo_width || '34vw';
+                    elements.photo.height = cfg.page2_photo_height || '60vh';
+                }
 
                 // Load Nametag 1 & 2 values (PAGE1 only)
                 if (elements.nametag1) {
@@ -1693,6 +1751,7 @@
                 if (elements.nametag1) applyVisualState('nametag1');
                 if (elements.nametag2) applyVisualState('nametag2');
                 if (elements.info) applyVisualState('info');
+                if (elements.photo) applyVisualState('photo');
                 if (elements.bracket_full) applyVisualState('bracket_full');
                 if (elements.bracket_live) applyVisualState('bracket_live');
                 if (elements.bracket_title) applyVisualState('bracket_title');
@@ -1735,6 +1794,10 @@
                 if (elements.nametag2) {
                     elements.nametag2.el.style.width = convertToPercent(elements.nametag2.width);
                     elements.nametag2.el.style.height = convertToPercent(elements.nametag2.height);
+                }
+                if (elements.photo) {
+                    elements.photo.el.style.width = convertToPercent(elements.photo.width);
+                    elements.photo.el.style.height = convertToPercent(elements.photo.height);
                 }
                 // 대진표 크기 적용
                 if (elements.bracket_full) {
@@ -1799,6 +1862,31 @@
                 }
             }
             } catch(err) { console.error('Config load failed:', err); }
+        }
+
+        async function loadPage2PhotoSample() {
+            if (pageNum !== '2') return;
+            const image = document.getElementById('draggable-photo-preview');
+            const label = document.getElementById('draggable-photo-label');
+            if (!image || !label) return;
+            try {
+                const items = await getItems();
+                const sample = (items || []).find(item => item.photoSibling || item.photoItem || item.photoSire || item.photoDam);
+                const source = sample && (sample.photoSibling || sample.photoItem || sample.photoSire || sample.photoDam);
+                if (source) {
+                    image.src = source;
+                    image.style.display = 'block';
+                    label.textContent = `경매 사진 · ${sample.name || sample.num || ''}`;
+                } else {
+                    image.removeAttribute('src');
+                    image.style.display = 'none';
+                    label.textContent = '경매 사진 · 드래그/크기조절';
+                }
+            } catch (error) {
+                image.style.display = 'none';
+                label.textContent = '경매 사진 · 드래그/크기조절';
+                console.warn('page2 photo sample load failed', error);
+            }
         }
 
         // 대진용 제어 함수
@@ -1892,6 +1980,12 @@
                 document.getElementById('info-val-top').textContent = info.bottom !== 'auto' ? `B ${info.bottom}` : `T ${info.top}`;
                 document.getElementById('info-val-left').textContent = info.right !== 'auto' ? `R ${info.right}` : `L ${info.left}`;
             }
+            if (elements.photo) {
+                const photo = elements.photo;
+                document.getElementById('photo-val-top').textContent = photo.bottom !== 'auto' ? `B ${photo.bottom}` : `T ${photo.top}`;
+                const photoX = photo.right !== 'auto' ? `R ${photo.right}` : `L ${photo.left}`;
+                document.getElementById('photo-val-left').textContent = `${photoX} (${photo.width}×${photo.height})`;
+            }
             if (pageNum === '3') {
                 if (elements.bracket_full) {
                     const br = elements.bracket_full;
@@ -1963,6 +2057,11 @@
         resizeBanner.addEventListener('touchstart', (e) => startResize(e, 'banner'), { passive: false });
         resizeTicker.addEventListener('mousedown', (e) => startResize(e, 'ticker'));
         resizeTicker.addEventListener('touchstart', (e) => startResize(e, 'ticker'), { passive: false });
+        const resizePhoto = document.getElementById('resize-photo');
+        if (resizePhoto && elements.photo) {
+            resizePhoto.addEventListener('mousedown', (e) => startResize(e, 'photo'));
+            resizePhoto.addEventListener('touchstart', (e) => startResize(e, 'photo'), { passive: false });
+        }
 
         // 네임택 리사이즈 핸들 (PAGE1 only)
         if (pageNum === '1') {
@@ -2046,6 +2145,13 @@
                     const newH = Math.max(40, resizeStartH - dy);
                     elements.ticker.height = ((newH / containerRect.height) * 100).toFixed(1) + 'vh';
                     elements.ticker.el.style.height = convertToPercent(elements.ticker.height);
+                } else if (resizeTarget === 'photo' && elements.photo) {
+                    const newW = Math.max(140, resizeStartW + dx);
+                    const newH = Math.max(140, resizeStartH + dy);
+                    elements.photo.width = ((newW / containerRect.width) * 100).toFixed(1) + 'vw';
+                    elements.photo.height = ((newH / containerRect.height) * 100).toFixed(1) + 'vh';
+                    elements.photo.el.style.width = convertToPercent(elements.photo.width);
+                    elements.photo.el.style.height = convertToPercent(elements.photo.height);
                 } else if (resizeTarget === 'nametag1' || resizeTarget === 'nametag2') {
                     const newW = Math.max(50, resizeStartW + dx);
                     const newH = Math.max(30, resizeStartH + dy);
@@ -2304,6 +2410,17 @@
                 configMap.p2_info_right = elements.info.right;
                 configMap.p2_info_bottom = elements.info.bottom;
             }
+            if (elements.photo) {
+                configMap.page2_photo_top = elements.photo.top;
+                configMap.page2_photo_left = elements.photo.left;
+                configMap.page2_photo_right = elements.photo.right;
+                configMap.page2_photo_bottom = elements.photo.bottom;
+                configMap.page2_photo_width = elements.photo.width;
+                configMap.page2_photo_height = elements.photo.height;
+                configMap.page2_photo_maxwidth = elements.photo.width;
+                configMap.page2_photo_maxheight = elements.photo.height;
+                configMap.page2_photo_peek = '0';
+            }
 
             if (pageNum === '3') {
                 if (elements.bracket_full) {
@@ -2446,6 +2563,17 @@
                 elements.info.right = '2%';
                 elements.info.bottom = 'auto';
                 applyVisualState('info');
+            }
+            if (elements.photo) {
+                elements.photo.top = 'auto';
+                elements.photo.left = '3%';
+                elements.photo.right = 'auto';
+                elements.photo.bottom = '5%';
+                elements.photo.width = '34vw';
+                elements.photo.height = '60vh';
+                elements.photo.el.style.width = '34%';
+                elements.photo.el.style.height = '60%';
+                applyVisualState('photo');
             }
 
             if (elements.nametag1) {
@@ -3424,6 +3552,7 @@
         // Initial Initialization
         window.addEventListener('DOMContentLoaded', () => {
             loadConfigurations();
+            loadPage2PhotoSample();
             if (pageNum === '3' && document.getElementById('tournament-dashboard')?.classList.contains('active')) {
                 tInit();
             }

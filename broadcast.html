@@ -58,11 +58,20 @@
 
         .empty {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 20px;
+            top: 20px;
+            right: 24px;
+            left: auto;
+            z-index: 20;
+            transform: none;
+            padding: 5px 9px;
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 999px;
+            background: rgba(7, 12, 22, 0.28);
+            color: rgba(255, 255, 255, 0.48);
+            font-size: 11px;
+            font-weight: 650;
+            letter-spacing: 0.02em;
+            line-height: 1;
         }
 
         .broadcast {
@@ -353,16 +362,17 @@
         }
 
         .photo-stack {
-            --page2-photo-max-height: 50vh;
-            --page2-photo-max-width: 42vw;
+            --page2-photo-max-height: 60vh;
+            --page2-photo-max-width: 34vw;
             --page2-photo-two-max-height: 44vh;
             --page2-photo-two-max-width: 41vw;
             --page2-photo-three-max-height: 30vh;
             --page2-photo-three-max-width: 38vw;
-            --page2-photo-peek: 8%;
+            --page2-photo-peek: 0;
             position: absolute;
-            right: 1.5%;
-            bottom: 2%;
+            left: 3%;
+            right: auto;
+            bottom: 5%;
             display: flex;
             flex-direction: column-reverse;
             align-items: flex-end;
@@ -465,6 +475,19 @@
             overflow: hidden;
             text-overflow: ellipsis;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 일반/단독 경매에서 동배 칸을 단일 소개 사진으로 쓸 때는 사진만 표시 */
+        .sub-photo.photo-only .label {
+            display: none;
+        }
+        .sub-photo.photo-only img {
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 26px;
+            box-shadow:
+                0 28px 70px -18px rgba(0, 0, 0, 0.86),
+                0 10px 26px rgba(0, 0, 0, 0.34),
+                0 0 0 1px rgba(255, 255, 255, 0.05);
         }
 
         .photo-stack.two-photos .sub-photo .label {
@@ -4122,13 +4145,17 @@
             const stack = document.getElementById('photo-stack');
             if (!stack) return;
 
-            const maxW = normalizeViewportSize(cfg.page2_photo_maxwidth, 'vw') || '42vw';
-            const maxH = normalizeViewportSize(cfg.page2_photo_maxheight, 'vh') || '50vh';
+            const maxW = normalizeViewportSize(cfg.page2_photo_width || cfg.page2_photo_maxwidth, 'vw') || '34vw';
+            const maxH = normalizeViewportSize(cfg.page2_photo_height || cfg.page2_photo_maxheight, 'vh') || '60vh';
             const twoMaxW = normalizeViewportSize(cfg.page2_photo_two_maxwidth, 'vw') || '41vw';
             const twoMaxH = normalizeViewportSize(cfg.page2_photo_two_maxheight, 'vh') || '44vh';
             const threeMaxW = normalizeViewportSize(cfg.page2_photo_three_maxwidth, 'vw') || '38vw';
             const threeMaxH = normalizeViewportSize(cfg.page2_photo_three_maxheight, 'vh') || '30vh';
-            const peek = normalizeCssLength(cfg.page2_photo_peek) || '14%';
+            const peek = normalizeCssLength(cfg.page2_photo_peek) || '0';
+            const left = normalizeCssLength(cfg.page2_photo_left);
+            const right = normalizeCssLength(cfg.page2_photo_right);
+            const top = normalizeCssLength(cfg.page2_photo_top);
+            const bottom = normalizeCssLength(cfg.page2_photo_bottom);
 
             stack.style.setProperty('--page2-photo-max-width', maxW);
             stack.style.setProperty('--page2-photo-max-height', maxH);
@@ -4137,6 +4164,16 @@
             stack.style.setProperty('--page2-photo-three-max-width', threeMaxW);
             stack.style.setProperty('--page2-photo-three-max-height', threeMaxH);
             stack.style.setProperty('--page2-photo-peek', peek);
+            stack.style.left = 'auto';
+            stack.style.right = 'auto';
+            stack.style.top = 'auto';
+            stack.style.bottom = 'auto';
+            if (hasPlacementValue(right)) stack.style.right = right;
+            else if (hasPlacementValue(left)) stack.style.left = left;
+            else stack.style.left = '3%';
+            if (hasPlacementValue(top)) stack.style.top = top;
+            else if (hasPlacementValue(bottom)) stack.style.bottom = bottom;
+            else stack.style.bottom = '5%';
         }
 
         function renderImageBannersLegacy(cfg) {
@@ -4815,6 +4852,9 @@
                 dam: item.damName ? ("모 · " + item.damName) : "모",
                 sibling: item.siblingName ? ("동배 · " + item.siblingName) : "동배"
             };
+            const photoOnlySibling = ['solo', 'extra', 'event'].includes(
+                String(getItemAuctionMeta(item).auctionType || '').toLowerCase()
+            );
             const visibleSubKeys = [];
             for (const [key, field] of Object.entries(subs)) {
                 const isHidden = hiddenPhotos.indexOf(key) >= 0;
@@ -4827,6 +4867,7 @@
                 const label = slot.querySelector(".label");
                 const visibleIndex = activeSubKeys.indexOf(key);
                 slot.classList.remove("visible", "slot-primary", "slot-secondary");
+                slot.classList.toggle("photo-only", key === "sibling" && photoOnlySibling);
                 if (visibleIndex >= 0) {
                     img.src = item[field];
                     if (label) label.textContent = subLabels[key];
