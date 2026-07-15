@@ -4812,10 +4812,7 @@
             let cleanInfoName = getAuctionItemDisplayLabel(item) || origName;
             const publicCompanyName = String(item.company || '').trim();
             const presentation = getBroadcastPresentation(item, window.latestConfigMap || {});
-            const presentationMeta = getItemAuctionMeta(item);
-            const isMedalOpenAuction = presentation.competition === 'tournament'
-                && Number(presentationMeta.tournamentStage) === 2
-                && presentation.showCompany;
+            const showCompanyInline = presentation.showCompany && Boolean(publicCompanyName);
             if (publicCompanyName) {
                 const escapedCompany = publicCompanyName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
                 const regex = new RegExp(escapedCompany, 'gi');
@@ -4828,20 +4825,15 @@
                 if (withoutCompany) cleanInfoName = withoutCompany;
             }
             // 공개 화면은 팀 슬롯과 분리된 숫자 라벨만 사용한다.
-            const medalOpenName = [cleanInfoName, publicCompanyName].filter(Boolean).join(' · ');
-            document.getElementById("info-name").textContent = isMedalOpenAuction ? medalOpenName : cleanInfoName;
-            const publicInfoParts = [];
-            if (!isMedalOpenAuction && presentation.showCompany && publicCompanyName) publicInfoParts.push(publicCompanyName);
-            publicInfoParts.push(presentation.label);
-            document.getElementById("info-sub").textContent = publicInfoParts.filter(Boolean).join(' · ');
+            const publicAuctionName = [cleanInfoName, publicCompanyName].filter(Boolean).join(' · ');
+            document.getElementById("info-name").textContent = showCompanyInline ? publicAuctionName : cleanInfoName;
+            document.getElementById("info-sub").textContent = presentation.label;
 
             // 호스트 카드 데이터 렌더링
-            document.getElementById("hc-name").textContent = isMedalOpenAuction
-                ? medalOpenName
+            document.getElementById("hc-name").textContent = showCompanyInline
+                ? publicAuctionName
                 : getCurrentTournamentItemLabel(item);
-            const subParts = [];
-            if (!isMedalOpenAuction && presentation.showCompany && item.company) subParts.push(item.company);
-            document.getElementById("hc-sub").textContent = subParts.join(' · ');
+            document.getElementById("hc-sub").textContent = '';
 
             // 서버에서 받은 개별 사진 숨김 플래그
             if (Array.isArray(item.hiddenPhotos)) hiddenPhotos = item.hiddenPhotos;
