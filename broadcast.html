@@ -5514,6 +5514,32 @@
             return fallbackByCompany[companyKey];
         }
 
+        function getMedalTotalsTeamFilter(items) {
+            const medalItems = (items || []).filter(item => {
+                const meta = getItemAuctionMeta(item);
+                return meta.auctionType === AUCTION_TYPES.TOURNAMENT
+                    && Number(meta.tournamentStage) === 2;
+            });
+            if (!medalItems.length) return null;
+
+            const activeItem = medalItems.find(item => isAuctionActiveItem(item));
+            const activeTeam = String(getItemAuctionMeta(activeItem).teamCode || '').toUpperCase();
+            if (activeTeam === 'A' || activeTeam === 'B') return new Set(['A', 'B']);
+            if (activeTeam === 'C' || activeTeam === 'D') return new Set(['C', 'D']);
+
+            const hasThirdPlaceItems = medalItems.some(item => {
+                const team = String(getItemAuctionMeta(item).teamCode || '').toUpperCase();
+                return team === 'C' || team === 'D';
+            });
+            const finalStarted = medalItems.some(item => {
+                const team = String(getItemAuctionMeta(item).teamCode || '').toUpperCase();
+                return (team === 'A' || team === 'B')
+                    && (isAuctionActiveItem(item) || isSoldForTotals(item));
+            });
+            if (finalStarted || !hasThirdPlaceItems) return new Set(['A', 'B']);
+            return new Set(['C', 'D']);
+        }
+
         function getBlindTotalRows(items, map) {
             const teamIndex = makeBlindBracketTeamIndex(map || {});
             const preferredScale = getBlindPreferredScale(items, map || {});
@@ -5527,11 +5553,15 @@
                         || Boolean(getBracketTeamLetterForItem(item, teamIndex, preferredScale));
                 })
                 .sort((a, b) => Number(a.num || 0) - Number(b.num || 0));
+            const medalTeamFilter = Number(preferredScale) === 2
+                ? getMedalTotalsTeamFilter(tournamentItems)
+                : null;
             const groups = [];
             const byTeam = {};
             tournamentItems.forEach(item => {
                 const company = String(item.company || '').trim() || '미지정';
                 const team = resolveBlindTeamLetter(item, teamIndex, fallbackByCompany, preferredScale);
+                if (medalTeamFilter && !medalTeamFilter.has(team)) return;
                 if (!byTeam[team]) {
                     byTeam[team] = {
                         company,
