@@ -5884,7 +5884,7 @@
                 rowEl.style.setProperty('--rank-text-opacity', teamRankTextOpacity(rank));
 
                 const formattedAmount = formatBlindTotalAmount(row.total);
-                const cacheKey = `${row.team}|${row.soldCount}/${row.itemCount}|${formattedAmount}|${rank}`;
+                const cacheKey = `${row.team}|${row.company}|${row.soldCount}/${row.itemCount}|${formattedAmount}|${rank}`;
                 if (rowEl.dataset.lastCache === cacheKey) {
                     // 스킵
                 } else {
@@ -5892,7 +5892,7 @@
                     rowEl.innerHTML = `
                         <span class="blind-total-rank${rank === 1 ? ' rank-1' : ''}">${rank}</span>
                         <div class="blind-total-main">
-                            <strong class="blind-total-team">${row.team}팀</strong>
+                            <strong class="blind-total-team">${esc(row.company)}</strong>
                             <span class="blind-total-count">${row.soldCount}/${row.itemCount}</span>
                         </div>
                         <strong class="blind-total-amount">${formattedAmount}</strong>
