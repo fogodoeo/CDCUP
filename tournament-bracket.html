@@ -104,7 +104,7 @@
         <div class="round r8" data-round="1"><div class="round-title"><strong>8강</strong><em>QUARTER FINAL · 8 TEAMS</em></div></div>
         <div class="round r4" data-round="2"><div class="round-title"><strong>4강</strong><em>SEMI FINAL · 4 TEAMS</em></div></div>
         <div class="round final" data-round="3"><div class="round-title"><strong>결승·3위전</strong><em>FINAL STAGE · 4 TEAMS</em></div></div>
-        <div class="legend"><div><span><i></i>메달 결정전 진출 경로</span><span id="bracket-total">금액 단위: 만원</span></div><b>16강 → 8강 → 4강 → 결승·3위전</b></div>
+        <div class="legend"><div><span><i></i>결승 진출 경로</span><span id="bracket-total">금액 단위: 만원</span></div><b>3·4위전은 연결선 없이 별도 표시</b></div>
       </section>
       <div class="progress-note" id="progress-note"></div>
     </main>
@@ -242,9 +242,7 @@
       });
       semifinals.forEach(match=>{
         if(!match.w)return;
-        const loser=match.w===match.a?match.b:match.a;
         if(finalMatch.a===match.w||finalMatch.b===match.w)LINKS.push([match.id,match.w,finalMatch.id,match.w,3]);
-        if(bronzeMatch.a===loser||bronzeMatch.b===loser)LINKS.push([match.id,loser,bronzeMatch.id,loser,3]);
       });
     }
     const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
