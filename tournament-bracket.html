@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#050911">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>2026 CDCUP 공식 토너먼트 대진표</title>
-  <script src="supabase-bridge.js?v=20260714-presentation-v1"></script>
+  <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
   <script src="cdcup-tournament-data.js?v=20260716-ranking-fix1"></script>
   <style>
     @font-face{font-family:Pretendard;src:local("Pretendard");font-weight:100 900}
@@ -305,7 +305,7 @@
     }
     async function initializeBracket(){
       try{
-        const [map,items]=await Promise.all([getConfigMap(),getBroadcastItems()]);
+        const [map,items]=await Promise.all([getRuntimeConfigMap(false),getBroadcastItemsLite()]);
         buildTournamentModel(map||{},items||[]);
         renderMatches();
         const grandTotal=ROUNDS.flatMap(round=>round.matches).reduce((sum,match)=>sum+Number(match.ap||0)+Number(match.bp||0),0);

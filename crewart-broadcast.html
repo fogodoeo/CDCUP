@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>크레와트 송출</title>
-    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
@@ -43,6 +43,11 @@
         function isSold(item) {
             const status = String(item && item.status || '');
             return status.includes('낙찰') || ['완료', 'sold'].includes(status.trim());
+        }
+
+        function isActive(item) {
+            const status = String(item && item.status || '').trim().toLowerCase();
+            return status === 'active' || status.includes('진행') || status.includes('경매');
         }
 
         function soldKey(item) {
@@ -149,13 +154,18 @@
             showHouseBurst(fresh[fresh.length - 1]);
         }
 
-        async function loadFrame() {
+        let frameLoading = false;
+
+        async function loadFrame(force = false) {
+            if (frameLoading || document.hidden) return;
+            frameLoading = true;
             try {
-                const [cfg, items, active] = await Promise.all([
-                    getConfigMap(),
-                    getBroadcastItems(),
-                    getActiveItem().catch(() => null)
+                const [cfg, items] = await Promise.all([
+                    getRuntimeConfigMap(false),
+                    getBroadcastItemsCached(force, 15000)
                 ]);
+                const activeRow = (items || []).find(isActive) || null;
+                const active = activeRow ? await enrichBroadcastItem(activeRow) : null;
                 config = { ...(cfg || {}), active_event_module: 'crewart' };
                 applyAuctionEventModule(config);
                 applyTicker(config);
@@ -171,11 +181,13 @@
                 }
             } catch (error) {
                 stage.innerHTML = '<div class="cw-current-auction"><div></div><div class="cw-current-copy"><div class="eyebrow">ERROR</div><h1>송출 데이터 오류</h1><div class="cw-current-meta"><span>' + esc(error.message || error) + '</span></div></div></div>';
+            } finally {
+                frameLoading = false;
             }
         }
 
-        loadFrame();
-        setInterval(loadFrame, 1800);
+        loadFrame(true);
+        setInterval(() => loadFrame(false), 750);
         setInterval(renderTickerLine, 4200);
     </script>
 </body>

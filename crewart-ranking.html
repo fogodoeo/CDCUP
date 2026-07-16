@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>크레와트 점수표</title>
-    <script src="supabase-bridge.js?v=20260703-flex-auction"></script>
+    <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
@@ -62,7 +62,10 @@
         }
 
         async function loadRanking() {
-            const [cfg, items] = await Promise.all([getConfigMap(), getBroadcastItems()]);
+            const [cfg, items] = await Promise.all([
+                getRuntimeConfigMap(false),
+                getBroadcastItemsCached(false, 60000)
+            ]);
             const config = { ...(cfg || {}), active_event_module: 'crewart' };
             applyAuctionEventModule(config);
             document.getElementById('scoreboard-wrap').innerHTML = renderCrewartHouseBoardHTML(items || [], config);

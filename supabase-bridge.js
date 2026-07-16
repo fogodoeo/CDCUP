@@ -316,6 +316,10 @@ function _mapBroadcastItem(r) {
         shipping_cost: r.shipping_cost || 0,
         updated_at: r.updated_at || '',
         updatedAt: r.updated_at || '',
+        _broadcastPhotosLoaded: Object.prototype.hasOwnProperty.call(r, 'photo_item')
+            || Object.prototype.hasOwnProperty.call(r, 'photo_sire')
+            || Object.prototype.hasOwnProperty.call(r, 'photo_dam')
+            || Object.prototype.hasOwnProperty.call(r, 'photo_sibling'),
         ...itemAuctionFields(r)
     };
 }
@@ -323,6 +327,68 @@ function _mapBroadcastItem(r) {
 async function getBroadcastItems() {
     const rows = await _sbFetch('items?order=num.asc');
     return (rows || []).map(_mapBroadcastItem);
+}
+
+const BROADCAST_LITE_COLUMNS = [
+    'id', 'company', 'num', 'name', 'start_price', 'note', 'announce',
+    'status', 'sold_price', 'winner', 'start_time', 'bid_log', 'checklist',
+    'checklist_parsed', 'sire_id', 'dam_id', 'shipping_type',
+    'shipping_company', 'shipping_region', 'shipping_cost', 'updated_at'
+].join(',');
+
+let _broadcastLiteCache = [];
+let _broadcastLiteCacheAt = 0;
+let _broadcastLitePulseKey = '';
+let _broadcastLiteRequest = null;
+let _broadcastLiteReady = false;
+const _broadcastPhotoCache = new Map();
+
+async function getBroadcastItemsLite() {
+    const rows = await _sbFetch(`items?select=${BROADCAST_LITE_COLUMNS}&order=num.asc`);
+    return (rows || []).map(_mapBroadcastItem);
+}
+
+async function getBroadcastItemsCached(force = false, maxAgeMs = 30000) {
+    if (_broadcastLiteRequest) return _broadcastLiteRequest;
+    _broadcastLiteRequest = (async () => {
+        const pulse = await getAuctionPulse();
+        const pulseKey = [pulse?.id ?? '', pulse?.status || '', pulse?.updatedAt || ''].join('|');
+        const cacheExpired = Date.now() - _broadcastLiteCacheAt >= Math.max(5000, Number(maxAgeMs) || 30000);
+        const needsItems = force
+            || !_broadcastLiteReady
+            || cacheExpired
+            || (_broadcastLitePulseKey && pulseKey !== _broadcastLitePulseKey);
+        _broadcastLitePulseKey = pulseKey;
+        if (needsItems) {
+            _broadcastLiteCache = await getBroadcastItemsLite();
+            _broadcastLiteCacheAt = Date.now();
+            _broadcastLiteReady = true;
+        }
+        return _broadcastLiteCache;
+    })().finally(() => {
+        _broadcastLiteRequest = null;
+    });
+    return _broadcastLiteRequest;
+}
+
+async function _getBroadcastPhotosCached(row) {
+    const itemId = row?.row ?? row?.id;
+    if (itemId === undefined || itemId === null || itemId === '') return {};
+    const cacheKey = String(itemId);
+    if (_broadcastPhotoCache.has(cacheKey)) return _broadcastPhotoCache.get(cacheKey);
+    const rows = await _sbFetch(`items?id=eq.${encodeURIComponent(itemId)}&select=photo_item,photo_sire,photo_dam,photo_sibling&limit=1`);
+    const source = rows && rows[0] ? rows[0] : {};
+    const photos = {
+        photoItem: source.photo_item || '',
+        photoSire: source.photo_sire || '',
+        photoDam: source.photo_dam || '',
+        photoSibling: source.photo_sibling || ''
+    };
+    if (_broadcastPhotoCache.size >= 200) {
+        _broadcastPhotoCache.delete(_broadcastPhotoCache.keys().next().value);
+    }
+    _broadcastPhotoCache.set(cacheKey, photos);
+    return photos;
 }
 
 async function _getBroadcastParentsCached() {
@@ -347,9 +413,15 @@ async function _getBroadcastHiddenPhotosCached() {
 
 async function enrichBroadcastItem(item) {
     if (!item) return null;
-    const [parents, hiddenPhotos] = await Promise.all([
+    const [parents, hiddenPhotos, itemPhotos] = await Promise.all([
         _getBroadcastParentsCached(),
-        _getBroadcastHiddenPhotosCached()
+        _getBroadcastHiddenPhotosCached(),
+        item._broadcastPhotosLoaded ? Promise.resolve({
+            photoItem: item.photoItem || '',
+            photoSire: item.photoSire || '',
+            photoDam: item.photoDam || '',
+            photoSibling: item.photoSibling || ''
+        }) : _getBroadcastPhotosCached(item)
     ]);
     const parentMap = {};
     (parents || []).forEach(parent => { parentMap[parent.id] = parent; });
@@ -357,8 +429,10 @@ async function enrichBroadcastItem(item) {
     const dam = item.dam_id ? parentMap[item.dam_id] : null;
     return {
         ...item,
-        photoSire: item.photoSire || (sire ? sire.photoUrl : '') || '',
-        photoDam: item.photoDam || (dam ? dam.photoUrl : '') || '',
+        photoItem: itemPhotos.photoItem || item.photoItem || '',
+        photoSire: itemPhotos.photoSire || item.photoSire || (sire ? sire.photoUrl : '') || '',
+        photoDam: itemPhotos.photoDam || item.photoDam || (dam ? dam.photoUrl : '') || '',
+        photoSibling: itemPhotos.photoSibling || item.photoSibling || '',
         sireName: sire ? sire.name : '',
         damName: dam ? dam.name : '',
         hiddenPhotos: hiddenPhotos || []
@@ -981,11 +1055,7 @@ async function getHiddenPhotos() {
  */
 async function setHiddenPhotos(keys) {
     const value = Array.isArray(keys) ? keys.join(',') : String(keys || '');
-    await _sbFetch('config', {
-        method: 'POST',
-        headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
-        body: JSON.stringify({ key: 'hiddenPhotos', value }),
-    });
+    await updateConfigs({ hiddenPhotos: value });
 }
 
 /**
@@ -1001,11 +1071,7 @@ async function getHostConfig() {
  * 호스트 설정 저장 (= GAS setHostConfig)
  */
 async function setHostConfig(cfg) {
-    await _sbFetch('config', {
-        method: 'POST',
-        headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
-        body: JSON.stringify({ key: 'hostConfig', value: JSON.stringify(cfg) }),
-    });
+    await updateConfigs({ hostConfig: JSON.stringify(cfg) });
 }
 
 /**
@@ -1079,15 +1145,19 @@ async function getBannerHidden() {
 }
 
 async function setBannerHidden(hidden) {
-    await _sbFetch('config', {
-        method: 'POST',
-        headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
-        body: JSON.stringify({ key: 'banner_hidden', value: String(hidden) }),
-    });
+    await updateConfigs({ banner_hidden: String(hidden) });
 }
 
 const CREWART_PARTICIPANT_ENTRY_PREFIX = 'crewart_participant_entry_';
 const CREWART_RESPONSE_ENTRY_PREFIX = 'crewart_survey_response_entry_';
+const RUNTIME_CONFIG_VERSION_KEY = 'runtime_config_version';
+const RUNTIME_CONFIG_MAX_AGE_MS = 60000;
+const RUNTIME_CONFIG_PULSE_INTERVAL_MS = 1000;
+let _runtimeConfigCache = null;
+let _runtimeConfigCacheAt = 0;
+let _runtimeConfigVersion = '';
+let _runtimeConfigLastPulseAt = 0;
+let _runtimeConfigRequest = null;
 
 function _mergeCrewartSurveyEntries(map) {
     const participantLines = new Map();
@@ -1135,16 +1205,56 @@ async function getConfigMap() {
     return _mergeCrewartSurveyEntries(map);
 }
 
+async function getConfigPulse() {
+    const rows = await _sbFetch(`config?key=eq.${RUNTIME_CONFIG_VERSION_KEY}&select=value&limit=1`);
+    return rows && rows[0] ? String(rows[0].value || '') : '';
+}
+
+async function getRuntimeConfigMap(force = false) {
+    if (_runtimeConfigRequest) return _runtimeConfigRequest;
+    _runtimeConfigRequest = (async () => {
+        const now = Date.now();
+        let needsFull = force
+            || !_runtimeConfigCache
+            || now - _runtimeConfigCacheAt >= RUNTIME_CONFIG_MAX_AGE_MS;
+
+        if (!needsFull && now - _runtimeConfigLastPulseAt >= RUNTIME_CONFIG_PULSE_INTERVAL_MS) {
+            const version = await getConfigPulse();
+            _runtimeConfigLastPulseAt = Date.now();
+            if (version && version !== _runtimeConfigVersion) needsFull = true;
+        }
+        if (!needsFull) return _runtimeConfigCache;
+
+        const rows = await _sbFetch('config?select=key,value&and=(key.neq.admin_pw,key.not.like.shipping_log_*,key.not.like.auction_archive_*)');
+        const map = {};
+        (rows || []).forEach(row => { map[row.key] = row.value; });
+        _runtimeConfigCache = _mergeCrewartSurveyEntries(map);
+        _runtimeConfigCacheAt = Date.now();
+        _runtimeConfigVersion = String(map[RUNTIME_CONFIG_VERSION_KEY] || '');
+        _runtimeConfigLastPulseAt = Date.now();
+        return _runtimeConfigCache;
+    })().finally(() => {
+        _runtimeConfigRequest = null;
+    });
+    return _runtimeConfigRequest;
+}
+
 async function updateConfigs(configMap) {
+    const version = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     const payloads = Object.keys(configMap).map(k => ({
         key: k,
         value: String(configMap[k])
     }));
+    if (!Object.prototype.hasOwnProperty.call(configMap, RUNTIME_CONFIG_VERSION_KEY)) {
+        payloads.push({ key: RUNTIME_CONFIG_VERSION_KEY, value: version });
+    }
     await _sbFetch('config', {
         method: 'POST',
         headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
         body: JSON.stringify(payloads),
     });
+    _runtimeConfigCache = null;
+    _runtimeConfigCacheAt = 0;
 }
 
 async function saveCrewartSurveyEntry(participantKey, participantLine, response) {
@@ -1164,7 +1274,7 @@ const AUCTION_ARCHIVE_KEY_PREFIX = 'auction_archive_';
 function _archiveSafeConfigs(configMap) {
     const result = {};
     Object.entries(configMap || {}).forEach(([key, value]) => {
-        if (key === 'admin_pw' || key === AUCTION_ARCHIVE_INDEX_KEY || key.startsWith(AUCTION_ARCHIVE_KEY_PREFIX)) return;
+        if (key === 'admin_pw' || key === RUNTIME_CONFIG_VERSION_KEY || key === AUCTION_ARCHIVE_INDEX_KEY || key.startsWith(AUCTION_ARCHIVE_KEY_PREFIX)) return;
         result[key] = value;
     });
     return result;

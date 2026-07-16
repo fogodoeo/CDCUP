@@ -25,7 +25,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <script src="supabase-bridge.js?v=20260715-medal-open-auction"></script>
+    <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link
@@ -4690,7 +4690,7 @@
 
         async function loadHostConfig() {
             try {
-                const cfg = await getConfigMap();
+                const cfg = await getRuntimeConfigMap(false);
                 applyLoadedHostConfig(cfg);
             } catch (err) {
                 console.error('loadHostConfig error', err);
@@ -4976,7 +4976,7 @@
             try {
                 const items = Array.isArray(prefetchedItems)
                     ? prefetchedItems
-                    : await getBroadcastItems();
+                    : await getBroadcastItemsCached(false, 15000);
                 processItemsList(items);
                 const active = items.find(candidate => isAuctionActiveItem(candidate));
                 const item = active ? await enrichBroadcastItem(active) : null;
@@ -4995,13 +4995,15 @@
             renderSaleModeOverlay(item);
         };
 
-        // 경매 활동 기반 적응형 폴링
-        // - 대기: 1초마다 updated_at 한 행만 확인, 전체 데이터는 6초마다 확인
-        // - 활동: 마지막 개체 변경 후 10분 동안 전체 데이터를 1초마다 확인
-        // - 숨김 탭: 네트워크 조회를 멈추고 다시 보일 때 즉시 동기화
+        // 경매 변경 감지 기반 경량 폴링
+        // - 0.35초마다 id/status/updated_at 한 행만 확인한다.
+        // - 실제 변경 시에만 사진을 제외한 경량 목록을 다시 받는다.
+        // - 사진은 현재 개체가 바뀔 때 한 번만 받고 페이지 안에서 캐시한다.
+        // - 숨김 탭은 네트워크 조회를 멈추고 다시 보일 때 즉시 동기화한다.
         const AUCTION_HOT_WINDOW_MS = 10 * 60 * 1000;
         const AUCTION_HOT_POLL_MS = 350;
-        const AUCTION_IDLE_DATA_MS = 4000;
+        const AUCTION_FULL_SYNC_MS = 15000;
+        const AUCTION_VIEW_SYNC_MS = 1500;
         const AUCTION_MAX_BACKOFF_MS = 8000;
         let _auctionPollTimer = null;
         let _auctionPollRunning = false;
@@ -5010,6 +5012,10 @@
         let _auctionLastDataAt = 0;
         let _auctionLastActivityAt = 0;
         let _auctionPollErrors = 0;
+        let _auctionLastPulseKey = '';
+        let _auctionLastViewSyncAt = 0;
+        let _auctionItemsCache = [];
+        let _auctionItemsLoaded = false;
 
         function _publishAuctionPollState() {
             const now = Date.now();
@@ -5077,26 +5083,30 @@
             }
             _auctionPollRunning = true;
             try {
+                maybeRefreshHostConfig(false);
                 const now = Date.now();
-                const isHot = now < _auctionHotUntil;
-                const needsData = forceData || isBracketPageTemp || isHot || now - _auctionLastDataAt >= AUCTION_IDLE_DATA_MS;
+                const pulse = await getAuctionPulse();
+                const pulseKey = [pulse?.id ?? '', pulse?.status || '', pulse?.updatedAt || ''].join('|');
+                const pulseChanged = Boolean(_auctionLastPulseKey && pulseKey !== _auctionLastPulseKey);
+                _auctionLastPulseKey = pulseKey;
+                const activityAt = Date.parse(pulse?.updatedAt || '');
+                _applyAuctionActivity(activityAt, null);
+                const needsData = forceData
+                    || !_auctionItemsLoaded
+                    || pulseChanged
+                    || now - _auctionLastDataAt >= AUCTION_FULL_SYNC_MS;
 
                 if (needsData) {
-                    const items = await getBroadcastItems();
+                    const items = await getBroadcastItemsLite();
+                    _auctionItemsCache = items || [];
+                    _auctionItemsLoaded = true;
                     _applyAuctionActivity(_latestItemActivityAt(items), items);
                     _auctionLastDataAt = Date.now();
+                    _auctionLastViewSyncAt = Date.now();
                     await _refreshBroadcastFromItems(items);
-                } else {
-                    const pulse = await getAuctionPulse();
-                    const activityAt = Date.parse(pulse?.updatedAt || '');
-                    const previousActivityAt = _auctionLastActivityAt;
-                    _applyAuctionActivity(activityAt, null);
-                    if (_auctionLastActivityAt > previousActivityAt || Date.now() < _auctionHotUntil) {
-                        const items = await getBroadcastItems();
-                        _applyAuctionActivity(_latestItemActivityAt(items), items);
-                        _auctionLastDataAt = Date.now();
-                        await _refreshBroadcastFromItems(items);
-                    }
+                } else if (now - _auctionLastViewSyncAt >= AUCTION_VIEW_SYNC_MS) {
+                    _auctionLastViewSyncAt = Date.now();
+                    await _refreshBroadcastFromItems(_auctionItemsCache);
                 }
                 _auctionPollErrors = 0;
             } catch (err) {
@@ -6947,10 +6957,10 @@
 
         async function getBroadcastConfigCached(force = false) {
             const now = Date.now();
-            if (!force && broadcastConfigCache && now - broadcastConfigCacheAt < 3000) {
+            if (!force && broadcastConfigCache && now - broadcastConfigCacheAt < 750) {
                 return broadcastConfigCache;
             }
-            broadcastConfigCache = await getConfigMap();
+            broadcastConfigCache = await getRuntimeConfigMap(force);
             broadcastConfigCacheAt = now;
             return broadcastConfigCache;
         }
@@ -6959,7 +6969,7 @@
             try {
                 const [map, items] = await Promise.all([
                     getBroadcastConfigCached(false),
-                    Array.isArray(prefetchedItems) ? Promise.resolve(prefetchedItems) : getBroadcastItems()
+                    Array.isArray(prefetchedItems) ? Promise.resolve(prefetchedItems) : getBroadcastItemsLite()
                 ]);
                 battleItemsCache = items || [];
                 battleItemsCacheAt = Date.now();
@@ -6981,7 +6991,7 @@
                 return battleItemsCache;
             }
             if (battleItemsRequest) return battleItemsRequest;
-            battleItemsRequest = getBroadcastItems()
+            battleItemsRequest = getBroadcastItemsCached(false, 15000)
                 .then(items => {
                     battleItemsCache = items || [];
                     battleItemsCacheAt = Date.now();

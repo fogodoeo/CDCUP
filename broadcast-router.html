@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>CREO 송출 화면</title>
-    <script src="supabase-bridge.js?v=20260715-medal-open-auction"></script>
+    <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <style>
         html,
@@ -54,7 +54,7 @@
         const params = new URLSearchParams(location.search);
         const frame = document.getElementById('broadcast-frame');
         const statusEl = document.getElementById('status');
-        const assetVersion = '20260715-suji-region';
+        const assetVersion = '20260717-egress-hotfix-v1';
         let lastSrc = '';
         let lastMode = '';
 
@@ -98,7 +98,7 @@
 
         async function refreshRoute() {
             try {
-                const config = await getConfigMap() || {};
+                const config = await getRuntimeConfigMap(false) || {};
                 const src = targetFor(config);
                 if (src !== lastSrc) {
                     frame.src = src;
