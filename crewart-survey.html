@@ -10,7 +10,7 @@
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260718-cave-entry-v1">
+    <link rel="stylesheet" href="crewart.css?v=20260718-anonymous-band-v2">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -59,7 +59,7 @@
                         <button class="cw-band-logout-button" id="band-logout-button" type="button" onclick="logoutBand()" hidden>다른 계정</button>
                     </section>
                     <div class="cw-intro-form">
-                        <div class="cw-field">
+                        <div class="cw-field cw-official-only">
                             <label for="nickname">사용할 이름</label>
                             <input class="cw-input" id="nickname" autocomplete="nickname" placeholder="닉네임">
                         </div>
@@ -144,6 +144,10 @@
         </section>
     </main>
 
+    <button class="cw-band-float" id="band-float-button" type="button" onclick="beginBandLogin()" disabled>
+        <span aria-hidden="true">B</span><strong id="band-float-label">BAND 확인 중</strong>
+    </button>
+
     <div class="cw-moment-shift" id="moment-shift" hidden aria-live="polite">
         <div class="cw-moment-shift-ring" aria-hidden="true"><i></i><i></i></div>
         <span>선택이 다음 순간을 엽니다</span>
@@ -187,11 +191,13 @@
         const CREWART_BAND_URL = 'https://www.band.us/band/101005857/post';
         const BAND_OAUTH_API = 'https://creok.onrender.com/api/band-oauth';
         const BAND_AUTH_STORAGE_KEY = 'crewart_band_auth_v1';
+        const BAND_SURVEY_RESUME_KEY = 'crewart_band_survey_resume_v1';
         let bandAuthReady = false;
         let bandAuthConfigured = false;
         let bandAuthToken = '';
         let bandAuthUser = null;
         let bandTargetUrl = CREWART_BAND_URL;
+        let pendingBandResume = false;
 
         const QUESTIONS = [
           {
@@ -626,7 +632,7 @@
                 copy.textContent = 'BAND 계정으로 결과를 연결합니다.';
             } else {
                 title.textContent = '테스트만 해보기';
-                copy.textContent = '결과는 저장하지 않습니다.';
+                copy.textContent = '입력 없이 익명 통계로 저장됩니다.';
             }
             refreshStartButton();
             if (!options.silent) {
@@ -711,6 +717,8 @@
             const bandLink = document.getElementById('band-result-link');
             const bandLabel = document.getElementById('band-result-label');
             const bandKicker = document.getElementById('band-result-kicker');
+            const floatButton = document.getElementById('band-float-button');
+            const floatLabel = document.getElementById('band-float-label');
             if (bandLink) bandLink.href = bandTargetUrl;
             if (bandLabel) bandLabel.textContent = bandAuthUser?.isTargetMember === true
                 ? '크레와트 BAND 바로 열기'
@@ -718,6 +726,13 @@
             if (bandKicker) bandKicker.textContent = bandAuthUser?.isTargetMember === true
                 ? '가입 확인 완료'
                 : '설문 완료 · 다음 단계';
+            if (floatButton && floatLabel) {
+                floatButton.hidden = Boolean(bandAuthUser);
+                floatButton.disabled = !bandAuthReady || !bandAuthConfigured;
+                floatLabel.textContent = !bandAuthReady
+                    ? 'BAND 확인 중'
+                    : bandAuthConfigured ? 'BAND 로그인' : 'BAND 준비 중';
+            }
             refreshStartButton();
         }
 
@@ -751,10 +766,90 @@
             return response.json();
         }
 
+        function currentSurveyStage() {
+            if (document.getElementById('result-panel')?.style.display !== 'none') return 'result';
+            if (document.getElementById('sorting-panel')?.style.display !== 'none') return 'result';
+            if (document.getElementById('mbti-step-panel')?.style.display !== 'none') return 'mbti';
+            if (document.getElementById('question-area')?.style.display !== 'none') return 'questions';
+            return 'intro';
+        }
+
+        function saveSurveyForBandLogin() {
+            if (!participationMode || currentSurveyStage() === 'intro') return;
+            const state = {
+                stage: currentSurveyStage(),
+                current,
+                answers: answers.slice(),
+                selectedMbti,
+                questions: QUESTIONS.map(question => ({
+                    id: question.id,
+                    a: question.a.slice(),
+                    scores: question.scores.slice(),
+                    visualFlipped: Boolean(question.visualFlipped)
+                }))
+            };
+            try { sessionStorage.setItem(BAND_SURVEY_RESUME_KEY, JSON.stringify(state)); } catch (_) {}
+        }
+
+        function tryRestoreSurveyAfterBandLogin() {
+            if (!pendingBandResume || !isLoaded || !bandAuthUser) return false;
+            let state = null;
+            try {
+                state = JSON.parse(sessionStorage.getItem(BAND_SURVEY_RESUME_KEY) || 'null');
+                sessionStorage.removeItem(BAND_SURVEY_RESUME_KEY);
+            } catch (_) {}
+            pendingBandResume = false;
+            if (!state || !Array.isArray(state.questions) || !Array.isArray(state.answers)) return false;
+
+            const questionMap = new Map(QUESTIONS.map(question => [question.id, question]));
+            const restored = state.questions.map(saved => {
+                const question = questionMap.get(saved.id);
+                if (!question) return null;
+                question.a = Array.isArray(saved.a) ? saved.a.slice(0, 2) : question.a;
+                question.scores = Array.isArray(saved.scores) ? saved.scores.slice(0, 2) : question.scores;
+                question.visualFlipped = Boolean(saved.visualFlipped);
+                return question;
+            }).filter(Boolean);
+            if (restored.length !== QUESTIONS.length) return false;
+
+            QUESTIONS.splice(0, QUESTIONS.length, ...restored);
+            surveyPrepared = true;
+            answers = state.answers.slice(0, QUESTIONS.length);
+            current = Math.min(Math.max(0, Number(state.current) || 0), QUESTIONS.length - 1);
+            selectedMbti = String(state.selectedMbti || '');
+            participationMode = 'official';
+            participantIdentity = bandAuthUser.id;
+            participantAlias = '';
+            const nickname = document.getElementById('nickname');
+            if (nickname) nickname.value = bandAuthUser.name || 'BAND 사용자';
+            document.getElementById('intro-panel').style.display = 'none';
+            document.getElementById('exam-opening').hidden = true;
+            document.getElementById('question-area').style.display = 'none';
+            document.getElementById('mbti-step-panel').style.display = 'none';
+            document.getElementById('sorting-panel').style.display = 'none';
+            document.getElementById('result-panel').style.display = 'none';
+
+            if (state.stage === 'result') {
+                finishSurvey();
+                document.getElementById('mbti-step-panel').style.display = 'none';
+                renderFinalResult();
+            } else if (state.stage === 'mbti') {
+                finishSurvey();
+                renderMbtiOptions();
+            } else {
+                document.getElementById('question-area').style.display = '';
+                renderQuestions();
+                document.getElementById('question-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            toast('BAND 로그인 완료 · 답변을 이어갑니다.');
+            return true;
+        }
+
         async function initBandAuth() {
             const fragment = new URLSearchParams(location.hash.replace(/^#/, ''));
             const returnedToken = fragment.get('band_auth') || '';
             const returnedError = fragment.get('band_oauth_error') || '';
+            pendingBandResume = Boolean(returnedToken);
             if (returnedToken || returnedError) clearOAuthFragment();
             try {
                 bandAuthToken = returnedToken || sessionStorage.getItem(BAND_AUTH_STORAGE_KEY) || '';
@@ -790,6 +885,7 @@
                 updateBandAuthUi();
             }
             if (returnedToken && bandAuthUser) chooseParticipationMode('official', { silent: true });
+            tryRestoreSurveyAfterBandLogin();
             if (returnedError) toast('BAND 로그인을 완료하지 못했습니다. 다시 시도해주세요.', true);
         }
 
@@ -798,6 +894,7 @@
                 toast('BAND 로그인 설정을 확인 중입니다.', true);
                 return;
             }
+            saveSurveyForBandLogin();
             const loginUrl = new URL(`${BAND_OAUTH_API}/start`);
             loginUrl.searchParams.set('return_url', CREWART_SURVEY_URL);
             location.assign(loginUrl.toString());
@@ -811,18 +908,20 @@
         }
 
         function startSurvey() {
-            const nickname = document.getElementById('nickname').value.trim();
+            const nicknameInput = document.getElementById('nickname');
+            const nickname = participationMode === 'guest' ? '익명 참여자' : nicknameInput.value.trim();
             const phone = normalizePhone(document.getElementById('phone').value);
             if (!participationMode) { toast('참여 방식을 먼저 선택해주세요.', true); return; }
             if (participationMode === 'official' && !bandAuthUser) { toast('BAND 로그인 후 설문을 시작해주세요.', true); return; }
-            if (!nickname) { toast('닉네임을 입력해주세요.', true); return; }
+            if (participationMode === 'official' && !nickname) { toast('닉네임을 입력해주세요.', true); return; }
             if (participationMode === 'official' && phone && (phone.length < 10 || phone.length > 11)) { toast('전화번호를 다시 확인해주세요.', true); return; }
             if (!isLoaded || !houses.length) { toast('기숙사 설정을 불러오는 중입니다. 잠시 후 다시 시작해주세요.', true); return; }
             if (openingInProgress) return;
-            participantAlias = participationMode === 'official' && phone ? '' : (participantAlias || createRandomAlias());
+            if (participationMode === 'guest') nicknameInput.value = '익명 참여자';
+            participantAlias = participationMode === 'official' && !phone ? (participantAlias || createRandomAlias()) : '';
             participantIdentity = participationMode === 'official'
                 ? bandAuthUser.id
-                : `guest-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+                : `guest-${window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`}`;
             openingInProgress = true;
             prepareSurvey();
             const intro = document.getElementById('intro-panel');
@@ -988,19 +1087,16 @@
             return [identity, house.name, aliasList.join(';')].filter(Boolean).join(',');
         }
 
-        async function submitSurvey() {
+        async function submitSurvey(options = {}) {
             if (!finalHouse || isSaving) return;
-            if (participationMode !== 'official') {
-                toast('테스트 모드의 결과는 저장하지 않습니다.');
-                return;
-            }
-            const name = document.getElementById('nickname').value.trim();
-            const aliases = document.getElementById('aliases').value.trim();
-            const phone = normalizePhone(document.getElementById('phone').value);
+            const isGuest = participationMode === 'guest';
+            const name = isGuest ? '익명 참여자' : document.getElementById('nickname').value.trim();
+            const aliases = isGuest ? '' : document.getElementById('aliases').value.trim();
+            const phone = isGuest ? '' : normalizePhone(document.getElementById('phone').value);
             const identity = participantIdentity || bandAuthUser?.id || phone || participantAlias || createRandomAlias();
             const saveButton = document.getElementById('save-result-button');
             isSaving = true;
-            if (saveButton) {
+            if (saveButton && !isGuest) {
                 saveButton.disabled = true;
                 saveButton.textContent = '저장 중...';
             }
@@ -1008,10 +1104,12 @@
                 const storageKey = await participantStorageKey(identity);
                 const response = {
                     participantKey: storageKey,
-                    participantAlias: participantAlias || null,
-                    bandUserId: bandAuthUser?.id || null,
-                    bandProfileName: bandAuthUser?.name || null,
-                    bandIsTargetMember: bandAuthUser?.isTargetMember ?? null,
+                    participationMode,
+                    anonymous: isGuest,
+                    participantAlias: isGuest ? null : (participantAlias || null),
+                    bandUserId: isGuest ? null : (bandAuthUser?.id || null),
+                    bandProfileName: isGuest ? null : (bandAuthUser?.name || null),
+                    bandIsTargetMember: isGuest ? null : (bandAuthUser?.isTargetMember ?? null),
                     name,
                     aliases,
                     phone: phone || null,
@@ -1045,18 +1143,19 @@
                 };
                 await saveCrewartSurveyEntry(
                     storageKey,
-                    participantLine(identity, name, finalHouse, aliases),
+                    participantLine(isGuest ? `anonymous-${storageKey}` : identity, name, finalHouse, aliases),
                     response
                 );
-                toast('기숙사 배정을 저장했습니다.');
-                if (saveButton) saveButton.textContent = '저장 완료';
+                if (!options.silent) toast(isGuest ? '익명 통계를 저장했습니다.' : '기숙사 배정을 저장했습니다.');
+                if (saveButton && !isGuest) saveButton.textContent = '저장 완료';
             } catch (error) {
                 isSaving = false;
-                if (saveButton) {
+                if (saveButton && !isGuest) {
                     saveButton.disabled = false;
                     saveButton.textContent = '결과 저장';
                 }
-                toast('저장 실패: ' + error.message, true);
+                if (options.silent) console.error('[Crewart anonymous statistics]', error);
+                else toast('저장 실패: ' + error.message, true);
             }
         }
 
@@ -1071,6 +1170,7 @@
             } finally {
                 isLoaded = true;
                 refreshStartButton();
+                tryRestoreSurveyAfterBandLogin();
             }
         }
 
@@ -1339,6 +1439,7 @@
             const saveButton = document.getElementById('save-result-button');
             if (saveButton) saveButton.hidden = participationMode !== 'official';
             document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (participationMode === 'guest') void submitSurvey({ silent: true });
         }
 
         async function copySurveyLink() {

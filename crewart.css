@@ -2614,7 +2614,7 @@ body.crewart-broadcast {
 .cw-cave-entry .cw-start-button { margin: 0; }
 .cw-cave-entry[data-mode="guest"] .cw-band-auth,
 .cw-cave-entry[data-mode="guest"] .cw-official-only { display: none; }
-.cw-cave-entry[data-mode="guest"] .cw-intro-form { grid-template-columns: 1fr; }
+.cw-cave-entry[data-mode="guest"] .cw-intro-form { display: none; }
 .cw-cave-fog { position: absolute; z-index: 1; inset: 0; overflow: hidden; pointer-events: none; }
 .cw-cave-fog i {
     position: absolute;
@@ -2666,4 +2666,58 @@ body.crewart-broadcast {
 @media (prefers-reduced-motion: reduce) {
     .cw-cave-fog i { animation: none; }
     .cw-entry-choice { transition: none; }
+}
+
+.cw-band-float {
+    position: fixed;
+    z-index: 90;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 48px;
+    padding: 7px 16px 7px 8px;
+    border: 1px solid rgba(112, 235, 175, .55);
+    border-radius: 999px;
+    background: rgba(7, 31, 24, .92);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, .34), 0 0 24px rgba(47, 211, 141, .12);
+    color: #effff7;
+    font: inherit;
+    cursor: pointer;
+    backdrop-filter: blur(14px);
+}
+.cw-band-float[hidden] { display: none !important; }
+.cw-band-float:disabled { cursor: default; opacity: .58; }
+.cw-band-float:not(:disabled):hover,
+.cw-band-float:not(:disabled):focus-visible {
+    border-color: #83efbd;
+    background: rgba(8, 48, 34, .96);
+    outline: none;
+    transform: translateY(-2px);
+}
+.cw-band-float > span {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #39d47f;
+    color: #052414;
+    font-family: Georgia, serif;
+    font-size: 17px;
+    font-weight: 900;
+}
+.cw-band-float strong { font-size: 12px; font-weight: 850; white-space: nowrap; }
+.cw-result-actions:has(#save-result-button[hidden]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+@media (max-width: 680px) {
+    .cw-band-float {
+        right: max(10px, env(safe-area-inset-right));
+        bottom: max(10px, env(safe-area-inset-bottom));
+        min-height: 43px;
+        padding: 5px 12px 5px 6px;
+    }
+    .cw-band-float > span { width: 31px; height: 31px; font-size: 15px; }
+    .cw-band-float strong { font-size: 11px; }
 }
