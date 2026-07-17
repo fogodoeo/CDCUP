@@ -4,11 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>크레와트 문항 관리</title>
+    <title>크레 MBTI 문항 관리 | 크레와트</title>
     <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
+    <script src="crewart-survey-core.js?v=20260718-cre-mbti-v1"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260712-survey-manager-v1">
+    <link rel="stylesheet" href="crewart.css?v=20260718-cre-mbti-manager-v2">
 </head>
 <body class="crewart-page cw-manager-page">
     <nav class="cw-nav">
@@ -25,9 +26,9 @@
     <main class="cw-shell">
         <header class="cw-page-head cw-manager-head">
             <div>
-                <div class="cw-kicker">CREWART CONTENT STUDIO</div>
-                <h1>질문과 삽화 관리</h1>
-                <p>12개 질문의 문구와 기본·선택 A·선택 B 장면을 직접 교체합니다.</p>
+                <div class="cw-kicker">CRE MBTI CONTENT STUDIO</div>
+                <h1>20개 질문 관리</h1>
+                <p>문항과 두 성향의 선택 문구를 수정합니다. 질문 이미지는 새 설문에서 사용하지 않습니다.</p>
                 <span class="cw-manager-save-state" id="manager-save-state">설정을 불러오는 중...</span>
             </div>
             <div class="cw-actions">
@@ -44,10 +45,7 @@
         <section class="cw-manager-workspace" id="manager-workspace" hidden>
             <aside class="cw-panel cw-manager-sidebar">
                 <header>
-                    <div>
-                        <div class="cw-kicker">12 MOMENTS</div>
-                        <h2>문항 선택</h2>
-                    </div>
+                    <div><div class="cw-kicker">20 QUESTIONS</div><h2>문항 선택</h2></div>
                     <button class="cw-manager-text-button" id="manager-reset-all" type="button">전체 기본값</button>
                 </header>
                 <div class="cw-manager-question-list" id="manager-question-list"></div>
@@ -56,18 +54,15 @@
             <section class="cw-panel cw-manager-editor">
                 <header class="cw-manager-editor-head">
                     <div>
-                        <div class="cw-manager-id-row"><span id="manager-id">C01</span><small id="manager-axis">EI</small></div>
+                        <div class="cw-manager-id-row"><span id="manager-id">Q01</span><small id="manager-axis">EI</small></div>
                         <h2>문항 내용</h2>
                     </div>
-                    <div class="cw-actions">
-                        <a class="cw-btn" id="manager-preview-link" href="crewart-survey.html?moment=C01" target="_blank" rel="noopener">이 문항 미리보기</a>
-                        <button class="cw-btn" id="manager-reset-current" type="button">이 문항 기본값</button>
-                    </div>
+                    <button class="cw-btn" id="manager-reset-current" type="button">이 문항 기본값</button>
                 </header>
 
                 <div class="cw-manager-copy-grid">
                     <div class="cw-field">
-                        <label for="manager-label">장면 제목</label>
+                        <label for="manager-label">짧은 상황 이름</label>
                         <input class="cw-input" id="manager-label" maxlength="40">
                     </div>
                     <div class="cw-field is-wide">
@@ -75,43 +70,28 @@
                         <textarea class="cw-textarea" id="manager-question" rows="3" maxlength="160"></textarea>
                     </div>
                     <div class="cw-field">
-                        <label for="manager-answer-a">선택지 A</label>
+                        <label for="manager-answer-a" id="manager-answer-a-label">첫 성향 선택지</label>
                         <textarea class="cw-textarea" id="manager-answer-a" rows="3" maxlength="120"></textarea>
                     </div>
                     <div class="cw-field">
-                        <label for="manager-answer-b">선택지 B</label>
+                        <label for="manager-answer-b" id="manager-answer-b-label">반대 성향 선택지</label>
                         <textarea class="cw-textarea" id="manager-answer-b" rows="3" maxlength="120"></textarea>
-                    </div>
-                    <div class="cw-field is-wide">
-                        <label for="manager-alt">삽화 설명 <small>화면 낭독용</small></label>
-                        <input class="cw-input" id="manager-alt" maxlength="160">
                     </div>
                 </div>
 
                 <div class="cw-manager-lock-note">
-                    <strong>점수축은 잠겨 있습니다.</strong>
-                    <span>A와 B의 성향 점수는 기존 값으로 유지됩니다. 문구의 의미를 반대로 바꾸지 않도록 주의하세요.</span>
+                    <strong>점수축과 화면 위치는 자동 관리됩니다.</strong>
+                    <span>두 선택지는 같은 축의 반대 의미를 유지해 주세요. 실제 설문에서는 좌우 위치가 무작위로 바뀝니다.</span>
                 </div>
-
-                <section class="cw-manager-image-section">
-                    <header>
-                        <div>
-                            <div class="cw-kicker">SCENE ILLUSTRATIONS</div>
-                            <h2>삽화 3장</h2>
-                        </div>
-                        <p>중앙 기준으로 자동 크롭됩니다. 중요한 피사체는 가운데에 배치하세요.</p>
-                    </header>
-                    <div class="cw-manager-images" id="manager-images"></div>
-                </section>
             </section>
         </section>
     </main>
 
     <div class="cw-manager-sticky-save">
-        <span>저장하면 새로 시작하는 설문부터 즉시 반영됩니다.</span>
-        <button class="cw-btn primary" type="button" onclick="saveManagedSurvey()">전체 변경사항 저장</button>
+        <span>저장한 문구는 새로 시작하는 설문부터 적용됩니다.</span>
+        <button class="cw-btn primary" id="manager-sticky-save" type="button">전체 변경사항 저장</button>
     </div>
     <div class="cw-toast" id="toast"></div>
-    <script src="crewart-survey-manager.js?v=20260712-survey-manager-v1"></script>
+    <script src="crewart-survey-manager.js?v=20260718-cre-mbti-manager-v2"></script>
 </body>
 </html>
