@@ -4,17 +4,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#090d12">
-    <meta name="description" content="평소의 나와 크레 앞의 나, 두 MBTI를 비교해 보세요.">
-    <meta property="og:title" content="평소 MBTI → 크레 MBTI | 크레와트">
+    <meta name="description" content="20개의 선택으로 알아보는 크레와트 성향 테스트">
+    <meta property="og:title" content="CREWART PERSONALITY TEST">
     <meta property="og:description" content="20개의 선택으로 알아보는 크레 앞의 나">
-    <title>평소 MBTI → 크레 MBTI | 크레와트</title>
+    <title>CREWART PERSONALITY TEST</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260718-cre-mbti-v1">
+    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260718-cre-mbti-v2">
     <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
-    <script src="crewart-survey-core.js?v=20260718-cre-mbti-v1"></script>
-    <script src="crewart-survey.js?v=20260718-cre-mbti-v1" defer></script>
+    <script src="crewart-survey-core.js?v=20260718-cre-mbti-v2"></script>
+    <script src="crewart-survey.js?v=20260718-cre-mbti-v2" defer></script>
 </head>
 <body>
     <div class="cw-atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -24,8 +24,7 @@
             <div class="cw-cave-fog" aria-hidden="true"><i></i><i></i><i></i></div>
             <div class="cw-intro-content">
                 <img class="cw-crest" src="assets/crewart-crest-v2.webp" width="720" height="838" alt="크레와트 문장">
-                <p class="cw-eyebrow">CREWART PERSONALITY TEST</p>
-                <h1>평소의 나와<br><strong>크레 앞의 나</strong></h1>
+                <h1>CREWART<br>PERSONALITY TEST</h1>
                 <p class="cw-intro-copy">20개의 선택 · 약 2분</p>
                 <button class="cw-primary-button" id="start-button" type="button" disabled>
                     <span>준비 중...</span><b aria-hidden="true">→</b>
@@ -44,6 +43,9 @@
             <article class="cw-question-card" id="question-card" aria-live="polite">
                 <p id="question-label"></p>
                 <h1 id="question-title"></h1>
+                <figure class="cw-question-illustration" id="question-illustration">
+                    <img id="question-image" src="" alt="" width="960" height="640" decoding="async">
+                </figure>
                 <div class="cw-choice-list" id="choice-list"></div>
             </article>
         </section>

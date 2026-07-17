@@ -21,6 +21,8 @@ test('20 questions contain five items for every MBTI axis', () => {
         assert.equal(question.options.length, 2);
         assert.equal(question.scores.length, 2);
         assert.deepEqual([...question.scores].sort(), [...question.axis].sort());
+        assert.match(question.image, /^question-c\d{2}\.webp$/);
+        assert.match(question.imageAlt, /상황 삽화$/);
     });
 });
 

@@ -5,6 +5,8 @@
     const SURVEY_URL = 'https://cdcup.onrender.com/crewart-survey.html';
     const DEFAULT_BAND_URL = 'https://www.band.us/band/101992972/post';
     const BAND_OAUTH_API = 'https://creok.onrender.com/api/band-oauth';
+    const KAKAO_JS_KEY = 'db7ffc8d6b9b7601b792ed69be4658fc';
+    const QUESTION_IMAGE_ROOT = 'assets/crewart-illustrations/';
     const AUTH_STORAGE_KEY = 'crewart_band_auth_v1';
     const RESUME_STORAGE_KEY = 'crewart_cre_mbti_resume_v1';
     const CONTENT_CONFIG_KEY = 'crewart_mbti_content_v1';
@@ -68,6 +70,7 @@
                 requestAnimationFrame(() => screen.classList.add('is-entering'));
             }
         });
+        element('band-float')?.classList.toggle('is-compact', screenId !== 'intro-screen');
         window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
@@ -199,9 +202,20 @@
         element('question-back').disabled = current === 0;
         element('question-label').textContent = question.label;
         element('question-title').textContent = question.q;
+        const illustration = element('question-illustration');
+        const image = element('question-image');
+        if (question.image) {
+            illustration.hidden = false;
+            image.src = `${QUESTION_IMAGE_ROOT}${question.image}`;
+            image.alt = question.imageAlt || `${question.label} 상황 삽화`;
+        } else {
+            illustration.hidden = true;
+            image.removeAttribute('src');
+            image.alt = '';
+        }
         element('choice-list').innerHTML = question.options.map((option, index) => `
             <button class="cw-choice-button${answers[current] === index ? ' is-selected' : ''}" type="button" data-choice="${index}">
-                <span>${escapeHtml(option)}</span><b aria-hidden="true">›</b>
+                <span>${escapeHtml(option)}</span>
             </button>`).join('');
         element('choice-list').querySelectorAll('[data-choice]').forEach(button => {
             button.addEventListener('click', () => chooseAnswer(Number(button.dataset.choice)));
@@ -209,6 +223,11 @@
         const card = element('question-card');
         card.classList.remove('is-changing');
         requestAnimationFrame(() => card.classList.add('is-changing'));
+        const nextImage = questions[current + 1]?.image;
+        if (nextImage) {
+            const preloader = new Image();
+            preloader.src = `${QUESTION_IMAGE_ROOT}${nextImage}`;
+        }
         startTimer(current);
     }
 
@@ -406,12 +425,16 @@
             ? 'BAND OAuth 승인이 완료되면 바로 열립니다.'
             : bandAuthUser ? '가입 후 이 페이지로 돌아오면 자동으로 다시 확인해요.' : '가입 후 선택 근거와 기숙사 배정이 열려요.';
         return `
-            <section class="cw-result-section cw-locked-detail">
-                <span class="cw-lock-icon" aria-hidden="true">⌁</span>
-                <h2>내가 뭘 골랐길래?</h2>
-                <p>20개 선택과 고민한 순간을 연결해, 평소와 달라진 이유를 보여드려요.</p>
-                <button class="cw-band-cta" type="button" data-action="unlock-detail" ${configured ? '' : 'disabled'}><span>${escapeHtml(label)}</span><b aria-hidden="true">→</b></button>
-                <small class="cw-lock-status">${escapeHtml(status)}</small>
+            <section class="cw-detail-gate">
+                <div class="cw-detail-preview" aria-hidden="true" inert>${renderMemberDetail()}${renderHouseCard()}</div>
+                <div class="cw-detail-shade" aria-hidden="true"></div>
+                <div class="cw-detail-unlock">
+                    <span class="cw-lock-icon" aria-hidden="true">⌁</span>
+                    <h2>세부 결과가 궁금한가요?</h2>
+                    <p>선택 근거, 고민한 문항과 기숙사 배정은<br>BAND 가입 확인 후 바로 선명해져요.</p>
+                    <button class="cw-band-cta" type="button" data-action="unlock-detail" ${configured ? '' : 'disabled'}><span>${escapeHtml(label)}</span><b aria-hidden="true">→</b></button>
+                    <small class="cw-lock-status">${escapeHtml(status)}</small>
+                </div>
             </section>`;
     }
 
@@ -434,7 +457,7 @@
                 ${renderBenchmarkCard()}
                 ${detail}
                 <div class="cw-result-actions">
-                    <button class="cw-primary-button" type="button" data-action="share"><span>결과 공유하기</span><b aria-hidden="true">↗</b></button>
+                    <button class="cw-primary-button cw-kakao-share" type="button" data-action="share"><img src="assets/kakaolink_btn_medium.png" width="20" height="20" alt=""><span>카카오톡으로 공유</span><b aria-hidden="true">↗</b></button>
                     <button class="cw-text-button" type="button" data-action="restart">다시 테스트하기</button>
                 </div>
             </div>`;
@@ -451,6 +474,10 @@
         }
         if (!bandAuthUser) {
             beginBandLogin();
+            return;
+        }
+        if (hasDetailedAccess()) {
+            window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
             return;
         }
         window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
@@ -623,12 +650,14 @@
         const button = element('band-float');
         const label = element('band-float-label');
         button.disabled = !bandAuthReady || !bandAuthConfigured;
-        button.classList.toggle('is-connected', hasDetailedAccess());
         label.textContent = !bandAuthReady
             ? 'BAND 확인 중'
             : !bandAuthConfigured
                 ? 'BAND 준비 중'
-                : bandAuthUser ? 'BAND 가입 확인' : 'BAND 로그인';
+                : hasDetailedAccess()
+                    ? 'BAND 열기'
+                    : bandAuthUser ? 'BAND 가입 확인' : 'BAND 로그인';
+        button.setAttribute('aria-label', label.textContent);
         if (result && !element('result-screen').hidden) renderResult();
     }
 
@@ -697,6 +726,27 @@
     async function shareResult() {
         const title = selectedMbti ? `평소 ${selectedMbti} → 크레 ${result.code}` : `나의 크레 MBTI는 ${result.code}`;
         const text = `${title}\n${result.typeName} · 문항당 ${formatSeconds(timingStats.medianMs)}`;
+        try {
+            if (window.Kakao) {
+                if (!window.Kakao.isInitialized()) window.Kakao.init(KAKAO_JS_KEY);
+                window.Kakao.Share.sendDefault({
+                    objectType: 'feed',
+                    content: {
+                        title,
+                        description: `${result.typeName} · 20개의 선택으로 확인한 크레 앞의 나`,
+                        imageUrl: 'https://cdcup.onrender.com/assets/crewart-cave-mobile.webp',
+                        link: { mobileWebUrl: SURVEY_URL, webUrl: SURVEY_URL }
+                    },
+                    buttons: [
+                        { title: '나도 테스트하기', link: { mobileWebUrl: SURVEY_URL, webUrl: SURVEY_URL } },
+                        { title: '크레와트 BAND', link: { mobileWebUrl: bandTargetUrl, webUrl: bandTargetUrl } }
+                    ]
+                });
+                return;
+            }
+        } catch (error) {
+            console.error('[Crewart Kakao share]', error);
+        }
         if (navigator.share) {
             try {
                 await navigator.share({ title: `${title} | 크레와트`, text, url: SURVEY_URL });

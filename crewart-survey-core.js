@@ -42,6 +42,19 @@
         { id: 'Q20', axis: 'JP', label: '사육장을 바꿀 때', q: '사육장을 업그레이드하려 한다. 나는?', options: ['필요한 것을 정리해 한 번에 완성한다', '한 가지씩 바꾸며 반응에 맞춰 이어간다'], scores: ['J', 'P'] }
     ];
 
+    const QUESTION_IMAGES = [
+        'question-c01.webp', 'question-c02.webp', 'question-c04.webp', 'question-c08.webp',
+        'question-c05.webp', 'question-c06.webp', 'question-c07.webp', 'question-c03.webp',
+        'question-c10.webp', 'question-c10.webp', 'question-c11.webp', 'question-c12.webp',
+        'question-c09.webp', 'question-c02.webp', 'question-c07.webp', 'question-c12.webp',
+        'question-c05.webp', 'question-c06.webp', 'question-c01.webp', 'question-c08.webp'
+    ];
+
+    QUESTIONS.forEach((question, index) => {
+        question.image = QUESTION_IMAGES[index];
+        question.imageAlt = `${question.label} 상황 삽화`;
+    });
+
     const AXIS_META = {
         EI: {
             title: '생각을 정리하는 방향',
