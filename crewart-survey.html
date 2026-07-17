@@ -10,57 +10,71 @@
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260717-band-oauth-v1">
+    <link rel="stylesheet" href="crewart.css?v=20260718-cave-entry-v1">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
 
     <main class="cw-shell cw-survey-shell">
-        <section class="cw-panel cw-exam-intro" id="intro-panel">
-            <div class="cw-intro-brand" aria-label="크레스티드게코 경매 밴드 크레와트">
-                <span class="cw-intro-emblem" aria-hidden="true">W</span>
-                <span><strong>크레와트</strong><small>크레스티드게코 경매 BAND</small></span>
+        <section class="cw-panel cw-exam-intro cw-cave-entry" id="intro-panel">
+            <div class="cw-cave-fog" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="cw-cave-content">
+                <div class="cw-intro-brand" aria-label="크레스티드게코 경매 밴드 크레와트">
+                    <span class="cw-intro-emblem" aria-hidden="true">W</span>
+                    <span><strong>크레와트</strong><small>크레스티드게코 경매 BAND</small></span>
+                </div>
+                <div class="cw-cave-heading">
+                    <div class="cw-kicker">CHOOSE YOUR PATH</div>
+                    <h2>나의 크레 취향<br>기숙사는?</h2>
+                    <p>12번의 선택 · 약 2분</p>
+                </div>
+                <div class="cw-entry-choices" id="entry-choices" aria-label="참여 방식 선택">
+                    <button class="cw-entry-choice is-official" type="button" onclick="chooseParticipationMode('official')">
+                        <span class="cw-entry-icon" aria-hidden="true">W</span>
+                        <span><strong>공식 기숙사 배정</strong><small>BAND 연결 · 결과 저장</small></span>
+                        <b aria-hidden="true">›</b>
+                    </button>
+                    <button class="cw-entry-choice is-guest" type="button" onclick="chooseParticipationMode('guest')">
+                        <span class="cw-entry-icon" aria-hidden="true">✦</span>
+                        <span><strong>테스트만 해보기</strong><small>로그인 없이 바로 시작</small></span>
+                        <b aria-hidden="true">›</b>
+                    </button>
+                </div>
+                <div class="cw-entry-details" id="entry-details" hidden>
+                    <button class="cw-mode-reset" type="button" onclick="resetParticipationMode()">‹ 다른 방식 선택</button>
+                    <div class="cw-mode-title"><strong id="participation-mode-title">참여 방식</strong><small id="participation-mode-copy"></small></div>
+                    <section class="cw-band-auth" id="band-auth-panel" aria-live="polite">
+                        <div class="cw-band-auth-profile">
+                            <span class="cw-band-auth-avatar" aria-hidden="true">
+                                <img id="band-auth-avatar" alt="" hidden>
+                                <b id="band-auth-avatar-fallback">B</b>
+                            </span>
+                            <span>
+                                <small id="band-auth-label">BAND 본인 확인</small>
+                                <strong id="band-auth-title">로그인 상태 확인 중...</strong>
+                                <em id="band-auth-copy">설문 참여 전에 BAND 계정을 한 번 확인합니다.</em>
+                            </span>
+                        </div>
+                        <button class="cw-btn cw-band-login-button" id="band-login-button" type="button" onclick="beginBandLogin()" disabled>BAND로 로그인</button>
+                        <button class="cw-band-logout-button" id="band-logout-button" type="button" onclick="logoutBand()" hidden>다른 계정</button>
+                    </section>
+                    <div class="cw-intro-form">
+                        <div class="cw-field">
+                            <label for="nickname">사용할 이름</label>
+                            <input class="cw-input" id="nickname" autocomplete="nickname" placeholder="닉네임">
+                        </div>
+                        <div class="cw-field cw-official-only">
+                            <label for="phone">전화번호 <small>선택</small></label>
+                            <input class="cw-input" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000">
+                        </div>
+                        <div class="cw-field is-wide cw-official-only">
+                            <label for="aliases">다른 이름 <small>선택</small></label>
+                            <input class="cw-input" id="aliases" placeholder="밴드닉·오픈채팅닉">
+                        </div>
+                    </div>
+                    <button class="cw-btn primary cw-start-button" id="start-button" type="button" onclick="startSurvey()" disabled><span>장면 준비 중...</span><i aria-hidden="true">✦</i></button>
+                </div>
             </div>
-            <div class="cw-kicker">CREWART AUCTION BAND PRESENTS</div>
-            <h2>나의 크레 취향<br>기숙사는?</h2>
-            <p class="cw-intro-copy">경매와 사육의 12가지 순간에서, 고민하지 않고 더 자연스럽게 끌리는 쪽을 골라보세요.</p>
-            <div class="cw-exam-facts" aria-label="선택 여정 안내">
-                <span><b>12</b> 순간</span>
-                <span><b>약 2분</b> 소요</span>
-                <span><b>4</b> 기숙사</span>
-            </div>
-            <section class="cw-band-auth" id="band-auth-panel" aria-live="polite">
-                <div class="cw-band-auth-profile">
-                    <span class="cw-band-auth-avatar" aria-hidden="true">
-                        <img id="band-auth-avatar" alt="" hidden>
-                        <b id="band-auth-avatar-fallback">B</b>
-                    </span>
-                    <span>
-                        <small id="band-auth-label">BAND 본인 확인</small>
-                        <strong id="band-auth-title">로그인 상태 확인 중...</strong>
-                        <em id="band-auth-copy">설문 참여 전에 BAND 계정을 한 번 확인합니다.</em>
-                    </span>
-                </div>
-                <button class="cw-btn cw-band-login-button" id="band-login-button" type="button" onclick="beginBandLogin()" disabled>BAND로 로그인</button>
-                <button class="cw-band-logout-button" id="band-logout-button" type="button" onclick="logoutBand()" hidden>다른 계정</button>
-            </section>
-            <div class="cw-intro-form">
-                <div class="cw-field">
-                    <label for="nickname">응시자 이름</label>
-                    <input class="cw-input" id="nickname" autocomplete="nickname" placeholder="사용할 닉네임">
-                </div>
-                <div class="cw-field">
-                    <label for="phone">전화번호 <small>선택</small></label>
-                    <input class="cw-input" id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000">
-                    <p class="cw-note">미입력 시 점수 연결용 임의 별명이 자동 발급됩니다.</p>
-                </div>
-                <div class="cw-field is-wide">
-                    <label for="aliases">다른 이름 <small>선택</small></label>
-                    <input class="cw-input" id="aliases" placeholder="밴드닉·오픈채팅닉">
-                </div>
-            </div>
-            <button class="cw-btn primary cw-start-button" id="start-button" type="button" onclick="startSurvey()" disabled><span>장면 준비 중...</span><i aria-hidden="true">✦</i></button>
-            <p class="cw-intro-note">12가지 순간과 선택지는 매번 다른 순서로 나타납니다.</p>
         </section>
 
         <section class="cw-exam-opening" id="exam-opening" hidden aria-live="polite">
@@ -167,6 +181,7 @@
         let choiceConfirmTimer = null;
         let participantAlias = '';
         let participantIdentity = '';
+        let participationMode = '';
         let isSaving = false;
         const CREWART_SURVEY_URL = 'https://cdcup.onrender.com/crewart-survey.html';
         const CREWART_BAND_URL = 'https://www.band.us/band/101005857/post';
@@ -595,6 +610,41 @@
             return `legacy-${(hash >>> 0).toString(16)}`;
         }
 
+        function chooseParticipationMode(mode, options = {}) {
+            participationMode = mode === 'official' ? 'official' : 'guest';
+            const intro = document.getElementById('intro-panel');
+            const choices = document.getElementById('entry-choices');
+            const details = document.getElementById('entry-details');
+            const title = document.getElementById('participation-mode-title');
+            const copy = document.getElementById('participation-mode-copy');
+            if (!intro || !choices || !details) return;
+            intro.dataset.mode = participationMode;
+            choices.hidden = true;
+            details.hidden = false;
+            if (participationMode === 'official') {
+                title.textContent = '공식 기숙사 배정';
+                copy.textContent = 'BAND 계정으로 결과를 연결합니다.';
+            } else {
+                title.textContent = '테스트만 해보기';
+                copy.textContent = '결과는 저장하지 않습니다.';
+            }
+            refreshStartButton();
+            if (!options.silent) {
+                requestAnimationFrame(() => details.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+            }
+        }
+
+        function resetParticipationMode() {
+            participationMode = '';
+            const intro = document.getElementById('intro-panel');
+            const choices = document.getElementById('entry-choices');
+            const details = document.getElementById('entry-details');
+            if (intro) delete intro.dataset.mode;
+            if (choices) choices.hidden = false;
+            if (details) details.hidden = true;
+            refreshStartButton();
+        }
+
         function refreshStartButton() {
             const startButton = document.getElementById('start-button');
             if (!startButton) return;
@@ -602,6 +652,11 @@
             let disabled = true;
             if (isLoaded && !houses.length) {
                 label = '기숙사 설정을 확인해주세요';
+            } else if (!participationMode) {
+                label = '참여 방식을 선택해주세요';
+            } else if (participationMode === 'guest' && isLoaded && houses.length) {
+                label = '테스트 시작';
+                disabled = false;
             } else if (isLoaded && !bandAuthReady) {
                 label = 'BAND 로그인 확인 중...';
             } else if (isLoaded && !bandAuthConfigured) {
@@ -734,6 +789,7 @@
                 bandAuthReady = true;
                 updateBandAuthUi();
             }
+            if (returnedToken && bandAuthUser) chooseParticipationMode('official', { silent: true });
             if (returnedError) toast('BAND 로그인을 완료하지 못했습니다. 다시 시도해주세요.', true);
         }
 
@@ -757,14 +813,16 @@
         function startSurvey() {
             const nickname = document.getElementById('nickname').value.trim();
             const phone = normalizePhone(document.getElementById('phone').value);
-            if (!bandAuthUser) { toast('BAND 로그인 후 설문을 시작해주세요.', true); return; }
+            if (!participationMode) { toast('참여 방식을 먼저 선택해주세요.', true); return; }
+            if (participationMode === 'official' && !bandAuthUser) { toast('BAND 로그인 후 설문을 시작해주세요.', true); return; }
             if (!nickname) { toast('닉네임을 입력해주세요.', true); return; }
-            if (phone && (phone.length < 10 || phone.length > 11)) { toast('전화번호를 다시 확인해주세요.', true); return; }
+            if (participationMode === 'official' && phone && (phone.length < 10 || phone.length > 11)) { toast('전화번호를 다시 확인해주세요.', true); return; }
             if (!isLoaded || !houses.length) { toast('기숙사 설정을 불러오는 중입니다. 잠시 후 다시 시작해주세요.', true); return; }
             if (openingInProgress) return;
-            participantAlias = phone ? '' : (participantAlias || createRandomAlias());
-            participantIdentity = bandAuthUser.id;
-            if (participantAlias) toast(`전화번호 미입력 · 자동 별명 ${participantAlias}`);
+            participantAlias = participationMode === 'official' && phone ? '' : (participantAlias || createRandomAlias());
+            participantIdentity = participationMode === 'official'
+                ? bandAuthUser.id
+                : `guest-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
             openingInProgress = true;
             prepareSurvey();
             const intro = document.getElementById('intro-panel');
@@ -932,6 +990,10 @@
 
         async function submitSurvey() {
             if (!finalHouse || isSaving) return;
+            if (participationMode !== 'official') {
+                toast('테스트 모드의 결과는 저장하지 않습니다.');
+                return;
+            }
             const name = document.getElementById('nickname').value.trim();
             const aliases = document.getElementById('aliases').value.trim();
             const phone = normalizePhone(document.getElementById('phone').value);
@@ -1274,6 +1336,8 @@
                         <blockquote>“${escapeHtml(house.motto)}”<br><span>${escapeHtml(result.type.shareLine)}</span></blockquote>
                     </div>
                 </details>`;
+            const saveButton = document.getElementById('save-result-button');
+            if (saveButton) saveButton.hidden = participationMode !== 'official';
             document.getElementById('result-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
@@ -1356,6 +1420,7 @@
                 isSaving = false;
                 const saveButton = document.getElementById('save-result-button');
                 if (saveButton) {
+                    saveButton.hidden = participationMode !== 'official';
                     saveButton.disabled = false;
                     saveButton.textContent = '결과 저장';
                 }
