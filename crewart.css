@@ -1220,6 +1220,45 @@ body.crewart-broadcast {
 .cw-exam-facts span { flex: 1; padding: 9px 8px; color: #6b604f; font-size: 11px; }
 .cw-exam-facts span + span { border-left: 1px solid rgba(80,61,31,.2); }
 .cw-exam-facts b { display: block; margin-bottom: 3px; color: #30281e; font-family: var(--cw-serif); font-size: 16px; }
+.cw-band-auth {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 10px;
+    align-items: center;
+    margin-top: 16px;
+    border: 1px solid rgba(75,58,31,.28);
+    border-radius: 12px;
+    padding: 11px 12px;
+    background: rgba(255,255,255,.42);
+    text-align: left;
+}
+.cw-band-auth.is-authenticated { border-color: rgba(0,166,78,.34); background: rgba(229,248,235,.55); }
+.cw-band-auth-profile { display: flex; min-width: 0; align-items: center; gap: 10px; }
+.cw-band-auth-profile > span:last-child { min-width: 0; }
+.cw-band-auth-avatar {
+    display: grid;
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(33,126,67,.28);
+    border-radius: 50%;
+    background: #e8f7ec;
+    color: #168340;
+}
+.cw-band-auth-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.cw-band-auth-avatar b { font-size: 15px; font-weight: 950; }
+.cw-band-auth-profile small,
+.cw-band-auth-profile strong,
+.cw-band-auth-profile em { display: block; }
+.cw-band-auth-profile small { color: #28814a; font-size: 9px; font-weight: 900; letter-spacing: .04em; }
+.cw-band-auth-profile strong { margin-top: 2px; color: #2c261e; font-size: 13px; }
+.cw-band-auth-profile em { margin-top: 2px; overflow: hidden; color: #766b58; font-size: 10px; font-style: normal; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.cw-band-login-button { min-height: 38px; border-color: #139846; background: #18a94e; color: #fff; font-size: 12px; font-weight: 900; }
+.cw-band-login-button:hover { border-color: #0f833b; background: #118f41; color: #fff; }
+.cw-band-login-button:disabled { cursor: wait; opacity: .55; }
+.cw-band-logout-button { border: 0; padding: 6px 2px; background: transparent; color: #6f6555; font: inherit; font-size: 10px; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .cw-intro-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 17px; text-align: left; }
 .cw-intro-form .is-wide { grid-column: 1 / -1; }
 .cw-intro-form .cw-note { margin: 6px 0 0; color: #766b58; }
@@ -1340,6 +1379,9 @@ body.crewart-broadcast {
     .cw-survey-shell .cw-page-head p { font-size: 13px; }
     .cw-exam-intro { padding: 30px 18px; }
     .cw-intro-emblem { width: 72px; height: 72px; font-size: 32px; }
+    .cw-band-auth { grid-template-columns: minmax(0, 1fr) auto; }
+    .cw-band-auth-profile { grid-column: 1 / -1; }
+    .cw-band-auth-profile em { white-space: normal; }
     .cw-intro-form { grid-template-columns: 1fr; }
     .cw-exam-facts span { padding: 11px 4px; }
     .cw-survey-shell .cw-question { padding: 12px; }

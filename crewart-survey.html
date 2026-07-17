@@ -10,7 +10,7 @@
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart.css?v=20260713-choice-review-v1">
+    <link rel="stylesheet" href="crewart.css?v=20260717-band-oauth-v1">
 </head>
 <body class="crewart-page crewart-survey-page">
     <div class="cw-ambient" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -29,6 +29,21 @@
                 <span><b>약 2분</b> 소요</span>
                 <span><b>4</b> 기숙사</span>
             </div>
+            <section class="cw-band-auth" id="band-auth-panel" aria-live="polite">
+                <div class="cw-band-auth-profile">
+                    <span class="cw-band-auth-avatar" aria-hidden="true">
+                        <img id="band-auth-avatar" alt="" hidden>
+                        <b id="band-auth-avatar-fallback">B</b>
+                    </span>
+                    <span>
+                        <small id="band-auth-label">BAND 본인 확인</small>
+                        <strong id="band-auth-title">로그인 상태 확인 중...</strong>
+                        <em id="band-auth-copy">설문 참여 전에 BAND 계정을 한 번 확인합니다.</em>
+                    </span>
+                </div>
+                <button class="cw-btn cw-band-login-button" id="band-login-button" type="button" onclick="beginBandLogin()" disabled>BAND로 로그인</button>
+                <button class="cw-band-logout-button" id="band-logout-button" type="button" onclick="logoutBand()" hidden>다른 계정</button>
+            </section>
             <div class="cw-intro-form">
                 <div class="cw-field">
                     <label for="nickname">응시자 이름</label>
@@ -103,8 +118,8 @@
                 <figure class="cw-result-illustration"><img id="result-illustration" alt=""></figure>
             </div>
             <div class="cw-trait-breakdown" id="trait-breakdown"></div>
-            <a class="cw-band-result-link" href="https://www.band.us/band/101005857/post" target="_blank" rel="noopener noreferrer">
-                <span><small>크레스티드게코 경매 BAND</small><strong>크레와트 보러가기</strong></span>
+            <a class="cw-band-result-link" id="band-result-link" href="https://www.band.us/band/101005857/post" target="_blank" rel="noopener noreferrer">
+                <span><small id="band-result-kicker">설문 완료 · 다음 단계</small><strong id="band-result-label">크레와트 BAND 가입 신청하기</strong></span>
                 <b aria-hidden="true">↗</b>
             </a>
             <div class="cw-actions cw-result-actions">
@@ -155,6 +170,13 @@
         let isSaving = false;
         const CREWART_SURVEY_URL = 'https://cdcup.onrender.com/crewart-survey.html';
         const CREWART_BAND_URL = 'https://www.band.us/band/101005857/post';
+        const BAND_OAUTH_API = 'https://creo.onrender.com/api/band-oauth';
+        const BAND_AUTH_STORAGE_KEY = 'crewart_band_auth_v1';
+        let bandAuthReady = false;
+        let bandAuthConfigured = false;
+        let bandAuthToken = '';
+        let bandAuthUser = null;
+        let bandTargetUrl = CREWART_BAND_URL;
 
         const QUESTIONS = [
           {
@@ -573,15 +595,175 @@
             return `legacy-${(hash >>> 0).toString(16)}`;
         }
 
+        function refreshStartButton() {
+            const startButton = document.getElementById('start-button');
+            if (!startButton) return;
+            let label = '장면 준비 중...';
+            let disabled = true;
+            if (isLoaded && !houses.length) {
+                label = '기숙사 설정을 확인해주세요';
+            } else if (isLoaded && !bandAuthReady) {
+                label = 'BAND 로그인 확인 중...';
+            } else if (isLoaded && !bandAuthConfigured) {
+                label = 'BAND 로그인 설정을 확인해주세요';
+            } else if (isLoaded && !bandAuthUser) {
+                label = 'BAND 로그인 후 시작할 수 있어요';
+            } else if (isLoaded && houses.length) {
+                label = '첫 선택의 순간 열기';
+                disabled = false;
+            }
+            startButton.disabled = disabled;
+            startButton.querySelector('span').textContent = label;
+        }
+
+        function updateBandAuthUi() {
+            const panel = document.getElementById('band-auth-panel');
+            const loginButton = document.getElementById('band-login-button');
+            const logoutButton = document.getElementById('band-logout-button');
+            const title = document.getElementById('band-auth-title');
+            const copy = document.getElementById('band-auth-copy');
+            const avatar = document.getElementById('band-auth-avatar');
+            const avatarFallback = document.getElementById('band-auth-avatar-fallback');
+            if (!panel || !loginButton || !title || !copy) return;
+
+            panel.classList.toggle('is-authenticated', Boolean(bandAuthUser));
+            loginButton.hidden = Boolean(bandAuthUser);
+            logoutButton.hidden = !bandAuthUser;
+            loginButton.disabled = !bandAuthReady || !bandAuthConfigured;
+            if (!bandAuthReady) {
+                title.textContent = '로그인 상태 확인 중...';
+                copy.textContent = '설문 참여 전에 BAND 계정을 한 번 확인합니다.';
+            } else if (!bandAuthConfigured) {
+                title.textContent = 'BAND 로그인 준비가 필요해요';
+                copy.textContent = '관리자가 OAuth 설정을 완료하면 바로 참여할 수 있습니다.';
+            } else if (!bandAuthUser) {
+                title.textContent = 'BAND 로그인이 필요해요';
+                copy.textContent = '로그인하면 설문 결과가 같은 BAND 계정으로 연결됩니다.';
+            } else {
+                title.textContent = `${bandAuthUser.name || 'BAND 사용자'}님으로 확인됐어요`;
+                copy.textContent = bandAuthUser.isTargetMember === true
+                    ? '이미 크레와트 BAND에 가입된 계정입니다.'
+                    : '설문 완료 후 크레와트 BAND 가입 화면으로 이어집니다.';
+            }
+
+            const imageUrl = bandAuthUser?.profileImageUrl || '';
+            if (avatar) {
+                avatar.hidden = !imageUrl;
+                if (imageUrl) avatar.src = imageUrl;
+            }
+            if (avatarFallback) avatarFallback.hidden = Boolean(imageUrl);
+
+            const bandLink = document.getElementById('band-result-link');
+            const bandLabel = document.getElementById('band-result-label');
+            const bandKicker = document.getElementById('band-result-kicker');
+            if (bandLink) bandLink.href = bandTargetUrl;
+            if (bandLabel) bandLabel.textContent = bandAuthUser?.isTargetMember === true
+                ? '크레와트 BAND 바로 열기'
+                : '크레와트 BAND 가입 신청하기';
+            if (bandKicker) bandKicker.textContent = bandAuthUser?.isTargetMember === true
+                ? '가입 확인 완료'
+                : '설문 완료 · 다음 단계';
+            refreshStartButton();
+        }
+
+        function clearOAuthFragment() {
+            const params = new URLSearchParams(location.hash.replace(/^#/, ''));
+            params.delete('band_auth');
+            params.delete('band_oauth_error');
+            const hash = params.toString();
+            history.replaceState(null, '', `${location.pathname}${location.search}${hash ? `#${hash}` : ''}`);
+        }
+
+        async function bandOAuthFetch(url, options = {}) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 6500);
+            try {
+                return await fetch(url, { ...options, signal: controller.signal });
+            } finally {
+                clearTimeout(timer);
+            }
+        }
+
+        async function verifyBandSession(token) {
+            const response = await bandOAuthFetch(`${BAND_OAUTH_API}/session`, {
+                method: 'POST',
+                mode: 'cors',
+                cache: 'no-store',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            if (!response.ok) throw new Error('BAND login expired');
+            return response.json();
+        }
+
+        async function initBandAuth() {
+            const fragment = new URLSearchParams(location.hash.replace(/^#/, ''));
+            const returnedToken = fragment.get('band_auth') || '';
+            const returnedError = fragment.get('band_oauth_error') || '';
+            if (returnedToken || returnedError) clearOAuthFragment();
+            try {
+                bandAuthToken = returnedToken || sessionStorage.getItem(BAND_AUTH_STORAGE_KEY) || '';
+                if (returnedToken) sessionStorage.setItem(BAND_AUTH_STORAGE_KEY, returnedToken);
+            } catch {
+                bandAuthToken = returnedToken;
+            }
+
+            try {
+                const configResponse = await bandOAuthFetch(`${BAND_OAUTH_API}/config`, {
+                    mode: 'cors', cache: 'no-store'
+                });
+                if (!configResponse.ok) throw new Error('BAND OAuth config unavailable');
+                const oauthConfig = await configResponse.json();
+                bandAuthConfigured = Boolean(oauthConfig.configured);
+                bandTargetUrl = oauthConfig.targetBandUrl || CREWART_BAND_URL;
+                if (bandAuthConfigured && bandAuthToken) {
+                    const session = await verifyBandSession(bandAuthToken);
+                    bandAuthUser = session.user || null;
+                    bandTargetUrl = session.targetBandUrl || bandTargetUrl;
+                    const nickname = document.getElementById('nickname');
+                    if (nickname && !nickname.value.trim() && bandAuthUser?.name) nickname.value = bandAuthUser.name;
+                }
+            } catch (error) {
+                console.error('[Crewart BAND OAuth]', error);
+                bandAuthUser = null;
+                if (bandAuthToken) {
+                    try { sessionStorage.removeItem(BAND_AUTH_STORAGE_KEY); } catch (_) {}
+                    bandAuthToken = '';
+                }
+            } finally {
+                bandAuthReady = true;
+                updateBandAuthUi();
+            }
+            if (returnedError) toast('BAND 로그인을 완료하지 못했습니다. 다시 시도해주세요.', true);
+        }
+
+        function beginBandLogin() {
+            if (!bandAuthReady || !bandAuthConfigured) {
+                toast('BAND 로그인 설정을 확인 중입니다.', true);
+                return;
+            }
+            const loginUrl = new URL(`${BAND_OAUTH_API}/start`);
+            loginUrl.searchParams.set('return_url', CREWART_SURVEY_URL);
+            location.assign(loginUrl.toString());
+        }
+
+        function logoutBand() {
+            try { sessionStorage.removeItem(BAND_AUTH_STORAGE_KEY); } catch (_) {}
+            bandAuthToken = '';
+            bandAuthUser = null;
+            updateBandAuthUi();
+        }
+
         function startSurvey() {
             const nickname = document.getElementById('nickname').value.trim();
             const phone = normalizePhone(document.getElementById('phone').value);
+            if (!bandAuthUser) { toast('BAND 로그인 후 설문을 시작해주세요.', true); return; }
             if (!nickname) { toast('닉네임을 입력해주세요.', true); return; }
             if (phone && (phone.length < 10 || phone.length > 11)) { toast('전화번호를 다시 확인해주세요.', true); return; }
             if (!isLoaded || !houses.length) { toast('기숙사 설정을 불러오는 중입니다. 잠시 후 다시 시작해주세요.', true); return; }
             if (openingInProgress) return;
             participantAlias = phone ? '' : (participantAlias || createRandomAlias());
-            participantIdentity = phone || participantAlias;
+            participantIdentity = bandAuthUser.id;
             if (participantAlias) toast(`전화번호 미입력 · 자동 별명 ${participantAlias}`);
             openingInProgress = true;
             prepareSurvey();
@@ -753,7 +935,7 @@
             const name = document.getElementById('nickname').value.trim();
             const aliases = document.getElementById('aliases').value.trim();
             const phone = normalizePhone(document.getElementById('phone').value);
-            const identity = participantIdentity || phone || participantAlias || createRandomAlias();
+            const identity = participantIdentity || bandAuthUser?.id || phone || participantAlias || createRandomAlias();
             const saveButton = document.getElementById('save-result-button');
             isSaving = true;
             if (saveButton) {
@@ -765,6 +947,9 @@
                 const response = {
                     participantKey: storageKey,
                     participantAlias: participantAlias || null,
+                    bandUserId: bandAuthUser?.id || null,
+                    bandProfileName: bandAuthUser?.name || null,
+                    bandIsTargetMember: bandAuthUser?.isTargetMember ?? null,
                     name,
                     aliases,
                     phone: phone || null,
@@ -823,11 +1008,7 @@
                 toast('기숙사 설정을 불러오지 못했습니다: ' + error.message, true);
             } finally {
                 isLoaded = true;
-                const startButton = document.getElementById('start-button');
-                if (startButton) {
-                    startButton.disabled = !houses.length;
-                    startButton.querySelector('span').textContent = houses.length ? '첫 선택의 순간 열기' : '기숙사 설정을 확인해주세요';
-                }
+                refreshStartButton();
             }
         }
 
@@ -1191,6 +1372,7 @@
             }, rewindDelay);
         }
 
+        initBandAuth();
         load();
     </script>
 </body>
