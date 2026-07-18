@@ -10,6 +10,7 @@
     const AUTH_STORAGE_KEY = 'crewart_band_auth_v1';
     const RESUME_STORAGE_KEY = 'crewart_cre_mbti_resume_v1';
     const CONTENT_CONFIG_KEY = 'crewart_mbti_content_v1';
+    const BAND_INTEGRATION_ENABLED = false;
     const IS_LOCAL_QA = ['127.0.0.1', 'localhost'].includes(location.hostname);
     const IS_QA_MODE = IS_LOCAL_QA || new URLSearchParams(location.search).has('qa');
 
@@ -348,6 +349,12 @@
         return Boolean(bandAuthUser && bandAuthUser.isTargetMember === true);
     }
 
+    function openBandTarget() {
+        if (!BAND_INTEGRATION_ENABLED) return false;
+        window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+        return true;
+    }
+
     function renderComparison(comparison) {
         if (!selectedMbti) return '';
         const changes = comparison.changes.length
@@ -414,22 +421,30 @@
 
     function renderHouseCard() {
         const house = Core.HOUSE_META[assignedHouseKey];
+        const bandAction = BAND_INTEGRATION_ENABLED
+            ? `<button class="cw-band-cta" type="button" data-action="open-band"><span>${house.name} 기숙사 참여하기</span><b aria-hidden="true">↗</b></button>`
+            : '';
         return `
             <section class="cw-result-section cw-house-card" style="--house-accent:${house.accent}">
                 <div class="cw-house-row"><div class="cw-house-seal">${house.seal}</div><div><small>CREWART COMMUNITY HOUSE</small><h2>${house.name}</h2></div></div>
                 <p>${house.korean} · ${house.color}. MBTI와 별개로 커뮤니티 인원이 고르게 만나도록 배정된 기숙사예요.</p>
-                <button class="cw-band-cta" type="button" data-action="open-band"><span>${house.name} 기숙사 참여하기</span><b aria-hidden="true">↗</b></button>
+                ${bandAction}
             </section>`;
     }
 
     function renderLockedDetail() {
-        const configured = bandAuthConfigured;
+        const configured = BAND_INTEGRATION_ENABLED && bandAuthConfigured;
         const label = !configured
             ? '세부 결과 준비 중'
             : bandAuthUser ? '크레와트 BAND 가입하기' : 'BAND 가입하고 세부 분석 보기';
-        const status = !configured
-            ? 'BAND 인증 오픈과 함께 제공됩니다.'
+        const status = !BAND_INTEGRATION_ENABLED
+            ? '정식 공개 전까지 잠시 닫아두었어요.'
+            : !configured
+                ? 'BAND 인증 오픈과 함께 제공됩니다.'
             : bandAuthUser ? '가입 후 이 페이지로 돌아오면 자동으로 다시 확인해요.' : '가입 후 선택 근거와 기숙사 배정이 열려요.';
+        const description = !BAND_INTEGRATION_ENABLED
+            ? '선택 근거, 고민한 문항과 기숙사 배정은<br>정식 공개와 함께 열립니다.'
+            : '선택 근거, 고민한 문항과 기숙사 배정은<br>BAND 가입 확인 후 바로 선명해져요.';
         return `
             <section class="cw-detail-gate">
                 <div class="cw-detail-preview" aria-hidden="true" inert>${renderMemberDetail()}${renderHouseCard()}</div>
@@ -437,7 +452,7 @@
                 <div class="cw-detail-unlock">
                     <span class="cw-lock-icon" aria-hidden="true">⌁</span>
                     <h2>세부 결과가 궁금한가요?</h2>
-                    <p>선택 근거, 고민한 문항과 기숙사 배정은<br>BAND 가입 확인 후 바로 선명해져요.</p>
+                    <p>${description}</p>
                     <button class="cw-band-cta" type="button" data-action="unlock-detail" ${configured ? '' : 'disabled'}><span>${escapeHtml(label)}</span><b aria-hidden="true">→</b></button>
                     <small class="cw-lock-status">${escapeHtml(status)}</small>
                 </div>
@@ -449,7 +464,10 @@
         const typeFlow = selectedMbti
             ? `<div class="cw-result-code-flow"><div><small>평소</small><strong>${escapeHtml(selectedMbti)}</strong></div><i aria-hidden="true">→</i><div class="is-cre"><small>크레 앞</small><strong>${escapeHtml(result.code)}</strong></div></div>`
             : `<div class="cw-result-code-flow is-single"><div class="is-cre"><small>크레 앞의 나는</small><strong>${escapeHtml(result.code)}</strong></div></div>`;
-        const detail = hasDetailedAccess() ? `${renderMemberDetail()}${renderHouseCard()}` : renderLockedDetail();
+        const detail = BAND_INTEGRATION_ENABLED && hasDetailedAccess() ? `${renderMemberDetail()}${renderHouseCard()}` : renderLockedDetail();
+        const bandShare = BAND_INTEGRATION_ENABLED
+            ? `<button class="cw-share-icon is-band" type="button" data-action="band-result" aria-label="크레와트 BAND 열기"><strong aria-hidden="true">B</strong></button>`
+            : '';
         element('result-content').innerHTML = `
             <div class="cw-result-wrap">
                 <section class="cw-result-poster">
@@ -466,30 +484,33 @@
                     <button class="cw-share-icon is-instagram" type="button" data-action="instagram" aria-label="인스타그램으로 공유">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5"></rect><circle cx="12" cy="12" r="4.1"></circle><circle class="cw-instagram-dot" cx="17.4" cy="6.8" r="1.1"></circle></svg>
                     </button>
-                    <button class="cw-share-icon is-band" type="button" data-action="band-result" aria-label="크레와트 BAND 열기">
-                        <strong aria-hidden="true">B</strong>
-                    </button>
+                    ${bandShare}
                 </div>
                 ${renderComparison(comparison)}
                 ${renderSpeedCard()}
                 ${detail}
             </div>`;
         element('result-content').querySelector('[data-action="unlock-detail"]')?.addEventListener('click', handleUnlockDetail);
-        element('result-content').querySelector('[data-action="open-band"]')?.addEventListener('click', () => window.open(bandTargetUrl, '_blank', 'noopener,noreferrer'));
+        element('result-content').querySelector('[data-action="open-band"]')?.addEventListener('click', openBandTarget);
         element('result-content').querySelector('[data-action="share"]')?.addEventListener('click', shareResult);
         element('result-content').querySelector('[data-action="instagram"]')?.addEventListener('click', shareToInstagram);
         element('result-content').querySelector('[data-action="band-result"]')?.addEventListener('click', handleResultBand);
     }
 
     function handleResultBand() {
+        if (!BAND_INTEGRATION_ENABLED) return;
         if (bandAuthConfigured && !bandAuthUser) {
             beginBandLogin();
             return;
         }
-        window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+        openBandTarget();
     }
 
     function handleUnlockDetail() {
+        if (!BAND_INTEGRATION_ENABLED) {
+            toast('BAND 연동은 현재 준비 중이에요.');
+            return;
+        }
         if (!bandAuthConfigured) {
             toast('BAND 연결 설정을 준비하고 있어요.', true);
             return;
@@ -499,10 +520,10 @@
             return;
         }
         if (hasDetailedAccess()) {
-            window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+            openBandTarget();
             return;
         }
-        window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+        openBandTarget();
         toast('가입 후 이 화면으로 돌아오면 자동으로 확인해요.');
     }
 
@@ -672,8 +693,9 @@
         const button = element('band-float');
         const label = element('band-float-label');
         const note = element('band-entry-note');
-        button.disabled = !bandAuthReady;
-        button.hidden = false;
+        button.disabled = !BAND_INTEGRATION_ENABLED || !bandAuthReady;
+        button.hidden = !BAND_INTEGRATION_ENABLED;
+        if (note) note.hidden = !BAND_INTEGRATION_ENABLED;
         label.textContent = !bandAuthReady
             ? 'BAND 확인 중'
             : !bandAuthConfigured
@@ -708,7 +730,11 @@
         footer.hidden = stage === 'intro';
         if (footer.hidden) return;
 
-        button.disabled = !bandAuthReady;
+        button.hidden = !BAND_INTEGRATION_ENABLED;
+        note.hidden = !BAND_INTEGRATION_ENABLED;
+        footer.classList.toggle('is-band-hidden', !BAND_INTEGRATION_ENABLED);
+        button.disabled = !BAND_INTEGRATION_ENABLED || !bandAuthReady;
+        if (!BAND_INTEGRATION_ENABLED) return;
         if (!bandAuthReady) {
             label.textContent = 'BAND 연결 확인 중';
             note.textContent = '연결 상태를 확인하고 있어요.';
@@ -729,23 +755,25 @@
     }
 
     function handlePersistentBand() {
+        if (!BAND_INTEGRATION_ENABLED) return;
         if (!bandAuthReady) return;
         if (!bandAuthConfigured) {
-            window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+            openBandTarget();
             return;
         }
         if (!bandAuthUser) {
             beginBandLogin();
             return;
         }
-        window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+        openBandTarget();
         if (!hasDetailedAccess()) toast('가입 후 이 화면으로 돌아오면 자동으로 확인해요.');
     }
 
     function handleBandEntry() {
+        if (!BAND_INTEGRATION_ENABLED) return;
         if (!bandAuthReady) return;
         if (!bandAuthConfigured) {
-            window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+            openBandTarget();
             toast('OAuth 승인 전이라 BAND 페이지를 먼저 열었어요.');
             return;
         }
@@ -754,7 +782,7 @@
             return;
         }
         if (!hasDetailedAccess()) {
-            window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+            openBandTarget();
             toast('BAND 가입 후 돌아오면 상세 결과까지 확인할 수 있어요.');
             return;
         }
@@ -795,6 +823,7 @@
     }
 
     function beginBandLogin() {
+        if (!BAND_INTEGRATION_ENABLED) return;
         if (!bandAuthReady || !bandAuthConfigured) {
             toast('BAND 연결 설정을 확인 중이에요.', true);
             return;
@@ -837,10 +866,7 @@
                         imageUrl: 'https://cdcup.onrender.com/assets/crewart-cave-mobile.webp',
                         link: { mobileWebUrl: SURVEY_URL, webUrl: SURVEY_URL }
                     },
-                    buttons: [
-                        { title: '나도 테스트하기', link: { mobileWebUrl: SURVEY_URL, webUrl: SURVEY_URL } },
-                        { title: '크레와트 BAND', link: { mobileWebUrl: bandTargetUrl, webUrl: bandTargetUrl } }
-                    ]
+                    buttons: [{ title: '나도 테스트하기', link: { mobileWebUrl: SURVEY_URL, webUrl: SURVEY_URL } }]
                 });
                 return;
             }
@@ -922,7 +948,10 @@
         start.disabled = false;
         start.querySelector('span').textContent = '바로 테스트하기';
         void loadConfig();
-        if (IS_LOCAL_QA) {
+        if (!BAND_INTEGRATION_ENABLED) {
+            bandAuthReady = false;
+            updateBandUi();
+        } else if (IS_LOCAL_QA) {
             bandAuthReady = true;
             updateBandUi();
         } else {

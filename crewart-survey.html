@@ -10,11 +10,11 @@
     <title>CREWART PERSONALITY TEST</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260718-cre-mbti-v6">
+    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260719-cre-mbti-v7">
     <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <script src="crewart-survey-core.js?v=20260718-cre-mbti-v4"></script>
-    <script src="crewart-survey.js?v=20260718-cre-mbti-v7" defer></script>
+    <script src="crewart-survey.js?v=20260719-cre-mbti-v8" defer></script>
 </head>
 <body>
     <div class="cw-atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -29,10 +29,10 @@
                 <button class="cw-primary-button" id="start-button" type="button" disabled>
                     <span>준비 중...</span>
                 </button>
-                <button class="cw-band-entry" id="band-float" type="button" disabled>
+                <button class="cw-band-entry" id="band-float" type="button" disabled hidden>
                     <span aria-hidden="true">B</span><strong id="band-float-label">BAND로 들어가기</strong>
                 </button>
-                <small class="cw-intro-note" id="band-entry-note">BAND 연결 시 상세 결과까지 확인할 수 있어요</small>
+                <small class="cw-intro-note" id="band-entry-note" hidden>BAND 연결 시 상세 결과까지 확인할 수 있어요</small>
             </div>
         </section>
 

@@ -510,6 +510,7 @@ body {
     text-underline-offset: 4px;
     cursor: pointer;
 }
+.cw-persistent-footer.is-band-hidden .cw-persistent-home { margin-top: 0; }
 .cw-toast { bottom: calc(18px + env(safe-area-inset-bottom)); border-color: #aaa294; background: rgba(255,254,250,.97); color: var(--ink); }
 
 @media (min-width: 680px) {
