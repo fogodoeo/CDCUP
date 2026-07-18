@@ -1,5 +1,5 @@
 :root {
-    color-scheme: dark;
+    color-scheme: light;
     --bg: #080b0e;
     --panel: rgba(18, 21, 22, .96);
     --panel-soft: rgba(232, 216, 177, .045);
@@ -252,6 +252,274 @@ button, a { -webkit-tap-highlight-color: transparent; }
     .cw-question-illustration { max-width: 260px; margin: 10px auto 0; }
     .cw-choice-list { margin-top: 12px; }
     .cw-choice-button { min-height: 58px; padding-top: 11px; padding-bottom: 11px; }
+}
+
+/* Paper-and-pencil visual system */
+:root {
+    --bg: #f4f1e9;
+    --paper: #fffefa;
+    --paper-soft: #ebe7dc;
+    --ink: #292824;
+    --text: #292824;
+    --muted: #747169;
+    --line: #d8d2c6;
+    --gold: #a97934;
+    --panel: #fffefa;
+    --panel-soft: rgba(255, 255, 255, .72);
+    --shadow: 0 14px 36px rgba(72, 62, 43, .12);
+}
+
+html { background: var(--bg); }
+body {
+    background:
+        radial-gradient(circle at 20% 0, rgba(116, 98, 66, .055), transparent 30%),
+        linear-gradient(180deg, #f7f4ed, var(--bg));
+    color: var(--ink);
+}
+.cw-atmosphere,
+.cw-cave-fog { display: none; }
+.cw-screen { padding-right: 16px; padding-bottom: max(28px, calc(20px + env(safe-area-inset-bottom))); padding-left: 16px; }
+
+.cw-intro {
+    background: var(--bg);
+    color: var(--ink);
+}
+.cw-intro::before {
+    background: linear-gradient(rgba(244,241,233,.9), rgba(244,241,233,.96)), url("assets/crewart-cave-mobile.webp") center / cover no-repeat;
+    filter: grayscale(1);
+    opacity: .62;
+}
+.cw-intro-content { transform: translateY(-1vh); }
+.cw-crest { width: min(42vw, 174px); margin-bottom: 18px; filter: drop-shadow(0 10px 18px rgba(56,49,37,.16)); }
+.cw-intro h1 { text-shadow: none; }
+.cw-intro h1 span { color: var(--ink); }
+.cw-intro h1 small { color: #8e6a34; }
+.cw-intro-copy { color: var(--muted); }
+.cw-intro-content > small { color: #8d8980; }
+.cw-primary-button {
+    border: 1px solid var(--ink);
+    border-radius: 8px;
+    background: var(--ink);
+    box-shadow: 0 4px 0 rgba(41,40,36,.16);
+    color: var(--paper);
+}
+.cw-band-entry { color: var(--ink); }
+
+.cw-progress-copy span { color: var(--ink); }
+.cw-progress-track { background: #ddd7cb; }
+.cw-progress-track i { background: #393732; }
+.cw-back-button { color: var(--ink); }
+.cw-question-card > p { color: #8f6a34; }
+.cw-question-card h1 { color: var(--ink); font-weight: 700; }
+.cw-question-illustration {
+    overflow: hidden;
+    border: 1px solid #d8d4cc;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 5px 16px rgba(54,50,42,.09);
+}
+.cw-question-illustration::after { display: none; }
+.cw-question-illustration img {
+    aspect-ratio: 3 / 2;
+    filter: grayscale(.08) contrast(1.025);
+    mix-blend-mode: normal;
+    opacity: 1;
+}
+.cw-choice-list { gap: 8px; border-bottom: 0; }
+.cw-choice-button {
+    min-height: 66px;
+    padding: 15px 16px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: rgba(255,255,255,.82);
+    box-shadow: 0 2px 0 rgba(65,59,48,.06);
+    color: var(--ink);
+}
+.cw-choice-button:hover,
+.cw-choice-button:focus-visible,
+.cw-choice-button.is-selected {
+    padding-left: 16px;
+    border-color: #6e675c;
+    background: #fff;
+    color: #171613;
+    outline: 2px solid rgba(84,78,68,.12);
+}
+
+.cw-simple-head h1 { color: var(--ink); }
+.cw-simple-head > p:last-child { color: var(--muted); }
+.cw-mbti-option {
+    border-color: var(--line);
+    background: var(--paper);
+    color: var(--ink);
+}
+.cw-mbti-option:hover,
+.cw-mbti-option:focus-visible,
+.cw-mbti-option.is-selected {
+    border-color: var(--ink);
+    background: #ece7db;
+    color: var(--ink);
+}
+.cw-secondary-button { border-color: var(--line); color: var(--ink); }
+
+.cw-result-poster {
+    border-color: #cfc8ba;
+    border-radius: 14px;
+    background:
+        linear-gradient(90deg, #bc4f45 0 25%, #587d58 25% 50%, #d0a03e 50% 75%, #526eaa 75%) top / 100% 4px no-repeat,
+        var(--paper);
+    box-shadow: var(--shadow);
+    color: var(--ink);
+}
+.cw-result-poster::after { border-color: rgba(67,61,51,.1); border-radius: 9px; }
+.cw-poster-kicker { color: #8d6a36; }
+.cw-result-code-flow small { color: var(--muted); }
+.cw-result-code-flow strong { color: var(--ink); }
+.cw-result-code-flow i { color: #8d877d; }
+.cw-result-code-flow .is-cre strong { color: #9b6d28; }
+.cw-result-poster h1 { color: var(--ink); }
+.cw-result-poster > p:last-child { color: var(--muted); }
+
+.cw-share-tools { display: flex; justify-content: center; gap: 14px; margin-top: 16px; }
+.cw-share-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(48,43,34,.13);
+    cursor: pointer;
+    transition: transform .16s ease, box-shadow .16s ease;
+}
+.cw-share-icon:active { transform: translateY(1px) scale(.97); box-shadow: 0 2px 6px rgba(48,43,34,.12); }
+.cw-share-icon.is-kakao { background: #fee500; }
+.cw-share-icon.is-kakao img { width: 24px; height: 24px; object-fit: contain; }
+.cw-share-icon.is-instagram { background: radial-gradient(circle at 68% 72%, #ffdc80 0 16%, #fcaf45 28%, #f77737 44%, #e1306c 62%, #c13584 76%, #833ab4 100%); }
+.cw-share-icon.is-instagram svg { width: 26px; height: 26px; fill: none; stroke: #fff; stroke-width: 1.8; }
+.cw-share-icon.is-instagram .cw-instagram-dot { fill: #fff; stroke: none; }
+.cw-share-icon.is-band { background: #35c76f; color: #072311; }
+.cw-share-icon.is-band strong { font-size: 21px; font-weight: 800; }
+
+.cw-result-insight { border-color: var(--line); }
+.cw-result-insight h2,
+.cw-change-row span { color: var(--ink); }
+.cw-result-insight header span,
+.cw-speed-measure,
+.cw-benchmark-inline span { color: var(--muted); }
+.cw-change-row { border-color: var(--line); }
+.cw-change-row b { color: #946a2d; }
+.cw-same-note { border-color: var(--line); color: var(--ink); }
+.cw-result-section {
+    border-color: var(--line);
+    background: var(--paper);
+    color: var(--ink);
+}
+.cw-result-section-head span,
+.cw-speed-number small,
+.cw-speed-copy { color: var(--muted); }
+.cw-speed-number { color: #946a2d; }
+.cw-benchmark-inline { border-color: var(--line); }
+.cw-benchmark-inline b { color: #8f672c; }
+.cw-speed-meta span { background: var(--paper-soft); color: var(--muted); }
+
+.cw-detail-gate { border-color: #cec8bb; background: #e9e5dc; }
+.cw-detail-shade { background: linear-gradient(180deg, rgba(244,241,233,.05), rgba(244,241,233,.52) 42%, rgba(244,241,233,.98) 86%); }
+.cw-detail-unlock { border-color: #d0cabc; border-radius: 10px; background: rgba(255,254,250,.96); color: var(--ink); }
+.cw-detail-unlock > p,
+.cw-lock-status { color: var(--muted); }
+.cw-lock-icon { border-color: #b9b0a1; background: #f1ece2; color: #756d60; }
+.cw-band-cta:disabled { background: #d0ccc3; color: #77746d; }
+.cw-axis-detail { border-color: var(--line); }
+.cw-axis-detail header span,
+.cw-axis-detail p,
+.cw-answer-detail summary,
+.cw-answer-detail li time { color: var(--muted); }
+.cw-axis-detail header b { color: #946a2d; }
+.cw-answer-detail { border-color: var(--line); }
+.cw-answer-detail li { color: var(--ink); }
+.cw-house-row small,
+.cw-house-card > p { color: var(--muted); }
+
+.cw-restart-button {
+    width: 100%;
+    min-height: 58px;
+    margin-top: 24px;
+    border: 1px solid var(--ink);
+    border-radius: 8px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.cw-toast { bottom: calc(18px + env(safe-area-inset-bottom)); border-color: #aaa294; background: rgba(255,254,250,.97); color: var(--ink); }
+
+@media (min-width: 680px) {
+    .cw-intro {
+        border-color: #d8d2c6;
+        background: var(--bg);
+        box-shadow: var(--shadow);
+    }
+    .cw-intro::before { background: linear-gradient(rgba(244,241,233,.9), rgba(244,241,233,.96)), url("assets/crewart-cave-desktop.webp") center / cover no-repeat; }
+}
+
+@media (max-height: 650px) {
+    .cw-crest { width: 112px; margin-bottom: 10px; }
+    .cw-question-illustration { max-width: 242px; margin-top: 10px; }
+    .cw-choice-list { margin-top: 9px; }
+    .cw-choice-button { min-height: 58px; padding-top: 11px; padding-bottom: 11px; }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        color-scheme: dark;
+        --bg: #171819;
+        --paper: #242526;
+        --paper-soft: #2d2e2f;
+        --ink: #f0ede6;
+        --text: #f0ede6;
+        --muted: #aaa79f;
+        --line: #424242;
+        --panel: #242526;
+        --panel-soft: #242526;
+        --shadow: 0 16px 42px rgba(0,0,0,.28);
+    }
+    html { background: var(--bg); }
+    body { background: linear-gradient(180deg, #1c1d1e, var(--bg)); color: var(--ink); }
+    .cw-intro { background: var(--bg); }
+    .cw-intro::before { background: linear-gradient(rgba(23,24,25,.9), rgba(23,24,25,.96)), url("assets/crewart-cave-mobile.webp") center / cover no-repeat; opacity: .72; }
+    .cw-intro h1 small { color: #c9a76e; }
+    .cw-intro-copy,
+    .cw-intro-content > small { color: var(--muted); }
+    .cw-primary-button,
+    .cw-restart-button { border-color: #ece7dc; background: #ece7dc; color: #24231f; box-shadow: none; }
+    .cw-progress-track { background: #393a3a; }
+    .cw-progress-track i { background: #e5dfd2; }
+    .cw-question-card > p { color: #c6a267; }
+    .cw-question-illustration { border-color: #4a4946; background: #fff; }
+    .cw-choice-button { border-color: var(--line); background: #222324; color: var(--ink); box-shadow: none; }
+    .cw-choice-button:hover,
+    .cw-choice-button:focus-visible,
+    .cw-choice-button.is-selected { border-color: #aaa49a; background: #2b2c2d; color: #fff; }
+    .cw-mbti-option { background: #222324; }
+    .cw-mbti-option:hover,
+    .cw-mbti-option:focus-visible,
+    .cw-mbti-option.is-selected { background: #323333; color: #fff; }
+    .cw-result-poster { border-color: #4b4944; background: linear-gradient(90deg, #bc4f45 0 25%, #587d58 25% 50%, #d0a03e 50% 75%, #526eaa 75%) top / 100% 4px no-repeat, var(--paper); }
+    .cw-result-code-flow .is-cre strong,
+    .cw-change-row b,
+    .cw-speed-number,
+    .cw-benchmark-inline b { color: #d0ad70; }
+    .cw-detail-gate { border-color: #444; background: #1f2021; }
+    .cw-detail-shade { background: linear-gradient(180deg, rgba(23,24,25,.08), rgba(23,24,25,.52) 42%, rgba(23,24,25,.98) 86%); }
+    .cw-detail-unlock { border-color: #444; background: rgba(36,37,38,.97); }
+    .cw-lock-icon { border-color: #555; background: #2d2e2f; color: #aaa79f; }
+    .cw-toast { border-color: #555; background: rgba(36,37,38,.98); color: var(--ink); }
+}
+
+@media (prefers-color-scheme: dark) and (min-width: 680px) {
+    .cw-intro::before { background: linear-gradient(rgba(23,24,25,.9), rgba(23,24,25,.96)), url("assets/crewart-cave-desktop.webp") center / cover no-repeat; }
 }
 
 @media (prefers-reduced-motion: reduce) {

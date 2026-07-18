@@ -437,18 +437,36 @@
                     <h1>${escapeHtml(result.typeName)}</h1>
                     <p>${escapeHtml(typeSummary(result.code))}</p>
                 </section>
-                <div class="cw-result-actions is-poster-action">
-                    <button class="cw-primary-button cw-kakao-share" type="button" data-action="share"><img src="assets/kakaolink_btn_medium.png" width="20" height="20" alt=""><span>카카오톡 공유</span></button>
-                    <button class="cw-text-button" type="button" data-action="restart">다시 테스트</button>
+                <div class="cw-share-tools" aria-label="결과 공유">
+                    <button class="cw-share-icon is-kakao" type="button" data-action="share" aria-label="카카오톡으로 공유">
+                        <img src="assets/kakaolink_btn_medium.png" width="24" height="24" alt="">
+                    </button>
+                    <button class="cw-share-icon is-instagram" type="button" data-action="instagram" aria-label="인스타그램으로 공유">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5"></rect><circle cx="12" cy="12" r="4.1"></circle><circle class="cw-instagram-dot" cx="17.4" cy="6.8" r="1.1"></circle></svg>
+                    </button>
+                    <button class="cw-share-icon is-band" type="button" data-action="band-result" aria-label="크레와트 BAND 열기">
+                        <strong aria-hidden="true">B</strong>
+                    </button>
                 </div>
                 ${renderComparison(comparison)}
                 ${renderSpeedCard()}
                 ${detail}
+                <button class="cw-restart-button" type="button" data-action="restart">다시 테스트하기</button>
             </div>`;
         element('result-content').querySelector('[data-action="unlock-detail"]')?.addEventListener('click', handleUnlockDetail);
         element('result-content').querySelector('[data-action="open-band"]')?.addEventListener('click', () => window.open(bandTargetUrl, '_blank', 'noopener,noreferrer'));
         element('result-content').querySelector('[data-action="share"]')?.addEventListener('click', shareResult);
+        element('result-content').querySelector('[data-action="instagram"]')?.addEventListener('click', shareToInstagram);
+        element('result-content').querySelector('[data-action="band-result"]')?.addEventListener('click', handleResultBand);
         element('result-content').querySelector('[data-action="restart"]')?.addEventListener('click', startSurvey);
+    }
+
+    function handleResultBand() {
+        if (bandAuthConfigured && !bandAuthUser) {
+            beginBandLogin();
+            return;
+        }
+        window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
     }
 
     function handleUnlockDetail() {
@@ -748,6 +766,30 @@
         }
     }
 
+    async function shareToInstagram() {
+        const title = selectedMbti ? `평소 ${selectedMbti} → 크레 ${result.code}` : `나의 크레 MBTI는 ${result.code}`;
+        const text = `${title}\n${result.typeName}`;
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: `${title} | 크레와트`, text, url: SURVEY_URL });
+                return;
+            } catch (error) {
+                if (error?.name === 'AbortError') return;
+            }
+        }
+        try {
+            await navigator.clipboard.writeText(`${text}\n${SURVEY_URL}`);
+            toast('링크를 복사했어요. 인스타그램에서 공유해 주세요.');
+        } catch (_) {
+            window.prompt('인스타그램에 공유할 내용을 복사해주세요.', `${text}\n${SURVEY_URL}`);
+        }
+    }
+
+    function syncThemeColor() {
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#171819' : '#f4f1e9');
+    }
+
     function bindEvents() {
         element('start-button').addEventListener('click', startSurvey);
         element('question-back').addEventListener('click', previousQuestion);
@@ -775,6 +817,8 @@
             return;
         }
         bindEvents();
+        syncThemeColor();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', syncThemeColor);
         const start = element('start-button');
         start.disabled = false;
         start.querySelector('span').textContent = '테스트 시작';
