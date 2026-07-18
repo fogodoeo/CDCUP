@@ -191,6 +191,12 @@
         renderQuestion();
     }
 
+    function returnToIntro() {
+        pauseTimer();
+        activeTimer = null;
+        setScreen('intro-screen');
+    }
+
     function renderQuestion() {
         const question = questions[current];
         if (!question) return;
@@ -451,14 +457,14 @@
                 ${renderComparison(comparison)}
                 ${renderSpeedCard()}
                 ${detail}
-                <button class="cw-restart-button" type="button" data-action="restart">다시 테스트하기</button>
+                <button class="cw-restart-button" type="button" data-action="restart">메인으로 돌아가기</button>
             </div>`;
         element('result-content').querySelector('[data-action="unlock-detail"]')?.addEventListener('click', handleUnlockDetail);
         element('result-content').querySelector('[data-action="open-band"]')?.addEventListener('click', () => window.open(bandTargetUrl, '_blank', 'noopener,noreferrer'));
         element('result-content').querySelector('[data-action="share"]')?.addEventListener('click', shareResult);
         element('result-content').querySelector('[data-action="instagram"]')?.addEventListener('click', shareToInstagram);
         element('result-content').querySelector('[data-action="band-result"]')?.addEventListener('click', handleResultBand);
-        element('result-content').querySelector('[data-action="restart"]')?.addEventListener('click', startSurvey);
+        element('result-content').querySelector('[data-action="restart"]')?.addEventListener('click', returnToIntro);
     }
 
     function handleResultBand() {
@@ -651,17 +657,48 @@
     function updateBandUi() {
         const button = element('band-float');
         const label = element('band-float-label');
-        button.disabled = !bandAuthReady || !bandAuthConfigured;
-        button.hidden = !bandAuthReady || !bandAuthConfigured;
+        const note = element('band-entry-note');
+        button.disabled = !bandAuthReady;
+        button.hidden = false;
         label.textContent = !bandAuthReady
             ? 'BAND 확인 중'
             : !bandAuthConfigured
-                ? 'BAND 준비 중'
+                ? 'BAND로 시작'
                 : hasDetailedAccess()
-                    ? 'BAND 열기'
-                    : bandAuthUser ? 'BAND 가입 확인' : 'BAND 로그인';
+                    ? 'BAND 연결됨 · 테스트 시작'
+                    : bandAuthUser ? 'BAND 가입 후 시작' : 'BAND 로그인하고 시작';
+        if (note) {
+            note.textContent = !bandAuthReady
+                ? 'BAND 연결 상태를 확인하고 있어요'
+                : !bandAuthConfigured
+                    ? 'OAuth 승인 전 · 지금은 BAND 페이지로 연결돼요'
+                    : hasDetailedAccess()
+                        ? `${bandAuthUser.name || 'BAND 회원'}님 · 상세 결과까지 확인할 수 있어요`
+                        : bandAuthUser
+                            ? '대상 BAND 가입 후 상세 결과를 확인할 수 있어요'
+                            : 'BAND 로그인 시 상세 결과까지 확인할 수 있어요';
+        }
         button.setAttribute('aria-label', label.textContent);
         if (result && !element('result-screen').hidden) renderResult();
+    }
+
+    function handleBandEntry() {
+        if (!bandAuthReady) return;
+        if (!bandAuthConfigured) {
+            window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+            toast('OAuth 승인 전이라 BAND 페이지를 먼저 열었어요.');
+            return;
+        }
+        if (!bandAuthUser) {
+            beginBandLogin();
+            return;
+        }
+        if (!hasDetailedAccess()) {
+            window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+            toast('BAND 가입 후 돌아오면 상세 결과까지 확인할 수 있어요.');
+            return;
+        }
+        startSurvey();
     }
 
     async function initBandAuth() {
@@ -798,7 +835,7 @@
             showResult(true);
         });
         element('show-result').addEventListener('click', () => showResult(false));
-        element('band-float').addEventListener('click', () => bandAuthUser ? handleUnlockDetail() : beginBandLogin());
+        element('band-float').addEventListener('click', handleBandEntry);
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') pauseTimer();
             else {
@@ -821,7 +858,7 @@
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', syncThemeColor);
         const start = element('start-button');
         start.disabled = false;
-        start.querySelector('span').textContent = '테스트 시작';
+        start.querySelector('span').textContent = '바로 테스트하기';
         void loadConfig();
         if (IS_LOCAL_QA) {
             bandAuthReady = true;
