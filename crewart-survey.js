@@ -70,7 +70,6 @@
                 requestAnimationFrame(() => screen.classList.add('is-entering'));
             }
         });
-        element('band-float')?.classList.toggle('is-compact', screenId !== 'intro-screen');
         window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
@@ -328,47 +327,32 @@
     }
 
     function renderComparison(comparison) {
-        if (!selectedMbti) {
-            return `
-                <div class="cw-type-compare is-single">
-                    <div class="cw-type-card is-cre"><small>크레 앞의 나는</small><strong>${escapeHtml(result.code)}</strong></div>
-                </div>`;
-        }
+        if (!selectedMbti) return '';
         const changes = comparison.changes.length
             ? `<div class="cw-change-list">${comparison.changes.map(change => `
                 <div class="cw-change-row"><b>${change.from} → ${change.to}</b><span>${escapeHtml(change.message)}</span></div>`).join('')}</div>`
             : '<p class="cw-same-note">평소와 크레 앞의 내가 네 글자 모두 같아요.</p>';
         return `
-            <div class="cw-type-compare">
-                <div class="cw-type-card"><small>평소의 나</small><strong>${escapeHtml(selectedMbti)}</strong></div>
-                <div class="cw-type-arrow" aria-hidden="true">→</div>
-                <div class="cw-type-card is-cre"><small>크레 앞의 나</small><strong>${escapeHtml(result.code)}</strong></div>
-            </div>
-            ${changes}`;
+            <section class="cw-result-insight">
+                <header><h2>평소와 달라진 점</h2><span>${comparison.changes.length ? `${comparison.changes.length}개 축 변화` : '같은 유형'}</span></header>
+                ${changes}
+            </section>`;
     }
 
     function renderSpeedCard() {
         const valid = timingStats.validCount > 0;
         const total = valid ? formatSeconds(timingStats.totalMs) : '측정 안 됨';
         const median = valid ? formatSeconds(timingStats.medianMs) : '-';
+        const benchmark = Core.buildSpeedBenchmark(timingStats.medianMs, speedSamples());
         return `
             <section class="cw-result-section cw-speed-card">
                 <div class="cw-result-section-head">
                     <div><span>선택 속도</span><strong>${escapeHtml(timingStats.style.label)}</strong></div>
-                    <div class="cw-speed-number">${escapeHtml(total)}<small> 총 응답</small></div>
+                    <div class="cw-speed-number">${escapeHtml(median)}<small> 문항당</small></div>
                 </div>
                 <p class="cw-speed-copy">${escapeHtml(timingStats.style.copy)}</p>
-                <div class="cw-speed-meta"><span>문항당 중앙값 ${escapeHtml(median)}</span><span>유효 응답 ${timingStats.validCount} / ${questions.length}</span></div>
-            </section>`;
-    }
-
-    function renderBenchmarkCard() {
-        const benchmark = Core.buildSpeedBenchmark(timingStats.medianMs, speedSamples());
-        return `
-            <section class="cw-result-section cw-benchmark">
-                <span class="cw-benchmark-badge">${escapeHtml(benchmark.badge)}</span>
-                <p>${escapeHtml(benchmark.message)}</p>
-                <small>${benchmark.ready ? `현재 ${benchmark.sampleSize}명 표본 · 완료 응답만 비교` : `앞으로 ${benchmark.needed}명의 응답이 더 필요해요`}</small>
+                <div class="cw-speed-measure"><span>전체 응답 ${escapeHtml(total)}</span><span>유효 ${timingStats.validCount} / ${questions.length}</span></div>
+                <div class="cw-benchmark-inline"><b>${escapeHtml(benchmark.badge)}</b><span>${escapeHtml(benchmark.message)}</span></div>
             </section>`;
     }
 
@@ -419,10 +403,10 @@
     function renderLockedDetail() {
         const configured = bandAuthConfigured;
         const label = !configured
-            ? 'BAND 연결 준비 중'
+            ? '세부 결과 준비 중'
             : bandAuthUser ? '크레와트 BAND 가입하기' : 'BAND 가입하고 세부 분석 보기';
         const status = !configured
-            ? 'BAND OAuth 승인이 완료되면 바로 열립니다.'
+            ? 'BAND 인증 오픈과 함께 제공됩니다.'
             : bandAuthUser ? '가입 후 이 페이지로 돌아오면 자동으로 다시 확인해요.' : '가입 후 선택 근거와 기숙사 배정이 열려요.';
         return `
             <section class="cw-detail-gate">
@@ -440,26 +424,26 @@
 
     function renderResult() {
         const comparison = Core.buildMbtiComparison(selectedMbti, result.code);
-        const title = selectedMbti
-            ? `평소엔 ${selectedMbti},<br>크레 앞에서는 <strong>${result.code}</strong>`
-            : `크레 앞의 나는<br><strong>${result.code}</strong>`;
+        const typeFlow = selectedMbti
+            ? `<div class="cw-result-code-flow"><div><small>평소</small><strong>${escapeHtml(selectedMbti)}</strong></div><i aria-hidden="true">→</i><div class="is-cre"><small>크레 앞</small><strong>${escapeHtml(result.code)}</strong></div></div>`
+            : `<div class="cw-result-code-flow is-single"><div class="is-cre"><small>크레 앞의 나는</small><strong>${escapeHtml(result.code)}</strong></div></div>`;
         const detail = hasDetailedAccess() ? `${renderMemberDetail()}${renderHouseCard()}` : renderLockedDetail();
         element('result-content').innerHTML = `
             <div class="cw-result-wrap">
-                <header class="cw-result-top">
+                <section class="cw-result-poster">
                     <img class="cw-result-crest" src="assets/crewart-crest-v2.webp" width="720" height="838" alt="" aria-hidden="true">
-                    <p class="cw-eyebrow">MY CRE MBTI</p>
-                    <h1>${title}</h1>
-                    <p>${escapeHtml(result.typeName)} · ${escapeHtml(typeSummary(result.code))}</p>
-                </header>
+                    <p class="cw-poster-kicker">CREWART PERSONALITY TEST</p>
+                    ${typeFlow}
+                    <h1>${escapeHtml(result.typeName)}</h1>
+                    <p>${escapeHtml(typeSummary(result.code))}</p>
+                </section>
+                <div class="cw-result-actions is-poster-action">
+                    <button class="cw-primary-button cw-kakao-share" type="button" data-action="share"><img src="assets/kakaolink_btn_medium.png" width="20" height="20" alt=""><span>카카오톡 공유</span></button>
+                    <button class="cw-text-button" type="button" data-action="restart">다시 테스트</button>
+                </div>
                 ${renderComparison(comparison)}
                 ${renderSpeedCard()}
-                ${renderBenchmarkCard()}
                 ${detail}
-                <div class="cw-result-actions">
-                    <button class="cw-primary-button cw-kakao-share" type="button" data-action="share"><img src="assets/kakaolink_btn_medium.png" width="20" height="20" alt=""><span>카카오톡으로 공유</span><b aria-hidden="true">↗</b></button>
-                    <button class="cw-text-button" type="button" data-action="restart">다시 테스트하기</button>
-                </div>
             </div>`;
         element('result-content').querySelector('[data-action="unlock-detail"]')?.addEventListener('click', handleUnlockDetail);
         element('result-content').querySelector('[data-action="open-band"]')?.addEventListener('click', () => window.open(bandTargetUrl, '_blank', 'noopener,noreferrer'));
@@ -650,6 +634,7 @@
         const button = element('band-float');
         const label = element('band-float-label');
         button.disabled = !bandAuthReady || !bandAuthConfigured;
+        button.hidden = !bandAuthReady || !bandAuthConfigured;
         label.textContent = !bandAuthReady
             ? 'BAND 확인 중'
             : !bandAuthConfigured

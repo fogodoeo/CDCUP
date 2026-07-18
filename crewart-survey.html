@@ -10,11 +10,11 @@
     <title>CREWART PERSONALITY TEST</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260718-cre-mbti-v2">
+    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260718-cre-mbti-v3">
     <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
-    <script src="crewart-survey-core.js?v=20260718-cre-mbti-v2"></script>
-    <script src="crewart-survey.js?v=20260718-cre-mbti-v2" defer></script>
+    <script src="crewart-survey-core.js?v=20260718-cre-mbti-v3"></script>
+    <script src="crewart-survey.js?v=20260718-cre-mbti-v3" defer></script>
 </head>
 <body>
     <div class="cw-atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -24,12 +24,15 @@
             <div class="cw-cave-fog" aria-hidden="true"><i></i><i></i><i></i></div>
             <div class="cw-intro-content">
                 <img class="cw-crest" src="assets/crewart-crest-v2.webp" width="720" height="838" alt="크레와트 문장">
-                <h1>CREWART<br>PERSONALITY TEST</h1>
-                <p class="cw-intro-copy">20개의 선택 · 약 2분</p>
+                <h1><span>CREWART</span><small>PERSONALITY TEST</small></h1>
+                <p class="cw-intro-copy">20문항 · 약 2분</p>
                 <button class="cw-primary-button" id="start-button" type="button" disabled>
-                    <span>준비 중...</span><b aria-hidden="true">→</b>
+                    <span>준비 중...</span>
                 </button>
                 <small>입력 없이 바로 시작해요</small>
+                <button class="cw-band-entry" id="band-float" type="button" disabled hidden>
+                    <span aria-hidden="true">B</span><strong id="band-float-label">BAND 확인 중</strong>
+                </button>
             </div>
         </section>
 
@@ -52,14 +55,13 @@
 
         <section class="cw-screen cw-mbti" id="mbti-screen" hidden>
             <header class="cw-simple-head">
-                <p class="cw-eyebrow">마지막 하나</p>
-                <h1>평소 나의 MBTI는?</h1>
-                <p>크레 앞의 나와 비교해 드려요.</p>
+                <h1>평소 MBTI는?</h1>
+                <p>모르면 바로 결과를 볼 수 있어요.</p>
             </header>
             <div class="cw-mbti-grid" id="mbti-grid" aria-label="평소 MBTI 선택"></div>
             <div class="cw-mbti-actions">
                 <button class="cw-secondary-button" id="mbti-unknown" type="button">잘 모르겠어요</button>
-                <button class="cw-primary-button" id="show-result" type="button" disabled><span>결과 보기</span><b aria-hidden="true">→</b></button>
+                <button class="cw-primary-button" id="show-result" type="button" disabled><span>결과 보기</span></button>
             </div>
         </section>
 
@@ -67,10 +69,6 @@
             <div id="result-content"></div>
         </section>
     </main>
-
-    <button class="cw-band-float" id="band-float" type="button" disabled>
-        <span aria-hidden="true">B</span><strong id="band-float-label">BAND 확인 중</strong>
-    </button>
 
     <div class="cw-toast" id="toast" role="status" aria-live="polite"></div>
     <noscript>이 테스트를 이용하려면 자바스크립트를 켜주세요.</noscript>
