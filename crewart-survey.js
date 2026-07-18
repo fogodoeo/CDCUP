@@ -663,7 +663,7 @@
         label.textContent = !bandAuthReady
             ? 'BAND 확인 중'
             : !bandAuthConfigured
-                ? 'BAND로 시작'
+                ? 'BAND로 들어가기'
                 : hasDetailedAccess()
                     ? 'BAND 연결됨 · 테스트 시작'
                     : bandAuthUser ? 'BAND 가입 후 시작' : 'BAND 로그인하고 시작';
