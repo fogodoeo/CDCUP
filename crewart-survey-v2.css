@@ -46,10 +46,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
     place-items: center;
     overflow: hidden;
     background:
-        linear-gradient(180deg, rgba(6, 10, 14, .14), rgba(6, 10, 14, .72)),
-        url("assets/crewart-cave-mobile.webp") center / cover no-repeat;
+        radial-gradient(circle at 14% 12%, rgba(188, 79, 69, .13), transparent 28%),
+        radial-gradient(circle at 86% 14%, rgba(88, 125, 88, .12), transparent 28%),
+        radial-gradient(circle at 16% 88%, rgba(208, 160, 62, .12), transparent 30%),
+        radial-gradient(circle at 84% 86%, rgba(82, 110, 170, .13), transparent 30%),
+        var(--bg);
 }
-.cw-intro::before { position: absolute; inset: 0; background: radial-gradient(circle at 50% 38%, transparent 4%, rgba(4, 7, 10, .36) 58%, rgba(4, 7, 10, .8) 100%); content: ""; }
+.cw-intro::before { position: absolute; inset: 0; background: radial-gradient(circle at 50% 38%, transparent 4%, rgba(4, 7, 10, .16) 64%, rgba(4, 7, 10, .34) 100%); content: ""; }
 .cw-intro-content { position: relative; z-index: 2; width: 100%; transform: translateY(-1.5vh); text-align: center; }
 .cw-crest { display: block; width: min(39vw, 164px); height: auto; margin: 0 auto 18px; filter: drop-shadow(0 18px 34px rgba(0, 0, 0, .52)); }
 .cw-eyebrow { margin: 0 0 10px; color: var(--gold); font-size: 10px; font-weight: 850; letter-spacing: .18em; text-transform: uppercase; }
@@ -58,11 +61,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .cw-intro h1 small { display: block; margin-top: 10px; color: var(--gold); font-size: 11px; font-weight: 600; letter-spacing: .28em; }
 .cw-intro-copy { margin: 18px 0 18px; color: rgba(245, 242, 233, .7); font-size: 13px; }
 .cw-intro-content > small { display: block; margin-top: 10px; color: rgba(245, 242, 233, .5); font-size: 10px; }
-
-.cw-cave-fog { position: absolute; inset: 0; z-index: 1; overflow: hidden; pointer-events: none; }
-.cw-cave-fog i { position: absolute; bottom: -8%; left: -38%; width: 115%; height: 32%; border-radius: 50%; background: rgba(211, 222, 222, .2); filter: blur(35px); animation: cw-fog 18s ease-in-out infinite alternate; }
-.cw-cave-fog i:nth-child(2) { left: 25%; bottom: 1%; width: 105%; opacity: .55; animation-duration: 23s; animation-delay: -8s; }
-.cw-cave-fog i:nth-child(3) { left: -4%; bottom: 19%; width: 70%; height: 20%; opacity: .26; animation-duration: 28s; animation-delay: -14s; }
 
 .cw-primary-button,
 .cw-secondary-button,
@@ -250,11 +248,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 @keyframes cw-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes cw-question { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
-@keyframes cw-fog { from { transform: translate3d(-8%, 2%, 0) scale(1); } to { transform: translate3d(13%, -3%, 0) scale(1.08); } }
-
 @media (min-width: 680px) {
     .cw-screen { padding-right: 24px; padding-left: 24px; }
-    .cw-intro { min-height: calc(100svh - 32px); margin: 16px auto; border: 1px solid rgba(255,255,255,.09); border-radius: 28px; background: linear-gradient(180deg, rgba(6,10,14,.12), rgba(6,10,14,.7)), url("assets/crewart-cave-desktop.webp") center / cover no-repeat; box-shadow: var(--shadow); }
+    .cw-intro { min-height: calc(100svh - 32px); margin: 16px auto; border: 1px solid rgba(255,255,255,.09); border-radius: 28px; box-shadow: var(--shadow); }
     .cw-choice-button { min-height: 82px; }
     .cw-mbti-grid { gap: 9px; }
     .cw-mbti-option { min-height: 66px; font-size: 16px; }
@@ -290,28 +286,63 @@ html { background: var(--bg); }
 body {
     background:
         radial-gradient(circle at 20% 0, rgba(116, 98, 66, .055), transparent 30%),
+        repeating-linear-gradient(0deg, rgba(65, 54, 36, .014) 0 1px, transparent 1px 4px),
         linear-gradient(180deg, #f7f4ed, var(--bg));
     color: var(--ink);
 }
-.cw-atmosphere,
-.cw-cave-fog { display: none; }
+.cw-atmosphere { display: none; }
 .cw-screen { padding-right: 16px; padding-bottom: max(28px, calc(20px + env(safe-area-inset-bottom))); padding-left: 16px; }
 
 .cw-intro {
-    background: var(--bg);
+    isolation: isolate;
+    background:
+        linear-gradient(90deg, #bc4f45 0 25%, #587d58 25% 50%, #d0a03e 50% 75%, #526eaa 75%) top / 100% 4px no-repeat,
+        radial-gradient(circle at 9% 10%, rgba(188, 79, 69, .10), transparent 25%),
+        radial-gradient(circle at 91% 12%, rgba(88, 125, 88, .09), transparent 25%),
+        radial-gradient(circle at 10% 90%, rgba(208, 160, 62, .09), transparent 27%),
+        radial-gradient(circle at 90% 88%, rgba(82, 110, 170, .10), transparent 27%),
+        repeating-linear-gradient(0deg, rgba(65, 54, 36, .018) 0 1px, transparent 1px 5px),
+        var(--bg);
     color: var(--ink);
 }
 .cw-intro::before {
-    background: linear-gradient(rgba(244,241,233,.9), rgba(244,241,233,.96)), url("assets/crewart-cave-mobile.webp") center / cover no-repeat;
-    filter: grayscale(1);
-    opacity: .62;
+    inset: 13px;
+    border: 1px solid rgba(76, 68, 55, .18);
+    border-radius: 16px;
+    background:
+        linear-gradient(135deg, rgba(41,40,36,.055), transparent 14%) top left / 90px 90px no-repeat,
+        linear-gradient(315deg, rgba(41,40,36,.045), transparent 14%) bottom right / 90px 90px no-repeat;
+    box-shadow: inset 0 0 0 5px rgba(255,255,255,.16);
+    opacity: 1;
 }
-.cw-intro-content { transform: translateY(-1vh); }
-.cw-crest { width: min(42vw, 174px); margin-bottom: 18px; filter: drop-shadow(0 10px 18px rgba(56,49,37,.16)); }
+.cw-intro::after {
+    position: absolute;
+    top: 29px;
+    right: 29px;
+    bottom: 29px;
+    left: 29px;
+    z-index: 1;
+    border: 1px solid rgba(76, 68, 55, .08);
+    border-radius: 11px;
+    content: "";
+    pointer-events: none;
+}
+.cw-intro-content { padding: 52px 18px; transform: none; }
+.cw-crest { width: min(42vw, 174px); margin-bottom: 18px; filter: drop-shadow(0 8px 13px rgba(56,49,37,.13)); }
 .cw-intro h1 { text-shadow: none; }
 .cw-intro h1 span { color: var(--ink); }
 .cw-intro h1 small { color: #8e6a34; }
-.cw-intro-copy { color: var(--muted); }
+.cw-intro-copy { margin: 18px 0 20px; color: var(--muted); }
+.cw-intro-copy::after {
+    display: block;
+    width: 88px;
+    height: 3px;
+    margin: 17px auto 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #bc4f45 0 25%, #587d58 25% 50%, #d0a03e 50% 75%, #526eaa 75%);
+    content: "";
+    opacity: .82;
+}
 .cw-intro-content > small { color: #8d8980; }
 .cw-primary-button {
     border: 1px solid var(--ink);
@@ -525,14 +556,17 @@ body {
 @media (min-width: 680px) {
     .cw-intro {
         border-color: #d8d2c6;
-        background: var(--bg);
         box-shadow: var(--shadow);
     }
-    .cw-intro::before { background: linear-gradient(rgba(244,241,233,.9), rgba(244,241,233,.96)), url("assets/crewart-cave-desktop.webp") center / cover no-repeat; }
+    .cw-intro::before { inset: 17px; }
+    .cw-intro::after { top: 36px; right: 36px; bottom: 36px; left: 36px; }
 }
 
 @media (max-height: 650px) {
+    .cw-intro-content { padding: 28px 14px; }
     .cw-crest { width: 112px; margin-bottom: 10px; }
+    .cw-intro-copy { margin: 10px 0 14px; }
+    .cw-intro-copy::after { margin-top: 10px; }
     .cw-question-illustration { max-width: 242px; margin-top: 10px; }
     .cw-choice-list { margin-top: 9px; }
     .cw-choice-button { min-height: 58px; padding-top: 11px; padding-bottom: 11px; }
@@ -554,8 +588,18 @@ body {
     }
     html { background: var(--bg); }
     body { background: linear-gradient(180deg, #1c1d1e, var(--bg)); color: var(--ink); }
-    .cw-intro { background: var(--bg); }
-    .cw-intro::before { background: linear-gradient(rgba(23,24,25,.9), rgba(23,24,25,.96)), url("assets/crewart-cave-mobile.webp") center / cover no-repeat; opacity: .72; }
+    .cw-intro {
+        background:
+            linear-gradient(90deg, #bc4f45 0 25%, #587d58 25% 50%, #d0a03e 50% 75%, #526eaa 75%) top / 100% 4px no-repeat,
+            radial-gradient(circle at 9% 10%, rgba(188,79,69,.13), transparent 25%),
+            radial-gradient(circle at 91% 12%, rgba(88,125,88,.12), transparent 25%),
+            radial-gradient(circle at 10% 90%, rgba(208,160,62,.11), transparent 27%),
+            radial-gradient(circle at 90% 88%, rgba(82,110,170,.14), transparent 27%),
+            repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 1px, transparent 1px 5px),
+            var(--bg);
+    }
+    .cw-intro::before { border-color: rgba(236,231,220,.14); background: none; box-shadow: inset 0 0 0 5px rgba(255,255,255,.018); opacity: 1; }
+    .cw-intro::after { border-color: rgba(236,231,220,.065); }
     .cw-intro h1 small { color: #c9a76e; }
     .cw-intro-copy,
     .cw-intro-content > small { color: var(--muted); }
@@ -587,10 +631,6 @@ body {
     .cw-top-home { border-color: #4b4b4b; background: rgba(36,37,38,.93); box-shadow: 0 5px 16px rgba(0,0,0,.25); color: var(--ink); }
     .cw-top-home:hover,
     .cw-top-home:focus-visible { border-color: #77736b; box-shadow: 0 7px 20px rgba(0,0,0,.32); }
-}
-
-@media (prefers-color-scheme: dark) and (min-width: 680px) {
-    .cw-intro::before { background: linear-gradient(rgba(23,24,25,.9), rgba(23,24,25,.96)), url("assets/crewart-cave-desktop.webp") center / cover no-repeat; }
 }
 
 @media (prefers-reduced-motion: reduce) {
