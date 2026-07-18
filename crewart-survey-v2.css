@@ -349,7 +349,7 @@ body {
     -webkit-text-stroke: .35px var(--ink);
 }
 .cw-wordmark.is-pending { visibility: hidden; }
-.cw-wordmark.is-writing {
+.cw-intro h1 .cw-wordmark.is-writing {
     color: transparent;
     clip-path: inset(0 100% 0 0);
     animation:
