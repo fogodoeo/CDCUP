@@ -1291,12 +1291,22 @@ function _archiveSummary(snapshot) {
     const items = snapshot?.items || [];
     const sold = items.filter(item => ['완료', 'sold', '낙찰'].includes(String(item.status || '').trim()));
     const stageCounts = {};
+    const roundAmounts = {};
     items.forEach(item => {
         const meta = getItemAuctionMeta(item);
         const key = meta.auctionType === AUCTION_TYPES.TOURNAMENT
             ? (meta.tournamentStage === 2 ? '결승·3·4위전' : (meta.tournamentStage ? meta.tournamentStage + '강' : '토너먼트'))
             : auctionTypeLabel(meta.auctionType);
         stageCounts[key] = (stageCounts[key] || 0) + 1;
+        const company = String(item.company || '').trim();
+        if (company
+            && meta.auctionType === AUCTION_TYPES.TOURNAMENT
+            && [2, 4, 8, 16].includes(Number(meta.tournamentStage))
+            && ['완료', 'sold', '낙찰'].includes(String(item.status || '').trim())) {
+            const stage = String(meta.tournamentStage);
+            if (!roundAmounts[stage]) roundAmounts[stage] = {};
+            roundAmounts[stage][company] = (roundAmounts[stage][company] || 0) + _archiveWonAmount(item);
+        }
     });
     return {
         id: snapshot.id,
@@ -1305,7 +1315,8 @@ function _archiveSummary(snapshot) {
         itemCount: items.length,
         soldCount: sold.length,
         totalSoldAmount: sold.reduce((sum, item) => sum + _archiveWonAmount(item), 0),
-        stageCounts
+        stageCounts,
+        roundAmounts
     };
 }
 
@@ -1351,14 +1362,25 @@ async function _createAuctionArchive(title) {
     const summary = _archiveSummary(snapshot);
     const index = await _readArchiveIndex();
     index.unshift(summary);
+    const roundAmountRows = Object.entries(summary.roundAmounts || {})
+        .filter(([, amounts]) => amounts && Object.keys(amounts).length)
+        .map(([stage, amounts]) => ({
+            key: `tournament_round_amounts_${stage}`,
+            value: JSON.stringify(amounts)
+        }));
+    const version = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     await _sbFetch('config', {
         method: 'POST',
         headers: { ..._sbHeaders, 'Prefer': 'return=minimal,resolution=merge-duplicates' },
         body: JSON.stringify([
             { key: AUCTION_ARCHIVE_KEY_PREFIX + id, value: JSON.stringify(snapshot) },
-            { key: AUCTION_ARCHIVE_INDEX_KEY, value: JSON.stringify(index.slice(0, 100)) }
+            { key: AUCTION_ARCHIVE_INDEX_KEY, value: JSON.stringify(index.slice(0, 100)) },
+            ...roundAmountRows,
+            { key: RUNTIME_CONFIG_VERSION_KEY, value: version }
         ])
     });
+    _runtimeConfigCache = null;
+    _runtimeConfigCacheAt = 0;
     return summary;
 }
 
@@ -1416,6 +1438,10 @@ async function archiveAndResetAuction(title, pw) {
             tournament_bracket_8: JSON.stringify({ matches: {} }),
             tournament_bracket_4: JSON.stringify({ matches: {} }),
             tournament_bracket_2: JSON.stringify({ matches: {} }),
+            tournament_round_amounts_16: '{}',
+            tournament_round_amounts_8: '{}',
+            tournament_round_amounts_4: '{}',
+            tournament_round_amounts_2: '{}',
             battle_current_match: '',
             battle_state: ''
         });

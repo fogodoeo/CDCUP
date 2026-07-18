@@ -159,6 +159,24 @@
         return {};
     }
 
+    function storedStageAmounts(map, stage, expectedTeams) {
+        let parsed = null;
+        try {
+            parsed = JSON.parse(map?.[`tournament_round_amounts_${stage}`] || 'null');
+        } catch (_) {}
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+
+        const expected = new Set((expectedTeams || []).map(name => String(name || '').trim()).filter(Boolean));
+        const amounts = Object.entries(parsed).reduce((result, [name, value]) => {
+            const team = String(name || '').trim();
+            if (!team || (expected.size && !expected.has(team))) return result;
+            result[team] = parseAmount(value);
+            return result;
+        }, {});
+        if (expected.size && [...expected].some(team => amounts[team] === undefined)) return {};
+        return amounts;
+    }
+
     function buildRoundAmounts(map, items) {
         const result = { 16: {}, 8: {}, 4: {}, 2: {} };
         OFFICIAL_ROUND_RESULTS.forEach(entry => {
@@ -168,9 +186,12 @@
         [4, 2].forEach(stage => {
             const expectedTeams = configuredStageTeams(map || {}, stage);
             const current = sumStageItems(items || [], stage, expectedTeams);
+            const stored = storedStageAmounts(map || {}, stage, expectedTeams);
             result[stage] = Object.keys(current).length
                 ? current
-                : archivedStageAmounts(map || {}, stage, expectedTeams);
+                : (Object.keys(stored).length
+                    ? stored
+                    : archivedStageAmounts(map || {}, stage, expectedTeams));
         });
         return result;
     }
