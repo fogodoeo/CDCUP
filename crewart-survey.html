@@ -10,11 +10,11 @@
     <title>CREWART PERSONALITY TEST</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260718-cre-mbti-v5">
+    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260718-cre-mbti-v6">
     <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <script src="crewart-survey-core.js?v=20260718-cre-mbti-v4"></script>
-    <script src="crewart-survey.js?v=20260718-cre-mbti-v6" defer></script>
+    <script src="crewart-survey.js?v=20260718-cre-mbti-v7" defer></script>
 </head>
 <body>
     <div class="cw-atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -69,6 +69,17 @@
             <div id="result-content"></div>
         </section>
     </main>
+
+    <footer class="cw-persistent-footer" id="survey-footer" hidden>
+        <div class="cw-persistent-footer-inner">
+            <button class="cw-persistent-band" id="persistent-band-button" type="button" disabled>
+                <span aria-hidden="true">B</span>
+                <strong id="persistent-band-label">BAND 연결 확인 중</strong>
+            </button>
+            <small id="persistent-band-note">현재 테스트 내용을 저장하고 같은 화면으로 돌아와요.</small>
+            <button class="cw-persistent-home" id="persistent-home-button" type="button">크레와트 메인으로 돌아가기</button>
+        </div>
+    </footer>
 
     <div class="cw-toast" id="toast" role="status" aria-live="polite"></div>
     <noscript>이 테스트를 이용하려면 자바스크립트를 켜주세요.</noscript>

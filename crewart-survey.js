@@ -70,6 +70,7 @@
                 requestAnimationFrame(() => screen.classList.add('is-entering'));
             }
         });
+        updatePersistentActions();
         window.scrollTo({ top: 0, behavior: 'instant' });
     }
 
@@ -192,8 +193,23 @@
     }
 
     function returnToIntro() {
+        if (currentStage() !== 'intro' && !window.confirm('처음부터 다시 할까요?\n\n현재 테스트 진행 내용은 초기화되지만 BAND 연결 상태는 유지됩니다.')) return;
         pauseTimer();
         activeTimer = null;
+        questions = [];
+        answers = [];
+        responseTimings = [];
+        current = 0;
+        selectedMbti = '';
+        surveySessionId = '';
+        sessionCreatedAt = '';
+        assignedHouseKey = '';
+        result = null;
+        timingStats = null;
+        advancing = false;
+        lastSavedSignature = '';
+        try { sessionStorage.removeItem(RESUME_STORAGE_KEY); } catch (_) {}
+        element('result-content').replaceChildren();
         setScreen('intro-screen');
     }
 
@@ -457,14 +473,12 @@
                 ${renderComparison(comparison)}
                 ${renderSpeedCard()}
                 ${detail}
-                <button class="cw-restart-button" type="button" data-action="restart">메인으로 돌아가기</button>
             </div>`;
         element('result-content').querySelector('[data-action="unlock-detail"]')?.addEventListener('click', handleUnlockDetail);
         element('result-content').querySelector('[data-action="open-band"]')?.addEventListener('click', () => window.open(bandTargetUrl, '_blank', 'noopener,noreferrer'));
         element('result-content').querySelector('[data-action="share"]')?.addEventListener('click', shareResult);
         element('result-content').querySelector('[data-action="instagram"]')?.addEventListener('click', shareToInstagram);
         element('result-content').querySelector('[data-action="band-result"]')?.addEventListener('click', handleResultBand);
-        element('result-content').querySelector('[data-action="restart"]')?.addEventListener('click', returnToIntro);
     }
 
     function handleResultBand() {
@@ -679,7 +693,53 @@
                             : 'BAND 로그인 시 상세 결과까지 확인할 수 있어요';
         }
         button.setAttribute('aria-label', label.textContent);
+        updatePersistentActions();
         if (result && !element('result-screen').hidden) renderResult();
+    }
+
+    function updatePersistentActions() {
+        const footer = element('survey-footer');
+        const button = element('persistent-band-button');
+        const label = element('persistent-band-label');
+        const note = element('persistent-band-note');
+        if (!footer || !button || !label || !note) return;
+
+        const stage = currentStage();
+        footer.hidden = stage === 'intro';
+        if (footer.hidden) return;
+
+        button.disabled = !bandAuthReady;
+        if (!bandAuthReady) {
+            label.textContent = 'BAND 연결 확인 중';
+            note.textContent = '연결 상태를 확인하고 있어요.';
+        } else if (!bandAuthConfigured) {
+            label.textContent = '크레와트 BAND로 이동';
+            note.textContent = '현재는 BAND 페이지로 바로 연결돼요.';
+        } else if (!bandAuthUser) {
+            label.textContent = '현재 정보 저장하고 BAND 로그인';
+            note.textContent = '로그인 후 지금 보던 화면에서 그대로 이어져요.';
+        } else if (!hasDetailedAccess()) {
+            label.textContent = '크레와트 BAND 가입 이어서 하기';
+            note.textContent = '가입 후 돌아오면 연결 상태를 자동으로 확인해요.';
+        } else {
+            label.textContent = '크레와트 BAND로 이동';
+            note.textContent = `${bandAuthUser.name || 'BAND 회원'}님으로 연결되어 있어요.`;
+        }
+        button.setAttribute('aria-label', label.textContent);
+    }
+
+    function handlePersistentBand() {
+        if (!bandAuthReady) return;
+        if (!bandAuthConfigured) {
+            window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+            return;
+        }
+        if (!bandAuthUser) {
+            beginBandLogin();
+            return;
+        }
+        window.open(bandTargetUrl, '_blank', 'noopener,noreferrer');
+        if (!hasDetailedAccess()) toast('가입 후 이 화면으로 돌아오면 자동으로 확인해요.');
     }
 
     function handleBandEntry() {
@@ -836,15 +896,17 @@
         });
         element('show-result').addEventListener('click', () => showResult(false));
         element('band-float').addEventListener('click', handleBandEntry);
+        element('persistent-band-button').addEventListener('click', handlePersistentBand);
+        element('persistent-home-button').addEventListener('click', returnToIntro);
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') pauseTimer();
             else {
                 resumeTimer();
-                if (!element('result-screen').hidden) void refreshMembership();
+                if (bandAuthToken && bandAuthUser) void refreshMembership();
             }
         });
         window.addEventListener('focus', () => {
-            if (!element('result-screen').hidden) void refreshMembership();
+            if (bandAuthToken && bandAuthUser) void refreshMembership();
         });
     }
 
