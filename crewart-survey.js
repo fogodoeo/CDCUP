@@ -60,6 +60,27 @@
         toastTimer = setTimeout(() => target.classList.remove('is-visible'), 2600);
     }
 
+    let wordmarkFontReady;
+
+    function playWordmark() {
+        const wordmark = element('crewart-wordmark');
+        if (!wordmark) return;
+        if (!wordmarkFontReady) {
+            const fontLoad = document.fonts?.load
+                ? document.fonts.load('400 72px "Berkshire Swash"').catch(() => [])
+                : Promise.resolve([]);
+            wordmarkFontReady = Promise.race([
+                fontLoad,
+                new Promise(resolve => setTimeout(resolve, 1400))
+            ]);
+        }
+        void wordmarkFontReady.then(() => {
+            wordmark.classList.remove('is-pending', 'is-writing');
+            void wordmark.offsetWidth;
+            wordmark.classList.add('is-writing');
+        });
+    }
+
     function setScreen(screenId) {
         ['intro-screen', 'question-screen', 'mbti-screen', 'result-screen'].forEach(id => {
             const screen = element(id);
@@ -69,6 +90,7 @@
             if (active) {
                 screen.classList.remove('is-entering');
                 requestAnimationFrame(() => screen.classList.add('is-entering'));
+                if (id === 'intro-screen') playWordmark();
             }
         });
         updatePersistentActions();
@@ -947,6 +969,7 @@
         const start = element('start-button');
         start.disabled = false;
         start.querySelector('span').textContent = '바로 테스트하기';
+        playWordmark();
         void loadConfig();
         if (!BAND_INTEGRATION_ENABLED) {
             bandAuthReady = false;

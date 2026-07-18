@@ -8,23 +8,25 @@
     <meta property="og:title" content="CREWART PERSONALITY TEST">
     <meta property="og:description" content="20개의 선택으로 알아보는 크레 앞의 나">
     <title>CREWART PERSONALITY TEST</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Berkshire+Swash&display=swap" rel="stylesheet">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260719-cre-mbti-v11">
+    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260719-cre-mbti-v12">
     <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
     <script src="crewart-survey-core.js?v=20260718-cre-mbti-v4"></script>
-    <script src="crewart-survey.js?v=20260719-cre-mbti-v9" defer></script>
+    <script src="crewart-survey.js?v=20260719-cre-mbti-v12" defer></script>
 </head>
 <body>
     <div class="cw-atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
 
     <main class="cw-app" id="app">
         <section class="cw-screen cw-intro is-active" id="intro-screen">
-            <div class="cw-paper-motion" aria-hidden="true"><i></i><i></i><i></i></div>
             <div class="cw-intro-content">
                 <img class="cw-crest" src="assets/crewart-crest-v2.webp" width="720" height="838" alt="크레와트 문장">
-                <h1><span>CREWART</span><small>PERSONALITY TEST</small></h1>
+                <h1><span class="cw-wordmark is-pending" id="crewart-wordmark">CREWART</span><small>PERSONALITY TEST</small></h1>
                 <p class="cw-intro-copy">20문항 · 약 2분</p>
                 <button class="cw-primary-button" id="start-button" type="button" disabled>
                     <span>준비 중...</span>
