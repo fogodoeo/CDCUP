@@ -724,17 +724,17 @@
         const button = element('persistent-band-button');
         const label = element('persistent-band-label');
         const note = element('persistent-band-note');
-        if (!footer || !button || !label || !note) return;
+        const home = element('persistent-home-button');
+        if (!footer || !button || !label || !note || !home) return;
 
         const stage = currentStage();
-        footer.hidden = stage === 'intro';
+        home.hidden = stage === 'intro';
+        footer.hidden = stage === 'intro' || !BAND_INTEGRATION_ENABLED;
         if (footer.hidden) return;
 
-        button.hidden = !BAND_INTEGRATION_ENABLED;
-        note.hidden = !BAND_INTEGRATION_ENABLED;
-        footer.classList.toggle('is-band-hidden', !BAND_INTEGRATION_ENABLED);
-        button.disabled = !BAND_INTEGRATION_ENABLED || !bandAuthReady;
-        if (!BAND_INTEGRATION_ENABLED) return;
+        button.hidden = false;
+        note.hidden = false;
+        button.disabled = !bandAuthReady;
         if (!bandAuthReady) {
             label.textContent = 'BAND 연결 확인 중';
             note.textContent = '연결 상태를 확인하고 있어요.';
