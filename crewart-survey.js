@@ -2,7 +2,7 @@
     'use strict';
 
     const Core = window.CrewartSurveyCore;
-    const SURVEY_URL = 'https://cdcup.onrender.com/crewart-survey.html';
+    const SURVEY_URL = new URL('crewart-survey.html', document.baseURI).toString();
     const DEFAULT_BAND_URL = 'https://www.band.us/band/101992972/post';
     const BAND_OAUTH_API = 'https://creok.onrender.com/api/band-oauth';
     const KAKAO_JS_KEY = 'db7ffc8d6b9b7601b792ed69be4658fc';
@@ -909,7 +909,7 @@
                     content: {
                         title,
                         description: `${result.typeName} · 20개의 선택으로 확인한 크레 앞의 나`,
-                        imageUrl: 'https://cdcup.onrender.com/assets/crewart-cave-mobile.webp',
+                        imageUrl: new URL('assets/crewart-cave-mobile.webp', document.baseURI).toString(),
                         link: { mobileWebUrl: SURVEY_URL, webUrl: SURVEY_URL }
                     },
                     buttons: [{ title: '나도 테스트하기', link: { mobileWebUrl: SURVEY_URL, webUrl: SURVEY_URL } }]
