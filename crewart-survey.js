@@ -67,7 +67,7 @@
         if (!wordmark) return;
         if (!wordmarkFontReady) {
             const fontLoad = document.fonts?.load
-                ? document.fonts.load('400 72px "Berkshire Swash"').catch(() => [])
+                ? document.fonts.load('900 72px "Cinzel Decorative"').catch(() => [])
                 : Promise.resolve([]);
             wordmarkFontReady = Promise.race([
                 fontLoad,
@@ -93,6 +93,12 @@
                 if (id === 'intro-screen') playWordmark();
             }
         });
+        const introVideo = element('intro-video');
+        if (introVideo) {
+            const canPlay = screenId === 'intro-screen' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (canPlay) void introVideo.play().catch(() => {});
+            else introVideo.pause();
+        }
         updatePersistentActions();
         window.scrollTo({ top: 0, behavior: 'instant' });
     }
