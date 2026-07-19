@@ -692,8 +692,20 @@ body {
     height: calc(100% + 12px);
     object-fit: cover;
     object-position: center center;
-    filter: blur(2.2px) saturate(.88) contrast(1.04);
-    transform: scale(1.025);
+    opacity: 0;
+    filter: blur(4px) saturate(.84) contrast(1.05);
+    transform: scale(1.04);
+    pointer-events: none;
+    transition: opacity .36s ease;
+}
+.cw-intro-video.is-playing { opacity: 1; }
+.cw-intro-video::-webkit-media-controls,
+.cw-intro-video::-webkit-media-controls-panel,
+.cw-intro-video::-webkit-media-controls-start-playback-button,
+.cw-intro-video::-webkit-media-controls-overlay-play-button {
+    display: none !important;
+    -webkit-appearance: none;
+    opacity: 0;
 }
 .cw-intro::before {
     position: absolute;

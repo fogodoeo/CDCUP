@@ -81,6 +81,24 @@
         });
     }
 
+    function setupIntroVideo() {
+        const introVideo = element('intro-video');
+        if (!introVideo) return;
+        introVideo.controls = false;
+        introVideo.muted = true;
+        introVideo.defaultMuted = true;
+        introVideo.playsInline = true;
+        const reveal = () => introVideo.classList.add('is-playing');
+        const conceal = () => introVideo.classList.remove('is-playing');
+        introVideo.addEventListener('playing', reveal);
+        introVideo.addEventListener('error', conceal);
+        introVideo.addEventListener('emptied', conceal);
+        if (!introVideo.paused && introVideo.readyState >= 3) reveal();
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            void introVideo.play().then(reveal).catch(conceal);
+        }
+    }
+
     function setScreen(screenId) {
         ['intro-screen', 'question-screen', 'mbti-screen', 'result-screen'].forEach(id => {
             const screen = element(id);
@@ -96,7 +114,7 @@
         const introVideo = element('intro-video');
         if (introVideo) {
             const canPlay = screenId === 'intro-screen' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            if (canPlay) void introVideo.play().catch(() => {});
+            if (canPlay) void introVideo.play().then(() => introVideo.classList.add('is-playing')).catch(() => introVideo.classList.remove('is-playing'));
             else introVideo.pause();
         }
         updatePersistentActions();
@@ -969,6 +987,7 @@
             toast('테스트 데이터를 불러오지 못했어요.', true);
             return;
         }
+        setupIntroVideo();
         bindEvents();
         syncThemeColor();
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', syncThemeColor);
