@@ -10,7 +10,7 @@
     const AUTH_STORAGE_KEY = 'crewart_band_auth_v1';
     const RESUME_STORAGE_KEY = 'crewart_cre_mbti_resume_v1';
     const CONTENT_CONFIG_KEY = 'crewart_mbti_content_v1';
-    const BAND_INTEGRATION_ENABLED = false;
+    const BAND_INTEGRATION_ENABLED = true;
     const IS_LOCAL_QA = ['127.0.0.1', 'localhost'].includes(location.hostname);
     const IS_QA_MODE = IS_LOCAL_QA || new URLSearchParams(location.search).has('qa');
 
