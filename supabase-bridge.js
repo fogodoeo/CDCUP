@@ -1442,6 +1442,7 @@ async function archiveAndResetAuction(title, pw) {
             tournament_round_amounts_8: '{}',
             tournament_round_amounts_4: '{}',
             tournament_round_amounts_2: '{}',
+            bracket_view_round: '16',
             battle_current_match: '',
             battle_state: ''
         });

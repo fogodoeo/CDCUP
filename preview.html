@@ -1926,7 +1926,7 @@
 
         async function changeBracketScale(scale) {
             try {
-                await updateConfigs({ active_tournament: scale });
+                await updateConfigs({ active_tournament: scale, bracket_view_round: scale });
                 toast('대진표 크기가 ' + scale + '강으로 변경되었습니다.');
                 document.getElementById('bracket-active-select').value = scale;
                 frame.contentWindow.location.reload();
@@ -1935,7 +1935,9 @@
 
         async function changeActiveTournament(val) {
             try {
-                await updateConfigs({ active_tournament: val });
+                const payload = { active_tournament: val };
+                if (val !== 'none') payload.bracket_view_round = val;
+                await updateConfigs(payload);
                 toast('송출 모드가 변경되었습니다: ' + (val === 'none' ? '비송출' : val + '강 송출'));
                 frame.contentWindow.location.reload();
             } catch(err) { toast('변경 실패: ' + err.message); }
@@ -3402,7 +3404,9 @@
         async function tChangeActive(val) {
             try {
                 tActiveTournament = val;
-                await updateConfigs({ active_tournament: val });
+                const payload = { active_tournament: val };
+                if (val !== 'none') payload.bracket_view_round = val;
+                await updateConfigs(payload);
                 toast('송출 모드 변경: ' + (val === 'none' ? '비송출' : (val === '2' ? '결승·3·4위전 송출' : val + '강 송출')));
             } catch (err) { toast('송출 모드 갱신 실패: ' + err.message); }
         }
