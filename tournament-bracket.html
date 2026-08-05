@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>2026 CDCUP 공식 토너먼트 대진표</title>
   <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
-  <script src="cdcup-tournament-data.js?v=20260718-stage-amounts-v1"></script>
+  <script src="cdcup-tournament-data.js?v=20260805-season2-wildcard-v1"></script>
   <style>
     @font-face{font-family:Pretendard;src:local("Pretendard");font-weight:100 900}
     :root{
@@ -170,35 +170,44 @@
     }
     function buildTournamentModel(map,items){
       const roundAmounts=CdcupTournamentData.buildRoundAmounts(map||{},items||[]);
+      const legacy=CdcupTournamentData.isLegacySeason(map||{});
+      const stored16=CdcupTournamentData.parseBracket(map||{},16).matches||{};
       const stored8=CdcupTournamentData.parseBracket(map||{},8).matches||{};
       const stored4=CdcupTournamentData.parseBracket(map||{},4).matches||{};
       const stored2=CdcupTournamentData.parseBracket(map||{},2).matches||{};
       const officialR16=CdcupTournamentData.ROUND_OF_16_MATCHUPS;
       const officialQf=CdcupTournamentData.QUARTERFINAL_MATCHUPS;
-      const r16=BRACKET_R16_ORDER.map(([left,right],index)=>{
-        const match=pairMatch(officialR16,left,right);
+      const r16Source=legacy
+        ? BRACKET_R16_ORDER.map(([left,right])=>pairMatch(officialR16,left,right))
+        : Array.from({length:8},(_,index)=>stored16[`16_${index+1}`]||{left:'',right:''});
+      const r16=r16Source.map((match,index)=>{
         return {
           id:`r16-${index+1}`,stage:16,label:`16강 ${index+1}경기`,
           a:match.left,ap:CdcupTournamentData.roundAmount(roundAmounts,match.left,16),
           b:match.right,bp:CdcupTournamentData.roundAmount(roundAmounts,match.right,16),
-          w:amountWinner(match,roundAmounts,16)
+          w:legacy?amountWinner(match,roundAmounts,16):savedOrAmountWinner(match,roundAmounts,16)
         };
       });
-      const quarterfinals=BRACKET_QF_ORDER.map(([left,right],index)=>{
-        const official=pairMatch(officialQf,left,right);
-        const saved=stored8[`8_${officialQf.indexOf(official)+1}`]||{};
+      const r16Winners=r16.map(match=>match.w);
+      const qfSource=legacy ? BRACKET_QF_ORDER.map(([left,right])=>pairMatch(officialQf,left,right)) : Array.from({length:4},(_,index)=>({
+        left:r16Winners[index*2]||'',right:r16Winners[index*2+1]||''
+      }));
+      const quarterfinals=qfSource.map((fallback,index)=>{
+        const official=legacy?pairMatch(officialQf,fallback.left,fallback.right):fallback;
+        const savedIndex=legacy?officialQf.indexOf(official)+1:index+1;
+        const saved=stored8[`8_${savedIndex}`]||{};
         const match={...saved,left:saved.left||official.left,right:saved.right||official.right};
         return {
           id:`r8-${index+1}`,stage:8,label:`8강 ${index+1}경기`,
           a:match.left,ap:CdcupTournamentData.roundAmount(roundAmounts,match.left,8),
           b:match.right,bp:CdcupTournamentData.roundAmount(roundAmounts,match.right,8),
-          w:amountWinner(match,roundAmounts,8)
+          w:legacy?amountWinner(match,roundAmounts,8):savedOrAmountWinner(match,roundAmounts,8)
         };
       });
       const qfWinners=quarterfinals.map(match=>match.w).filter(Boolean);
       const semifinalDefaults=[
-        {left:qfWinners[0]||'베누스',right:qfWinners[1]||'히꼬'},
-        {left:qfWinners[2]||'비송',right:qfWinners[3]||'자몽'}
+        {left:qfWinners[0]||(legacy?'베누스':''),right:qfWinners[1]||(legacy?'히꼬':'')},
+        {left:qfWinners[2]||(legacy?'비송':''),right:qfWinners[3]||(legacy?'자몽':'')}
       ];
       const semifinals=[0,1].map(index=>{
         const match=stageMatch(stored4,stored8,`4_${index+1}`,semifinalDefaults[index]);

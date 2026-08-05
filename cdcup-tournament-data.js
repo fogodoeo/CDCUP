@@ -179,10 +179,16 @@
 
     function buildRoundAmounts(map, items) {
         const result = { 16: {}, 8: {}, 4: {}, 2: {} };
-        OFFICIAL_ROUND_RESULTS.forEach(entry => {
-            result[16][entry.name] = entry.round16;
-            if (entry.round8 !== undefined) result[8][entry.name] = entry.round8;
-        });
+        if (isLegacySeason(map)) {
+            OFFICIAL_ROUND_RESULTS.forEach(entry => {
+                result[16][entry.name] = entry.round16;
+                if (entry.round8 !== undefined) result[8][entry.name] = entry.round8;
+            });
+        } else {
+            [16, 8].forEach(stage => {
+                result[stage] = sumStageItems(items || [], stage, []);
+            });
+        }
         [4, 2].forEach(stage => {
             const expectedTeams = configuredStageTeams(map || {}, stage);
             const current = sumStageItems(items || [], stage, expectedTeams);
@@ -194,6 +200,11 @@
                     : archivedStageAmounts(map || {}, stage, expectedTeams));
         });
         return result;
+    }
+
+    function isLegacySeason(map) {
+        const season = Number.parseInt(map?.tournament_season, 10);
+        return !Number.isFinite(season) || season < 2;
     }
 
     function teamTotal(roundAmounts, name) {
@@ -223,6 +234,7 @@
         configuredStageTeams,
         archivedStageAmounts,
         buildRoundAmounts,
+        isLegacySeason,
         teamTotal,
         allTeamTotals
     });

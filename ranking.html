@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>종합 순위표 | CDCUP</title>
     <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
-    <script src="cdcup-tournament-data.js?v=20260718-stage-amounts-v1"></script>
+    <script src="cdcup-tournament-data.js?v=20260805-season2-wildcard-v1"></script>
     <script src="event-modules.js?v=20260710-crebti3"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -481,6 +481,7 @@
         let tournamentStageAmounts = {};
         let latestRankingMap = {};
         let activeFilter = 'all';
+        let legacyOfficialMode = true;
 
         const {
             OFFICIAL_ROUND_RESULTS,
@@ -623,7 +624,7 @@
         }
 
         function officialPrice(name, round) {
-            return CdcupTournamentData.officialPrice(name, round);
+            return legacyOfficialMode ? CdcupTournamentData.officialPrice(name, round) : undefined;
         }
 
         function winnerByOfficialPrice(match, round) {
@@ -653,19 +654,24 @@
         }
 
         function renderRoundViews(map) {
-            const officialMap = Object.fromEntries(OFFICIAL_ROUND_RESULTS.map(entry => [entry.name, entry]));
+            const officialMap = Object.fromEntries((legacyOfficialMode ? OFFICIAL_ROUND_RESULTS : []).map(entry => [entry.name, entry]));
             const rowMap = Object.fromEntries(allRows.map(row => [row.name, row]));
+            const storedRound16 = parseBracket(map || {}, 16).matches || {};
             const stored = parseBracket(map || {}, 8).matches || {};
             const storedSemifinal = parseBracket(map || {}, 4).matches || {};
             const storedFinalStage = parseBracket(map || {}, 2).matches || {};
-            const quarterfinals = QUARTERFINAL_MATCHUPS.map((item, index) => {
+            const round16Matches = legacyOfficialMode ? ROUND_OF_16_MATCHUPS : Array.from({ length: 8 }, (_, index) => storedRound16['16_' + (index + 1)] || { left: '', right: '' });
+            const round16Winner = match => (match?.winner === 'left' || match?.winner === 'right') ? match[match.winner] : winnerByStageAmount(match, 16);
+            const round16Winners = round16Matches.map(round16Winner);
+            const quarterfinalDefaults = legacyOfficialMode ? QUARTERFINAL_MATCHUPS : Array.from({ length: 4 }, (_, index) => ({ left: round16Winners[index * 2] || '', right: round16Winners[index * 2 + 1] || '' }));
+            const quarterfinals = quarterfinalDefaults.map((item, index) => {
                 const saved = stored['8_' + (index + 1)] || {};
                 return { ...saved, left: saved.left || item.left, right: saved.right || item.right };
             });
 
             const storedWinner = match => match?.winner === 'left' || match?.winner === 'right' ? (match[match.winner] || '') : '';
             const stageWinner = (match, round) => storedWinner(match) || winnerByStageAmount(match, round);
-            const qfWinners = quarterfinals.map(match => storedWinner(match) || winnerByOfficialPrice(match, 8));
+            const qfWinners = quarterfinals.map(match => storedWinner(match) || (legacyOfficialMode ? winnerByOfficialPrice(match, 8) : winnerByStageAmount(match, 8)));
             const validQualifiedMatch = match => match && [match.left, match.right].filter(Boolean).every(team => qfWinners.includes(team));
             const semifinals = [0, 1].map(index => {
                 const candidate = storedSemifinal['4_' + (index + 1)] || {};
@@ -715,7 +721,7 @@
             const stageMatchMarkup = (match, round, index) => {
                 let winner = storedWinner(match);
                 if (round === 16) {
-                    winner = winnerByOfficialPrice(match, 16);
+                    winner = legacyOfficialMode ? winnerByOfficialPrice(match, 16) : (winner || winnerByStageAmount(match, 16));
                 } else if (round === 8 && !winner) {
                     winner = winnerByOfficialPrice(match, 8);
                 } else if (!winner) {
@@ -742,7 +748,7 @@
                 </article>`;
             };
 
-            document.getElementById('round-content-16').innerHTML = ROUND_OF_16_MATCHUPS.map((match, index) => stageMatchMarkup(match, 16, index)).join('');
+            document.getElementById('round-content-16').innerHTML = round16Matches.map((match, index) => stageMatchMarkup(match, 16, index)).join('');
             document.getElementById('round-content-8').innerHTML = quarterfinals.map((match, index) => stageMatchMarkup(match, 8, index)).join('');
             document.getElementById('round-content-4').innerHTML = `<div class="qualified-strip"><span class="qualified-strip-label">4강 진출 확정</span>${qfWinners.map(name => `<span class="qualified-team">${escapeHtml(name)} · ${escapeHtml(englishName(name))}</span>`).join('')}</div>` + semifinals.map((match, index) => stageMatchMarkup(match, 4, index)).join('');
             document.getElementById('round-content-2').innerHTML = stageMatchMarkup(finalMatch, 2, 0) + stageMatchMarkup(thirdMatch, 2, 1);
@@ -932,6 +938,7 @@
                     getBroadcastItemsCached(false, 60000)
                 ]);
                 latestRankingMap = map || {};
+                legacyOfficialMode = CdcupTournamentData.isLegacySeason(map || {});
                 const eventModule = applyAuctionEventModule(map || {});
                 if (eventModule.id === 'crewart') {
                     renderCrewartRanking(map || {}, items || []);
@@ -952,7 +959,7 @@
                 document.querySelector('.board-title span').textContent = '업체를 선택하면 라운드별 경기 여정을 볼 수 있습니다.';
                 document.querySelector('.board-foot').innerHTML = '<span>※ 최종 도달 라운드 → 토너먼트 낙찰금 순 · 일반 경매는 순위 미반영</span><span>2026 CDCUP OFFICIAL STANDINGS</span>';
                 const logos = teamLogoMap(map || {});
-                const officialMap = Object.fromEntries(OFFICIAL_ROUND_RESULTS.map(entry => [entry.name, entry]));
+                const officialMap = Object.fromEntries((legacyOfficialMode ? OFFICIAL_ROUND_RESULTS : []).map(entry => [entry.name, entry]));
                 const isSold = item => ['완료', 'sold', '낙찰'].includes(String(item.status || '').trim());
                 const tournamentItems = (items || []).filter(isTournamentAuctionItem);
                 const amounts = {};
@@ -968,14 +975,14 @@
                     amounts[name] = (amounts[name] || 0) + price;
                 });
 
-                const qualifiedTeams = new Set(QUARTERFINAL_MATCHUPS.map(match => winnerByOfficialPrice(match, 8)).filter(Boolean));
+                const qualifiedTeams = new Set((legacyOfficialMode ? QUARTERFINAL_MATCHUPS.map(match => winnerByOfficialPrice(match, 8)) : Object.values(parseBracket(map || {}, 4).matches || {}).flatMap(match => [match?.left, match?.right])).filter(Boolean));
                 const matchWinnerName = match => match && (match.winner === 'left' || match.winner === 'right') ? match[match.winner] : '';
                 const cleanStageBracket = scale => {
                     const bracket = parseBracket(map || {}, scale);
                     const matches = {};
                     Object.entries(bracket.matches || {}).forEach(([key, match]) => {
                         const teams = [match?.left, match?.right].filter(Boolean);
-                        if (!teams.length || !teams.every(team => qualifiedTeams.has(team))) return;
+                        if (!teams.length || (qualifiedTeams.size && !teams.every(team => qualifiedTeams.has(team)))) return;
                         const clean = { ...match };
                         const round = Number.parseInt(String(key).split('_')[0], 10) || scale;
                         const inferred = winnerByStageAmount(clean, round);
@@ -1021,7 +1028,7 @@
                 const phases = { 16: phaseResults(parseBracket(map || {}, 16), 16), 8: phaseResults(parseBracket(map || {}, 8), 8), 4: phaseResults(semifinalOnlyBracket, 4), 2: phaseResults(stage2Bracket, 2) };
 
                 // 공식 기록을 대진표 데이터와 합친다. 8강 금액이 있는 팀은 16강 통과 팀이다.
-                OFFICIAL_ROUND_RESULTS.forEach(entry => {
+                (legacyOfficialMode ? OFFICIAL_ROUND_RESULTS : []).forEach(entry => {
                     phases[16][entry.name] = entry.round8 !== undefined
                         ? { participated: true, reached: 8, eliminated: null, champion: false }
                         : { participated: true, reached: 16, eliminated: 16, champion: false };
@@ -1034,7 +1041,7 @@
                     }
                 });
 
-                const names = new Set([...Object.keys(phases[16]), ...Object.keys(phases[8]), ...Object.keys(phases[4]), ...Object.keys(phases[2]), ...OFFICIAL_ROUND_RESULTS.map(entry => entry.name)]);
+                const names = new Set([...Object.keys(phases[16]), ...Object.keys(phases[8]), ...Object.keys(phases[4]), ...Object.keys(phases[2]), ...(legacyOfficialMode ? OFFICIAL_ROUND_RESULTS.map(entry => entry.name) : [])]);
                 tournamentItems.forEach(item => { if (item.company) names.add(String(item.company).trim()); });
                 sideAuctionRows = (items || []).filter(item => !isTournamentAuctionItem(item) && ['완료','sold','낙찰','유찰'].includes(String(item.status || '').trim()))
                     .sort((a,b) => (Number(a.num)||0) - (Number(b.num)||0));

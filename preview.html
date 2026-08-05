@@ -482,6 +482,12 @@
         /* ══ 3P Tournament Dashboard ══ */
         .tournament-dashboard { display: none; width: 100%; }
         .tournament-dashboard.active { display: block; }
+        .t-rule-banner { margin: 12px 0 14px; padding: 14px 16px; border: 1px solid #bfdbfe; border-radius: 12px; background: #eff6ff; color: #1e3a8a; }
+        .t-rule-banner strong { display: block; font-size: 14px; }
+        .t-rule-banner span { display: block; margin-top: 4px; font-size: 12px; line-height: 1.5; }
+        .t-wildcard-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+        .t-wildcard-chip { padding: 5px 8px; border-radius: 999px; background: #fff; border: 1px solid #bfdbfe; font-size: 11px; font-weight: 700; color: #334155; }
+        .t-wildcard-chip.in { color: #166534; border-color: #86efac; background: #f0fdf4; }
 
         .t-header {
             display: flex; justify-content: space-between; align-items: center;
@@ -1061,6 +1067,12 @@
                     <a class="t-btn" href="ranking.html?ceremony=1" target="_blank" rel="noopener" style="text-decoration:none;">시상식 화면</a>
                 </div>
             </div>
+
+            <section class="t-rule-banner" aria-label="2회차 와일드카드 규칙">
+                <strong>2회차 16강 · 패자 와일드카드 4팀</strong>
+                <span>각 1:1 경기 승자 8팀은 진출하고, 패자 8팀 중 16강 낙찰합계가 높은 4팀도 다음 라운드에 진출합니다.</span>
+                <div class="t-wildcard-list" id="t-wildcard-list"><span class="t-wildcard-chip">16강 결과 집계 전</span></div>
+            </section>
 
             <!-- 참가 팀 풀 -->
             <div class="t-pool-title">
@@ -2710,6 +2722,7 @@
         let tItemSelections = {};
         let tItemsPerTeam = { 16: 4, 8: 4, 4: 3, 2: 3 };
         let tMatchItemsPerTeam = { 16: {}, 8: {}, 4: {}, 2: {} };
+        let tWildcardCount = 4;
 
         function tStageMatchCount(round) {
             return Number(round) === 2 ? 2 : Number(round) / 2;
@@ -2743,6 +2756,7 @@
             try {
                 const map = await getConfigMap();
                 if (map) {
+                    tWildcardCount = Math.max(1, Number.parseInt(map.tournament_wildcard_count, 10) || 4);
                     [16, 8, 4, 2].forEach(s => {
                         const k = 'tournament_bracket_' + s;
                         if (map[k]) try { tBrackets[s] = JSON.parse(map[k]); } catch(e){}
@@ -2789,6 +2803,7 @@
             try {
                 const items = await getItems();
                 tAllItems = items || [];
+                tRenderWildcardStandings();
                 const teams = [...new Set((items || []).filter(tIsCurrentStageItem).map(i => i.company).filter(Boolean))];
                 const pool = document.getElementById('t-team-pool');
                 if (teams.length === 0) {
@@ -2948,6 +2963,34 @@
         function tRequiredItemCount() {
             const value = Number.parseInt(tItemsPerTeam[tScale], 10);
             return Number.isInteger(value) && value > 0 ? Math.min(value, 99) : 1;
+        }
+
+        function tRenderWildcardStandings() {
+            const target = document.getElementById('t-wildcard-list');
+            if (!target) return;
+            const sold = new Set(['완료', 'sold', '낙찰']);
+            const totals = {};
+            (tAllItems || []).forEach(item => {
+                const meta = getItemAuctionMeta(item);
+                const company = String(item.company || '').trim();
+                if (company && meta.auctionType === 'tournament' && Number(meta.tournamentStage) === 16 && sold.has(String(item.status || '').trim())) {
+                    totals[company] = (totals[company] || 0) + (Number.parseFloat(String(item.sold_price ?? item.soldPrice ?? '').replace(/,/g, '')) || 0);
+                }
+            });
+            const losers = [];
+            for (let index = 1; index <= 8; index++) {
+                const match = tGetMatch(16, '16_' + index);
+                let winner = match.winner === 'left' || match.winner === 'right' ? match[match.winner] : '';
+                if (!winner && match.left && match.right && totals[match.left] !== totals[match.right]) {
+                    winner = (totals[match.left] || 0) > (totals[match.right] || 0) ? match.left : match.right;
+                }
+                const loser = winner ? (winner === match.left ? match.right : match.left) : '';
+                if (loser) losers.push({ name: loser, amount: totals[loser] || 0 });
+            }
+            losers.sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name, 'ko'));
+            target.innerHTML = losers.length
+                ? losers.map((team, index) => `<span class="t-wildcard-chip ${index < tWildcardCount ? 'in' : ''}">${index < tWildcardCount ? 'WC ' + (index + 1) : index + 1 + '위'} · ${tEsc(team.name)} ${team.amount.toLocaleString('ko-KR')}만원</span>`).join('')
+                : '<span class="t-wildcard-chip">16강 결과 집계 전</span>';
         }
 
         function tRequiredItemCountForMatch(scale, matchIndex) {
@@ -3350,6 +3393,7 @@
             m.winner = (m.winner === slot) ? '' : slot;
             tPropagate(tScale, mk);
             tRenderTree();
+            if (String(mk).startsWith('16_')) tRenderWildcardStandings();
 
         }
 
