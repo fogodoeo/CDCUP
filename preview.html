@@ -1002,6 +1002,13 @@
                         <input type="range" id="blind-totals-opacity-input" min="0" max="100" step="5" value="0" oninput="previewBlindTotalsOpacity(this.value)" onchange="updateBlindTotalsOpacity(this.value)" onwheel="wheelBlindTotalsOpacity(event)" style="width:86px; accent-color:#d9b05c;">
                         <strong id="blind-totals-opacity-value" style="min-width:32px; font-size:11px; color:var(--text-muted);">0%</strong>
                     </div>
+                    <div class="switch-container" id="toggle-blind-totals-display-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">팀내역 표시:</span>
+                        <select id="blind-totals-display-select" onchange="updateBlindTotalsDisplayMode(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
+                            <option value="pages">6팀씩 5초 순환</option>
+                            <option value="ticker">한 줄 자막</option>
+                        </select>
+                    </div>
                     <div class="switch-container" id="toggle-bracket-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">송출 모드:</span>
                         <select id="bracket-active-select" onchange="changeActiveTournament(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
@@ -1274,6 +1281,7 @@
                 setDisplay('toggle-event-match-show-group', !isCrewart);
                 setDisplay('toggle-blind-totals-font-group', !isCrewart);
                 setDisplay('toggle-blind-totals-opacity-group', !isCrewart);
+                setDisplay('toggle-blind-totals-display-group', !isCrewart);
                 setDisplay('toggle-live-bidders-show-group', !isCrewart);
                 setDisplay('toggle-live-bidders-switch-group', !isCrewart);
                 setDisplay('toggle-live-bidders-mode-group', !isCrewart);
@@ -1384,6 +1392,7 @@
             document.getElementById('toggle-bracket-live-opacity-group').style.display = 'none';
             document.getElementById('toggle-blind-totals-font-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-blind-totals-opacity-group').style.display = isInitialCrewart ? 'none' : '';
+            document.getElementById('toggle-blind-totals-display-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('bracket-coords').style.display = '';
             document.getElementById('bracket-live-coords').style.display = 'none';
             document.getElementById('bracket-title-coords').style.display = 'none'; // Hidden per user request
@@ -1554,6 +1563,21 @@
         function updateBlindTotalsOpacity(val) {
             previewBlindTotalsOpacity(val);
             saveCoordinates(false);
+        }
+
+        async function updateBlindTotalsDisplayMode(value) {
+            const mode = value === 'ticker' ? 'ticker' : 'pages';
+            try {
+                await updateConfigs({
+                    blind_totals_display_mode: mode,
+                    blind_totals_page_size: '6',
+                    blind_totals_page_interval: '5'
+                });
+                frame.contentWindow.postMessage({ type: 'forceRefresh' }, '*');
+                toast(mode === 'ticker' ? '팀 실시간 내역을 한 줄 자막으로 표시합니다.' : '팀 실시간 내역을 6팀씩 5초 간격으로 순환합니다.');
+            } catch (error) {
+                toast('팀내역 표시 방식 저장 실패: ' + error.message);
+            }
         }
 
         function wheelBlindTotalsOpacity(event) {
@@ -1745,6 +1769,8 @@
                     if (blindFontInput) blindFontInput.value = elements.blind_totals.fontSize;
                     const blindOpacityInput = document.getElementById('blind-totals-opacity-input');
                     if (blindOpacityInput) { blindOpacityInput.value = elements.blind_totals.opacity; previewBlindTotalsOpacity(elements.blind_totals.opacity); }
+                    const blindDisplaySelect = document.getElementById('blind-totals-display-select');
+                    if (blindDisplaySelect) blindDisplaySelect.value = cfg.blind_totals_display_mode === 'ticker' ? 'ticker' : 'pages';
 
                     // 실시간 입찰자 설정 팝업 데이터 로딩
                     const liveBiddersShow = cfg.live_bidders_show !== undefined ? String(cfg.live_bidders_show) : '0';

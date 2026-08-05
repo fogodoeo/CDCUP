@@ -2870,6 +2870,15 @@
             overflow: visible;
             position: relative;
         }
+        #blind-team-total-overlay.ticker-mode .blind-total-head { padding-bottom: calc(var(--blind-total-fs) * 0.28); }
+        #blind-team-total-overlay.ticker-mode .blind-total-list { display: block; overflow: hidden; width: 100%; white-space: nowrap; }
+        .blind-total-ticker-track { display: inline-flex; align-items: center; width: max-content; animation: blind-total-ticker-scroll 32s linear infinite; will-change: transform; }
+        .blind-total-ticker-group { display: inline-flex; align-items: center; gap: calc(var(--blind-total-fs) * 1.1); padding-right: calc(var(--blind-total-fs) * 1.1); }
+        .blind-total-ticker-item { display: inline-flex; align-items: baseline; gap: calc(var(--blind-total-fs) * 0.32); padding: calc(var(--blind-total-fs) * 0.35) calc(var(--blind-total-fs) * 0.55); border: 1px solid rgba(217, 176, 92, 0.24); border-radius: 999px; background: rgba(8, 13, 24, 0.82); color: #f8fafc; }
+        .blind-total-ticker-item b { color: #d9b05c; font-variant-numeric: tabular-nums; }
+        .blind-total-ticker-item strong { font-weight: 850; }
+        .blind-total-ticker-item small { color: #94a3b8; font-size: 0.72em; }
+        @keyframes blind-total-ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         .blind-total-row {
             display: flex;
             align-items: center;
@@ -5806,7 +5815,10 @@
             prevTotals: {},     // team → 이전 총합
             frozen: false,      // 팝업 표시 중 리더보드 동결
             pendingData: null,  // 동결 중 대기 데이터
-            pendingMap: null
+            pendingMap: null,
+            pageIndex: 0,
+            pageChangedAt: 0,
+            pageSignature: ''
         };
 
         function getLeaderboardElementKey(el) {
@@ -5883,7 +5895,7 @@
         }
 
         // 팀 리더보드 DOM 업데이트 (전체 팀 및 FLIP 이동 애니메이션)
-        function applyLeaderboardUpdate(panel, sorted, map, animate) {
+        function applyLeaderboardUpdate(panel, sorted, map, animate, rankOffset = 0) {
             let listEl = panel.querySelector('.blind-total-list');
             if (!listEl) {
                 listEl = document.createElement('div');
@@ -5911,7 +5923,7 @@
 
             // 행 업데이트/생성 + DOM 순서 정렬
             visibleRows.forEach((row, idx) => {
-                const rank = idx + 1;
+                const rank = rankOffset + idx + 1;
                 let rowEl = existingRows[row.team];
                 if (!rowEl) {
                     rowEl = document.createElement('div');
@@ -5963,6 +5975,48 @@
             _blindRankState.prevOrder = visibleRows.map(r => r.team);
         }
 
+        function getBlindTotalsPresentation(sorted, map) {
+            const mode = String(map?.blind_totals_display_mode || 'pages') === 'ticker' ? 'ticker' : 'pages';
+            if (mode === 'ticker') return { mode, rows: sorted, pageIndex: 0, pageCount: 1, rankOffset: 0 };
+            const pageSize = Math.max(3, Math.min(10, Number.parseInt(map?.blind_totals_page_size || '6', 10) || 6));
+            const intervalMs = Math.max(3, Math.min(30, Number.parseInt(map?.blind_totals_page_interval || '5', 10) || 5)) * 1000;
+            const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
+            const signature = [...sorted.map(row => row.team)].sort((a, b) => a.localeCompare(b, 'ko')).join('|') + '|' + pageSize;
+            const now = Date.now();
+            if (_blindRankState.pageSignature !== signature) {
+                _blindRankState.pageSignature = signature;
+                _blindRankState.pageIndex = Math.min(_blindRankState.pageIndex, pageCount - 1);
+                _blindRankState.pageChangedAt = now;
+            } else if (!_blindRankState.pageChangedAt) {
+                _blindRankState.pageChangedAt = now;
+            } else if (pageCount > 1 && now - _blindRankState.pageChangedAt >= intervalMs) {
+                const steps = Math.floor((now - _blindRankState.pageChangedAt) / intervalMs);
+                _blindRankState.pageIndex = (_blindRankState.pageIndex + steps) % pageCount;
+                _blindRankState.pageChangedAt += steps * intervalMs;
+            }
+            if (_blindRankState.pageIndex >= pageCount) _blindRankState.pageIndex = 0;
+            const rankOffset = _blindRankState.pageIndex * pageSize;
+            return { mode, rows: sorted.slice(rankOffset, rankOffset + pageSize), pageIndex: _blindRankState.pageIndex, pageCount, rankOffset };
+        }
+
+        function renderBlindTotalsTicker(panel, sorted) {
+            panel.classList.add('ticker-mode');
+            let listEl = panel.querySelector('.blind-total-list');
+            if (!listEl) {
+                listEl = document.createElement('div');
+                listEl.className = 'blind-total-list';
+                panel.appendChild(listEl);
+            }
+            const content = sorted.map((row, index) => `<span class="blind-total-ticker-item"><b>${index + 1}위</b><strong>${esc(row.company)}</strong><span>${formatBlindTotalAmount(row.total)}</span><small>${row.soldCount}/${row.itemCount}</small></span>`).join('');
+            const cacheKey = sorted.map(row => `${row.team}:${row.total}:${row.soldCount}/${row.itemCount}`).join('|');
+            if (listEl.dataset.tickerCache !== cacheKey) {
+                listEl.dataset.tickerCache = cacheKey;
+                listEl.innerHTML = content ? `<div class="blind-total-ticker-track"><div class="blind-total-ticker-group">${content}</div><div class="blind-total-ticker-group" aria-hidden="true">${content}</div></div>` : '<div class="blind-total-empty">토너먼트 개체 대기 중</div>';
+            }
+            sorted.forEach(row => { _blindRankState.prevTotals[row.team] = row.total; });
+            _blindRankState.prevOrder = sorted.map(row => row.team);
+        }
+
 
         function renderBlindTeamTotals(map, items) {
             const panel = document.getElementById('blind-team-total-overlay');
@@ -5992,8 +6046,24 @@
             // 낙찰 감지
             const soldItem = detectBlindSoldItem(items);
 
-            const updateTeamHeader = () => ensureP3PanelHeader(panel, '팀 실시간 내역', '');
-            updateTeamHeader();
+            const renderPresentation = (currentSorted, currentMap, animate) => {
+                const presentation = getBlindTotalsPresentation(currentSorted, currentMap);
+                if (presentation.mode === 'ticker') {
+                    ensureP3PanelHeader(panel, '팀 실시간 내역', `<span class="blind-total-counter">전체 ${currentSorted.length}팀 · 자막</span>`);
+                    renderBlindTotalsTicker(panel, currentSorted);
+                } else {
+                    panel.classList.remove('ticker-mode');
+                    const tickerTrack = panel.querySelector('.blind-total-ticker-track');
+                    if (tickerTrack) tickerTrack.remove();
+                    const listEl = panel.querySelector('.blind-total-list');
+                    if (listEl) delete listEl.dataset.tickerCache;
+                    const interval = Math.max(3, Math.min(30, Number.parseInt(currentMap?.blind_totals_page_interval || '5', 10) || 5));
+                    const pageMeta = presentation.pageCount > 1 ? `${presentation.pageIndex + 1}/${presentation.pageCount} · ${interval}초 순환` : `전체 ${currentSorted.length}팀`;
+                    ensureP3PanelHeader(panel, '팀 실시간 내역', `<span class="blind-total-counter">${pageMeta}</span>`);
+                    applyLeaderboardUpdate(panel, presentation.rows, currentMap, animate, presentation.rankOffset);
+                }
+                return presentation;
+            };
 
             panel.classList.add('visible');
 
@@ -6013,12 +6083,7 @@
                     const latestRows = getBlindTotalRows(latestItems, latestMap);
                     const latestSorted = [...latestRows].sort((a, b) => b.total - a.total);
 
-                    // 카운터도 최신으로
-                    const latestDone = latestRows.reduce((s, r) => s + r.soldCount, 0);
-                    const latestTotal = latestRows.reduce((s, r) => s + r.itemCount, 0);
-                    updateTeamHeader();
-
-                    applyLeaderboardUpdate(panel, latestSorted, latestMap, true);
+                    renderPresentation(latestSorted, latestMap, true);
                     renderEventMatchSection(panel, latestItems, latestMap);
                     _blindRankState.pendingData = null;
                     _blindRankState.pendingMap = null;
@@ -6026,7 +6091,8 @@
             } else {
                 // 일반 업데이트 (낙찰 없음)
                 const hasPrev = _blindRankState.prevOrder.length > 0;
-                const visibleSorted = sorted;
+                const presentation = getBlindTotalsPresentation(sorted, map);
+                const visibleSorted = presentation.rows;
                 const orderChanged = hasPrev && JSON.stringify(visibleSorted.map(r => r.team)) !== JSON.stringify(_blindRankState.prevOrder);
                 const valueIncreased = hasPrev && visibleSorted.some(row => Number(row.total) > Number(_blindRankState.prevTotals[row.team] || 0));
                 const biddersConfigured = String(map?.live_bidders_show ?? '0') === '1';
@@ -6035,7 +6101,7 @@
                 const biddersShow = biddersConfigured && liveBidRows.length > 0;
                 const isPanelActive = _p3ActiveCard === 'totals' || !biddersShow;
 
-                applyLeaderboardUpdate(panel, sorted, map, isPanelActive && (orderChanged || valueIncreased));
+                renderPresentation(sorted, map, isPanelActive && (orderChanged || valueIncreased));
                 renderEventMatchSection(panel, items, map);
             }
         }
