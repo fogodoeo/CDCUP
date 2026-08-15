@@ -1,74 +1,162 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#f4f1e9">
-    <meta name="description" content="20개의 선택으로 알아보는 크레와트 성향 테스트">
-    <meta property="og:title" content="CREWARTS PERSONALITY TEST">
-    <meta property="og:description" content="20개의 선택으로 알아보는 크레 앞의 나">
-    <title>CREWARTS PERSONALITY TEST</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#f4f4f1">
+    <meta name="description" content="12개의 결정적 순간으로 알아보는 나의 크레 성향">
+    <meta property="og:title" content="크레와트 성향 테스트">
+    <meta property="og:description" content="크레를 선택하고 돌보는 나의 방식">
+    <meta property="og:image" content="https://creok.onrender.com/assets/crewart-cave-mobile.webp">
+    <meta property="og:url" content="https://creok.onrender.com/crewart-survey.html">
+    <link rel="canonical" href="https://creok.onrender.com/crewart-survey.html">
+    <title>크레와트 성향 테스트</title>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="crewart-survey-v2.css?v=20260719-wax-intro-v2">
-    <script src="supabase-bridge.js?v=20260717-egress-hotfix-v1"></script>
+    <link
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+        rel="stylesheet">
+    <link rel="stylesheet" href="crewart-survey-v4.css?v=20260815-home-polish-v59">
     <script src="assets/vendor/kakao-2.8.1.min.js"></script>
-    <script src="crewart-survey-core.js?v=20260718-cre-mbti-v4"></script>
-    <script src="crewart-survey.js?v=20260720-band-entry-v1" defer></script>
+    <script src="crewart-survey-core.js?v=20260815-home-polish-v59"></script>
+    <!-- Share-link target is cache-busted so KakaoTalk never reuses the old root URL. -->
+    <script src="crewart-survey.js?v=20260815-home-polish-v59" defer></script>
 </head>
+
 <body>
     <div class="cw-atmosphere" aria-hidden="true"><i></i><i></i><i></i></div>
 
+    <header class="cw-utility-bar" aria-label="검사 이동">
+        <button class="cw-top-home" id="persistent-home-button" type="button" aria-label="크레와트 메인으로 돌아가기"
+            title="크레와트 메인으로 돌아가기" hidden>검사 종료</button>
+    </header>
+
     <main class="cw-app" id="app">
         <section class="cw-screen cw-intro is-active" id="intro-screen">
-            <video class="cw-intro-video" id="intro-video" autoplay muted loop playsinline webkit-playsinline preload="auto" tabindex="-1" disablepictureinpicture controlslist="nodownload nofullscreen noplaybackrate" aria-hidden="true">
-                <source src="assets/crewarts-sealing-wax.mp4" type="video/mp4">
-            </video>
             <div class="cw-intro-content">
                 <header class="cw-intro-heading">
+                    <div class="cw-intro-visual" aria-hidden="true">
+                        <video class="cw-intro-video" id="intro-video" autoplay muted loop playsinline
+                            webkit-playsinline preload="metadata" tabindex="-1" disablepictureinpicture
+                            controlslist="nodownload nofullscreen noplaybackrate">
+                            <source src="assets/crewarts-sealing-wax.mp4" type="video/mp4">
+                        </video>
+                    </div>
                     <h1><span class="cw-wordmark is-pending" id="crewart-wordmark">CREWARTS</span><small>PERSONALITY TEST</small></h1>
-                    <p class="cw-intro-copy">20문항 · 약 2분</p>
+                    <p class="cw-intro-tagline">크레를 고르고 돌보는 나의 방식을 알아보세요.</p>
+                    <p class="cw-intro-copy">12문항 · 약 3분</p>
                 </header>
-                <div class="cw-intro-actions">
-                    <button class="cw-primary-button" id="start-button" type="button" disabled>
-                        <span>준비 중...</span>
-                    </button>
-                    <button class="cw-band-entry" id="band-float" type="button" disabled hidden>
-                        <span aria-hidden="true">B</span><strong id="band-float-label">BAND로 들어가기</strong>
-                    </button>
-                    <small class="cw-intro-note" id="band-entry-note" hidden>BAND 연결 시 상세 결과까지 확인할 수 있어요</small>
-                </div>
+
+                <section class="cw-home-result" id="home-result-card" hidden aria-labelledby="home-result-heading">
+                    <p class="cw-home-profile-kicker">나의 크레 성향</p>
+                    <strong id="home-result-code">—</strong>
+                    <h2 id="home-result-heading">성향 결과</h2>
+                    <div class="cw-home-house">
+                        <span id="home-house-swatch" aria-hidden="true"></span>
+                        <div><small>나의 기숙사</small><strong id="home-house-name">파랑 기숙사</strong></div>
+                    </div>
+                    <div class="cw-home-result-actions">
+                        <button class="cw-test-action cw-primary-button" id="home-retest" type="button">다시 시작</button>
+                    </div>
+                </section>
+
+                <section class="cw-home-start" id="home-start-card">
+                    <button class="cw-test-action cw-primary-button" id="start-button" type="button" disabled><span>성향 테스트 시작</span></button>
+                    <div class="cw-home-auth-inline" id="home-auth-card" aria-labelledby="home-band-title">
+                        <img src="assets/band-app-icon-official.png?v=20260801-logo-v2" width="22" height="22" alt="">
+                        <span id="home-band-title">회원 확인 후 기숙사와 전체 분석 보기</span>
+                        <span id="band-connection-status"></span>
+                        <button type="button" id="home-auth-button">회원 확인</button>
+                    </div>
+                </section>
+                <p class="cw-home-copyright">© 2026 CREO. All rights reserved.</p>
             </div>
         </section>
+
+        <!-- BAND Member Verification Modal Dialog -->
+        <dialog class="cw-member-dialog" id="member-dialog" aria-labelledby="dialog-band-title">
+            <div class="cw-member-dialog-sheet">
+                <header class="cw-member-dialog-head">
+                    <div>
+                        <h3 id="dialog-band-title">BAND 회원 확인</h3>
+                        <p class="cw-member-dialog-sub">가입 여부 확인</p>
+                    </div>
+                    <button class="cw-dialog-close" id="member-dialog-close" type="button" aria-label="닫기">✕</button>
+                </header>
+
+                <form class="cw-member-form" id="member-check-form">
+                    <label for="member-phone">휴대전화번호</label>
+                    <div class="cw-member-input-group">
+                        <input id="member-phone" name="phone" type="tel" inputmode="numeric" autocomplete="tel"
+                            maxlength="13" placeholder="010-1234-5678" aria-describedby="member-phone-help" required>
+                        <button class="cw-dialog-band-button" id="member-check-submit" type="submit">
+                            <strong id="member-check-submit-label">확인하기</strong>
+                        </button>
+                    </div>
+                    <small id="member-phone-help">입력하신 번호는 가입 확인 외에 저장되지 않아요.</small>
+                </form>
+
+                <div class="cw-band-verified" id="band-verified-state" hidden>
+                    <header>
+                        <span aria-hidden="true">✓</span>
+                        <div><small>STATUS</small><strong>회원 확인 완료</strong></div>
+                    </header>
+                    <dl>
+                        <div>
+                            <dt>휴대전화번호</dt>
+                            <dd id="auth-phone-number">확인된 회원</dd>
+                        </div>
+                        <div>
+                            <dt>연결 상태</dt>
+                            <dd><i aria-hidden="true"></i> 정상</dd>
+                        </div>
+                    </dl>
+                    <div class="cw-band-account-actions">
+                        <button id="auth-phone-edit" type="button">번호 변경</button>
+                        <button id="auth-phone-clear" type="button">연결 해제</button>
+                    </div>
+                </div>
+
+                <div class="cw-member-status" id="member-check-status" role="status" aria-live="polite" hidden>
+                </div>
+
+                <a class="cw-member-join" id="member-join-link" data-band-join
+                    href="https://www.band.us/band/101992972/post" target="_blank" rel="noopener noreferrer">
+                    <span class="cw-member-join-copy">
+                        <img src="assets/band-app-icon-official.png?v=20260801-logo-v2" alt="" width="28"
+                            height="28">
+                        <span><small>COMMUNITY</small><strong>BAND 가입하기</strong></span>
+                    </span>
+                    <span aria-hidden="true">→</span>
+                </a>
+            </div>
+        </dialog>
 
         <section class="cw-screen cw-test" id="question-screen" hidden>
             <header class="cw-progress-head">
                 <button class="cw-back-button" id="question-back" type="button" aria-label="이전 질문">‹</button>
-                <div class="cw-progress-copy"><span id="progress-text">1 / 20</span><small id="progress-axis">크레 앞의 나를 찾는 중</small></div>
+                <div class="cw-progress-copy"><small id="progress-axis">크레 앞의 나를 찾는 중</small><span id="progress-text">1
+                        / 12</span></div>
                 <span class="cw-progress-space" aria-hidden="true"></span>
             </header>
             <div class="cw-progress-track" aria-hidden="true"><i id="progress-bar"></i></div>
             <article class="cw-question-card" id="question-card" aria-live="polite">
                 <p id="question-label"></p>
                 <h1 id="question-title"></h1>
-                <figure class="cw-question-illustration" id="question-illustration">
-                    <img id="question-image" src="" alt="" width="960" height="640" decoding="async">
-                </figure>
                 <div class="cw-choice-list" id="choice-list"></div>
             </article>
+            <p class="cw-q0-copyright" id="q0-copyright" hidden>© 2026 CREO. All rights reserved.</p>
         </section>
 
         <section class="cw-screen cw-mbti" id="mbti-screen" hidden>
             <header class="cw-simple-head">
-                <h1>평소 MBTI는?</h1>
-                <p>모르면 바로 결과를 볼 수 있어요.</p>
+                <p class="cw-step-label">선택 입력</p>
+                <h1>평소 유형은?</h1>
+                <p>알고 있다면 골라주세요.</p>
             </header>
-            <div class="cw-mbti-grid" id="mbti-grid" aria-label="평소 MBTI 선택"></div>
+            <div class="cw-mbti-grid" id="mbti-grid" aria-label="평소 유형 선택"></div>
             <div class="cw-mbti-actions">
-                <button class="cw-secondary-button" id="mbti-unknown" type="button">잘 모르겠어요</button>
+                <button class="cw-secondary-button" id="mbti-unknown" type="button">모름 · 건너뛰기</button>
                 <button class="cw-primary-button" id="show-result" type="button" disabled><span>결과 보기</span></button>
             </div>
         </section>
@@ -78,19 +166,50 @@
         </section>
     </main>
 
-    <button class="cw-top-home" id="persistent-home-button" type="button" aria-label="크레와트 메인으로 돌아가기" title="크레와트 메인으로 돌아가기" hidden>처음으로</button>
-
-    <footer class="cw-persistent-footer" id="survey-footer" hidden>
-        <div class="cw-persistent-footer-inner">
-            <button class="cw-persistent-band" id="persistent-band-button" type="button" disabled>
-                <span aria-hidden="true">B</span>
-                <strong id="persistent-band-label">BAND 연결 확인 중</strong>
-            </button>
-            <small id="persistent-band-note">현재 테스트 내용을 저장하고 같은 화면으로 돌아와요.</small>
+    <nav class="cw-bottom-nav" id="app-nav" aria-label="주요 메뉴" hidden>
+        <div>
+            <button type="button" data-nav="home"><span>홈</span></button>
+            <button type="button" data-nav="result"><span>결과</span></button>
         </div>
-    </footer>
+    </nav>
+
+    <dialog class="cw-kakao-dialog" id="kakao-share-dialog" aria-labelledby="kakao-share-title">
+        <form method="dialog" class="cw-kakao-dialog-sheet">
+            <header class="cw-kakao-dialog-head">
+                <div>
+                    <img src="assets/kakaolink_btn_medium.png" width="34" height="34" alt="">
+                    <div><small>SHARE RESULT</small>
+                        <h2 id="kakao-share-title">카카오톡으로 보내기</h2>
+                    </div>
+                </div>
+                <button type="submit" value="cancel" aria-label="닫기">×</button>
+            </header>
+            <div class="cw-kakao-preview"><img id="kakao-share-preview" alt="카카오톡에 전송할 결과 카드 미리보기"></div>
+            <ol class="cw-kakao-steps">
+                <li><b>1</b><span>공유창 열기</span></li>
+                <li><b>2</b><span>카카오톡 선택</span></li>
+                <li><b>3</b><span>친구·채팅방 선택</span></li>
+            </ol>
+            <button class="cw-kakao-open" id="kakao-share-confirm" type="button"><span data-action-label>공유창
+                    열기</span></button>
+        </form>
+    </dialog>
+
+    <dialog class="cw-save-dialog" id="result-save-dialog" aria-labelledby="result-save-title">
+        <form method="dialog" class="cw-save-dialog-sheet">
+            <header class="cw-save-dialog-head">
+                <div><small>RESULT IMAGE</small>
+                    <h2 id="result-save-title">이미지 저장</h2>
+                </div>
+                <button type="submit" value="cancel" aria-label="닫기">×</button>
+            </header>
+            <div class="cw-save-preview"><img id="result-save-preview" alt="저장될 결과 이미지 미리보기"></div>
+            <button class="cw-save-confirm" id="result-save-confirm" type="button"><span>저장하기</span></button>
+        </form>
+    </dialog>
 
     <div class="cw-toast" id="toast" role="status" aria-live="polite"></div>
     <noscript>이 테스트를 이용하려면 자바스크립트를 켜주세요.</noscript>
 </body>
+
 </html>
