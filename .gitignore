@@ -1,0 +1,15 @@
+# Local credentials and operator configuration
+config.json
+creo-auciton-*.json
+
+# Desktop runtime state
+__pycache__/
+*.pyc
+!band_monitor_app_core.pyc
+chrome_debug_profile/
+print_outputs/
+
+# Local deployment and generated review workspaces
+tmp/
+web-deploy/
+scratch/artifact-*/
