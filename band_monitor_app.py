@@ -2423,6 +2423,17 @@ def _patch_auction_card_quick_edit():
             "dam_id": updated.get("dam_id", updated.get("damId", "")),
         }
 
+        # Platform item edits are sent as a complete record.  While an auction
+        # is live, an edit card can still contain the pre-start standby status;
+        # sending that stale record makes the public P2 item disappear.  Pin
+        # the status to the authoritative MainWindow active item whenever the
+        # edited row is the live row.
+        active_item = getattr(mw, "active_item", None) or {}
+        active_row = active_item.get("row")
+        if active_row is not None and str(active_row) == str(updated.get("row")):
+            data["status"] = _core.S_ACTIVE
+            updated["status"] = _core.S_ACTIVE
+
         self._quick_save_inflight = True
         self._quick_save_pending = False
 
