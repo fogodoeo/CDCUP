@@ -2526,9 +2526,8 @@
 
     <script>
         // 거점 가격표 데이터베이스
-        const WRAPANG_DISCOUNT_RATE = 0.7;
         const WRAPANG_PAYMENT_ACCOUNT = { bank: '국민은행', number: '645901-04-465911', holder: '이시안' };
-        const getDiscountedWrapangCost = cost => Math.round((Number(cost) || 0) * WRAPANG_DISCOUNT_RATE);
+        const getWrapangCost = cost => Math.round(Number(cost) || 0);
 
         function auctionItemWon(item) {
             return (parseFloat(item.soldPrice || item.sold_price) || 0) * 10000;
@@ -2682,12 +2681,12 @@ ${wrapangDuplicateNote}`;
             '랩팡': {
                 regions: {
                     '수도권': [
-                        { shop: '랩팡 서울거점', cost: getDiscountedWrapangCost(5000) },
-                        { shop: '랩팡 수원거점', cost: getDiscountedWrapangCost(5000) }
+                        { shop: '랩팡 서울거점', cost: getWrapangCost(5000) },
+                        { shop: '랩팡 수원거점', cost: getWrapangCost(5000) }
                     ],
                     '지방거점': [
-                        { shop: '랩팡 대전거점', cost: getDiscountedWrapangCost(5000) },
-                        { shop: '랩팡 부산거점', cost: getDiscountedWrapangCost(5000) }
+                        { shop: '랩팡 대전거점', cost: getWrapangCost(5000) },
+                        { shop: '랩팡 부산거점', cost: getWrapangCost(5000) }
                     ]
                 }
             },
@@ -2793,7 +2792,7 @@ ${wrapangDuplicateNote}`;
                         Object.keys(wrapangRes.data).forEach(regName => {
                             SHIPPING_DATA['랩팡'].regions[regName] = wrapangRes.data[regName].map(shopItem => ({
                                 shop: shopItem.shop,
-                                cost: getDiscountedWrapangCost(shopItem.cost || (regName.includes('제주') ? 55000 : 25000)),
+                                cost: getWrapangCost(shopItem.cost || (regName.includes('제주') ? 55000 : 25000)),
                                 day: shopItem.day || shopItem.arrival_day || shopItem.delivery_day || ''
                             }));
                         });
