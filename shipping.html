@@ -2049,23 +2049,6 @@
             color: #1E293B !important;
         }
 
-        .wrapang-payment-card {
-            display: none;
-            padding: 15px;
-            border: 1px solid #A7D9BC;
-            border-radius: 13px;
-            background: linear-gradient(115deg, #F0FDF4, #FFFFFF);
-        }
-        .wrapang-payment-card.active { display: block; }
-        .wrapang-payment-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .wrapang-payment-head strong { color: #166534; font-size: 13px; }
-        .wrapang-payment-head b { color: #166534; font-size: 18px; }
-        .wrapang-account { margin-top: 8px; color: #253044; font-size: 12px; font-weight: 850; }
-        .wrapang-payment-card p { margin: 6px 0 0; color: #587064; font-size: 10px; line-height: 1.55; }
-        .wrapang-payment-actions { display: flex; gap: 7px; margin-top: 11px; }
-        .wrapang-payment-actions a, .wrapang-payment-actions button { display: inline-flex; align-items: center; justify-content: center; min-height: 36px; padding: 0 12px; border: 0; border-radius: 9px; background: #166534; color: #FFFFFF; font-family: inherit; font-size: 11px; font-weight: 800; text-decoration: none; cursor: pointer; }
-        .wrapang-payment-actions button { border: 1px solid #BBE6CB; background: #FFFFFF; color: #166534; }
-
         .registration-overview {
             margin-bottom: 22px;
             overflow: hidden;
@@ -2225,7 +2208,6 @@
             .registration-time { grid-column: 1 / -1; padding-top: 4px; border-top: 1px dashed #E5E9F0; }
             .registration-time strong { display: inline; margin-left: 5px; }
             .registration-overview-list { max-height: 520px; }
-            .wrapang-payment-actions { display: grid; grid-template-columns: 1fr 1fr; }
         }
 
         body { padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
@@ -2377,13 +2359,6 @@
                     </div>
                 </div>
 
-                <section class="wrapang-payment-card" id="buyer-wrapang-payment-card">
-                    <div class="wrapang-payment-head"><strong>랩팡 합배송비 · 1회 입금</strong><b id="buyer-wrapang-payment-amount">0원</b></div>
-                    <div class="wrapang-account">국민은행 645901-04-465911 · 이시안</div>
-                    <p>랩팡 배송비 입금계좌입니다. 다른 업체를 통해 이미 납부한 경우 중복 입금하지 않습니다.</p>
-                    <div class="wrapang-payment-actions"><button type="button" onclick="copyWrapangAccount()">계좌 복사</button></div>
-                </section>
-
                 <button class="btn btn-full" onclick="submitBuyerShipping()">배송 정보 등록 완료</button>
             </div>
         </div>
@@ -2492,10 +2467,6 @@
                 <!-- 합배송 구성과 업체별 수령 금액 -->
                 <section id="editor-shipping-breakdown" class="shipping-breakdown" aria-live="polite" style="display: none;"></section>
 
-                <section class="wrapang-payment-card" id="editor-wrapang-payment-card">
-                    <div class="wrapang-payment-head"><strong>랩팡 합배송비</strong><b id="editor-wrapang-payment-amount">0원</b></div>
-                </section>
-
                 <!-- 메모 입력 -->
                 <div class="form-group">
                     <label>메모</label>
@@ -2526,7 +2497,6 @@
 
     <script>
         // 거점 가격표 데이터베이스
-        const WRAPANG_PAYMENT_ACCOUNT = { bank: '국민은행', number: '645901-04-465911', holder: '이시안' };
         const getWrapangCost = cost => Math.round(Number(cost) || 0);
 
         function auctionItemWon(item) {
@@ -2568,27 +2538,7 @@
             const bid = (selectedItems || []).reduce((sum, item) => sum + auctionItemWon(item), 0);
             const itemLines = (selectedItems || []).map(paymentSmsItemLine).join('\n');
             const others = otherCompanyPaymentText(allItems, selectedCompany);
-            const wrapangDuplicateNote = '※ 랩팡 합배송비는 1회만 입금합니다. 다른 업체 안내로 이미 입금하셨다면 중복 입금하지 않으셔도 됩니다.';
-
-            if (shippingType === '배송' && shippingCompany === '랩팡') {
-                return `[${selectedCompany} 낙찰]
-${itemLines}
-
-${selectedCompany} 결제금액: ${bid.toLocaleString()}원
-※ 랩팡 배송비는 아래 계좌로 별도 입금${others}
-
-[랩팡 합배송]
-참여 업체: ${sellerCompanies.join(', ')}
-총 ${(allItems || []).length}개체 / 배송비 ${totalShipping.toLocaleString()}원
-
-[랩팡 배송비 입금계좌]
-${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number}
-예금주 ${WRAPANG_PAYMENT_ACCOUNT.holder}
-
-${wrapangDuplicateNote}`;
-            }
-
-            const splitShipping = shippingType === '배송' && ['도도시', '파르게'].includes(shippingCompany);
+            const splitShipping = shippingType === '배송' && ['도도시', '파르게', '랩팡'].includes(shippingCompany);
             const hasShippingMethod = shippingType === '배송' || shippingType === '직접수령';
             const selectedItemCount=(selectedItems || []).length;
             let deliverySection='';
@@ -2631,10 +2581,6 @@ ${wrapangDuplicateNote}`;
                 console.error(error);
                 showToast('복사에 실패했습니다.', true);
             }
-        }
-
-        function copyWrapangAccount() {
-            copyPlainText(`${WRAPANG_PAYMENT_ACCOUNT.bank} ${WRAPANG_PAYMENT_ACCOUNT.number} ${WRAPANG_PAYMENT_ACCOUNT.holder}`, '랩팡 입금 계좌를 복사했습니다.');
         }
 
         const SHIPPING_DATA = {
@@ -3399,8 +3345,7 @@ ${wrapangDuplicateNote}`;
                     const shippingAllocations = splitShippingCostByCompany(state.sellerCompanies, totalShipping, state.allItems);
                     const calculatedShippingCost = shippingAllocations[selectedCo] || 0;
                     const savedShippingCost = getSavedShippingCost(groupItems);
-                    const isWrapangCentralPayment = state.shipping_type === '배송' && state.shipping_company === '랩팡';
-                    const shippingCost = isWrapangCentralPayment ? 0 : state.shipping_type === '배송'
+                    const shippingCost = state.shipping_type === '배송'
                         ? (totalShipping > 0 ? calculatedShippingCost : savedShippingCost)
                         : 0;
                     
@@ -3775,7 +3720,6 @@ ${wrapangDuplicateNote}`;
 
             const sellerCos = state.sellerCompanies.filter(Boolean);
             const totalObjectCount = state.allItems.length;
-            const isWrapangCentralPayment = editorShippingState.type === '배송' && editorShippingState.company === '랩팡';
             let formulaHtml = '';
             let canShowCompanies = true;
 
@@ -3810,7 +3754,7 @@ ${wrapangDuplicateNote}`;
                     const bid = parseInt(String(it.sold_price).replace(/[^0-9]/g, '')) || 0;
                     return sum + (bid * 10000);
                 }, 0);
-                const shippingShare = isWrapangCentralPayment ? 0 : (allocations[co] || 0);
+                const shippingShare = allocations[co] || 0;
                 const collectTotal = bidWon + shippingShare;
                 const objectNames = items.map(it => {
                     return auctionItemLabel(it, { includeTeam: true });
@@ -3824,10 +3768,10 @@ ${wrapangDuplicateNote}`;
                             <span class="breakdown-company-name">${co}</span>
                             <span class="breakdown-company-badge ${isCurrent ? '' : 'is-other'}">${isCurrent ? '현재 업체' : '다른 업체'}</span>
                         </div>
-                        <div class="breakdown-objects">개체 ${items.length}개${isWrapangCentralPayment ? ' · 랩팡 합배송' : ` (${pct}% 부담)`} · ${objectNames}</div>
+                        <div class="breakdown-objects">개체 ${items.length}개 (${pct}% 부담) · ${objectNames}</div>
                         <div class="breakdown-money-grid">
                             <div><span>낙찰금액</span><strong>${bidWon.toLocaleString()}원</strong></div>
-                            <div><span>${isWrapangCentralPayment ? '배송비(랩팡 직접입금)' : '배분 배송비'}</span><strong>${shippingShare.toLocaleString()}원</strong></div>
+                            <div><span>배분 배송비</span><strong>${shippingShare.toLocaleString()}원</strong></div>
                             <div class="company-collect"><span>받을 금액</span><strong>${collectTotal.toLocaleString()}원</strong></div>
                         </div>
                     </div>
@@ -3881,19 +3825,13 @@ ${wrapangDuplicateNote}`;
                 ? calculateShippingCost(comp, editorShippingState.type, reg, hub, state.allItems.length)
                 : 0;
             const shippingAllocations = splitShippingCostByCompany(sellerCos, totalShipping, state.allItems);
-            const isWrapangCentralPayment = editorShippingState.type === '배송' && comp === '랩팡';
-            const shipCost = isWrapangCentralPayment ? 0 : (editorShippingState.type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0);
+            const shipCost = editorShippingState.type === '배송' ? (shippingAllocations[selectedCo] || 0) : 0;
             const grandTotal = (totalBid * 10000) + shipCost;
 
             document.getElementById('editor-summary-bid').textContent = (totalBid * 10000).toLocaleString() + '원';
-            document.getElementById('editor-summary-ship').textContent = isWrapangCentralPayment ? '랩팡 직접입금' : shipCost.toLocaleString() + '원';
+            document.getElementById('editor-summary-ship').textContent = shipCost.toLocaleString() + '원';
             document.getElementById('editor-summary-total').textContent = grandTotal.toLocaleString() + '원';
             renderEditorShippingBreakdown(state, selectedCo, baseCost, totalShipping, shippingAllocations, comp || '배송');
-
-            const wrapangCard = document.getElementById('editor-wrapang-payment-card');
-            const wrapangAmount = document.getElementById('editor-wrapang-payment-amount');
-            if (wrapangCard) wrapangCard.classList.toggle('active', isWrapangCentralPayment);
-            if (wrapangAmount) wrapangAmount.textContent = totalShipping.toLocaleString() + '원';
 
             // 상단에는 통화, 전체 문자, 전체 안내문 복사를 제공한다.
             const callBtn = document.getElementById('editor-info-call-btn');
@@ -4005,17 +3943,11 @@ ${wrapangDuplicateNote}`;
                 const shippingAllocations = type === '배송'
                     ? splitShippingCostByCompany(sellerCos, totalShipping, state.allItems)
                     : splitShippingCostByCompany(sellerCos, 0, state.allItems);
-                const isWrapangCentralPayment = type === '배송' && company === '랩팡';
-
                 const promises = [];
-                let wrapangTotalAssigned = false;
                 for (const co of sellerCos) {
                     const coItems = state.allItems.filter(it => (it.company || '').trim() === co);
                     coItems.forEach((it, idx) => {
-                        const shippingCost = isWrapangCentralPayment
-                            ? (!wrapangTotalAssigned ? totalShipping : 0)
-                            : ((idx === 0) ? (shippingAllocations[co] || 0) : 0);
-                        if (isWrapangCentralPayment && !wrapangTotalAssigned) wrapangTotalAssigned = true;
+                        const shippingCost = (idx === 0) ? (shippingAllocations[co] || 0) : 0;
                         promises.push(
                             updateItemShipping(it.row, {
                                 shipping_type: type,
@@ -4742,11 +4674,6 @@ ${wrapangDuplicateNote}`;
             
             const grandTotalWon = (totalBid * 10000) + totalShipping;
             document.getElementById('b-summary-total').textContent = grandTotalWon.toLocaleString() + '원';
-            const wrapangCard = document.getElementById('buyer-wrapang-payment-card');
-            const wrapangAmount = document.getElementById('buyer-wrapang-payment-amount');
-            const isWrapang = buyerShippingState.type === '배송' && buyerShippingState.company === '랩팡';
-            if (wrapangCard) wrapangCard.classList.toggle('active', isWrapang);
-            if (wrapangAmount) wrapangAmount.textContent = totalShipping.toLocaleString() + '원';
         }
 
         // 낙찰자 셀프서비스 제출
@@ -4801,10 +4728,6 @@ ${wrapangDuplicateNote}`;
                 }
 
                 const shippingAllocations = splitShippingCostByCompany(sellerCos, totalShipping, buyerFoundItems);
-                const isWrapangCentralPayment = type === '배송' && buyerShippingState.company === '랩팡';
-
-                // 랩팡은 합배송 전체 금액을 한 개체에만 저장하고, 그 외 배송사는 업체별 배분값을 저장한다.
-                let wrapangTotalAssigned = false;
                 for (const co of sellerCos) {
                     const coItems = buyerFoundItems.filter(it => (it.company || '').trim() === co);
                     
@@ -4819,12 +4742,7 @@ ${wrapangDuplicateNote}`;
                             shipping_company = baseShipping.shipping_company;
                             shipping_region = baseShipping.shipping_region;
 
-                            if (isWrapangCentralPayment) {
-                                if (!wrapangTotalAssigned) {
-                                    shipping_cost = totalShipping;
-                                    wrapangTotalAssigned = true;
-                                }
-                            } else if (idx === 0) shipping_cost = shippingAllocations[co] || 0;
+                            if (idx === 0) shipping_cost = shippingAllocations[co] || 0;
                         }
 
                         await updateItemShipping(it.row, {
@@ -4836,13 +4754,8 @@ ${wrapangDuplicateNote}`;
                     }
                 }
 
-                if (isWrapangCentralPayment) {
-                    showToast('등록 완료 · 랩팡 합배송비는 안내 계좌로 한 번만 입금해 주세요.');
-                    document.getElementById('buyer-wrapang-payment-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                } else {
-                    showToast('배송 정보 등록이 완료되었습니다! 판매자 정산서에 실시간 반영됩니다.');
-                    setTimeout(() => { location.reload(); }, 2000);
-                }
+                showToast('배송 정보 등록이 완료되었습니다! 판매자 정산서에 실시간 반영됩니다.');
+                setTimeout(() => { location.reload(); }, 2000);
             } catch (e) {
                 console.error(e);
                 showToast('저장 실패: ' + e.message, true);
