@@ -20,6 +20,7 @@
 - `auction_contract.py`: 상태, 금액 단위, 체크리스트 메타데이터
 - `platform_manager.py`: 채널 컨텍스트와 platform/legacy 어댑터 경계
 - `capture_client.py`: 캡처 인증, 요청 payload, 재시도, 수동/종료 중복 규칙
+- `label_spool.py`: 라벨 인쇄 이력의 동시 접근과 원자적 저장
 - `supabase_manager.py`: CDCUP 레거시 저장소. 상태 해석은 공통 계약을 사용한다.
 
 ## 캡처 불변조건

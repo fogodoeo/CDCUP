@@ -30,6 +30,7 @@ import uuid
 from auction_contract import checklist_meta as _auction_checklist_meta
 from auction_contract import parse_checklist as _parse_auction_checklist
 from capture_client import CaptureClient, build_capture_payload
+from label_spool import LabelSpool, label_display_text
 
 
 _ORIGINAL_PRINT = builtins.print
@@ -99,6 +100,7 @@ sys.excepthook = _crash_report_excepthook
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 LABEL_SPOOL_PATH = os.path.join(APP_DIR, "print_outputs", "label_print_spool.json")
+_LABEL_SPOOL = LabelSpool(LABEL_SPOOL_PATH)
 BID_SAVE_MIN_INTERVAL_SEC = 2.0
 MAX_SEEN_CHAT_KEYS = 4000
 KEEP_SEEN_CHAT_KEYS = 3000
@@ -539,54 +541,6 @@ def _as_int(value, default):
 
 def _now_text():
     return time.strftime("%Y-%m-%d %H:%M:%S")
-
-
-def _load_label_spool():
-    for attempt in range(3):
-        try:
-            with open(LABEL_SPOOL_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            if isinstance(data, dict) and isinstance(data.get("jobs"), list):
-                return data
-        except FileNotFoundError:
-            break
-        except Exception as exc:
-            if attempt == 2:
-                print(f"[LabelSpool] read failed: {exc}")
-            time.sleep(0.05)
-    return {"jobs": []}
-
-
-def _save_label_spool(spool):
-    os.makedirs(os.path.dirname(LABEL_SPOOL_PATH), exist_ok=True)
-    tmp_path = LABEL_SPOOL_PATH + ".tmp"
-    with open(tmp_path, "w", encoding="utf-8") as f:
-        json.dump(spool, f, ensure_ascii=False, indent=2)
-    os.replace(tmp_path, LABEL_SPOOL_PATH)
-
-
-def _find_spool_job(spool, job_id):
-    for job in spool.get("jobs", []):
-        if job.get("id") == job_id:
-            return job
-    return None
-
-
-def _label_display_text(job):
-    payload = job.get("payload", {})
-    status_map = {
-        "queued": "대기",
-        "printing": "출력중",
-        "done": "완료",
-        "failed": "실패",
-    }
-    status = status_map.get(job.get("status"), job.get("status", ""))
-    num = payload.get("num", "")
-    name = payload.get("item_name", "")
-    winner = payload.get("winner_name", "")
-    price = payload.get("sold_price", "")
-    created = job.get("created_at", "")
-    return f"[{status}] #{num} {name} / {winner} / {price} / {created}"
 
 
 def _chat_command_text(value):
@@ -3457,27 +3411,14 @@ def _patch_main_window():
             "last_error": "",
             "payload": payload,
         }
-        spool = _load_label_spool()
-        jobs = spool.setdefault("jobs", [])
-        jobs.append(job)
-        if len(jobs) > 300:
-            del jobs[: len(jobs) - 300]
-        _save_label_spool(spool)
+        _LABEL_SPOOL.append(job, max_jobs=300)
         return job
 
     def _get_label_spool_job(self, job_id):
-        spool = _load_label_spool()
-        return _find_spool_job(spool, job_id)
+        return _LABEL_SPOOL.find(job_id)
 
     def _update_label_spool_job(self, job_id, **updates):
-        spool = _load_label_spool()
-        job = _find_spool_job(spool, job_id)
-        if not job:
-            return None
-        job.update(updates)
-        job["updated_at"] = _now_text()
-        _save_label_spool(spool)
-        return job
+        return _LABEL_SPOOL.update(job_id, **updates)
 
     def _install_label_reprint_button(self):
         try:
@@ -3508,7 +3449,7 @@ def _patch_main_window():
             print(f"[LabelSpool] reprint button install failed: {exc}")
 
     def _open_label_reprint_dialog(self):
-        spool = _load_label_spool()
+        spool = _LABEL_SPOOL.load()
         jobs = [
             job
             for job in reversed(spool.get("jobs", []))
@@ -3518,7 +3459,7 @@ def _patch_main_window():
             self.toast.show_toast("재출력할 라벨 기록이 없습니다.", "warning")
             return
 
-        labels = [_label_display_text(job) for job in jobs]
+        labels = [label_display_text(job) for job in jobs]
         selected, ok = _core.QInputDialog.getItem(
             self,
             "라벨 재출력",

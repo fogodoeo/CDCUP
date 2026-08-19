@@ -13,6 +13,7 @@ class DesktopArchitectureTests(unittest.TestCase):
             "band_monitor_app_core.pyc",
             "auction_contract.py",
             "capture_client.py",
+            "label_spool.py",
             "platform_manager.py",
             "supabase_manager.py",
             "requirements.txt",
