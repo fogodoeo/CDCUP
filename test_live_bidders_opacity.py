@@ -24,7 +24,7 @@ class LiveBiddersOpacityTests(unittest.TestCase):
 
     def test_second_bidder_stays_readable(self):
         self.assertIn('#live-bidders-overlay .blind-total-row[data-rank="2"]', self.broadcast)
-        self.assertIn("--rank-text-opacity: 0.94;", self.broadcast)
+        self.assertIn("--rank-text-opacity: 0.90;", self.broadcast)
 
 
 if __name__ == "__main__":
