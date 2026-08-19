@@ -118,6 +118,7 @@ AUCTION_COUNTDOWN_INITIAL_STAGES = (
     ("🟧🟧⬜⬜⬜", 8000),
     ("🟥⬜⬜⬜⬜", 8000),
 )
+AUCTION_COUNTDOWN_GREEN_STAGE_COUNT = 2
 AUCTION_COUNTDOWN_RESUME_STAGES = AUCTION_COUNTDOWN_INITIAL_STAGES[2:]
 AUCTION_COUNTDOWN_FIRST_MESSAGE_DELAY_MS = 850
 AUCTION_COUNTDOWN_RESUME_DELAY_MS = 700
@@ -3203,6 +3204,17 @@ def _patch_main_window():
             return
         current_top = _countdown_current_top_signature(self)
         if current_top is None or current_top == previous_top:
+            return
+        sequence = getattr(self, "_auction_countdown_sequence", ())
+        stage_index = int(getattr(self, "_auction_countdown_stage_index", 0) or 0)
+        if (
+            sequence == AUCTION_COUNTDOWN_INITIAL_STAGES
+            and stage_index <= AUCTION_COUNTDOWN_GREEN_STAGE_COUNT
+        ):
+            _append_chat_debug_log(
+                "countdown kept in green after bid "
+                f"stage={stage_index} previous={previous_top!r} current={current_top!r}"
+            )
             return
         _begin_auction_countdown(self, resume=True, announce=False)
         _append_chat_debug_log(

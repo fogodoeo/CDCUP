@@ -187,6 +187,40 @@ class AuctionCountdownTests(unittest.TestCase):
         self.assertEqual(window._auction_countdown_sequence, app.AUCTION_COUNTDOWN_RESUME_STAGES)
         self.assertEqual(window.auction_card.btn_countdown.text(), "카운트 취소")
 
+    def test_bid_during_initial_green_keeps_current_countdown_position(self):
+        window = _CountdownWindow()
+        app._core.MainWindow._begin_auction_countdown(window, resume=False, announce=False)
+        window._auction_countdown_timer.stop()
+        app._core.MainWindow._advance_auction_countdown(window)
+        window._auction_countdown_timer.stop()
+        previous_top = app._core.MainWindow._countdown_current_top_signature(window)
+        window.active_item["bids"].append(
+            {"name": "새 입찰자", "bidder_key": "new", "amount": 11, "time": "20:01"}
+        )
+
+        app._core.MainWindow._restart_countdown_after_accepted_bid(window, previous_top)
+
+        self.assertEqual(window._auction_countdown_sequence, app.AUCTION_COUNTDOWN_INITIAL_STAGES)
+        self.assertEqual(window._auction_countdown_stage_index, 1)
+
+    def test_bid_after_green_restarts_from_yellow(self):
+        window = _CountdownWindow()
+        app._core.MainWindow._begin_auction_countdown(window, resume=False, announce=False)
+        window._auction_countdown_timer.stop()
+        for _ in range(3):
+            app._core.MainWindow._advance_auction_countdown(window)
+            window._auction_countdown_timer.stop()
+        previous_top = app._core.MainWindow._countdown_current_top_signature(window)
+        window.active_item["bids"].append(
+            {"name": "새 입찰자", "bidder_key": "new", "amount": 11, "time": "20:01"}
+        )
+
+        app._core.MainWindow._restart_countdown_after_accepted_bid(window, previous_top)
+        window._auction_countdown_timer.stop()
+
+        self.assertEqual(window._auction_countdown_sequence, app.AUCTION_COUNTDOWN_RESUME_STAGES)
+        self.assertEqual(window._auction_countdown_stage_index, 0)
+
     def test_manual_ok_without_changed_top_stays_locked(self):
         window = _CountdownWindow()
         app._core.MainWindow._begin_auction_countdown(window, resume=False, announce=False)
