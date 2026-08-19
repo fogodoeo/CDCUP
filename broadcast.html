@@ -167,6 +167,41 @@
             -webkit-backdrop-filter: blur(16px);
         }
 
+        .top-bar .name-line {
+            display: flex;
+            align-items: center;
+            gap: clamp(11px, 1.1vw, 17px);
+            max-width: 58vw;
+            min-width: 0;
+        }
+
+        .top-bar .company-tag {
+            display: inline-flex;
+            align-items: center;
+            min-height: 26px;
+            flex: 0 0 auto;
+            padding: 4px 10px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.82);
+            font-size: clamp(12px, calc(var(--sb-name-size, 30px) * 0.48), 16px);
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+        }
+
+        .top-bar .company-tag[hidden] {
+            display: none !important;
+        }
+
+        .top-bar .name-line .name {
+            min-width: 0;
+            max-width: 100%;
+            flex: 1 1 auto;
+        }
+
         .top-bar .name {
             font-size: var(--sb-name-size, 30px);
             font-weight: 800;
@@ -3491,7 +3526,10 @@
         <div class="scoreboard-wrap" id="scoreboard-wrap">
             <div class="top-bar" id="top-bar">
                 <div class="name-section">
-                    <span class="name" id="info-name"></span>
+                    <div class="name-line">
+                        <span class="company-tag" id="info-company" hidden></span>
+                        <span class="name" id="info-name"></span>
+                    </div>
                     <span class="sub" id="info-sub"></span>
                 </div>
                 <span class="sep"></span>
@@ -4836,7 +4874,11 @@
             }
             // 공개 화면은 팀 슬롯과 분리된 숫자 라벨만 사용한다.
             const publicAuctionName = [cleanInfoName, publicCompanyName].filter(Boolean).join(' · ');
-            document.getElementById("info-name").textContent = showCompanyInline ? publicAuctionName : cleanInfoName;
+            const infoCompany = document.getElementById("info-company");
+            const showCompanyTag = !isHost && showCompanyInline;
+            infoCompany.textContent = showCompanyTag ? publicCompanyName : '';
+            infoCompany.hidden = !showCompanyTag;
+            document.getElementById("info-name").textContent = cleanInfoName;
             document.getElementById("info-sub").textContent = presentation.label;
 
             // 호스트 카드 데이터 렌더링
