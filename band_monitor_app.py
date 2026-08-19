@@ -105,6 +105,25 @@ BID_SAVE_MIN_INTERVAL_SEC = 2.0
 MAX_SEEN_CHAT_KEYS = 4000
 KEEP_SEEN_CHAT_KEYS = 3000
 MAX_BID_TABLE_ROWS = 200
+AUCTION_COUNTDOWN_ANNOUNCEMENT = (
+    "⏳ 마감 카운트를 시작합니다. ⬜⬜⬜⬜⬜ 표시 이후의 입찰은 반영되지 않습니다."
+)
+AUCTION_COUNTDOWN_LOCK_MESSAGE = "⬜⬜⬜⬜⬜"
+AUCTION_COUNTDOWN_LOCK_SEND_LABEL = "마감 잠금 표시 전송 실패"
+AUCTION_COUNTDOWN_INITIAL_STAGES = (
+    ("🟩🟩🟩🟩🟩", 5000),
+    ("🟩🟩🟩🟩⬜", 5000),
+    ("🟨🟨🟨⬜⬜", 7000),
+    ("🟧🟧⬜⬜⬜", 8000),
+    ("🟥⬜⬜⬜⬜", 8000),
+)
+AUCTION_COUNTDOWN_RESUME_STAGES = AUCTION_COUNTDOWN_INITIAL_STAGES[2:]
+AUCTION_COUNTDOWN_FIRST_MESSAGE_DELAY_MS = 850
+AUCTION_COUNTDOWN_RESUME_DELAY_MS = 700
+AUCTION_COUNTDOWN_IDLE = "idle"
+AUCTION_COUNTDOWN_RUNNING = "running"
+AUCTION_COUNTDOWN_LOCK_PENDING = "lock_pending"
+AUCTION_COUNTDOWN_LOCKED = "locked"
 CORE_PYC_CANDIDATES = [
     os.path.join(APP_DIR, "band_monitor_app_core.pyc"),
     os.path.join(APP_DIR, "__pycache__", "band_monitor_app_core.cpython-313.pyc"),
@@ -132,6 +151,31 @@ def _load_core():
 
 
 _core = _load_core()
+
+
+def _countdown_item_key(item):
+    item = item or {}
+    return str(item.get("row") or item.get("num") or "").strip()
+
+
+def _countdown_top_signature(bids):
+    bids = list(bids or [])
+    if not bids:
+        return None
+    top = bids[0] or {}
+    try:
+        amount = float(top.get("amount", 0) or 0)
+    except (TypeError, ValueError):
+        amount = 0.0
+    bidder = str(top.get("bidder_key") or top.get("name") or "").strip()
+    return bidder, amount
+
+
+def _dispatch_countdown_action(card):
+    window = card.window() if card is not None else None
+    handler = getattr(window, "_on_auction_countdown_action", None)
+    if callable(handler):
+        handler()
 
 
 def _as_bool(value, default=False):
@@ -1895,6 +1939,25 @@ def _patch_auction_card_performance():
         self.btn_manual_bid_edit.clicked.connect(lambda: _manual_edit_selected_bid(self))
         self.btn_manual_bid_delete.clicked.connect(lambda: _manual_delete_selected_bid(self))
 
+        action_layout = None
+        container = self.findChild(_core.QWidget, "auctionCard")
+        container_layout = container.layout() if container is not None else None
+        if container_layout is not None:
+            for layout_index in range(container_layout.count()):
+                candidate = container_layout.itemAt(layout_index).layout()
+                if candidate is not None and candidate.indexOf(getattr(self, "btn_sold", None)) >= 0:
+                    action_layout = candidate
+                    break
+        if action_layout is not None and not hasattr(self, "btn_countdown"):
+            self.btn_countdown = _core.QPushButton("마감 카운트")
+            self.btn_countdown.setObjectName("btnCountdown")
+            self.btn_countdown.setCursor(_core.Qt.PointingHandCursor)
+            sold_index = action_layout.indexOf(self.btn_sold)
+            action_layout.insertWidget(max(0, sold_index + 1), self.btn_countdown)
+            self.btn_countdown.clicked.connect(
+                lambda _checked=False, card=self: _dispatch_countdown_action(card)
+            )
+
         index = layout.indexOf(table)
         if index >= 0:
             layout.insertLayout(index, row)
@@ -2365,6 +2428,7 @@ def _patch_main_window():
     original_end_auction = MainWindow._end_auction
     original_add_bid = MainWindow._add_bid
     original_on_sold = MainWindow._on_sold
+    original_on_chat_send_done = MainWindow._on_chat_send_done
     original_normalize_bid_entries = MainWindow._normalize_bid_entries
 
     def _normalize_bid_entries(self, raw):
@@ -2763,6 +2827,291 @@ def _patch_main_window():
 
         self._queue_chat_send("\n".join(parts), "현재 경매 정보 전송 실패")
 
+    def _countdown_current_bids(self):
+        item = getattr(self, "active_item", None)
+        if not item:
+            return []
+        return self._normalize_bid_entries(item.get("bids", []))
+
+    def _countdown_current_top_signature(self):
+        return _countdown_top_signature(_countdown_current_bids(self))
+
+    def _countdown_is_locked(self):
+        return getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE) == AUCTION_COUNTDOWN_LOCKED
+
+    def _countdown_button_style(state):
+        if state in {AUCTION_COUNTDOWN_RUNNING, AUCTION_COUNTDOWN_LOCK_PENDING}:
+            return (
+                "QPushButton { background:#FFF4E8; color:#A84300; border:1px solid #F5B97A; "
+                "border-radius:7px; font-size:11px; font-weight:850; padding:0 6px; }"
+                "QPushButton:hover { background:#FFE8D1; border-color:#E89542; }"
+            )
+        if state == AUCTION_COUNTDOWN_LOCKED:
+            return (
+                "QPushButton { background:#0B7A55; color:#FFFFFF; border:1px solid #0B7A55; "
+                "border-radius:7px; font-size:12px; font-weight:900; padding:0 7px; }"
+                "QPushButton:hover { background:#086544; border-color:#086544; }"
+            )
+        return (
+            "QPushButton { background:#FFF9EE; color:#8A5A00; border:1px solid #E9C77C; "
+            "border-radius:7px; font-size:11px; font-weight:850; padding:0 6px; }"
+            "QPushButton:hover { background:#FFF0CF; border-color:#D8AA4E; }"
+        )
+
+    def _update_auction_countdown_button(self):
+        card = getattr(self, "auction_card", None)
+        button = getattr(card, "btn_countdown", None) if card is not None else None
+        if button is None:
+            return
+        item = getattr(self, "active_item", None)
+        is_quiz = bool(item and _quiz_item_meta(item).get("is_quiz"))
+        state = getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE)
+        button.setVisible(bool(item) and not is_quiz)
+        button.setEnabled(bool(item) and not is_quiz)
+        if state in {AUCTION_COUNTDOWN_RUNNING, AUCTION_COUNTDOWN_LOCK_PENDING}:
+            button.setText("카운트 취소")
+            if state == AUCTION_COUNTDOWN_LOCK_PENDING:
+                button.setToolTip("BAND 채팅에서 빈칸 표시의 순서를 확인하고 있습니다.")
+            else:
+                button.setToolTip("진행 중인 마감 카운트를 취소합니다.")
+        elif state == AUCTION_COUNTDOWN_LOCKED:
+            button.setText("입찰 OK")
+            button.setToolTip("왼쪽에서 수동 입력한 입찰을 승인하고 노란색 3칸부터 재개합니다.")
+        else:
+            button.setText("마감 카운트")
+            button.setToolTip("입찰 마감 카운트를 시작합니다.")
+        button.setStyleSheet(_countdown_button_style(state))
+
+    def _set_auction_countdown_state(self, state):
+        self._auction_countdown_state = state
+        _update_auction_countdown_button(self)
+
+    def _stop_auction_countdown(self, announce=False):
+        timer = getattr(self, "_auction_countdown_timer", None)
+        if timer is not None:
+            timer.stop()
+        self._auction_countdown_generation = getattr(self, "_auction_countdown_generation", 0) + 1
+        self._auction_countdown_sequence = ()
+        self._auction_countdown_stage_index = 0
+        self._auction_countdown_item_key = ""
+        self._auction_countdown_locked_top = None
+        self._auction_countdown_late_bids = []
+        self._auction_countdown_lock_marker_pending = False
+        _set_auction_countdown_state(self, AUCTION_COUNTDOWN_IDLE)
+        if announce and getattr(self, "active_item", None):
+            self._queue_chat_send("마감 카운트를 취소했습니다.", "카운트 취소 안내 전송 실패")
+
+    def _init_auction_countdown(self):
+        self._auction_countdown_generation = 0
+        self._auction_countdown_sequence = ()
+        self._auction_countdown_stage_index = 0
+        self._auction_countdown_item_key = ""
+        self._auction_countdown_locked_top = None
+        self._auction_countdown_late_bids = []
+        self._auction_countdown_lock_marker_pending = False
+        self._auction_countdown_timer = _core.QTimer(self)
+        self._auction_countdown_timer.setSingleShot(True)
+        self._auction_countdown_timer.timeout.connect(lambda: _advance_auction_countdown(self))
+        card = getattr(self, "auction_card", None)
+        button = getattr(card, "btn_countdown", None) if card is not None else None
+        handler = getattr(self, "_on_auction_countdown_action", None)
+        if button is not None and callable(handler):
+            try:
+                button.clicked.disconnect()
+            except (TypeError, RuntimeError):
+                pass
+            button.clicked.connect(lambda _checked=False: handler())
+            self._auction_countdown_button_bound = True
+        _set_auction_countdown_state(self, AUCTION_COUNTDOWN_IDLE)
+
+    def _begin_auction_countdown(self, resume=False, announce=False):
+        item = getattr(self, "active_item", None)
+        if not item:
+            self.toast.show_toast("진행 중인 경매가 없습니다.", "warning")
+            return False
+        if _quiz_item_meta(item).get("is_quiz"):
+            self.toast.show_toast("퀴즈 진행에는 마감 카운트를 사용할 수 없습니다.", "warning")
+            return False
+
+        timer = getattr(self, "_auction_countdown_timer", None)
+        if timer is None:
+            _init_auction_countdown(self)
+            timer = self._auction_countdown_timer
+        timer.stop()
+        self._auction_countdown_generation = getattr(self, "_auction_countdown_generation", 0) + 1
+        self._auction_countdown_sequence = (
+            AUCTION_COUNTDOWN_RESUME_STAGES if resume else AUCTION_COUNTDOWN_INITIAL_STAGES
+        )
+        self._auction_countdown_stage_index = 0
+        self._auction_countdown_item_key = _countdown_item_key(item)
+        self._auction_countdown_locked_top = None
+        self._auction_countdown_late_bids = []
+        self._auction_countdown_lock_marker_pending = False
+        _set_auction_countdown_state(self, AUCTION_COUNTDOWN_RUNNING)
+
+        if announce:
+            self._queue_chat_send(AUCTION_COUNTDOWN_ANNOUNCEMENT, "마감 카운트 안내 전송 실패")
+        delay = (
+            AUCTION_COUNTDOWN_RESUME_DELAY_MS if resume
+            else AUCTION_COUNTDOWN_FIRST_MESSAGE_DELAY_MS
+        )
+        timer.start(delay)
+        return True
+
+    def _advance_auction_countdown(self):
+        if getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE) != AUCTION_COUNTDOWN_RUNNING:
+            return
+        item = getattr(self, "active_item", None)
+        if not item or _countdown_item_key(item) != getattr(self, "_auction_countdown_item_key", ""):
+            _stop_auction_countdown(self)
+            return
+
+        sequence = getattr(self, "_auction_countdown_sequence", ())
+        index = getattr(self, "_auction_countdown_stage_index", 0)
+        if index >= len(sequence):
+            _lock_auction_bidding(self)
+            return
+
+        message, duration_ms = sequence[index]
+        self._auction_countdown_stage_index = index + 1
+        self._queue_chat_send(message, "마감 카운트 전송 실패")
+        self._auction_countdown_timer.start(int(duration_ms))
+
+    def _lock_auction_bidding(self):
+        if getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE) != AUCTION_COUNTDOWN_RUNNING:
+            return
+        timer = getattr(self, "_auction_countdown_timer", None)
+        if timer is not None:
+            timer.stop()
+        self._auction_countdown_lock_marker_pending = True
+        _set_auction_countdown_state(self, AUCTION_COUNTDOWN_LOCK_PENDING)
+        self._queue_chat_send(AUCTION_COUNTDOWN_LOCK_MESSAGE, AUCTION_COUNTDOWN_LOCK_SEND_LABEL)
+        _append_chat_debug_log(
+            "countdown lock marker queued "
+            f"item={getattr(self, '_auction_countdown_item_key', '')!r}"
+        )
+
+    def _confirm_auction_lock_boundary(self):
+        if not getattr(self, "_auction_countdown_lock_marker_pending", False):
+            return False
+        item = getattr(self, "active_item", None)
+        if not item or _countdown_item_key(item) != getattr(self, "_auction_countdown_item_key", ""):
+            _stop_auction_countdown(self)
+            return False
+        self._auction_countdown_lock_marker_pending = False
+        self._auction_countdown_locked_top = _countdown_current_top_signature(self)
+        self._auction_countdown_late_bids = []
+        _set_auction_countdown_state(self, AUCTION_COUNTDOWN_LOCKED)
+        self.toast.show_toast("입찰이 잠겼습니다. 낙찰 또는 수동 입찰 승인을 선택하세요.", "success")
+        _append_chat_debug_log(
+            "countdown locked at observed chat marker "
+            f"item={getattr(self, '_auction_countdown_item_key', '')!r} "
+            f"top={getattr(self, '_auction_countdown_locked_top', None)!r}"
+        )
+        return True
+
+    def _record_locked_late_bid(self, name, amount, t="", bidder_key="", text=""):
+        entries = getattr(self, "_auction_countdown_late_bids", None)
+        if entries is None:
+            entries = []
+            self._auction_countdown_late_bids = entries
+        entries.append({
+            "name": _normalize_winner_text(name),
+            "bidder_key": str(bidder_key or name).strip(),
+            "amount": amount,
+            "time": str(t or ""),
+            "text": str(text or ""),
+        })
+        if len(entries) > 50:
+            del entries[:-50]
+        _append_chat_debug_log(
+            f"bid ignored after countdown lock name={name!r} amount={amount!r} time={t!r}"
+        )
+
+    def _approve_manual_bid_and_resume(self):
+        if not _countdown_is_locked(self):
+            return False
+        current_top = _countdown_current_top_signature(self)
+        locked_top = getattr(self, "_auction_countdown_locked_top", None)
+        if current_top is None or current_top == locked_top:
+            self.toast.show_toast(
+                "왼쪽 입찰 목록에서 승인할 입찰자와 금액을 입력하거나 수정해 주세요.",
+                "warning",
+            )
+            return False
+
+        bids = _countdown_current_bids(self)
+        top = bids[0]
+        msg = _format_manual_chat(self, "highest", top.get("name", ""), top.get("amount", 0))
+        if msg:
+            self._queue_chat_send(msg, "수동 승인 입찰 전송 실패")
+        if not _begin_auction_countdown(self, resume=True, announce=False):
+            return False
+        self.toast.show_toast("수동 입찰을 반영하고 노란색 3칸부터 재개합니다.", "success")
+        _append_chat_debug_log(
+            f"manual bid approved after lock previous={locked_top!r} current={current_top!r}"
+        )
+        return True
+
+    def _on_auction_countdown_action(self):
+        state = getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE)
+        _append_chat_debug_log(
+            f"countdown button clicked state={state!r} "
+            f"active={_countdown_item_key(getattr(self, 'active_item', None))!r}"
+        )
+        if state == AUCTION_COUNTDOWN_LOCKED:
+            _approve_manual_bid_and_resume(self)
+            return
+        if state in {AUCTION_COUNTDOWN_RUNNING, AUCTION_COUNTDOWN_LOCK_PENDING}:
+            answer = _core.QMessageBox.question(
+                self,
+                "마감 카운트 취소",
+                "진행 중인 마감 카운트를 취소할까요?",
+                _core.QMessageBox.Yes | _core.QMessageBox.No,
+                _core.QMessageBox.No,
+            )
+            if answer == _core.QMessageBox.Yes:
+                _stop_auction_countdown(self, announce=True)
+            return
+        _begin_auction_countdown(self, resume=False, announce=True)
+
+    def _restart_countdown_after_accepted_bid(self, previous_top):
+        if getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE) != AUCTION_COUNTDOWN_RUNNING:
+            return
+        current_top = _countdown_current_top_signature(self)
+        if current_top is None or current_top == previous_top:
+            return
+        _begin_auction_countdown(self, resume=True, announce=False)
+        _append_chat_debug_log(
+            f"countdown reset to yellow previous={previous_top!r} current={current_top!r}"
+        )
+
+    def _on_chat_send_done(self, payload):
+        result = original_on_chat_send_done(self, payload)
+        if not payload.get("ok"):
+            label = payload.get("label")
+            if (
+                label == AUCTION_COUNTDOWN_LOCK_SEND_LABEL
+                and getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE)
+                == AUCTION_COUNTDOWN_LOCK_PENDING
+            ):
+                _stop_auction_countdown(self)
+                self.toast.show_toast(
+                    "빈칸 표시를 전송하지 못해 입찰 잠금을 해제했습니다. 카운트를 다시 시작해 주세요.",
+                    "error",
+                )
+            elif label in {
+                "마감 카운트 안내 전송 실패",
+                "마감 카운트 전송 실패",
+                "수동 승인 입찰 전송 실패",
+            } and getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE) == AUCTION_COUNTDOWN_RUNNING:
+                _stop_auction_countdown(self)
+                self.toast.show_toast(
+                    "카운트 메시지를 전송하지 못해 마감 카운트를 중단했습니다.",
+                    "error",
+                )
+        return result
+
     def _configure_item_table(self):
         table = getattr(self, "item_table", None)
         if table is None:
@@ -2777,6 +3126,7 @@ def _patch_main_window():
 
     def __init__(self, *args, **kwargs):
         original_init(self, *args, **kwargs)
+        _init_auction_countdown(self)
         _configure_item_table(self)
         # Replace SheetsManager with SupabaseManager if configured
         if hasattr(self, "config") and (self.config.get("capture_service_url") or self.config.get("supabase_url")):
@@ -3008,11 +3358,22 @@ def _patch_main_window():
             try:
                 name = _normalize_winner_text(m.get("name", ""))
                 text = m.get("text", "")
+                display_text = text
                 t = m.get("time", "")
                 bidder_key = str(m.get("userKey") or name).strip() or name
                 if not name or not text:
                     continue
                 key = _chat_message_seen_key(self, m, idx)
+                is_new_lock_marker = (
+                    text.strip() == AUCTION_COUNTDOWN_LOCK_MESSAGE
+                    and getattr(self, "_auction_countdown_lock_marker_pending", False)
+                    and key not in self._seen_msgs
+                )
+                if is_new_lock_marker:
+                    # The BAND server order is authoritative: every message
+                    # handled before this marker remains a valid bid, while
+                    # messages handled after it are late and stay unreflected.
+                    _confirm_auction_lock_boundary(self)
                 buy_now = _is_buy_now_text(text)
                 if buy_now:
                     _append_chat_debug_log(
@@ -3059,7 +3420,22 @@ def _patch_main_window():
                         except (ValueError, TypeError):
                             pass
                         if buy_now or bid_amount >= price:
-                            is_bid = self._add_bid(name, bid_amount, t, bidder_key)
+                            if _countdown_is_locked(self):
+                                _record_locked_late_bid(
+                                    self,
+                                    name,
+                                    bid_amount,
+                                    t=t,
+                                    bidder_key=bidder_key,
+                                    text=text,
+                                )
+                                display_text = f"[마감 후 · 미반영] {text}"
+                                # Keep it visible when the operator uses the
+                                # bid-only chat filter, without adding it to
+                                # the actual bid list or highest-price state.
+                                is_bid = True
+                            else:
+                                is_bid = self._add_bid(name, bid_amount, t, bidder_key)
                             if buy_now:
                                 current_item_key = (
                                     (self.active_item or {}).get("row")
@@ -3079,7 +3455,7 @@ def _patch_main_window():
                         _append_chat_debug_log(
                             f"buy-now seen but no active item or no amount name={name!r} active={bool(self.active_item)} amount={bid_amount}"
                         )
-                self.chat_w.append_msg(name, text, t, is_bid)
+                self.chat_w.append_msg(name, display_text, t, is_bid)
             except Exception as exc:
                 print(f"[Chat] message handling failed: {exc}", flush=True)
                 _append_chat_debug_log(f"message handling failed: {exc}")
@@ -3087,8 +3463,14 @@ def _patch_main_window():
 
     def _add_bid(self, name, amount, t="", bidder_key=""):
         name = _normalize_winner_text(name)
+        if _countdown_is_locked(self):
+            return False
+        previous_top = _countdown_current_top_signature(self)
         if str(amount) != "2.0":
-            return original_add_bid(self, name, amount, t, bidder_key)
+            result = original_add_bid(self, name, amount, t, bidder_key)
+            if result:
+                _restart_countdown_after_accepted_bid(self, previous_top)
+            return result
         if not getattr(self, "active_item", None):
             return False
         bidder_key = str(bidder_key or name).strip() or name
@@ -3118,6 +3500,7 @@ def _patch_main_window():
             msg = _format_manual_chat(self, "highest", bid_name, new_top["amount"])
             if msg:
                 self._queue_chat_send(msg, "최고가 갱신 안내 전송 실패")
+        _restart_countdown_after_accepted_bid(self, previous_top)
         return True
 
     def _persist_bid_state_async(self, item, bids=None):
@@ -3165,6 +3548,10 @@ def _patch_main_window():
         is_quiz = sale_meta.get("mode") == "quiz"
         if hasattr(card, "btn_sold"):
             card.btn_sold.setText(definition.get("confirm_label", "낙찰"))
+        countdown_button = getattr(card, "btn_countdown", None)
+        if countdown_button is not None:
+            countdown_button.setVisible(not is_quiz and bool(getattr(self, "active_item", None)))
+            countdown_button.setEnabled(not is_quiz and bool(getattr(self, "active_item", None)))
         if hasattr(card, "btn_unsold"):
             card.btn_unsold.setText(definition.get("empty_label", "유찰"))
         for name in ("btn_manual_bid_add", "btn_manual_bid_edit"):
@@ -3189,6 +3576,7 @@ def _patch_main_window():
                 start_label.setStyleSheet("font-size:12px; color:#667085; font-weight:700; background:transparent;")
 
     def _start_auction(self, item):
+        _stop_auction_countdown(self)
         sale_meta = _sale_item_meta(item)
         if sale_meta.get("mode") == "quiz":
             quiz_meta = _quiz_item_meta(item)
@@ -3218,6 +3606,7 @@ def _patch_main_window():
             pass
         result = original_start_auction(self, item)
         _apply_auction_card_mode(self, item)
+        _update_auction_countdown_button(self)
         _update_chat_poll_timer(self)
         _update_auction_title(self, item)
         return result
@@ -3291,6 +3680,7 @@ def _patch_main_window():
         if result and quiz_message:
             self._queue_chat_send(quiz_message, "퀴즈 당첨 안내 전송 실패")
         if result:
+            _stop_auction_countdown(self)
             if status == _core.S_SOLD:
                 _queue_capture_job(self, item, sold_price, winner)
             _finalize_completed_auction_ui(self, item, status, sold_price, winner)
@@ -3708,6 +4098,7 @@ def _patch_main_window():
     MainWindow._open_label_reprint_dialog = _open_label_reprint_dialog
     MainWindow._retry_label_job = _retry_label_job
     MainWindow._on_chat_poll_done = _on_chat_poll_done
+    MainWindow._on_chat_send_done = _on_chat_send_done
     MainWindow._normalize_bid_entries = _normalize_bid_entries
     MainWindow._persist_bid_state_async = _persist_bid_state_async
     MainWindow._prompt_manual_bid = _prompt_manual_bid
@@ -3719,6 +4110,21 @@ def _patch_main_window():
     MainWindow._send_manual_highest_chat = _send_current_highest_chat
     MainWindow._send_manual_winner_chat = _send_current_winner_chat
     MainWindow._send_highest = _send_current_highest_chat
+    MainWindow._countdown_current_bids = _countdown_current_bids
+    MainWindow._countdown_current_top_signature = _countdown_current_top_signature
+    MainWindow._countdown_is_locked = _countdown_is_locked
+    MainWindow._update_auction_countdown_button = _update_auction_countdown_button
+    MainWindow._set_auction_countdown_state = _set_auction_countdown_state
+    MainWindow._init_auction_countdown = _init_auction_countdown
+    MainWindow._stop_auction_countdown = _stop_auction_countdown
+    MainWindow._begin_auction_countdown = _begin_auction_countdown
+    MainWindow._advance_auction_countdown = _advance_auction_countdown
+    MainWindow._lock_auction_bidding = _lock_auction_bidding
+    MainWindow._confirm_auction_lock_boundary = _confirm_auction_lock_boundary
+    MainWindow._record_locked_late_bid = _record_locked_late_bid
+    MainWindow._approve_manual_bid_and_resume = _approve_manual_bid_and_resume
+    MainWindow._on_auction_countdown_action = _on_auction_countdown_action
+    MainWindow._restart_countdown_after_accepted_bid = _restart_countdown_after_accepted_bid
     MainWindow._refresh_table = _refresh_table_sorted
     MainWindow._refresh_table_fast_for_items = _refresh_table_fast_compact
     MainWindow._start_auction = _start_auction
@@ -4785,6 +5191,7 @@ def _patch_main_visual_hierarchy():
             getattr(self, "btn_manual_bid_edit", None),
             getattr(self, "btn_manual_bid_delete", None),
             getattr(self, "btn_sold", None),
+            getattr(self, "btn_countdown", None),
             getattr(self, "btn_unsold", None),
             getattr(self, "btn_cancel", None),
             getattr(self, "btn_correct", None),
@@ -4810,6 +5217,7 @@ def _patch_main_visual_hierarchy():
 
         for button in (
             getattr(self, "btn_sold", None),
+            getattr(self, "btn_countdown", None),
             getattr(self, "btn_unsold", None),
             getattr(self, "btn_cancel", None),
             getattr(self, "btn_correct", None),
@@ -4937,6 +5345,13 @@ def _patch_main_visual_hierarchy():
             "QPushButton { background:#173E8F; color:white; border:none; border-radius:7px; font-weight:900; }"
             "QPushButton:hover { background:#234F9C; }"
         )
+        countdown_button = getattr(self, "btn_countdown", None)
+        if countdown_button is not None:
+            countdown_button.setStyleSheet(
+                "QPushButton { background:#FFF9EE; color:#8A5A00; border:1px solid #E9C77C; "
+                "border-radius:7px; font-size:11px; font-weight:850; padding:0 6px; }"
+                "QPushButton:hover { background:#FFF0CF; border-color:#D8AA4E; }"
+            )
         secondary_action_style = (
             "QPushButton { background:#FFFFFF; color:#667085; border:1px solid #DDE1E7; "
             "border-radius:7px; font-size:12px; font-weight:700; }"
@@ -4965,6 +5380,9 @@ def _patch_main_visual_hierarchy():
         else:
             self.btn_panel_start.setVisible(True)
             _style_start_button(self)
+        update_countdown = getattr(mw, "_update_auction_countdown_button", None)
+        if callable(update_countdown):
+            update_countdown()
         return result
 
     def set_active(self, item):
@@ -4973,6 +5391,10 @@ def _patch_main_visual_hierarchy():
         _style_card_state(self, True)
         _set_operational_controls(self, True)
         self.btn_panel_start.setVisible(False)
+        mw = self.window()
+        update_countdown = getattr(mw, "_update_auction_countdown_button", None)
+        if callable(update_countdown):
+            update_countdown()
         return result
 
     def set_idle(self):
