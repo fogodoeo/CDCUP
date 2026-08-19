@@ -100,6 +100,7 @@ sys.excepthook = _crash_report_excepthook
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 LABEL_SPOOL_PATH = os.path.join(APP_DIR, "print_outputs", "label_print_spool.json")
+ACTIVE_AUCTION_SESSION_PATH = os.path.join(APP_DIR, "print_outputs", "active_auction_session.json")
 _LABEL_SPOOL = LabelSpool(LABEL_SPOOL_PATH)
 BID_SAVE_MIN_INTERVAL_SEC = 2.0
 MAX_SEEN_CHAT_KEYS = 4000
@@ -567,6 +568,116 @@ def _queue_capture_job(window, item, sold_price="", winner="", manual=False):
 
     thread.finished.connect(_discard_capture_thread)
     thread.start()
+
+
+def _active_session_channel(window):
+    manager = getattr(window, "sheets", None)
+    return str(getattr(manager, "channel_id", "") or "").strip().lower()
+
+
+def _save_active_auction_session(window, item):
+    item = item or {}
+    row = str(item.get("row") or item.get("id") or "").strip()
+    if not row:
+        return
+    payload = {
+        "row": row,
+        "num": item.get("num") or 0,
+        "name": item.get("name") or "",
+        "start_time": item.get("start_time") or item.get("startTime") or "",
+        "channel_id": _active_session_channel(window),
+        "saved_at": time.time(),
+    }
+    target = ACTIVE_AUCTION_SESSION_PATH
+    temporary = target + ".tmp"
+    try:
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        with open(temporary, "w", encoding="utf-8", newline="\n") as handle:
+            json.dump(payload, handle, ensure_ascii=False, indent=2)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, target)
+    except OSError as exc:
+        print(f"[AuctionSession] 진행 상태 저장 실패: {exc}", flush=True)
+
+
+def _clear_active_auction_session():
+    for path in (ACTIVE_AUCTION_SESSION_PATH, ACTIVE_AUCTION_SESSION_PATH + ".tmp"):
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+        except OSError as exc:
+            print(f"[AuctionSession] 진행 상태 정리 실패: {exc}", flush=True)
+
+
+def _load_active_auction_session():
+    try:
+        with open(ACTIVE_AUCTION_SESSION_PATH, "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        if not isinstance(payload, dict):
+            raise ValueError("invalid session payload")
+        saved_at = float(payload.get("saved_at") or 0)
+        if not saved_at or time.time() - saved_at > 12 * 60 * 60:
+            _clear_active_auction_session()
+            return None
+        return payload
+    except FileNotFoundError:
+        return None
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        print(f"[AuctionSession] 진행 상태 읽기 실패: {exc}", flush=True)
+        _clear_active_auction_session()
+        return None
+
+
+def _restore_active_auction_session(window, items):
+    payload = _load_active_auction_session()
+    if not payload or not items:
+        return None
+    saved_channel = str(payload.get("channel_id") or "").strip().lower()
+    current_channel = _active_session_channel(window)
+    if saved_channel and current_channel and saved_channel != current_channel:
+        return None
+    saved_row = str(payload.get("row") or "").strip()
+    saved_num = str(payload.get("num") or "").strip()
+    item = next(
+        (
+            candidate for candidate in items
+            if str(candidate.get("row") or candidate.get("id") or "").strip() == saved_row
+            or (not saved_row and saved_num and str(candidate.get("num") or "").strip() == saved_num)
+        ),
+        None,
+    )
+    if not item:
+        return None
+    status = str(item.get("status") or "").strip()
+    terminal = {_core.S_SOLD, _core.S_UNSOLD, _core.S_CANCEL}
+    if status in terminal:
+        _clear_active_auction_session()
+        return None
+    if status not in {_core.S_WAIT, _core.S_ACTIVE}:
+        return None
+    item["status"] = _core.S_ACTIVE
+    if payload.get("start_time"):
+        item["start_time"] = payload["start_time"]
+        item["startTime"] = payload["start_time"]
+    if status != _core.S_ACTIVE:
+        update = {
+            "row": item.get("row") or item.get("id"),
+            "status": _core.S_ACTIVE,
+            "start_time": item.get("start_time") or "",
+        }
+
+        def _repair_remote_status():
+            try:
+                if not window.sheets.update_item(update):
+                    print("[AuctionSession] 진행 상태 원격 복구 실패", flush=True)
+            except Exception as exc:
+                print(f"[AuctionSession] 진행 상태 원격 복구 실패: {exc}", flush=True)
+
+        threading.Thread(target=_repair_remote_status, daemon=True).start()
+    print(f"[AuctionSession] #{item.get('num', '')} {item.get('name', '')} 진행 상태 복원", flush=True)
+    return item
 
 
 def _as_float(value, default):
@@ -2426,6 +2537,7 @@ def _patch_main_window():
     original_init = MainWindow.__init__
     original_start_auction = MainWindow._start_auction
     original_end_auction = MainWindow._end_auction
+    original_on_connect_done_inner = MainWindow._on_connect_done_inner
     original_add_bid = MainWindow._add_bid
     original_on_sold = MainWindow._on_sold
     original_on_chat_send_done = MainWindow._on_chat_send_done
@@ -3163,6 +3275,11 @@ def _patch_main_window():
         if getattr(self, "items", None):
             self._refresh_table()
 
+    def _on_connect_done_inner(self, items, tabs, cdp_ok):
+        if items is not None and not getattr(self, "active_item", None):
+            _restore_active_auction_session(self, items)
+        return original_on_connect_done_inner(self, items, tabs, cdp_ok)
+
     def _auction_filter_mode(self):
         filter_value = getattr(self, "_filter", "")
         filter_keys = list(getattr(self, "_filter_btns", {}).keys())
@@ -3605,6 +3722,7 @@ def _patch_main_window():
         except Exception:
             pass
         result = original_start_auction(self, item)
+        _save_active_auction_session(self, item)
         _apply_auction_card_mode(self, item)
         _update_auction_countdown_button(self)
         _update_chat_poll_timer(self)
@@ -3681,6 +3799,7 @@ def _patch_main_window():
             self._queue_chat_send(quiz_message, "퀴즈 당첨 안내 전송 실패")
         if result:
             _stop_auction_countdown(self)
+            _clear_active_auction_session()
             if status == _core.S_SOLD:
                 _queue_capture_job(self, item, sold_price, winner)
             _finalize_completed_auction_ui(self, item, status, sold_price, winner)
@@ -4099,6 +4218,7 @@ def _patch_main_window():
     MainWindow._retry_label_job = _retry_label_job
     MainWindow._on_chat_poll_done = _on_chat_poll_done
     MainWindow._on_chat_send_done = _on_chat_send_done
+    MainWindow._on_connect_done_inner = _on_connect_done_inner
     MainWindow._normalize_bid_entries = _normalize_bid_entries
     MainWindow._persist_bid_state_async = _persist_bid_state_async
     MainWindow._prompt_manual_bid = _prompt_manual_bid
