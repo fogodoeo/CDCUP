@@ -21,6 +21,11 @@ class BroadcastCompanyTagTests(unittest.TestCase):
         self.assertIn("infoCompany.hidden = !showCompanyTag;", self.source)
         self.assertIn("showCompany: visibility === 'public'", self.source)
 
+    def test_legacy_tournament_uses_screen_blind_setting(self):
+        self.assertIn("const configuredBlindMode = String(map?.bracket_full_blind", self.source)
+        self.assertIn("configuredBlindMode === '0'", self.source)
+        self.assertIn("configuredTournamentVisibility", self.source)
+
     def test_company_tag_has_independent_spacing(self):
         self.assertIn(".top-bar .name-line", self.source)
         self.assertIn("gap: clamp(11px, 1.1vw, 17px);", self.source)

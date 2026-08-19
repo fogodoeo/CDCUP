@@ -1010,6 +1010,11 @@
                             <option value="ticker">한 줄 자막</option>
                         </select>
                     </div>
+                    <div class="switch-container" id="toggle-live-bidders-opacity-group" style="display:none; gap: 7px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
+                        <span style="font-weight: 700;">입찰명단 투명도:</span>
+                        <input type="range" id="live-bidders-opacity-input" min="0" max="100" step="1" value="94" oninput="previewLiveBiddersOpacity(this.value)" onchange="updateLiveBiddersOpacity(this.value)" style="width:86px; accent-color:#d9b05c;">
+                        <strong id="live-bidders-opacity-value" style="min-width:32px; font-size:11px; color:var(--text-muted);">94%</strong>
+                    </div>
                     <div class="switch-container" id="toggle-bracket-mode-group" style="display:none; gap: 6px; align-items: center; border-left: 1px solid var(--border); padding-left: 12px; margin-left: 6px;">
                         <span style="font-weight: 700;">송출 모드:</span>
                         <select id="bracket-active-select" onchange="changeActiveTournament(this.value)" class="cdcup-input" style="padding: 2px 6px; width: auto; height: 28px; font-size: 11px; font-weight: 700; border-radius: 4px;">
@@ -1286,6 +1291,7 @@
                 setDisplay('toggle-live-bidders-show-group', !isCrewart);
                 setDisplay('toggle-live-bidders-switch-group', !isCrewart);
                 setDisplay('toggle-live-bidders-mode-group', !isCrewart);
+                setDisplay('toggle-live-bidders-opacity-group', !isCrewart);
                 setDisplay('bracket-coords', true);
                 setDisplay('bracket-live-coords', false);
                 setDisplay('bracket-title-coords', false);
@@ -1386,6 +1392,7 @@
             document.getElementById('toggle-live-bidders-show-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-live-bidders-switch-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-live-bidders-mode-group').style.display = isInitialCrewart ? 'none' : '';
+            document.getElementById('toggle-live-bidders-opacity-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-bracket-scale-group').style.display = 'none';
             document.getElementById('toggle-bracket-mode-group').style.display = isInitialCrewart ? 'none' : '';
             document.getElementById('toggle-bracket-full-font-group').style.display = isInitialCrewart ? '' : 'none';
@@ -1563,6 +1570,19 @@
 
         function updateBlindTotalsOpacity(val) {
             previewBlindTotalsOpacity(val);
+            saveCoordinates(false);
+        }
+
+        function previewLiveBiddersOpacity(val) {
+            const parsed = parseInt(val, 10);
+            const opacity = Math.max(0, Math.min(100, Number.isFinite(parsed) ? parsed : 94));
+            const valueEl = document.getElementById('live-bidders-opacity-value');
+            if (valueEl) valueEl.textContent = opacity + '%';
+            frame.contentWindow.postMessage({ type: 'liveBiddersOpacity', value: opacity }, '*');
+        }
+
+        function updateLiveBiddersOpacity(val) {
+            previewLiveBiddersOpacity(val);
             saveCoordinates(false);
         }
 
@@ -1777,6 +1797,7 @@
                     const liveBiddersShow = cfg.live_bidders_show !== undefined ? String(cfg.live_bidders_show) : '0';
                     const liveBiddersSwitchSec = cfg.live_bidders_switch_sec || '5';
                     const liveBiddersMode = cfg.live_bidders_mode || 'top';
+                    const liveBiddersOpacity = cfg.live_bidders_opacity ?? '94';
 
                     const showInput = document.getElementById('toggle-live-bidders-show');
                     if (showInput) showInput.checked = liveBiddersShow === '1';
@@ -1786,6 +1807,11 @@
 
                     const modeSelect = document.getElementById('live-bidders-mode-select');
                     if (modeSelect) modeSelect.value = liveBiddersMode;
+                    const bidderOpacityInput = document.getElementById('live-bidders-opacity-input');
+                    if (bidderOpacityInput) {
+                        bidderOpacityInput.value = liveBiddersOpacity;
+                        previewLiveBiddersOpacity(liveBiddersOpacity);
+                    }
 
                     // 이벤트 매치 설정 로딩
                     const eventMatchShow = cfg.event_match_show !== undefined ? String(cfg.event_match_show) : '0';
@@ -2536,6 +2562,7 @@
                     configMap['live_bidders_show'] = document.getElementById('toggle-live-bidders-show')?.checked ? '1' : '0';
                     configMap['live_bidders_switch_sec'] = document.getElementById('live-bidders-switch-input')?.value || '5';
                     configMap['live_bidders_mode'] = document.getElementById('live-bidders-mode-select')?.value || 'top';
+                    configMap['live_bidders_opacity'] = document.getElementById('live-bidders-opacity-input')?.value || '94';
                     configMap['event_match_show'] = document.getElementById('toggle-event-match-show')?.checked ? '1' : '0';
                 }
             }
@@ -2729,6 +2756,8 @@
                     if (blindFontInput) blindFontInput.value = '14';
                     const blindOpacityInput = document.getElementById('blind-totals-opacity-input');
                     if (blindOpacityInput) { blindOpacityInput.value = '0'; previewBlindTotalsOpacity('0'); }
+                    const bidderOpacityInput = document.getElementById('live-bidders-opacity-input');
+                    if (bidderOpacityInput) { bidderOpacityInput.value = '94'; previewLiveBiddersOpacity('94'); }
                     applyVisualState('blind_totals');
                     focusBracketLayer(resetIsCrewart ? 'bracket_full' : 'blind_totals');
                 }

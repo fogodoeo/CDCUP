@@ -2947,7 +2947,13 @@
             grid-template-columns: minmax(0, 1fr) auto;
             gap: calc(var(--blind-total-fs) * 0.3);
             align-items: center;
-            background: rgba(8, 13, 24, 0.94);
+            background: rgba(8, 13, 24, var(--live-bidders-opacity, 0.94));
+        }
+        #live-bidders-overlay .blind-total-row[data-rank="2"] {
+            --rank-text-opacity: 0.94;
+        }
+        #live-bidders-overlay .blind-total-row[data-rank="3"] {
+            --rank-text-opacity: 0.86;
         }
         .blind-total-row[data-rank="2"] {
             --rank-text-opacity: 0.78;
@@ -5425,6 +5431,13 @@
                 const value = Math.max(35, Math.min(100, Number(e.data.value) || 94)) / 100;
                 if (treeLive) treeLive.style.setProperty('--live-panel-opacity', String(value));
             }
+
+            if (e.data.type === 'liveBiddersOpacity') {
+                const biddersPanel = document.getElementById('live-bidders-overlay');
+                const rawValue = Number(e.data.value);
+                const value = Math.max(0, Math.min(100, Number.isFinite(rawValue) ? rawValue : 94)) / 100;
+                if (biddersPanel) biddersPanel.style.setProperty('--live-bidders-opacity', String(value));
+            }
         });
 
         // ══════════════════════════════════════
@@ -6252,13 +6265,15 @@
                 ? 'tournament'
                 : 'single';
             const explicitVisibility = String(auctionMeta.visibilityMode || '').toLowerCase();
+            const configuredBlindMode = String(map?.bracket_full_blind ?? '').trim().toLowerCase();
+            const configuredTournamentVisibility = configuredBlindMode === '0' ? 'public' : 'blind';
             const isMedalOpenTournament = competition === 'tournament'
                 && Number(auctionMeta.tournamentStage) === 2;
             const visibility = isMedalOpenTournament
                 ? 'public'
                 : (['public', 'blind'].includes(explicitVisibility)
                     ? explicitVisibility
-                    : (competition === 'tournament' ? 'blind' : 'public'));
+                    : (competition === 'tournament' ? configuredTournamentVisibility : 'public'));
             const isQuiz = saleMeta.mode === 'quiz';
             let label = '';
             if (competition === 'tournament') {
@@ -6781,6 +6796,8 @@
             const fontSize = Math.max(9, Math.min(96, parseInt(map.blind_totals_font_size || '14', 10) || 14));
             const opacityRaw = parseInt(map.blind_totals_opacity ?? '0', 10);
             const opacity = Math.max(0, Math.min(100, Number.isFinite(opacityRaw) ? opacityRaw : 0)) / 100;
+            const bidderOpacityRaw = parseInt(map.live_bidders_opacity ?? '94', 10);
+            const bidderOpacity = Math.max(0, Math.min(100, Number.isFinite(bidderOpacityRaw) ? bidderOpacityRaw : 94)) / 100;
 
             container.style.removeProperty('top');
             container.style.removeProperty('left');
@@ -6794,6 +6811,7 @@
             container.style.height = height;
             container.style.setProperty('--blind-total-fs', fontSize + 'px');
             container.style.setProperty('--blind-total-opacity', String(opacity));
+            biddersPanel.style.setProperty('--live-bidders-opacity', String(bidderOpacity));
 
             if (totalsShow) {
                 renderBlindTeamTotals(map, items);
