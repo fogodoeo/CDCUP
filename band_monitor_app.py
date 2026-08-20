@@ -2556,6 +2556,16 @@ def _patch_main_window():
     original_on_sold = MainWindow._on_sold
     original_on_chat_send_done = MainWindow._on_chat_send_done
     original_normalize_bid_entries = MainWindow._normalize_bid_entries
+    original_build_label_print_context = MainWindow._build_label_print_context
+
+    def _build_label_print_context(self, item):
+        """Normalize sheet/API scalar values before the frozen label formatter."""
+        normalized = dict(item or {})
+        if not normalized.get("sold_price") and normalized.get("soldPrice") is not None:
+            normalized["sold_price"] = normalized.get("soldPrice")
+        for key in ("status", "startPrice", "price", "sold_price", "winner", "winner_phone"):
+            normalized[key] = str(normalized.get(key) or "").strip()
+        return original_build_label_print_context(self, normalized)
 
     def _normalize_bid_entries(self, raw):
         source = raw
@@ -4041,7 +4051,15 @@ def _patch_main_window():
         if key == getattr(self, "_last_auto_label_key", None):
             return
         self._last_auto_label_key = key
-        self._start_label_print(item, "라벨 인쇄 시작...")
+        try:
+            self._start_label_print(item, "라벨 인쇄 시작...")
+        except Exception as exc:
+            self._last_auto_label_key = None
+            _append_label_print_log(self, f"auto label setup failed: {exc}")
+            self.toast.show_toast(
+                f"낙찰은 완료됐지만 라벨 준비에 실패했습니다: {_short_label_error(exc)}",
+                "error",
+            )
 
     def _append_label_print_log(self, message):
         try:
@@ -4097,7 +4115,15 @@ def _patch_main_window():
             if not item:
                 self.toast.show_toast("선택한 개체가 없습니다.", "warning")
                 return
-            job_record = self._make_label_spool_job(dict(item))
+            try:
+                job_record = self._make_label_spool_job(dict(item))
+            except Exception as exc:
+                _append_label_print_log(self, f"label job creation failed: {exc}")
+                self.toast.show_toast(
+                    f"라벨 준비 실패: {_short_label_error(exc)} / 낙찰 처리는 유지됩니다.",
+                    "error",
+                )
+                return
             job_id = job_record["id"]
 
         if getattr(self, "_label_print_jobs", 0) > 0:
@@ -4245,6 +4271,7 @@ def _patch_main_window():
     MainWindow._on_chat_send_done = _on_chat_send_done
     MainWindow._on_connect_done_inner = _on_connect_done_inner
     MainWindow._normalize_bid_entries = _normalize_bid_entries
+    MainWindow._build_label_print_context = _build_label_print_context
     MainWindow._persist_bid_state_async = _persist_bid_state_async
     MainWindow._prompt_manual_bid = _prompt_manual_bid
     MainWindow._record_manual_bid = _record_manual_bid
