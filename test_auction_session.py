@@ -63,6 +63,16 @@ class ActiveAuctionSessionTests(unittest.TestCase):
         self.assertIsNone(restored)
         self.assertFalse(os.path.exists(self.session_path))
 
+    def test_authoritative_status_rejects_a_stale_local_active_item(self):
+        active = {"row": "creyon_lot_13", "status": app._core.S_ACTIVE}
+        remote = [
+            {"row": "creyon_lot_13", "status": app._core.S_SOLD},
+            {"row": "creyon_lot_16", "status": app._core.S_ACTIVE},
+        ]
+
+        self.assertFalse(app._active_item_is_authoritative(active, remote))
+        self.assertTrue(app._active_item_is_authoritative(remote[1], remote))
+
 
 if __name__ == "__main__":
     unittest.main()

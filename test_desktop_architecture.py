@@ -40,6 +40,12 @@ class DesktopArchitectureTests(unittest.TestCase):
         self.assertLess(value_index, platform_index)
         self.assertIn('capture_channel = session_channel if configured_channel in {"", "auto"}', source)
 
+    def test_platform_active_status_keeps_syncing_during_an_auction(self):
+        source = (ROOT / "band_monitor_app.py").read_text(encoding="utf-8")
+        self.assertIn("def _active_item_is_authoritative(active_item, items):", source)
+        self.assertIn("[Platform] stale active row released", source)
+        self.assertIn("MainWindow._sync_sheet = _sync_sheet", source)
+
 
 if __name__ == "__main__":
     unittest.main()

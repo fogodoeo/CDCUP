@@ -633,6 +633,26 @@ def _load_active_auction_session():
         return None
 
 
+def _active_item_is_authoritative(active_item, items):
+    """Return true only when the server still marks this exact row live."""
+    if not active_item or items is None:
+        return False
+    active_row = str(active_item.get("row") or active_item.get("id") or "").strip()
+    if not active_row:
+        return False
+    remote = next(
+        (
+            item for item in items
+            if str(item.get("row") or item.get("id") or "").strip() == active_row
+        ),
+        None,
+    )
+    if not remote:
+        return False
+    status = str(remote.get("status") or "").strip()
+    return status == _core.S_ACTIVE or "진행" in status
+
+
 def _restore_active_auction_session(window, items):
     payload = _load_active_auction_session()
     if not payload or not items:
@@ -2549,6 +2569,7 @@ def _patch_chat_shortcuts():
 def _patch_main_window():
     MainWindow = _core.MainWindow
     original_init = MainWindow.__init__
+    original_sync_sheet = MainWindow._sync_sheet
     original_start_auction = MainWindow._start_auction
     original_end_auction = MainWindow._end_auction
     original_on_connect_done_inner = MainWindow._on_connect_done_inner
@@ -3311,9 +3332,54 @@ def _patch_main_window():
             self._refresh_table()
 
     def _on_connect_done_inner(self, items, tabs, cdp_ok):
+        current = getattr(self, "active_item", None)
+        if items is not None and current and not _active_item_is_authoritative(current, items):
+            stale_row = current.get("row") or current.get("id")
+            _drop_pending_bid_save(self, stale_row)
+            _stop_auction_countdown(self)
+            _clear_active_auction_session()
+            self.active_item = None
+            self.auction_start_time = None
+            if hasattr(self, "auction_card"):
+                self.auction_card.set_idle()
+            print(f"[Platform] stale active row released: {stale_row}", flush=True)
         if items is not None and not getattr(self, "active_item", None):
             _restore_active_auction_session(self, items)
         return original_on_connect_done_inner(self, items, tabs, cdp_ok)
+
+    def _sync_sheet(self):
+        manager = getattr(self, "sheets", None)
+        platform_active = bool(
+            getattr(self, "active_item", None)
+            and getattr(manager, "channel_aware", False)
+            and getattr(manager, "using_platform", False)
+        )
+        if not platform_active:
+            return original_sync_sheet(self)
+        if (
+            getattr(self, "_drag_reordering", False)
+            or self._has_pending_result_saves()
+            or getattr(self, "_sync_inflight", False)
+            or getattr(self, "_manual_sheet_pull_inflight", False)
+            or getattr(self, "_manual_sheet_push_inflight", False)
+            or getattr(self, "_tab_change_inflight", False)
+        ):
+            return None
+
+        self._sync_inflight = True
+
+        def _do_sync():
+            try:
+                items = manager.read_items()
+                if items is not None and getattr(manager, "online", False):
+                    self.sig_connect_done.emit(items, None, self.cdp.connected)
+            except Exception as exc:
+                print(f"[Platform] active status sync failed: {exc}", flush=True)
+            finally:
+                self._sync_inflight = False
+
+        threading.Thread(target=_do_sync, daemon=True).start()
+        return None
 
     def _auction_filter_mode(self):
         filter_value = getattr(self, "_filter", "")
@@ -4270,6 +4336,7 @@ def _patch_main_window():
     MainWindow._on_chat_poll_done = _on_chat_poll_done
     MainWindow._on_chat_send_done = _on_chat_send_done
     MainWindow._on_connect_done_inner = _on_connect_done_inner
+    MainWindow._sync_sheet = _sync_sheet
     MainWindow._normalize_bid_entries = _normalize_bid_entries
     MainWindow._build_label_print_context = _build_label_print_context
     MainWindow._persist_bid_state_async = _persist_bid_state_async
