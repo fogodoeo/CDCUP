@@ -32,10 +32,7 @@ class _CountdownWindow(app._core.QObject):
                 }
             ],
         }
-        self.auction_card = types.SimpleNamespace(
-            btn_countdown=app._core.QPushButton(),
-            lbl_countdown_progress=app._core.QLabel(),
-        )
+        self.auction_card = types.SimpleNamespace(btn_countdown=app._core.QPushButton())
         self.toast = _Toast()
         self.config = {"templates": {}}
         self.sent = []
@@ -103,14 +100,14 @@ class AuctionCountdownTests(unittest.TestCase):
         self.assertEqual(
             [message for message, _ in app.AUCTION_COUNTDOWN_INITIAL_STAGES],
             [
-                "🟩🟩🟩🟩🟩",
-                "🟩🟩🟩🟩⬜",
-                "🟨🟨🟨⬜⬜",
-                "🟧🟧⬜⬜⬜",
-                "🟥⬜⬜⬜⬜",
+                "🟩🟩🟩🟩🟩 (5/5)",
+                "🟩🟩🟩🟩⬜ (4/5)",
+                "🟨🟨🟨⬜⬜ (3/5)",
+                "🟧🟧⬜⬜⬜ (2/5)",
+                "🟥⬜⬜⬜⬜ (1/5)",
             ],
         )
-        self.assertEqual(app.AUCTION_COUNTDOWN_LOCK_MESSAGE, "⬜⬜⬜⬜⬜")
+        self.assertEqual(app.AUCTION_COUNTDOWN_LOCK_MESSAGE, "⬜⬜⬜⬜⬜ (0/5) 마감")
 
     def test_live_socket_with_empty_queue_recovers_new_bid_from_band_dom(self):
         class Listener:
@@ -160,9 +157,8 @@ class AuctionCountdownTests(unittest.TestCase):
         self.assertIsNotNone(action_layout)
         sold_index = action_layout.indexOf(card.btn_sold)
         self.assertIs(action_layout.itemAt(sold_index + 1).widget(), card.btn_countdown)
-        self.assertIs(action_layout.itemAt(sold_index + 2).widget(), card.lbl_countdown_progress)
         self.assertEqual(card.btn_countdown.text(), "마감 카운트")
-        self.assertEqual(card.lbl_countdown_progress.text(), "(5/5)")
+        self.assertFalse(hasattr(card, "lbl_countdown_progress"))
 
     def test_main_window_binds_countdown_button_directly(self):
         window = _CountdownWindow()
@@ -223,7 +219,6 @@ class AuctionCountdownTests(unittest.TestCase):
             window._auction_countdown_timer.stop()
 
         self.assertEqual(window._auction_countdown_state, app.AUCTION_COUNTDOWN_LOCK_PENDING)
-        self.assertEqual(window.auction_card.lbl_countdown_progress.text(), "(0/5) 마감")
         app._core.MainWindow._confirm_auction_lock_boundary(window)
         self.assertEqual(window._auction_countdown_state, app.AUCTION_COUNTDOWN_LOCKED)
         self.assertEqual(window.auction_card.btn_countdown.text(), "입찰 OK")
@@ -342,7 +337,6 @@ class AuctionCountdownTests(unittest.TestCase):
         self.assertEqual(window.active_item["bids"][0]["bidder_key"], "late-12")
         self.assertEqual(window._auction_countdown_state, app.AUCTION_COUNTDOWN_RUNNING)
         self.assertEqual(window._auction_countdown_sequence, app.AUCTION_COUNTDOWN_RESUME_STAGES)
-        self.assertEqual(window.auction_card.lbl_countdown_progress.text(), "(3/5)")
 
     def test_band_chat_order_around_blank_marker_is_authoritative(self):
         window = _CountdownWindow()

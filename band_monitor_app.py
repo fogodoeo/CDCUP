@@ -107,17 +107,16 @@ MAX_SEEN_CHAT_KEYS = 4000
 KEEP_SEEN_CHAT_KEYS = 3000
 MAX_BID_TABLE_ROWS = 200
 AUCTION_COUNTDOWN_ANNOUNCEMENT = (
-    "⏳ 마감 카운트를 시작합니다. ⬜⬜⬜⬜⬜ 표시 이후의 입찰은 반영되지 않습니다."
+    "⏳ 마감 카운트를 시작합니다. ⬜⬜⬜⬜⬜ (0/5) 마감 표시 이후의 입찰은 반영되지 않습니다."
 )
-AUCTION_COUNTDOWN_LOCK_MESSAGE = "⬜⬜⬜⬜⬜"
+AUCTION_COUNTDOWN_LOCK_MESSAGE = "⬜⬜⬜⬜⬜ (0/5) 마감"
 AUCTION_COUNTDOWN_LOCK_SEND_LABEL = "마감 잠금 표시 전송 실패"
-AUCTION_COUNTDOWN_TOTAL_SLOTS = 5
 AUCTION_COUNTDOWN_INITIAL_STAGES = (
-    ("🟩🟩🟩🟩🟩", 6000),
-    ("🟩🟩🟩🟩⬜", 6000),
-    ("🟨🟨🟨⬜⬜", 8400),
-    ("🟧🟧⬜⬜⬜", 9600),
-    ("🟥⬜⬜⬜⬜", 9600),
+    ("🟩🟩🟩🟩🟩 (5/5)", 6000),
+    ("🟩🟩🟩🟩⬜ (4/5)", 6000),
+    ("🟨🟨🟨⬜⬜ (3/5)", 8400),
+    ("🟧🟧⬜⬜⬜ (2/5)", 9600),
+    ("🟥⬜⬜⬜⬜ (1/5)", 9600),
 )
 AUCTION_COUNTDOWN_GREEN_STAGE_COUNT = 2
 AUCTION_COUNTDOWN_RESUME_STAGES = AUCTION_COUNTDOWN_INITIAL_STAGES[2:]
@@ -2109,14 +2108,6 @@ def _patch_auction_card_performance():
             self.btn_countdown.clicked.connect(
                 lambda _checked=False, card=self: _dispatch_countdown_action(card)
             )
-            self.lbl_countdown_progress = _core.QLabel("(5/5)")
-            self.lbl_countdown_progress.setObjectName("lblCountdownProgress")
-            self.lbl_countdown_progress.setMinimumWidth(62)
-            self.lbl_countdown_progress.setAlignment(_core.Qt.AlignCenter | _core.Qt.AlignVCenter)
-            self.lbl_countdown_progress.setStyleSheet(
-                "font-size:12px; font-weight:900; color:#8A5A00; padding:0 3px;"
-            )
-            action_layout.insertWidget(max(0, sold_index + 2), self.lbl_countdown_progress)
 
         index = layout.indexOf(table)
         if index >= 0:
@@ -3069,22 +3060,6 @@ def _patch_main_window():
             button.setText("마감 카운트")
             button.setToolTip("입찰 마감 카운트를 시작합니다.")
         button.setStyleSheet(_countdown_button_style(state))
-        progress = getattr(card, "lbl_countdown_progress", None) if card is not None else None
-        if progress is not None:
-            progress.setVisible(bool(item) and not is_quiz)
-            remaining = max(0, min(
-                AUCTION_COUNTDOWN_TOTAL_SLOTS,
-                _as_int(getattr(self, "_auction_countdown_remaining", AUCTION_COUNTDOWN_TOTAL_SLOTS), AUCTION_COUNTDOWN_TOTAL_SLOTS),
-            ))
-            progress.setText(
-                f"({remaining}/{AUCTION_COUNTDOWN_TOTAL_SLOTS}) 마감"
-                if state in {AUCTION_COUNTDOWN_LOCK_PENDING, AUCTION_COUNTDOWN_LOCKED}
-                else f"({remaining}/{AUCTION_COUNTDOWN_TOTAL_SLOTS})"
-            )
-            progress.setStyleSheet(
-                "font-size:12px; font-weight:950; padding:0 3px; color:"
-                + ("#B42318;" if remaining == 0 else "#8A5A00;")
-            )
 
     def _set_auction_countdown_state(self, state):
         self._auction_countdown_state = state
@@ -3101,7 +3076,6 @@ def _patch_main_window():
         self._auction_countdown_locked_top = None
         self._auction_countdown_late_bids = []
         self._auction_countdown_lock_marker_pending = False
-        self._auction_countdown_remaining = AUCTION_COUNTDOWN_TOTAL_SLOTS
         _set_auction_countdown_state(self, AUCTION_COUNTDOWN_IDLE)
         if announce and getattr(self, "active_item", None):
             self._queue_chat_send("마감 카운트를 취소했습니다.", "카운트 취소 안내 전송 실패")
@@ -3114,7 +3088,6 @@ def _patch_main_window():
         self._auction_countdown_locked_top = None
         self._auction_countdown_late_bids = []
         self._auction_countdown_lock_marker_pending = False
-        self._auction_countdown_remaining = AUCTION_COUNTDOWN_TOTAL_SLOTS
         self._auction_countdown_timer = _core.QTimer(self)
         self._auction_countdown_timer.setSingleShot(True)
         self._auction_countdown_timer.timeout.connect(lambda: _advance_auction_countdown(self))
@@ -3153,10 +3126,6 @@ def _patch_main_window():
         self._auction_countdown_locked_top = None
         self._auction_countdown_late_bids = []
         self._auction_countdown_lock_marker_pending = False
-        self._auction_countdown_remaining = (
-            len(AUCTION_COUNTDOWN_RESUME_STAGES)
-            if resume else AUCTION_COUNTDOWN_TOTAL_SLOTS
-        )
         _set_auction_countdown_state(self, AUCTION_COUNTDOWN_RUNNING)
 
         if announce:
@@ -3184,8 +3153,6 @@ def _patch_main_window():
 
         message, duration_ms = sequence[index]
         self._auction_countdown_stage_index = index + 1
-        self._auction_countdown_remaining = sum(message.count(mark) for mark in ("🟩", "🟨", "🟧", "🟥"))
-        _update_auction_countdown_button(self)
         self._queue_chat_send(message, "마감 카운트 전송 실패")
         self._auction_countdown_timer.start(int(duration_ms))
 
@@ -3196,7 +3163,6 @@ def _patch_main_window():
         if timer is not None:
             timer.stop()
         self._auction_countdown_lock_marker_pending = True
-        self._auction_countdown_remaining = 0
         _set_auction_countdown_state(self, AUCTION_COUNTDOWN_LOCK_PENDING)
         self._queue_chat_send(AUCTION_COUNTDOWN_LOCK_MESSAGE, AUCTION_COUNTDOWN_LOCK_SEND_LABEL)
         _append_chat_debug_log(
