@@ -32,5 +32,20 @@ class BroadcastCompanyTagTests(unittest.TestCase):
         self.assertIn(".top-bar .company-tag", self.source)
 
 
+class SharedNametagTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.broadcast = (ROOT / "broadcast.html").read_text(encoding="utf-8")
+        cls.preview = (ROOT / "preview.html").read_text(encoding="utf-8")
+        cls.settings = (ROOT / "settings.html").read_text(encoding="utf-8")
+
+    def test_three_nametags_are_configurable_and_rendered(self):
+        self.assertIn('id="cfg-host-name3"', self.settings)
+        self.assertIn('id="draggable-nametag3"', self.preview)
+        self.assertIn("configMap.nametag3_left", self.preview)
+        self.assertIn('id="host-nametag-3"', self.broadcast)
+        self.assertIn("for (let i = 1; i <= 3; i++)", self.broadcast)
+
+
 if __name__ == "__main__":
     unittest.main()

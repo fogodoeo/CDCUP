@@ -147,6 +147,20 @@
             background: rgba(236, 72, 153, 0.25);
         }
 
+        /* Draggable Nametag 3 (PAGE1 only) */
+        .draggable-nametag3 {
+            width: 16%;
+            height: 8%;
+            background: rgba(14, 165, 233, 0.15);
+            border: 2px dashed #0EA5E9;
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+        }
+        .draggable-nametag3:hover {
+            border-color: #38BDF8;
+            background: rgba(14, 165, 233, 0.25);
+        }
+
         .draggable-info {
             width: 42%;
             height: 16%;
@@ -854,6 +868,12 @@
                     <div class="resize-handle resize-handle-se" id="resize-nametag2" title="크기 조절" style="border-color: #EC4899;"></div>
                 </div>
 
+                <!-- 5. Draggable Nametag 3 (PAGE1 only) -->
+                <div class="draggable-element draggable-nametag3" id="draggable-nametag3" data-type="nametag3" style="display:none;">
+                    <div class="element-label">네임택 3</div>
+                    <div class="resize-handle resize-handle-se" id="resize-nametag3" title="크기 조절" style="border-color: #0EA5E9;"></div>
+                </div>
+
                 <!-- PAGE2 개체정보 위치 -->
                 <div class="draggable-element draggable-info" id="draggable-info" data-type="info" style="display:none;">
                     <div class="element-label">개체정보</div>
@@ -921,6 +941,10 @@
                     <div class="switch-container" id="toggle-nametag2-group" style="display:none;">
                         <span>네임택 2</span>
                         <input type="checkbox" id="toggle-nametag2-show" class="switch-input" checked onchange="toggleShowState('nametag2')">
+                    </div>
+                    <div class="switch-container" id="toggle-nametag3-group" style="display:none;">
+                        <span>네임택 3</span>
+                        <input type="checkbox" id="toggle-nametag3-show" class="switch-input" checked onchange="toggleShowState('nametag3')">
                     </div>
                     <div class="switch-container" id="toggle-bracket-full-show-group" style="display:none;" onclick="focusBracketLayer('bracket_full')" title="클릭하면 전체대진 배치 박스가 선택됩니다">
                         <span>전체 결과</span>
@@ -1038,6 +1062,7 @@
                     <span id="ticker-coords-group">자막 좌표: Top <strong id="ticker-val-top">0%</strong>, Left <strong id="ticker-val-left">0%</strong></span>
                     <span id="nametag1-coords" style="display:none;"> | 네임택1: <strong id="nametag1-val-top">0%</strong>, <strong id="nametag1-val-left">0%</strong></span>
                     <span id="nametag2-coords" style="display:none;"> | 네임택2: <strong id="nametag2-val-top">0%</strong>, <strong id="nametag2-val-left">0%</strong></span>
+                    <span id="nametag3-coords" style="display:none;"> | 네임택3: <strong id="nametag3-val-top">0%</strong>, <strong id="nametag3-val-left">0%</strong></span>
                     <span id="info-coords" style="display:none;"> | 개체정보: <strong id="info-val-top">0%</strong>, <strong id="info-val-left">0%</strong></span>
                     <span id="photo-coords" style="display:none;"> | 사진: <strong id="photo-val-top">0%</strong>, <strong id="photo-val-left">0%</strong></span>
                     <span id="bracket-coords" style="display:none;">전체결과: Top <strong id="bracket-val-top">0%</strong>, Left <strong id="bracket-val-left">0%</strong></span>
@@ -1360,10 +1385,13 @@
         if (pageNum === '1') {
             document.getElementById('draggable-nametag1').style.display = '';
             document.getElementById('draggable-nametag2').style.display = '';
+            document.getElementById('draggable-nametag3').style.display = '';
             document.getElementById('toggle-nametag1-group').style.display = '';
             document.getElementById('toggle-nametag2-group').style.display = '';
+            document.getElementById('toggle-nametag3-group').style.display = '';
             document.getElementById('nametag1-coords').style.display = '';
             document.getElementById('nametag2-coords').style.display = '';
+            document.getElementById('nametag3-coords').style.display = '';
         }
 
         if (pageNum === '2') {
@@ -1447,7 +1475,7 @@
             };
         }
 
-        // PAGE1 전용: 네임택 2개 개별 드래그
+        // PAGE1 전용: 네임택 3개 개별 드래그
         if (pageNum === '1') {
             elements.nametag1 = {
                 el: document.getElementById('draggable-nametag1'),
@@ -1456,7 +1484,12 @@
             };
             elements.nametag2 = {
                 el: document.getElementById('draggable-nametag2'),
-                top: "auto", left: "18%", right: "auto", bottom: "6%", show: "1",
+                top: "auto", left: "42%", right: "auto", bottom: "6%", show: "1",
+                width: "16vw", height: "8vh"
+            };
+            elements.nametag3 = {
+                el: document.getElementById('draggable-nametag3'),
+                top: "auto", left: "auto", right: "3%", bottom: "6%", show: "1",
                 width: "16vw", height: "8vh"
             };
         }
@@ -1695,7 +1728,7 @@
                         : (cfg.p2_photo_show !== undefined ? String(cfg.p2_photo_show) : '1');
                 }
 
-                // Load Nametag 1 & 2 values (PAGE1 only)
+                // Load Nametag 1, 2 & 3 values (PAGE1 only)
                 if (elements.nametag1) {
                     const sharedW = cfg.nametag_width || cfg.nametag1_width || '16vw';
                     const sharedH = cfg.nametag_height || cfg.nametag1_height || '8vh';
@@ -1717,12 +1750,27 @@
                     const sharedBottom = cfg.nametag_bottom || cfg.nametag2_bottom || '6%';
 
                     elements.nametag2.top = sharedTop;
-                    elements.nametag2.left = cfg.nametag2_left || 'auto';
-                    elements.nametag2.right = cfg.nametag2_right || '3%';
+                    const thirdName = String(cfg.host_name3 || '').trim();
+                    const hasThirdPlacement = Boolean(cfg.nametag3_left || cfg.nametag3_right);
+                    elements.nametag2.left = thirdName && !hasThirdPlacement ? '42%' : (cfg.nametag2_left || '42%');
+                    elements.nametag2.right = thirdName && !hasThirdPlacement ? 'auto' : (cfg.nametag2_right || 'auto');
                     elements.nametag2.bottom = sharedBottom;
                     elements.nametag2.show = cfg.nametag2_show !== undefined ? String(cfg.nametag2_show) : '1';
                     elements.nametag2.width = sharedW;
                     elements.nametag2.height = sharedH;
+                }
+                if (elements.nametag3) {
+                    const sharedW = cfg.nametag_width || cfg.nametag3_width || '16vw';
+                    const sharedH = cfg.nametag_height || cfg.nametag3_height || '8vh';
+                    const sharedTop = cfg.nametag_top || cfg.nametag3_top || 'auto';
+                    const sharedBottom = cfg.nametag_bottom || cfg.nametag3_bottom || '6%';
+                    elements.nametag3.top = sharedTop;
+                    elements.nametag3.left = cfg.nametag3_left || 'auto';
+                    elements.nametag3.right = cfg.nametag3_right || '3%';
+                    elements.nametag3.bottom = sharedBottom;
+                    elements.nametag3.show = cfg.nametag3_show !== undefined ? String(cfg.nametag3_show) : '1';
+                    elements.nametag3.width = sharedW;
+                    elements.nametag3.height = sharedH;
                 }
 
                 // Load Bracket values (PAGE3 only)
@@ -1824,6 +1872,7 @@
                 applyVisualState('ticker');
                 if (elements.nametag1) applyVisualState('nametag1');
                 if (elements.nametag2) applyVisualState('nametag2');
+                if (elements.nametag3) applyVisualState('nametag3');
                 if (elements.info) applyVisualState('info');
                 if (elements.photo) applyVisualState('photo');
                 if (elements.bracket_full) applyVisualState('bracket_full');
@@ -1837,6 +1886,7 @@
                 document.getElementById('toggle-ticker-show').checked = elements.ticker.show === "1";
                 if (elements.nametag1) document.getElementById('toggle-nametag1-show').checked = elements.nametag1.show === "1";
                 if (elements.nametag2) document.getElementById('toggle-nametag2-show').checked = elements.nametag2.show === "1";
+                if (elements.nametag3) document.getElementById('toggle-nametag3-show').checked = elements.nametag3.show === "1";
                 if (elements.photo) document.getElementById('toggle-photo-show').checked = elements.photo.show === "1";
                 if (elements.bracket_full) document.getElementById('toggle-bracket-full-show').checked = elements.bracket_full.show === "1";
                 if (elements.bracket_live) document.getElementById('toggle-bracket-live-show').checked = elements.bracket_live.show === "1";
@@ -1869,6 +1919,10 @@
                 if (elements.nametag2) {
                     elements.nametag2.el.style.width = convertToPercent(elements.nametag2.width);
                     elements.nametag2.el.style.height = convertToPercent(elements.nametag2.height);
+                }
+                if (elements.nametag3) {
+                    elements.nametag3.el.style.width = convertToPercent(elements.nametag3.width);
+                    elements.nametag3.el.style.height = convertToPercent(elements.nametag3.height);
                 }
                 if (elements.photo) {
                     elements.photo.el.style.width = convertToPercent(elements.photo.width);
@@ -2052,6 +2106,11 @@
                 document.getElementById('nametag2-val-top').textContent = n.bottom !== 'auto' ? `B ${n.bottom}` : `T ${n.top}`;
                 document.getElementById('nametag2-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}` + ` (${n.width})`;
             }
+            if (elements.nametag3) {
+                const n = elements.nametag3;
+                document.getElementById('nametag3-val-top').textContent = n.bottom !== 'auto' ? `B ${n.bottom}` : `T ${n.top}`;
+                document.getElementById('nametag3-val-left').textContent = n.right !== 'auto' ? `R ${n.right}` : `L ${n.left}` + ` (${n.width})`;
+            }
             if (elements.info) {
                 const info = elements.info;
                 document.getElementById('info-val-top').textContent = info.bottom !== 'auto' ? `B ${info.bottom}` : `T ${info.top}`;
@@ -2144,10 +2203,13 @@
         if (pageNum === '1') {
             const rn1 = document.getElementById('resize-nametag1');
             const rn2 = document.getElementById('resize-nametag2');
+            const rn3 = document.getElementById('resize-nametag3');
             rn1.addEventListener('mousedown', (e) => startResize(e, 'nametag1'));
             rn1.addEventListener('touchstart', (e) => startResize(e, 'nametag1'), { passive: false });
             rn2.addEventListener('mousedown', (e) => startResize(e, 'nametag2'));
             rn2.addEventListener('touchstart', (e) => startResize(e, 'nametag2'), { passive: false });
+            rn3.addEventListener('mousedown', (e) => startResize(e, 'nametag3'));
+            rn3.addEventListener('touchstart', (e) => startResize(e, 'nametag3'), { passive: false });
         }
 
         // 대진표 리사이즈 핸들 (PAGE3 only)
@@ -2229,7 +2291,7 @@
                     elements.photo.height = ((newH / containerRect.height) * 100).toFixed(1) + 'vh';
                     elements.photo.el.style.width = convertToPercent(elements.photo.width);
                     elements.photo.el.style.height = convertToPercent(elements.photo.height);
-                } else if (resizeTarget === 'nametag1' || resizeTarget === 'nametag2') {
+                } else if (resizeTarget === 'nametag1' || resizeTarget === 'nametag2' || resizeTarget === 'nametag3') {
                     const newW = Math.max(50, resizeStartW + dx);
                     const newH = Math.max(30, resizeStartH + dy);
                     const unifiedW = ((newW / containerRect.width) * 100).toFixed(1) + 'vw';
@@ -2238,10 +2300,14 @@
                     elements.nametag1.height = unifiedH;
                     elements.nametag2.width = unifiedW;
                     elements.nametag2.height = unifiedH;
+                    elements.nametag3.width = unifiedW;
+                    elements.nametag3.height = unifiedH;
                     elements.nametag1.el.style.width = convertToPercent(unifiedW);
                     elements.nametag1.el.style.height = convertToPercent(unifiedH);
                     elements.nametag2.el.style.width = convertToPercent(unifiedW);
                     elements.nametag2.el.style.height = convertToPercent(unifiedH);
+                    elements.nametag3.el.style.width = convertToPercent(unifiedW);
+                    elements.nametag3.el.style.height = convertToPercent(unifiedH);
                 } else if (resizeTarget === 'bracket_full' && elements.bracket_full) {
                     const newW = Math.max(100, resizeStartW + dx);
                     const newH = Math.max(100, resizeStartH + dy);
@@ -2324,7 +2390,7 @@
                     elements[activeDragKey].bottom = 'auto';
                 }
                 applyVisualState('ticker');
-            } else if (activeDragKey === 'nametag1' || activeDragKey === 'nametag2') {
+            } else if (activeDragKey === 'nametag1' || activeDragKey === 'nametag2' || activeDragKey === 'nametag3') {
                 // Couple vertical positions
                 let topVal = 'auto';
                 let bottomVal = 'auto';
@@ -2339,6 +2405,8 @@
                 elements.nametag1.bottom = bottomVal;
                 elements.nametag2.top = topVal;
                 elements.nametag2.bottom = bottomVal;
+                elements.nametag3.top = topVal;
+                elements.nametag3.bottom = bottomVal;
                 
                 // Horizontal position remains independent for active dragged key
                 if (centerX > containerRect.width / 2) {
@@ -2352,6 +2420,7 @@
                 
                 applyVisualState('nametag1');
                 applyVisualState('nametag2');
+                applyVisualState('nametag3');
             } else if (activeDragKey === 'bracket_full' && elements.bracket_full) {
                 elements.bracket_full.left = ((x / containerRect.width) * 100).toFixed(1) + "%";
                 elements.bracket_full.top = ((y / containerRect.height) * 100).toFixed(1) + "%";
@@ -2567,8 +2636,8 @@
                 }
             }
 
-            // PAGE1 전용: 네임택 1,2 좌표 저장 (수직 및 크기는 공유, 수평은 개별)
-            if (elements.nametag1 && elements.nametag2) {
+            // PAGE1 전용: 네임택 1,2,3 좌표 저장 (수직 및 크기는 공유, 수평은 개별)
+            if (elements.nametag1 && elements.nametag2 && elements.nametag3) {
                 configMap.nametag_width = elements.nametag1.width;
                 configMap.nametag_height = elements.nametag1.height;
                 configMap.nametag_top = elements.nametag1.top;
@@ -2582,6 +2651,10 @@
                 configMap.nametag2_right = elements.nametag2.right;
                 configMap.nametag2_show = elements.nametag2.show;
 
+                configMap.nametag3_left = elements.nametag3.left;
+                configMap.nametag3_right = elements.nametag3.right;
+                configMap.nametag3_show = elements.nametag3.show;
+
                 // Backwards compatibility / explicit synchronization
                 configMap.nametag1_width = elements.nametag1.width;
                 configMap.nametag1_height = elements.nametag1.height;
@@ -2592,6 +2665,11 @@
                 configMap.nametag2_height = elements.nametag2.height;
                 configMap.nametag2_top = elements.nametag2.top;
                 configMap.nametag2_bottom = elements.nametag2.bottom;
+
+                configMap.nametag3_width = elements.nametag3.width;
+                configMap.nametag3_height = elements.nametag3.height;
+                configMap.nametag3_top = elements.nametag3.top;
+                configMap.nametag3_bottom = elements.nametag3.bottom;
 
                 // Clear unified left/right keys to avoid stale conflicts
                 configMap.nametag_left = 'auto';
@@ -2669,13 +2747,22 @@
                 applyVisualState('nametag1');
             }
             if (elements.nametag2) {
-                elements.nametag2.top = "auto"; elements.nametag2.left = "auto";
-                elements.nametag2.right = "3%"; elements.nametag2.bottom = "6%";
+                elements.nametag2.top = "auto"; elements.nametag2.left = "42%";
+                elements.nametag2.right = "auto"; elements.nametag2.bottom = "6%";
                 elements.nametag2.show = "1";
                 elements.nametag2.width = "16vw"; elements.nametag2.height = "8vh";
                 elements.nametag2.el.style.width = '16%'; elements.nametag2.el.style.height = '8%';
                 document.getElementById('toggle-nametag2-show').checked = true;
                 applyVisualState('nametag2');
+            }
+            if (elements.nametag3) {
+                elements.nametag3.top = "auto"; elements.nametag3.left = "auto";
+                elements.nametag3.right = "3%"; elements.nametag3.bottom = "6%";
+                elements.nametag3.show = "1";
+                elements.nametag3.width = "16vw"; elements.nametag3.height = "8vh";
+                elements.nametag3.el.style.width = '16%'; elements.nametag3.el.style.height = '8%';
+                document.getElementById('toggle-nametag3-show').checked = true;
+                applyVisualState('nametag3');
             }
 
             if (pageNum === '3') {

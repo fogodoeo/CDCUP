@@ -465,6 +465,7 @@ def _sync_auction_animation_config(config, manager=None):
     """Publish the local Band-monitor animation switch to the broadcast config."""
     url = str(config.get("supabase_url", "") or "").rstrip("/")
     key = str(config.get("supabase_key", "") or "")
+    value = "1" if _as_bool(config.get("auction_animation_enabled"), True) else "0"
     is_channel_aware = bool(getattr(manager, "channel_aware", False))
     if is_channel_aware and getattr(manager, "using_platform", False):
         def _platform_worker():
@@ -482,8 +483,6 @@ def _sync_auction_animation_config(config, manager=None):
         return
     if not url or not key:
         return
-    value = "1" if _as_bool(config.get("auction_animation_enabled"), True) else "0"
-
     def _worker():
         try:
             import requests
@@ -510,10 +509,13 @@ def _queue_capture_job(window, item, sold_price="", winner="", manual=False):
     config = getattr(window, "config", {}) or {}
     if not manual and not _as_bool(config.get("auto_capture_enabled"), False):
         return
+    configured_channel = str(config.get("capture_channel_id") or "auto").strip().lower()
+    session_channel = _active_session_channel(window)
+    capture_channel = session_channel if configured_channel in {"", "auto"} and session_channel else (configured_channel or "auto")
     client = CaptureClient(
         config.get("capture_service_url"),
         config.get("capture_agent_token"),
-        config.get("capture_channel_id") or "auto",
+        capture_channel,
     )
     try:
         client.validate()

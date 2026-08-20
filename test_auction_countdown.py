@@ -131,6 +131,18 @@ class AuctionCountdownTests(unittest.TestCase):
         self.assertEqual(window._auction_countdown_state, app.AUCTION_COUNTDOWN_RUNNING)
         self.assertEqual(window.sent[0][0], app.AUCTION_COUNTDOWN_ANNOUNCEMENT)
 
+    def test_platform_channel_uses_the_same_countdown_contract(self):
+        window = _CountdownWindow()
+        window.sheets = types.SimpleNamespace(channel_id="creyon", using_platform=True)
+        app._core.MainWindow._init_auction_countdown(window)
+
+        window.auction_card.btn_countdown.click()
+        self.qt_app.processEvents()
+        window._auction_countdown_timer.stop()
+
+        self.assertEqual(window._auction_countdown_state, app.AUCTION_COUNTDOWN_RUNNING)
+        self.assertEqual(window.sent[0][0], app.AUCTION_COUNTDOWN_ANNOUNCEMENT)
+
     def test_restored_active_item_reenables_countdown_button(self):
         host = app._core.QMainWindow()
         card = app._core.AuctionCardWidget()

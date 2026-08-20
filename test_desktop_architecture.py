@@ -33,6 +33,13 @@ class DesktopArchitectureTests(unittest.TestCase):
         self.assertIn("CaptureClient", source)
         self.assertIn("_sync_auction_animation_config(self.config, self.sheets)", source)
 
+    def test_platform_motion_and_capture_follow_the_verified_channel(self):
+        source = (ROOT / "band_monitor_app.py").read_text(encoding="utf-8")
+        value_index = source.index('value = "1" if _as_bool(config.get("auction_animation_enabled")')
+        platform_index = source.index('if is_channel_aware and getattr(manager, "using_platform", False):')
+        self.assertLess(value_index, platform_index)
+        self.assertIn('capture_channel = session_channel if configured_channel in {"", "auto"}', source)
+
 
 if __name__ == "__main__":
     unittest.main()

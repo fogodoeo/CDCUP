@@ -385,10 +385,12 @@
             <div class="form-row">
                 <div class="form-group"><label>진행자 1 이름</label><input type="text" id="cfg-host-name1" placeholder="예: 홍길동"></div>
                 <div class="form-group"><label>진행자 2 이름</label><input type="text" id="cfg-host-name2" placeholder="예: 김철수"></div>
+                <div class="form-group"><label>진행자 3 이름</label><input type="text" id="cfg-host-name3" placeholder="예: 이영희"></div>
             </div>
             <div class="form-row">
                 <div class="form-group"><label>진행자 1 역할</label><input type="text" id="cfg-host-role1" placeholder="예: MC"></div>
                 <div class="form-group"><label>진행자 2 역할</label><input type="text" id="cfg-host-role2" placeholder="예: 해설"></div>
+                <div class="form-group"><label>진행자 3 역할</label><input type="text" id="cfg-host-role3" placeholder="예: 게스트"></div>
             </div>
             <div class="form-row">
                 <div class="form-group"><label>네임택 폰트 크기 (px)</label><input type="number" id="cfg-nametag-font-size" placeholder="22"></div>
@@ -996,8 +998,10 @@
                 scoreboard_label: document.getElementById('cfg-scoreboard-label').value,
                 host_name1: document.getElementById('cfg-host-name1').value,
                 host_name2: document.getElementById('cfg-host-name2').value,
+                host_name3: document.getElementById('cfg-host-name3').value,
                 host_role1: document.getElementById('cfg-host-role1').value,
                 host_role2: document.getElementById('cfg-host-role2').value,
+                host_role3: document.getElementById('cfg-host-role3').value,
                 nametag_font_size: document.getElementById('cfg-nametag-font-size').value,
                 bracket_font_size: document.getElementById('cfg-bracket-font-size').value || '14',
             };
@@ -1136,8 +1140,10 @@
                 // 진행자 네임택
                 document.getElementById('cfg-host-name1').value = cfg.host_name1 || '';
                 document.getElementById('cfg-host-name2').value = cfg.host_name2 || '';
+                document.getElementById('cfg-host-name3').value = cfg.host_name3 || '';
                 document.getElementById('cfg-host-role1').value = cfg.host_role1 || '';
                 document.getElementById('cfg-host-role2').value = cfg.host_role2 || '';
+                document.getElementById('cfg-host-role3').value = cfg.host_role3 || '';
                 document.getElementById('cfg-nametag-font-size').value = cfg.nametag_font_size || '';
                 document.getElementById('cfg-bracket-font-size').value = cfg.bracket_font_size || '14';
                 // team logos
