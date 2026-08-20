@@ -111,6 +111,7 @@ AUCTION_COUNTDOWN_ANNOUNCEMENT = (
 )
 AUCTION_COUNTDOWN_LOCK_MESSAGE = "⬜⬜⬜⬜⬜"
 AUCTION_COUNTDOWN_LOCK_SEND_LABEL = "마감 잠금 표시 전송 실패"
+AUCTION_COUNTDOWN_TOTAL_SLOTS = 5
 AUCTION_COUNTDOWN_INITIAL_STAGES = (
     ("🟩🟩🟩🟩🟩", 6000),
     ("🟩🟩🟩🟩⬜", 6000),
@@ -1519,19 +1520,36 @@ def _patch_band_cdp():
             }
 
     def get_chat_snapshot_ws(self, limit=50):
-        """Return chat messages from WebSocket listener (near-zero CPU).
-        Falls back to DOM-based method if WebSocket is not connected."""
+        """Return WebSocket chat, with DOM recovery when the socket queue is empty.
+
+        BAND can keep the DevTools socket alive while omitting an individual chat
+        frame.  The visible DOM is then the only source for that message.  Using
+        the DOM only when the socket queue is empty preserves server ordering for
+        normal bursts and still recovers a missed standalone bid without waiting
+        for the BAND post to be edited.
+        """
         listener = getattr(self, "_ws_chat_listener", None)
         if listener and listener.is_alive():
             messages, mutation_seq = listener.get_messages()
-            return {
-                "messages": messages[-limit:] if messages else [],
-                "messageNodeCount": listener._total_received,
-                "mutationSeq": mutation_seq,
-                "inputFound": True,
-                "sendFound": True,
-                "domReady": True,
-            }
+            if messages:
+                return {
+                    "messages": messages[-limit:],
+                    "messageNodeCount": listener._total_received,
+                    "mutationSeq": mutation_seq,
+                    "inputFound": True,
+                    "sendFound": True,
+                    "domReady": True,
+                }
+            snapshot = get_chat_snapshot_light(self, limit)
+            snapshot["mutationSeq"] = max(
+                _as_int(snapshot.get("mutationSeq"), 0),
+                _as_int(mutation_seq, 0),
+            )
+            snapshot["messageNodeCount"] = max(
+                _as_int(snapshot.get("messageNodeCount"), 0),
+                _as_int(getattr(listener, "_total_received", 0), 0),
+            )
+            return snapshot
         # Fallback to DOM-based snapshot
         return get_chat_snapshot_light(self, limit)
 
@@ -2091,6 +2109,14 @@ def _patch_auction_card_performance():
             self.btn_countdown.clicked.connect(
                 lambda _checked=False, card=self: _dispatch_countdown_action(card)
             )
+            self.lbl_countdown_progress = _core.QLabel("(5/5)")
+            self.lbl_countdown_progress.setObjectName("lblCountdownProgress")
+            self.lbl_countdown_progress.setMinimumWidth(62)
+            self.lbl_countdown_progress.setAlignment(_core.Qt.AlignCenter | _core.Qt.AlignVCenter)
+            self.lbl_countdown_progress.setStyleSheet(
+                "font-size:12px; font-weight:900; color:#8A5A00; padding:0 3px;"
+            )
+            action_layout.insertWidget(max(0, sold_index + 2), self.lbl_countdown_progress)
 
         index = layout.indexOf(table)
         if index >= 0:
@@ -2852,12 +2878,12 @@ def _patch_main_window():
             )
         return True
 
-    def _record_manual_bid(self, name, amount, force_top=True):
+    def _record_manual_bid(self, name, amount, force_top=True, bidder_key=None):
         if not getattr(self, "active_item", None):
             self.toast.show_toast("진행 중인 경매가 없습니다.", "warning")
             return False
         name = _normalize_winner_text(name)
-        bidder_key = str(name or "").strip()
+        bidder_key = str(bidder_key or name or "").strip()
         if not bidder_key:
             return False
 
@@ -3023,6 +3049,7 @@ def _patch_main_window():
         item = getattr(self, "active_item", None)
         is_quiz = bool(item and _quiz_item_meta(item).get("is_quiz"))
         state = getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE)
+        late_bids = list(getattr(self, "_auction_countdown_late_bids", []) or [])
         button.setVisible(bool(item) and not is_quiz)
         button.setEnabled(bool(item) and not is_quiz)
         if state in {AUCTION_COUNTDOWN_RUNNING, AUCTION_COUNTDOWN_LOCK_PENDING}:
@@ -3032,12 +3059,32 @@ def _patch_main_window():
             else:
                 button.setToolTip("진행 중인 마감 카운트를 취소합니다.")
         elif state == AUCTION_COUNTDOWN_LOCKED:
-            button.setText("입찰 OK")
-            button.setToolTip("왼쪽에서 수동 입력한 입찰을 승인하고 노란색 3칸부터 재개합니다.")
+            if late_bids:
+                button.setText(f"늦은 입찰 {len(late_bids)}건")
+                button.setToolTip("마감 후 들어온 입찰을 인정할지, 현재 마감을 유지할지 선택합니다.")
+            else:
+                button.setText("입찰 OK")
+                button.setToolTip("왼쪽에서 수동 입력한 입찰을 승인하고 노란색 3칸부터 재개합니다.")
         else:
             button.setText("마감 카운트")
             button.setToolTip("입찰 마감 카운트를 시작합니다.")
         button.setStyleSheet(_countdown_button_style(state))
+        progress = getattr(card, "lbl_countdown_progress", None) if card is not None else None
+        if progress is not None:
+            progress.setVisible(bool(item) and not is_quiz)
+            remaining = max(0, min(
+                AUCTION_COUNTDOWN_TOTAL_SLOTS,
+                _as_int(getattr(self, "_auction_countdown_remaining", AUCTION_COUNTDOWN_TOTAL_SLOTS), AUCTION_COUNTDOWN_TOTAL_SLOTS),
+            ))
+            progress.setText(
+                f"({remaining}/{AUCTION_COUNTDOWN_TOTAL_SLOTS}) 마감"
+                if state in {AUCTION_COUNTDOWN_LOCK_PENDING, AUCTION_COUNTDOWN_LOCKED}
+                else f"({remaining}/{AUCTION_COUNTDOWN_TOTAL_SLOTS})"
+            )
+            progress.setStyleSheet(
+                "font-size:12px; font-weight:950; padding:0 3px; color:"
+                + ("#B42318;" if remaining == 0 else "#8A5A00;")
+            )
 
     def _set_auction_countdown_state(self, state):
         self._auction_countdown_state = state
@@ -3054,6 +3101,7 @@ def _patch_main_window():
         self._auction_countdown_locked_top = None
         self._auction_countdown_late_bids = []
         self._auction_countdown_lock_marker_pending = False
+        self._auction_countdown_remaining = AUCTION_COUNTDOWN_TOTAL_SLOTS
         _set_auction_countdown_state(self, AUCTION_COUNTDOWN_IDLE)
         if announce and getattr(self, "active_item", None):
             self._queue_chat_send("마감 카운트를 취소했습니다.", "카운트 취소 안내 전송 실패")
@@ -3066,6 +3114,7 @@ def _patch_main_window():
         self._auction_countdown_locked_top = None
         self._auction_countdown_late_bids = []
         self._auction_countdown_lock_marker_pending = False
+        self._auction_countdown_remaining = AUCTION_COUNTDOWN_TOTAL_SLOTS
         self._auction_countdown_timer = _core.QTimer(self)
         self._auction_countdown_timer.setSingleShot(True)
         self._auction_countdown_timer.timeout.connect(lambda: _advance_auction_countdown(self))
@@ -3104,6 +3153,10 @@ def _patch_main_window():
         self._auction_countdown_locked_top = None
         self._auction_countdown_late_bids = []
         self._auction_countdown_lock_marker_pending = False
+        self._auction_countdown_remaining = (
+            len(AUCTION_COUNTDOWN_RESUME_STAGES)
+            if resume else AUCTION_COUNTDOWN_TOTAL_SLOTS
+        )
         _set_auction_countdown_state(self, AUCTION_COUNTDOWN_RUNNING)
 
         if announce:
@@ -3131,6 +3184,8 @@ def _patch_main_window():
 
         message, duration_ms = sequence[index]
         self._auction_countdown_stage_index = index + 1
+        self._auction_countdown_remaining = sum(message.count(mark) for mark in ("🟩", "🟨", "🟧", "🟥"))
+        _update_auction_countdown_button(self)
         self._queue_chat_send(message, "마감 카운트 전송 실패")
         self._auction_countdown_timer.start(int(duration_ms))
 
@@ -3141,6 +3196,7 @@ def _patch_main_window():
         if timer is not None:
             timer.stop()
         self._auction_countdown_lock_marker_pending = True
+        self._auction_countdown_remaining = 0
         _set_auction_countdown_state(self, AUCTION_COUNTDOWN_LOCK_PENDING)
         self._queue_chat_send(AUCTION_COUNTDOWN_LOCK_MESSAGE, AUCTION_COUNTDOWN_LOCK_SEND_LABEL)
         _append_chat_debug_log(
@@ -3181,6 +3237,11 @@ def _patch_main_window():
         })
         if len(entries) > 50:
             del entries[:-50]
+        _update_auction_countdown_button(self)
+        self.toast.show_toast(
+            f"마감 후 입찰 {len(entries)}건이 들어왔습니다. 버튼에서 인정 여부를 선택하세요.",
+            "warning",
+        )
         _append_chat_debug_log(
             f"bid ignored after countdown lock name={name!r} amount={amount!r} time={t!r}"
         )
@@ -3210,6 +3271,62 @@ def _patch_main_window():
         )
         return True
 
+    def _accept_locked_late_bid(self):
+        if not _countdown_is_locked(self):
+            return False
+        entries = list(getattr(self, "_auction_countdown_late_bids", []) or [])
+        if not entries:
+            return False
+        indexed = list(enumerate(entries))
+        _, selected = max(
+            indexed,
+            key=lambda pair: (
+                float(pair[1].get("amount", 0) or 0),
+                pair[0],
+            ),
+        )
+        previous_top = _countdown_current_top_signature(self)
+        self._record_manual_bid(
+            selected.get("name", ""),
+            selected.get("amount", 0),
+            force_top=False,
+            bidder_key=selected.get("bidder_key", ""),
+        )
+        current_top = _countdown_current_top_signature(self)
+        if current_top is None or current_top == previous_top:
+            self.toast.show_toast("현재 최고가보다 높은 늦은 입찰이 없습니다. 마감을 유지합니다.", "warning")
+            return False
+        self._auction_countdown_late_bids = []
+        return _approve_manual_bid_and_resume(self)
+
+    def _choose_locked_late_bid(self):
+        entries = list(getattr(self, "_auction_countdown_late_bids", []) or [])
+        if not entries:
+            return False
+        selected = max(
+            enumerate(entries),
+            key=lambda pair: (float(pair[1].get("amount", 0) or 0), pair[0]),
+        )[1]
+        amount_text = _manual_amount_text(selected.get("amount", 0))
+        box = _core.QMessageBox(self)
+        box.setWindowTitle("마감 후 입찰 확인")
+        box.setIcon(_core.QMessageBox.Warning)
+        box.setText(
+            f"{selected.get('name', '')} · {amount_text}만원\n"
+            f"마감 후 입찰 {len(entries)}건이 있습니다."
+        )
+        box.setInformativeText("인정하면 해당 최고 입찰을 반영하고 노란색 3칸부터 다시 카운트합니다.")
+        accept_button = box.addButton("인정 후 재카운트", _core.QMessageBox.AcceptRole)
+        keep_button = box.addButton("마감 유지", _core.QMessageBox.RejectRole)
+        box.setDefaultButton(keep_button)
+        box.exec()
+        if box.clickedButton() is accept_button:
+            return _accept_locked_late_bid(self)
+        self._auction_countdown_late_bids = []
+        _update_auction_countdown_button(self)
+        self.toast.show_toast("늦은 입찰을 반영하지 않고 현재 마감을 유지합니다.", "success")
+        return False
+
     def _on_auction_countdown_action(self):
         state = getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE)
         _append_chat_debug_log(
@@ -3217,7 +3334,10 @@ def _patch_main_window():
             f"active={_countdown_item_key(getattr(self, 'active_item', None))!r}"
         )
         if state == AUCTION_COUNTDOWN_LOCKED:
-            _approve_manual_bid_and_resume(self)
+            if getattr(self, "_auction_countdown_late_bids", None):
+                _choose_locked_late_bid(self)
+            else:
+                _approve_manual_bid_and_resume(self)
             return
         if state in {AUCTION_COUNTDOWN_RUNNING, AUCTION_COUNTDOWN_LOCK_PENDING}:
             answer = _core.QMessageBox.question(
@@ -4362,6 +4482,8 @@ def _patch_main_window():
     MainWindow._confirm_auction_lock_boundary = _confirm_auction_lock_boundary
     MainWindow._record_locked_late_bid = _record_locked_late_bid
     MainWindow._approve_manual_bid_and_resume = _approve_manual_bid_and_resume
+    MainWindow._accept_locked_late_bid = _accept_locked_late_bid
+    MainWindow._choose_locked_late_bid = _choose_locked_late_bid
     MainWindow._on_auction_countdown_action = _on_auction_countdown_action
     MainWindow._restart_countdown_after_accepted_bid = _restart_countdown_after_accepted_bid
     MainWindow._refresh_table = _refresh_table_sorted

@@ -1,4 +1,5 @@
 import os
+import json
 import types
 import unittest
 from collections import deque
@@ -31,7 +32,10 @@ class _CountdownWindow(app._core.QObject):
                 }
             ],
         }
-        self.auction_card = types.SimpleNamespace(btn_countdown=app._core.QPushButton())
+        self.auction_card = types.SimpleNamespace(
+            btn_countdown=app._core.QPushButton(),
+            lbl_countdown_progress=app._core.QLabel(),
+        )
         self.toast = _Toast()
         self.config = {"templates": {}}
         self.sent = []
@@ -57,6 +61,7 @@ class _CountdownWindow(app._core.QObject):
             "_lock_auction_bidding",
             "_confirm_auction_lock_boundary",
             "_record_locked_late_bid",
+            "_accept_locked_late_bid",
             "_approve_manual_bid_and_resume",
             "_on_auction_countdown_action",
         )
@@ -107,6 +112,42 @@ class AuctionCountdownTests(unittest.TestCase):
         )
         self.assertEqual(app.AUCTION_COUNTDOWN_LOCK_MESSAGE, "⬜⬜⬜⬜⬜")
 
+    def test_live_socket_with_empty_queue_recovers_new_bid_from_band_dom(self):
+        class Listener:
+            _total_received = 8
+
+            @staticmethod
+            def is_alive():
+                return True
+
+            @staticmethod
+            def get_messages():
+                return [], 8
+
+        payload = {
+            "messages": [{
+                "name": "마감 후 입찰자",
+                "text": "12",
+                "time": "20:02",
+                "userKey": "late-user",
+                "messageKey": "dom:late-message",
+            }],
+            "messageNodeCount": 9,
+            "mutationSeq": 9,
+            "inputFound": True,
+            "sendFound": True,
+            "domReady": True,
+        }
+        fake_cdp = types.SimpleNamespace(
+            _ws_chat_listener=Listener(),
+            evaluate=lambda _script: json.dumps(payload, ensure_ascii=False),
+        )
+
+        snapshot = app._core.BandCDP.get_chat_snapshot(fake_cdp, 50)
+
+        self.assertEqual(snapshot["messages"][0]["messageKey"], "dom:late-message")
+        self.assertEqual(snapshot["mutationSeq"], 9)
+
     def test_action_button_is_immediately_after_sold(self):
         card = app._core.AuctionCardWidget()
         container = card.findChild(app._core.QWidget, "auctionCard")
@@ -119,7 +160,9 @@ class AuctionCountdownTests(unittest.TestCase):
         self.assertIsNotNone(action_layout)
         sold_index = action_layout.indexOf(card.btn_sold)
         self.assertIs(action_layout.itemAt(sold_index + 1).widget(), card.btn_countdown)
+        self.assertIs(action_layout.itemAt(sold_index + 2).widget(), card.lbl_countdown_progress)
         self.assertEqual(card.btn_countdown.text(), "마감 카운트")
+        self.assertEqual(card.lbl_countdown_progress.text(), "(5/5)")
 
     def test_main_window_binds_countdown_button_directly(self):
         window = _CountdownWindow()
@@ -180,6 +223,7 @@ class AuctionCountdownTests(unittest.TestCase):
             window._auction_countdown_timer.stop()
 
         self.assertEqual(window._auction_countdown_state, app.AUCTION_COUNTDOWN_LOCK_PENDING)
+        self.assertEqual(window.auction_card.lbl_countdown_progress.text(), "(0/5) 마감")
         app._core.MainWindow._confirm_auction_lock_boundary(window)
         self.assertEqual(window._auction_countdown_state, app.AUCTION_COUNTDOWN_LOCKED)
         self.assertEqual(window.auction_card.btn_countdown.text(), "입찰 OK")
@@ -276,6 +320,29 @@ class AuctionCountdownTests(unittest.TestCase):
         self.assertEqual(len(window._auction_countdown_late_bids), 1)
         self.assertIn("마감 후 · 미반영", window.chat_w.messages[-1][1])
         self.assertTrue(window.chat_w.messages[-1][-1])
+        self.assertEqual(window.auction_card.btn_countdown.text(), "늦은 입찰 1건")
+
+    def test_operator_can_accept_highest_late_bid_and_resume(self):
+        window = _CountdownWindow()
+        window._record_manual_bid = app._core.MainWindow._record_manual_bid.__get__(window, type(window))
+        window._persist_bid_state_async = lambda *_args, **_kwargs: None
+        window.auction_card.update_bids = lambda bids: None
+        window.chat_w.append_msg = lambda *args: window.chat_w.messages.append(args)
+        app._core.MainWindow._begin_auction_countdown(window, resume=False, announce=False)
+        window._auction_countdown_timer.stop()
+        app._core.MainWindow._lock_auction_bidding(window)
+        app._core.MainWindow._confirm_auction_lock_boundary(window)
+        app._core.MainWindow._record_locked_late_bid(window, "늦은 11", 11, bidder_key="late-11")
+        app._core.MainWindow._record_locked_late_bid(window, "늦은 12", 12, bidder_key="late-12")
+
+        accepted = app._core.MainWindow._accept_locked_late_bid(window)
+        window._auction_countdown_timer.stop()
+
+        self.assertTrue(accepted)
+        self.assertEqual(window.active_item["bids"][0]["bidder_key"], "late-12")
+        self.assertEqual(window._auction_countdown_state, app.AUCTION_COUNTDOWN_RUNNING)
+        self.assertEqual(window._auction_countdown_sequence, app.AUCTION_COUNTDOWN_RESUME_STAGES)
+        self.assertEqual(window.auction_card.lbl_countdown_progress.text(), "(3/5)")
 
     def test_band_chat_order_around_blank_marker_is_authoritative(self):
         window = _CountdownWindow()
