@@ -171,6 +171,45 @@ class ChannelAwareManagerTests(unittest.TestCase):
         self.assertTrue(manager.update_broadcast_config({"auction_animation_enabled": "0"}))
         self.assertEqual(calls, [{"patch": {"auction_animation_enabled": "0"}}])
 
+    def test_crewart_bid_assignment_uses_the_verified_channel_and_idempotency_fields(self):
+        calls = []
+
+        def request(method, url, **kwargs):
+            if url.endswith("/api/platform/operator-context"):
+                return FakeResponse(200, {
+                    "activeChannelId": "crewart",
+                    "channel": {
+                        "id": "crewart", "name": "CREWART", "dataAdapter": "platform",
+                        "audienceCompetition": {
+                            "enabled": True, "assignment": "survey-random", "metric": "soldPrice"
+                        },
+                    },
+                    "workspace": {"items": []},
+                })
+            if method == "POST" and url.endswith("/api/platform/channels/crewart/audience-assignment"):
+                calls.append(kwargs)
+                return FakeResponse(200, {
+                    "houseKey": "R", "source": "random", "isNewRandom": True, "revealSequence": 1
+                })
+            raise AssertionError(url)
+
+        manager = ChannelAwareManager(
+            {"platform_admin_password": "test-secret"},
+            legacy=FakeLegacy(),
+            request_func=request,
+        )
+        result = manager.resolve_audience_assignment(
+            item_id="A01", bidder_key="band-member-key", name="김상정/대구/01012345678",
+            amount=3, message_key="ws:member:1:3", bid_sequence=123,
+        )
+
+        self.assertEqual(result["houseKey"], "R")
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0]["timeout"], 3)
+        self.assertEqual(calls[0]["json"]["message_key"], "ws:member:1:3")
+        self.assertEqual(calls[0]["json"]["bid_sequence"], 123)
+        self.assertEqual(calls[0]["json"]["bidder_key"], "band-member-key")
+
 
 if __name__ == "__main__":
     unittest.main()

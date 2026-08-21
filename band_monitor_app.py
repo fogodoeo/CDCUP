@@ -16,6 +16,7 @@ import json
 import importlib.util
 import marshal
 import os
+import queue
 import re
 import secrets
 import subprocess
@@ -732,6 +733,19 @@ def _normalize_winner_text(value):
     return re.sub(r"(?<!\d)(\d{8})(?!\d)", r"010\1", str(value or ""))
 
 
+def _format_crewart_assignment_chat(name, amount, suffix):
+    """Build the single BAND acknowledgement used by the assignment queue."""
+    raw = _normalize_winner_text(name)
+    parsed_name, _ = _core.parse_winner(raw)
+    display_name = parsed_name or raw
+    display_name = re.sub(r"\s*[./|·]+\s*", " ", str(display_name or ""))
+    display_name = re.sub(r"\s+", " ", display_name).strip() or "입찰자"
+    price = _core.fmt_price(amount)
+    if price and not price.endswith("원"):
+        price += "원"
+    return f"{display_name} {price} 입찰 {str(suffix or '').strip()}".strip()
+
+
 def _is_buy_now_text(value):
     return _chat_command_text(value) == "즉구"
 
@@ -954,6 +968,8 @@ class _BandChatWSListener:
             "time": t,
             "userKey": member_key,
             "messageKey": message_key,
+            "messageTimeMs": int(msg_time_ms or 0),
+            "receivedAtMs": int(time.time() * 1000),
         }
 
         with self._lock:
@@ -2631,6 +2647,19 @@ def _patch_main_window():
                 bid["sale_mode"] = sale_mode
             if quiz_answer:
                 bid["answer"] = quiz_answer
+            for metadata_key in (
+                "message_key",
+                "timestamp",
+                "received_at_ms",
+                "bid_sequence",
+                "crewart_house_key",
+                "crewart_house_source",
+                "crewart_assignment_session",
+                "crewart_assignment_sequence",
+            ):
+                metadata_value = source[index].get(metadata_key)
+                if metadata_value not in (None, ""):
+                    bid[metadata_key] = metadata_value
         return normalized
 
     def _chat_poll_interval_ms(self):
@@ -2908,6 +2937,69 @@ def _patch_main_window():
         except Exception:
             pass
         return True
+
+    def _crewart_audience_competition_active(self):
+        sheets = getattr(self, "sheets", None)
+        channel = getattr(sheets, "channel", {}) if sheets is not None else {}
+        competition = channel.get("audienceCompetition") if isinstance(channel, dict) else {}
+        return bool(
+            getattr(sheets, "using_platform", False)
+            and isinstance(competition, dict)
+            and competition.get("enabled") is True
+            and competition.get("assignment") == "survey-random"
+        )
+
+    def _queue_crewart_bid_confirmation(self, bid, item_id):
+        jobs = getattr(self, "_crewart_assignment_jobs", None)
+        if jobs is None:
+            return False
+        jobs.put({
+            "item_id": str(item_id or ""),
+            "bidder_key": str(bid.get("bidder_key") or bid.get("name") or ""),
+            "name": str(bid.get("name") or ""),
+            "amount": float(bid.get("amount") or 0),
+            "message_key": str(bid.get("message_key") or ""),
+            "bid_sequence": int(bid.get("bid_sequence") or 0),
+        })
+        return True
+
+    def _crewart_assignment_worker(self):
+        house_icons = {"R": "🔴", "G": "🟢", "B": "🔵", "Y": "🟡"}
+        while True:
+            job = self._crewart_assignment_jobs.get()
+            try:
+                result = None
+                error = None
+                for attempt in range(2):
+                    try:
+                        result = self.sheets.resolve_audience_assignment(
+                            item_id=job["item_id"],
+                            bidder_key=job["bidder_key"],
+                            name=job["name"],
+                            amount=job["amount"],
+                            message_key=job["message_key"],
+                            bid_sequence=job["bid_sequence"],
+                        )
+                        error = None
+                        break
+                    except Exception as exc:
+                        error = exc
+                        if attempt == 0:
+                            time.sleep(0.25)
+                if result and result.get("isNewRandom"):
+                    suffix = "🎲 신규 배정"
+                elif result and str(result.get("houseKey") or "").upper() in house_icons:
+                    suffix = house_icons[str(result.get("houseKey")).upper()]
+                else:
+                    suffix = "⚪ 기숙사 확인 중"
+                message = _format_crewart_assignment_chat(job["name"], job["amount"], suffix)
+                self._queue_chat_send(message, "기숙사 입찰 확인 전송 실패")
+                if error:
+                    _append_chat_debug_log(
+                        f"crewart assignment unavailable bidder={job['bidder_key']!r} error={error}"
+                    )
+            finally:
+                self._crewart_assignment_jobs.task_done()
 
     def _format_manual_chat(self, template_key, name, amount):
         item = getattr(self, "active_item", None) or {}
@@ -3399,6 +3491,15 @@ def _patch_main_window():
         self._pending_bid_save_timers = {}
         self._bid_save_last_queued_at = {}
         self._chat_poll_inflight_since = 0
+        self._bid_event_sequence = 0
+        self._current_bid_message_meta = None
+        self._crewart_assignment_jobs = queue.Queue()
+        self._crewart_assignment_thread = threading.Thread(
+            target=lambda: _crewart_assignment_worker(self),
+            daemon=True,
+            name="CrewartAssignment",
+        )
+        self._crewart_assignment_thread.start()
         _install_label_reprint_button(self)
         _update_chat_poll_timer(self)
         # Safety timer: check for stuck polls every 5 seconds
@@ -3739,7 +3840,15 @@ def _patch_main_window():
                                 # the actual bid list or highest-price state.
                                 is_bid = True
                             else:
-                                is_bid = self._add_bid(name, bid_amount, t, bidder_key)
+                                self._current_bid_message_meta = {
+                                    "message_key": key,
+                                    "message_time_ms": _as_int(m.get("messageTimeMs"), 0),
+                                    "received_at_ms": _as_int(m.get("receivedAtMs"), int(time.time() * 1000)),
+                                }
+                                try:
+                                    is_bid = self._add_bid(name, bid_amount, t, bidder_key)
+                                finally:
+                                    self._current_bid_message_meta = None
                             if buy_now:
                                 current_item_key = (
                                     (self.active_item or {}).get("row")
@@ -3765,14 +3874,63 @@ def _patch_main_window():
                 _append_chat_debug_log(f"message handling failed: {exc}")
         _update_chat_poll_timer(self)
 
+    def _finalize_crewart_accepted_bid(self, bidder_key):
+        if not _crewart_audience_competition_active(self) or not getattr(self, "active_item", None):
+            return
+        bidder_key = str(bidder_key or "").strip()
+        bids = self._normalize_bid_entries(self.active_item.get("bids", []))
+        accepted = next(
+            (bid for bid in bids if str(bid.get("bidder_key") or bid.get("name") or "").strip() == bidder_key),
+            None,
+        )
+        if accepted is None:
+            return
+        self._bid_event_sequence = int(getattr(self, "_bid_event_sequence", 0) or 0) + 1
+        meta = dict(getattr(self, "_current_bid_message_meta", None) or {})
+        received_at_ms = _as_int(meta.get("received_at_ms"), int(time.time() * 1000))
+        message_time_ms = _as_int(meta.get("message_time_ms"), 0)
+        accepted["message_key"] = str(
+            meta.get("message_key")
+            or f"local:{self.active_item.get('row') or self.active_item.get('id') or ''}:{received_at_ms}:{bidder_key}"
+        )
+        accepted["received_at_ms"] = received_at_ms
+        accepted["timestamp"] = time.strftime(
+            "%Y-%m-%dT%H:%M:%S",
+            time.localtime((message_time_ms or received_at_ms) / 1000),
+        )
+        accepted["bid_sequence"] = received_at_ms * 1000 + (self._bid_event_sequence % 1000)
+        self.active_item["bids"] = bids
+        self._persist_bid_state_async(self.active_item, bids)
+        self.auction_card.update_bids(bids)
+        if self.config.get("auto_chat_enabled", True):
+            _queue_crewart_bid_confirmation(
+                self,
+                accepted,
+                self.active_item.get("row") or self.active_item.get("id") or "",
+            )
+
     def _add_bid(self, name, amount, t="", bidder_key=""):
         name = _normalize_winner_text(name)
         if _countdown_is_locked(self):
             return False
         previous_top = _countdown_current_top_signature(self)
+        crewart_audience = _crewart_audience_competition_active(self)
+        auto_chat_enabled = self.config.get("auto_chat_enabled", True)
         if str(amount) != "2.0":
-            result = original_add_bid(self, name, amount, t, bidder_key)
+            auto_chat_was_present = "auto_chat_enabled" in self.config
+            if crewart_audience and auto_chat_enabled:
+                self.config["auto_chat_enabled"] = False
+            try:
+                result = original_add_bid(self, name, amount, t, bidder_key)
+            finally:
+                if crewart_audience and auto_chat_enabled:
+                    if auto_chat_was_present:
+                        self.config["auto_chat_enabled"] = True
+                    else:
+                        self.config.pop("auto_chat_enabled", None)
             if result:
+                if crewart_audience:
+                    _finalize_crewart_accepted_bid(self, str(bidder_key or name).strip() or name)
                 _restart_countdown_after_accepted_bid(self, previous_top)
             return result
         if not getattr(self, "active_item", None):
@@ -3799,12 +3957,14 @@ def _patch_main_window():
 
         new_top = bids[0]
         is_new_leader = (new_top.get("bidder_key") or new_top["name"]) != prev_top_key
-        if new_top["amount"] > prev_top_amount and is_new_leader and self.config.get("auto_chat_enabled", True):
+        if new_top["amount"] > prev_top_amount and is_new_leader and auto_chat_enabled and not crewart_audience:
             bid_name = new_top["name"]
             msg = _format_manual_chat(self, "highest", bid_name, new_top["amount"])
             if msg:
                 self._queue_chat_send(msg, "최고가 갱신 안내 전송 실패")
         _restart_countdown_after_accepted_bid(self, previous_top)
+        if crewart_audience:
+            _finalize_crewart_accepted_bid(self, bidder_key)
         return True
 
     def _persist_bid_state_async(self, item, bids=None):

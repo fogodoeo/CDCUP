@@ -93,7 +93,7 @@ class ChannelAwareManager:
         self.ws = ChannelAwareWorksheet(self)
         self.refresh_context(force=True)
 
-    def _request(self, path, method="GET", payload=None, admin=False):
+    def _request(self, path, method="GET", payload=None, admin=False, timeout=12):
         if admin and not self.admin_password:
             raise RuntimeError("채널 운영 관리자 비밀번호가 설정되지 않았습니다.")
         headers = {"Accept": "application/json"}
@@ -106,7 +106,7 @@ class ChannelAwareManager:
             f"{self.base_url}/api/platform/{str(path).lstrip('/')}",
             headers=headers,
             json=payload,
-            timeout=12,
+            timeout=timeout,
         )
         try:
             body = response.json()
@@ -185,6 +185,47 @@ class ChannelAwareManager:
             admin=True,
         )
         return bool(result.get("config") is not None)
+
+    def resolve_audience_assignment(
+        self,
+        item_id,
+        bidder_key,
+        name,
+        amount,
+        message_key="",
+        bid_sequence=0,
+        region="",
+    ):
+        """Resolve one accepted live bidder without blocking the auction state.
+
+        The server owns the session cutoff and the stable house assignment.  A
+        retry is safe because the member/session pair is idempotent.
+        """
+        if not self._context_ready(force=True):
+            raise RuntimeError(self.last_read_error or "현재 운영 채널을 확인하지 못했습니다.")
+        if not self.using_platform:
+            return {}
+        competition = self.channel.get("audienceCompetition") or {}
+        if not (
+            competition.get("enabled") is True
+            and competition.get("assignment") == "survey-random"
+        ):
+            return {}
+        return self._request(
+            f"channels/{self.channel_id}/audience-assignment",
+            method="POST",
+            payload={
+                "itemId": str(item_id or ""),
+                "bidder_key": str(bidder_key or ""),
+                "name": str(name or ""),
+                "region": str(region or ""),
+                "amount": float(amount or 0),
+                "message_key": str(message_key or ""),
+                "bid_sequence": max(0, int(bid_sequence or 0)),
+            },
+            admin=True,
+            timeout=3,
+        )
 
     def get_tab_list(self):
         if not self._context_ready():
