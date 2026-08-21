@@ -70,7 +70,8 @@ class ChannelAwareManager:
     def __init__(self, config, legacy=None, request_func=None):
         self.config = config
         self.legacy = legacy or SupabaseManager(config)
-        self._request_func = request_func or requests.request
+        self._http_session = None if request_func else requests.Session()
+        self._request_func = request_func or self._http_session.request
         self.base_url = str(config.get("capture_service_url") or "https://creok.onrender.com").rstrip("/")
         self.admin_password = str(
             config.get("platform_admin_password")
@@ -201,7 +202,10 @@ class ChannelAwareManager:
         The server owns the session cutoff and the stable house assignment.  A
         retry is safe because the member/session pair is idempotent.
         """
-        if not self._context_ready(force=True):
+        # The assignment endpoint independently verifies the active channel and
+        # live item. Re-fetching operator-context before every bid added another
+        # network round trip without weakening that server-side guard.
+        if not self._context_verified and not self._context_ready(force=True):
             raise RuntimeError(self.last_read_error or "현재 운영 채널을 확인하지 못했습니다.")
         if not self.using_platform:
             return {}

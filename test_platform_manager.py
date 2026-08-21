@@ -173,9 +173,11 @@ class ChannelAwareManagerTests(unittest.TestCase):
 
     def test_crewart_bid_assignment_uses_the_verified_channel_and_idempotency_fields(self):
         calls = []
+        context_calls = []
 
         def request(method, url, **kwargs):
             if url.endswith("/api/platform/operator-context"):
+                context_calls.append(url)
                 return FakeResponse(200, {
                     "activeChannelId": "crewart",
                     "channel": {
@@ -209,6 +211,7 @@ class ChannelAwareManagerTests(unittest.TestCase):
         self.assertEqual(calls[0]["json"]["message_key"], "ws:member:1:3")
         self.assertEqual(calls[0]["json"]["bid_sequence"], 123)
         self.assertEqual(calls[0]["json"]["bidder_key"], "band-member-key")
+        self.assertEqual(len(context_calls), 1)
 
 
 if __name__ == "__main__":

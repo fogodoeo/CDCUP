@@ -107,6 +107,11 @@ BID_SAVE_MIN_INTERVAL_SEC = 2.0
 MAX_SEEN_CHAT_KEYS = 4000
 KEEP_SEEN_CHAT_KEYS = 3000
 MAX_BID_TABLE_ROWS = 200
+CHAT_POLL_ACTIVE_WS_MS = 250
+CHAT_POLL_ACTIVE_DOM_MS = 700
+CHAT_POLL_IDLE_WS_MS = 900
+CHAT_POLL_IDLE_DOM_MS = 1800
+CHAT_DOM_RECOVERY_INTERVAL_SEC = 0.9
 AUCTION_COUNTDOWN_ANNOUNCEMENT = (
     "⏳ 마감 카운트를 시작합니다. ⬜⬜⬜⬜⬜ (0/5) 마감 표시 이후의 입찰은 반영되지 않습니다."
 )
@@ -1555,6 +1560,21 @@ def _patch_band_cdp():
                     "sendFound": True,
                     "domReady": True,
                 }
+            # A healthy socket is the fast path. A full BAND DOM scan on every
+            # 250 ms tick would make Chrome busy again, so retain the DOM only
+            # as a bounded recovery path for the occasional missed frame.
+            now = time.monotonic()
+            last_recovery = float(getattr(self, "_ws_dom_recovery_at", 0.0) or 0.0)
+            if last_recovery and now - last_recovery < CHAT_DOM_RECOVERY_INTERVAL_SEC:
+                return {
+                    "messages": [],
+                    "messageNodeCount": _as_int(getattr(listener, "_total_received", 0), 0),
+                    "mutationSeq": _as_int(mutation_seq, 0),
+                    "inputFound": True,
+                    "sendFound": True,
+                    "domReady": True,
+                }
+            self._ws_dom_recovery_at = now
             snapshot = get_chat_snapshot_light(self, limit)
             snapshot["mutationSeq"] = max(
                 _as_int(snapshot.get("mutationSeq"), 0),
@@ -2663,13 +2683,17 @@ def _patch_main_window():
         return normalized
 
     def _chat_poll_interval_ms(self):
-        if getattr(self, "_label_print_jobs", 0) > 0:
-            return 4000
+        listener = getattr(getattr(self, "cdp", None), "_ws_chat_listener", None)
+        socket_live = bool(listener and listener.is_alive())
+        # Auction chat stays responsive even while a label is printing. The
+        # previous 4 s print throttle delayed otherwise valid live bids.
+        if getattr(self, "active_item", None):
+            return CHAT_POLL_ACTIVE_WS_MS if socket_live else CHAT_POLL_ACTIVE_DOM_MS
         if getattr(self, "_poll_fail", 0) >= 3:
             return 5000
-        if getattr(self, "active_item", None):
-            return 1200
-        return 2500
+        if getattr(self, "_label_print_jobs", 0) > 0:
+            return 2500
+        return CHAT_POLL_IDLE_WS_MS if socket_live else CHAT_POLL_IDLE_DOM_MS
 
     def _update_chat_poll_timer(self):
         timer = getattr(self, "poll_timer", None)

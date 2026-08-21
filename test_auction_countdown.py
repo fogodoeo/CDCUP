@@ -145,6 +145,49 @@ class AuctionCountdownTests(unittest.TestCase):
         self.assertEqual(snapshot["messages"][0]["messageKey"], "dom:late-message")
         self.assertEqual(snapshot["mutationSeq"], 9)
 
+    def test_live_socket_poll_is_fast_and_label_print_does_not_throttle_bids(self):
+        listener = types.SimpleNamespace(is_alive=lambda: True)
+        window = types.SimpleNamespace(
+            active_item={"row": 7},
+            _label_print_jobs=1,
+            _poll_fail=0,
+            cdp=types.SimpleNamespace(_ws_chat_listener=listener),
+        )
+
+        interval = app._core.MainWindow._chat_poll_interval_ms(window)
+
+        self.assertEqual(interval, app.CHAT_POLL_ACTIVE_WS_MS)
+        self.assertLessEqual(interval, 250)
+
+    def test_healthy_socket_throttles_empty_dom_recovery_scans(self):
+        class Listener:
+            _total_received = 8
+
+            @staticmethod
+            def is_alive():
+                return True
+
+            @staticmethod
+            def get_messages():
+                return [], 8
+
+        calls = []
+        payload = {
+            "messages": [], "messageNodeCount": 8, "mutationSeq": 8,
+            "inputFound": True, "sendFound": True, "domReady": True,
+        }
+        fake_cdp = types.SimpleNamespace(
+            _ws_chat_listener=Listener(),
+            evaluate=lambda script: calls.append(script) or json.dumps(payload),
+        )
+
+        first = app._core.BandCDP.get_chat_snapshot(fake_cdp, 50)
+        second = app._core.BandCDP.get_chat_snapshot(fake_cdp, 50)
+
+        self.assertEqual(first["messages"], [])
+        self.assertEqual(second["messages"], [])
+        self.assertEqual(len(calls), 1)
+
     def test_action_button_is_immediately_after_sold(self):
         card = app._core.AuctionCardWidget()
         container = card.findChild(app._core.QWidget, "auctionCard")
