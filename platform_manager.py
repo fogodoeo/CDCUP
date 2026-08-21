@@ -91,6 +91,10 @@ class ChannelAwareManager:
         self._items = {}
         self._items_channel_id = ""
         self._lock = threading.RLock()
+        self._write_lock = threading.RLock()
+        self._write_generation = 0
+        self._stage_sequence = 0
+        self._staged_item_updates = {}
         self.ws = ChannelAwareWorksheet(self)
         self.refresh_context(force=True)
 
@@ -145,6 +149,7 @@ class ChannelAwareManager:
                 # the same item ID.
                 self._items = {}
                 self._items_channel_id = ""
+                self._staged_item_updates = {}
             self.online = True
             self.last_read_error = ""
         except Exception as exc:
@@ -283,6 +288,8 @@ class ChannelAwareManager:
         }
 
     def read_items(self):
+        with self._lock:
+            read_generation = self._write_generation
         if not self._context_ready(force=True):
             return []
         if not self.using_platform:
@@ -293,8 +300,20 @@ class ChannelAwareManager:
             workspace = self._context_workspace or self._request(f"channels/{self.channel_id}/workspace", admin=True)
             self._context_workspace = None
             rows = workspace.get("items") or []
-            self._items = {str(item.get("id")): item for item in rows}
-            self._items_channel_id = self.channel_id
+            with self._lock:
+                if self._write_generation != read_generation and self._items_channel_id == self.channel_id:
+                    rows = list(self._items.values())
+                else:
+                    merged_rows = []
+                    for source in rows:
+                        item = dict(source)
+                        staged = self._staged_item_updates.get(str(item.get("id")))
+                        if staged:
+                            item = self._merge_platform_item_record(item, staged.get("data") or {})
+                        merged_rows.append(item)
+                    rows = merged_rows
+                    self._items = {str(item.get("id")): item for item in rows}
+                    self._items_channel_id = self.channel_id
             self.online = True
             self.last_read_error = ""
             return [self._legacy_item(item) for item in sorted(rows, key=lambda row: int(row.get("lotNumber") or 0))]
@@ -318,10 +337,7 @@ class ChannelAwareManager:
             return record
         raise RuntimeError("현재 화면에 불러온 채널 목록에서 개체를 찾을 수 없습니다. 목록을 새로고침해주세요.")
 
-    def _save_platform_item(self, row, data, transition=False):
-        current = self._current_record(row)
-        if not current:
-            raise RuntimeError("현재 채널에서 개체를 찾을 수 없습니다.")
+    def _merge_platform_item_record(self, current, data):
         attrs = dict(current.get("attributes") or {})
         attr_fields = {
             "announce": "announce",
@@ -363,25 +379,75 @@ class ChannelAwareManager:
             record["winnerName"] = str(data["winner"] or "")
         for key in ("createdAt", "updatedAt", "channelId"):
             record.pop(key, None)
-        if transition:
-            status = _status_to_platform(data.get("status"))
-            mode = "live" if status == "live" else ("sold" if status == "sold" else "standby")
-            result = self._request(
-                f"channels/{self.channel_id}/auction-transition",
-                method="PUT",
-                payload={"itemId": str(row), "status": status, "mode": mode, "item": record, "state": {"page": 2}},
-                admin=True,
-            )
-        else:
-            result = self._request(
-                f"channels/{self.channel_id}/items/{row}",
-                method="PUT",
-                payload={"record": record},
-                admin=True,
-            )
-        saved = result.get("record") or result.get("item") or record
-        self._items[str(row)] = saved
-        return saved
+        return record
+
+    def stage_item_update(self, data):
+        """Keep an unsaved editor draft authoritative during refresh/start races."""
+        if not self._context_verified or not self.using_platform:
+            return False
+        row = str(data.get("row") or data.get("rowNum") or "")
+        if not row:
+            return False
+        editable = {
+            key: value for key, value in dict(data or {}).items()
+            if key in {
+                "company", "num", "name", "price", "start_price", "startPrice",
+                "note", "announce", "photoItem", "photoSire", "photoDam",
+                "photoSibling", "checklist", "checklist_parsed", "sire_id", "dam_id",
+            }
+        }
+        if not editable:
+            return False
+        with self._lock:
+            if self._items_channel_id != self.channel_id or row not in self._items:
+                return False
+            self._stage_sequence += 1
+            self._staged_item_updates[row] = {
+                "revision": self._stage_sequence,
+                "data": editable,
+            }
+            self._items[row] = self._merge_platform_item_record(self._items[row], editable)
+        return True
+
+    def _save_platform_item(self, row, data, transition=False):
+        row_key = str(row)
+        with self._write_lock:
+            with self._lock:
+                current = self._current_record(row)
+                if not current:
+                    raise RuntimeError("현재 채널에서 개체를 찾을 수 없습니다.")
+                record = self._merge_platform_item_record(current, data)
+                staged = self._staged_item_updates.get(row_key)
+                staged_revision = int((staged or {}).get("revision") or 0)
+                if staged:
+                    record = self._merge_platform_item_record(record, staged.get("data") or {})
+            if transition:
+                status = _status_to_platform(data.get("status"))
+                mode = "live" if status == "live" else ("sold" if status == "sold" else "standby")
+                result = self._request(
+                    f"channels/{self.channel_id}/auction-transition",
+                    method="PUT",
+                    payload={"itemId": row_key, "status": status, "mode": mode, "item": record, "state": {"page": 2}},
+                    admin=True,
+                )
+            else:
+                result = self._request(
+                    f"channels/{self.channel_id}/items/{row_key}",
+                    method="PUT",
+                    payload={"record": record},
+                    admin=True,
+                )
+            saved = result.get("record") or result.get("item") or record
+            with self._lock:
+                latest_stage = self._staged_item_updates.get(row_key)
+                if latest_stage and int(latest_stage.get("revision") or 0) == staged_revision:
+                    self._staged_item_updates.pop(row_key, None)
+                elif latest_stage:
+                    saved = self._merge_platform_item_record(saved, latest_stage.get("data") or {})
+                self._items[row_key] = saved
+                self._write_generation += 1
+                self._context_workspace = None
+            return saved
 
     def update_item(self, data):
         # A write must always revalidate the active channel. The UI may still

@@ -424,6 +424,43 @@ def _merge_checklist_after_edit(original_raw, edited_raw, mode="auction", config
     return _replace_sale_mode_checklist("|".join(edited_parts), mode, config)
 
 
+def _replace_quick_checklist(raw, gender, weight):
+    preserved = []
+    for part in str(raw or "").split("|"):
+        if ":" not in part:
+            continue
+        key, value = part.split(":", 1)
+        key = key.strip()
+        if not key or key in {"gender", "weight"}:
+            continue
+        preserved.append(f"{key}:{value.strip()}")
+    quick = []
+    if gender:
+        quick.append(f"gender:{gender}")
+    if weight:
+        quick.append(f"weight:{weight}")
+    return "|".join(quick + preserved)
+
+
+def _quick_edit_draft(item, name, gender, weight, note):
+    source = dict(item or {})
+    return {
+        "name": str(name or "").strip(),
+        "checklist": _replace_quick_checklist(
+            source.get("checklist", ""),
+            str(gender or "U"),
+            str(weight or "").strip().replace("g", ""),
+        ),
+        "note": str(note or "").strip(),
+    }
+
+
+def _quick_draft_matches(item, fields):
+    source = item or {}
+    draft = fields or {}
+    return all(str(source.get(key) or "") == str(draft.get(key) or "") for key in ("name", "checklist", "note"))
+
+
 def _quiz_item_meta(item):
     meta = _sale_item_meta(item)
     config = meta.get("config", {})
@@ -2317,21 +2354,7 @@ def _patch_auction_card_quick_edit():
         return values
 
     def _update_checklist(raw, gender, weight):
-        preserved = []
-        for part in str(raw or "").split("|"):
-            if ":" not in part:
-                continue
-            key, value = part.split(":", 1)
-            key = key.strip()
-            if key in {"gender", "weight"}:
-                continue
-            preserved.append(f"{key}:{value.strip()}")
-        quick = []
-        if gender:
-            quick.append(f"gender:{gender}")
-        if weight:
-            quick.append(f"weight:{weight}")
-        return "|".join(quick + preserved)
+        return _replace_quick_checklist(raw, gender, weight)
 
     def _ensure_quick_bridge(self):
         if getattr(self, "_quick_edit_bridge", None) is None:
@@ -2345,11 +2368,90 @@ def _patch_auction_card_quick_edit():
             self._quick_autosave_timer.timeout.connect(lambda: _save_quick_item(self))
             self._quick_save_inflight = False
             self._quick_save_pending = False
+        if getattr(self, "_quick_drafts", None) is None:
+            self._quick_drafts = {}
+            self._quick_draft_sequence = 0
+
+    def _quick_row_key(item):
+        return str((item or {}).get("row") or (item or {}).get("id") or "").strip()
+
+    def _capture_quick_draft(self):
+        item = getattr(self, "_quick_edit_item", None) or getattr(self, "_viewing_item", None)
+        if not item or not _quick_row_key(item):
+            return None, 0
+        controls = (
+            getattr(self, "_quick_name", None),
+            getattr(self, "_quick_gender", None),
+            getattr(self, "_quick_weight", None),
+            getattr(self, "_quick_note", None),
+        )
+        if any(control is None for control in controls):
+            return dict(item), 0
+        fields = _quick_edit_draft(
+            item,
+            self._quick_name.text(),
+            self._quick_gender.currentData(),
+            self._quick_weight.text(),
+            self._quick_note.text(),
+        )
+        row_key = _quick_row_key(item)
+        existing = self._quick_drafts.get(row_key) or {}
+        fields_changed = existing.get("fields") != fields
+        if fields_changed:
+            self._quick_draft_sequence += 1
+            revision = self._quick_draft_sequence
+            state = "dirty"
+        else:
+            revision = int(existing.get("revision") or 0)
+            state = existing.get("state") or "dirty"
+        self._quick_drafts[row_key] = {
+            "revision": revision,
+            "fields": dict(fields),
+            "state": state,
+            "saved_at": existing.get("saved_at", 0.0),
+        }
+        item.update(fields)
+        mw = self.window()
+        for candidate in getattr(mw, "items", []) or []:
+            if _quick_row_key(candidate) == row_key:
+                candidate.update(fields)
+        sheets = getattr(mw, "sheets", None) or getattr(mw, "sheets_manager", None)
+        stage = getattr(sheets, "stage_item_update", None)
+        if fields_changed and callable(stage):
+            stage({"row": item.get("row") or item.get("id"), **fields})
+        return dict(item), revision
+
+    def _apply_quick_draft(self, item):
+        row_key = _quick_row_key(item)
+        draft = self._quick_drafts.get(row_key) if row_key else None
+        if draft and item is not None:
+            item.update(draft.get("fields") or {})
+        return item
+
+    def _merge_quick_drafts_into_items(self, items):
+        if items is None:
+            return items
+        now = time.monotonic()
+        for item in items:
+            row_key = _quick_row_key(item)
+            draft = self._quick_drafts.get(row_key) if row_key else None
+            if not draft:
+                continue
+            fields = draft.get("fields") or {}
+            if draft.get("state") == "saved" and _quick_draft_matches(item, fields):
+                self._quick_drafts.pop(row_key, None)
+                continue
+            if draft.get("state") == "saved" and now - float(draft.get("saved_at") or 0.0) > 15.0:
+                self._quick_drafts.pop(row_key, None)
+                continue
+            item.update(fields)
+        return items
 
     def _schedule_quick_save(self, delay=650):
         if getattr(self, "_quick_edit_item", None) is None:
             return
         _ensure_quick_bridge(self)
+        _capture_quick_draft(self)
         self._quick_autosave_timer.start(max(0, int(delay)))
 
     def __init__(self, *args, **kwargs):
@@ -2358,9 +2460,19 @@ def _patch_auction_card_quick_edit():
 
     def _update_detail_grid(self, item):
         pending_timer = getattr(self, "_quick_autosave_timer", None)
-        if pending_timer is not None and pending_timer.isActive() and getattr(self, "_quick_edit_item", None):
-            pending_timer.stop()
-            _save_quick_item(self)
+        previous_item = getattr(self, "_quick_edit_item", None)
+        previous_key = _quick_row_key(previous_item)
+        has_existing_draft = bool(previous_key and self._quick_drafts.get(previous_key))
+        has_pending_edit = bool(
+            (pending_timer is not None and pending_timer.isActive())
+            or getattr(self, "_quick_save_inflight", False)
+            or getattr(self, "_quick_save_pending", False)
+        )
+        if previous_item and (has_existing_draft or has_pending_edit):
+            _capture_quick_draft(self)
+            if pending_timer is not None and pending_timer.isActive():
+                pending_timer.stop()
+                _save_quick_item(self)
 
         grid = self.detail_grid_layout
         while grid.count():
@@ -2375,6 +2487,7 @@ def _patch_auction_card_quick_edit():
             return
 
         _ensure_quick_bridge(self)
+        _apply_quick_draft(self, item)
         self._quick_edit_item = item
         checklist = _parse_checklist(item.get("checklist", ""))
 
@@ -2456,6 +2569,7 @@ def _patch_auction_card_quick_edit():
 
     def _save_quick_item(self):
         _ensure_quick_bridge(self)
+        updated, revision = _capture_quick_draft(self)
         if getattr(self, "_quick_save_inflight", False):
             self._quick_save_pending = True
             return
@@ -2473,18 +2587,13 @@ def _patch_auction_card_quick_edit():
                 mw.toast.show_toast(detail or "데이터 쓰기 연결이 되어 있지 않습니다.", "warning")
             return
 
-        name = self._quick_name.text().strip()
+        updated = updated or dict(item)
+        name = str(updated.get("name") or "").strip()
         if not name:
             if hasattr(mw, "toast"):
                 mw.toast.show_toast("개체명은 비워둘 수 없습니다.", "warning")
             return
-        gender = str(self._quick_gender.currentData() or "U")
-        weight = self._quick_weight.text().strip().replace("g", "")
-        note = self._quick_note.text().strip()
-        updated = dict(item)
-        updated["name"] = name
-        updated["checklist"] = _update_checklist(item.get("checklist", ""), gender, weight)
-        updated["note"] = note
+        note = str(updated.get("note") or "")
 
         data = {
             "rowNum": updated.get("row"),
@@ -2515,6 +2624,9 @@ def _patch_auction_card_quick_edit():
 
         self._quick_save_inflight = True
         self._quick_save_pending = False
+        draft = self._quick_drafts.get(_quick_row_key(updated))
+        if draft and int(draft.get("revision") or 0) == revision:
+            draft["state"] = "saving"
 
         def _worker():
             ok, error = False, ""
@@ -2524,14 +2636,22 @@ def _patch_auction_card_quick_edit():
                     error = getattr(sheets, "last_write_error", "") or "저장하지 못했습니다."
             except Exception as exc:
                 error = str(exc)
-            self._quick_edit_bridge.sig_done.emit(ok, error, updated)
+            self._quick_edit_bridge.sig_done.emit(ok, error, (updated, revision))
 
         threading.Thread(target=_worker, daemon=True).start()
 
-    def _on_quick_save_done(self, ok, error, updated):
+    def _on_quick_save_done(self, ok, error, payload):
         self._quick_save_inflight = False
+        if isinstance(payload, tuple) and len(payload) == 2:
+            updated, revision = payload
+        else:
+            updated, revision = payload, 0
         mw = self.window()
+        row_key = _quick_row_key(updated)
+        draft = self._quick_drafts.get(row_key)
         if not ok:
+            if draft and int(draft.get("revision") or 0) == revision:
+                draft["state"] = "dirty"
             if hasattr(mw, "toast"):
                 mw.toast.show_toast(f"자동 저장 실패: {error}", "error")
         else:
@@ -2543,6 +2663,9 @@ def _patch_auction_card_quick_edit():
             current = getattr(self, "_quick_edit_item", None)
             if current is not None and (current is updated or (row is not None and current.get("row") == row)):
                 current.update(updated)
+            if draft and int(draft.get("revision") or 0) == revision:
+                draft["state"] = "saved"
+                draft["saved_at"] = time.monotonic()
 
         if getattr(self, "_quick_save_pending", False):
             self._quick_save_pending = False
@@ -2562,6 +2685,8 @@ def _patch_auction_card_quick_edit():
     AuctionCardWidget._update_detail_grid = _update_detail_grid
     AuctionCardWidget._save_quick_item = _save_quick_item
     AuctionCardWidget._schedule_quick_save = _schedule_quick_save
+    AuctionCardWidget._capture_quick_draft = _capture_quick_draft
+    AuctionCardWidget._merge_quick_drafts_into_items = _merge_quick_drafts_into_items
     AuctionCardWidget.show_item_detail = show_item_detail
     AuctionCardWidget.set_active = set_active
 
@@ -3537,6 +3662,10 @@ def _patch_main_window():
             self._refresh_table()
 
     def _on_connect_done_inner(self, items, tabs, cdp_ok):
+        card = getattr(self, "auction_card", None)
+        merge_drafts = getattr(card, "_merge_quick_drafts_into_items", None)
+        if callable(merge_drafts):
+            items = merge_drafts(items)
         current = getattr(self, "active_item", None)
         if items is not None and current and not _active_item_is_authoritative(current, items):
             stale_row = current.get("row") or current.get("id")
@@ -3554,6 +3683,14 @@ def _patch_main_window():
 
     def _sync_sheet(self):
         manager = getattr(self, "sheets", None)
+        card = getattr(self, "auction_card", None)
+        quick_timer = getattr(card, "_quick_autosave_timer", None)
+        if (
+            getattr(card, "_quick_save_inflight", False)
+            or getattr(card, "_quick_save_pending", False)
+            or (quick_timer is not None and quick_timer.isActive())
+        ):
+            return None
         platform_active = bool(
             getattr(self, "active_item", None)
             and getattr(manager, "channel_aware", False)
@@ -4058,6 +4195,27 @@ def _patch_main_window():
                 start_label.setStyleSheet("font-size:12px; color:#667085; font-weight:700; background:transparent;")
 
     def _start_auction(self, item):
+        card = getattr(self, "auction_card", None)
+        capture_draft = getattr(card, "_capture_quick_draft", None)
+        quick_timer = getattr(card, "_quick_autosave_timer", None)
+        current_quick_item = getattr(card, "_quick_edit_item", None)
+        current_quick_key = str(
+            (current_quick_item or {}).get("row") or (current_quick_item or {}).get("id") or ""
+        ).strip()
+        has_existing_draft = bool(
+            current_quick_key
+            and (getattr(card, "_quick_drafts", None) or {}).get(current_quick_key)
+        )
+        has_pending_edit = bool(
+            (quick_timer is not None and quick_timer.isActive())
+            or getattr(card, "_quick_save_inflight", False)
+            or getattr(card, "_quick_save_pending", False)
+        )
+        if callable(capture_draft) and (has_existing_draft or has_pending_edit):
+            capture_draft()
+            if quick_timer is not None and quick_timer.isActive():
+                quick_timer.stop()
+                card._save_quick_item()
         _stop_auction_countdown(self)
         sale_meta = _sale_item_meta(item)
         if sale_meta.get("mode") == "quiz":

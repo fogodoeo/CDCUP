@@ -1,4 +1,6 @@
 import json
+import threading
+import time
 import unittest
 
 from platform_manager import ChannelAwareManager
@@ -212,6 +214,122 @@ class ChannelAwareManagerTests(unittest.TestCase):
         self.assertEqual(calls[0]["json"]["bid_sequence"], 123)
         self.assertEqual(calls[0]["json"]["bidder_key"], "band-member-key")
         self.assertEqual(len(context_calls), 1)
+
+    def test_new_platform_channel_merges_staged_quick_edit_into_auction_start(self):
+        writes = []
+        item = {
+            "id": "lot-1", "lotNumber": 1, "name": "초기 개체", "note": "",
+            "status": "waiting", "attributes": {"checklist": "gender:U|weight:3"},
+        }
+
+        def request(method, url, **kwargs):
+            if url.endswith("/api/platform/operator-context"):
+                return FakeResponse(200, {
+                    "activeChannelId": "new-channel",
+                    "channel": {"id": "new-channel", "name": "NEW", "dataAdapter": "platform"},
+                    "workspace": {"items": [item]},
+                })
+            if method == "PUT" and url.endswith("/auction-transition"):
+                writes.append(kwargs["json"])
+                return FakeResponse(200, {"item": kwargs["json"]["item"]})
+            raise AssertionError(url)
+
+        manager = ChannelAwareManager(
+            {"platform_admin_password": "test-secret"}, legacy=FakeLegacy(), request_func=request
+        )
+        manager.read_items()
+        self.assertTrue(manager.stage_item_update({
+            "row": "lot-1", "name": "수정 개체", "note": "비고 유지",
+            "checklist": "gender:M|weight:3",
+        }))
+        self.assertTrue(manager.update_item({"row": "lot-1", "status": "진행중"}))
+
+        self.assertEqual(len(writes), 1)
+        self.assertEqual(writes[0]["item"]["name"], "수정 개체")
+        self.assertEqual(writes[0]["item"]["note"], "비고 유지")
+        self.assertEqual(writes[0]["item"]["attributes"]["checklist"], "gender:M|weight:3")
+        self.assertEqual(writes[0]["status"], "live")
+
+    def test_quick_edit_and_start_writes_are_serialized_without_stale_field_restore(self):
+        writes = []
+        first_write_started = threading.Event()
+        allow_first_write = threading.Event()
+        item = {
+            "id": "lot-1", "lotNumber": 1, "name": "개체", "note": "",
+            "status": "waiting", "attributes": {"checklist": "gender:U"},
+        }
+
+        def request(method, url, **kwargs):
+            if url.endswith("/api/platform/operator-context"):
+                return FakeResponse(200, {
+                    "activeChannelId": "new-channel",
+                    "channel": {"id": "new-channel", "name": "NEW", "dataAdapter": "platform"},
+                    "workspace": {"items": [item]},
+                })
+            if method == "PUT":
+                payload = kwargs["json"]
+                writes.append((url, payload))
+                if len(writes) == 1:
+                    first_write_started.set()
+                    allow_first_write.wait(2)
+                return FakeResponse(200, {
+                    "item": payload.get("item"), "record": payload.get("record")
+                })
+            raise AssertionError(url)
+
+        manager = ChannelAwareManager(
+            {"platform_admin_password": "test-secret"}, legacy=FakeLegacy(), request_func=request
+        )
+        manager.read_items()
+        manager.stage_item_update({"row": "lot-1", "note": "새 비고", "checklist": "gender:M"})
+
+        edit_thread = threading.Thread(target=lambda: manager.update_item({
+            "row": "lot-1", "note": "새 비고", "checklist": "gender:M"
+        }))
+        start_thread = threading.Thread(
+            target=lambda: manager.update_item({"row": "lot-1", "status": "진행중"})
+        )
+        edit_thread.start()
+        self.assertTrue(first_write_started.wait(1))
+        start_thread.start()
+        time.sleep(0.05)
+        self.assertEqual(len(writes), 1)
+        allow_first_write.set()
+        edit_thread.join(2)
+        start_thread.join(2)
+
+        self.assertEqual(len(writes), 2)
+        sent_records = [payload.get("record") or payload.get("item") for _url, payload in writes]
+        self.assertTrue(all(record["note"] == "새 비고" for record in sent_records))
+        self.assertTrue(all(record["attributes"]["checklist"] == "gender:M" for record in sent_records))
+
+    def test_failed_quick_edit_write_keeps_the_draft_across_refresh_for_retry(self):
+        item = {
+            "id": "lot-1", "lotNumber": 1, "name": "개체", "note": "",
+            "status": "waiting", "attributes": {"checklist": "gender:U"},
+        }
+
+        def request(method, url, **_kwargs):
+            if url.endswith("/api/platform/operator-context"):
+                return FakeResponse(200, {
+                    "activeChannelId": "new-channel",
+                    "channel": {"id": "new-channel", "name": "NEW", "dataAdapter": "platform"},
+                    "workspace": {"items": [item]},
+                })
+            if method == "PUT":
+                raise RuntimeError("temporary write failure")
+            raise AssertionError(url)
+
+        manager = ChannelAwareManager(
+            {"platform_admin_password": "test-secret"}, legacy=FakeLegacy(), request_func=request
+        )
+        manager.read_items()
+        manager.stage_item_update({"row": "lot-1", "note": "재시도 비고", "checklist": "gender:M"})
+        self.assertFalse(manager.update_item({"row": "lot-1", "note": "재시도 비고", "checklist": "gender:M"}))
+
+        refreshed = manager.read_items()[0]
+        self.assertEqual(refreshed["note"], "재시도 비고")
+        self.assertEqual(refreshed["checklist"], "gender:M")
 
 
 if __name__ == "__main__":
