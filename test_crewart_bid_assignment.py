@@ -1,4 +1,5 @@
 import unittest
+from types import SimpleNamespace
 
 import band_monitor_app as app
 
@@ -24,6 +25,30 @@ class CrewartBidAssignmentTests(unittest.TestCase):
         self.assertIn('"bid_sequence"', source)
         self.assertIn('name="CrewartAssignment"', source)
         self.assertNotIn('channel_id", "") == "crewart"', source)
+
+    def test_assignment_job_is_dropped_after_item_or_channel_boundary(self):
+        window = SimpleNamespace(
+            sheets=SimpleNamespace(channel_id="crewart"),
+            active_item={"row": "item-2"},
+        )
+        self.assertTrue(app._crewart_assignment_job_is_current(
+            window, {"channel_id": "crewart", "item_id": "item-2"}
+        ))
+        self.assertFalse(app._crewart_assignment_job_is_current(
+            window, {"channel_id": "crewart", "item_id": "item-1"}
+        ))
+        self.assertFalse(app._crewart_assignment_job_is_current(
+            window, {"channel_id": "creyon", "item_id": "item-2"}
+        ))
+
+    def test_assignment_job_is_dropped_after_auction_ends(self):
+        window = SimpleNamespace(
+            sheets=SimpleNamespace(channel_id="crewart"),
+            active_item=None,
+        )
+        self.assertFalse(app._crewart_assignment_job_is_current(
+            window, {"channel_id": "crewart", "item_id": "item-1"}
+        ))
 
 
 if __name__ == "__main__":

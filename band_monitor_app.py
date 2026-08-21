@@ -791,6 +791,19 @@ def _format_crewart_assignment_chat(name, amount, suffix):
     return f"{display_name} {price} 입찰 {str(suffix or '').strip()}".strip()
 
 
+def _crewart_assignment_job_is_current(window, job):
+    """Reject queued assignment work after an item or channel boundary."""
+    manager = getattr(window, "sheets", None)
+    expected_channel = str((job or {}).get("channel_id") or "").strip()
+    current_channel = str(getattr(manager, "channel_id", "") or "").strip()
+    if expected_channel and current_channel != expected_channel:
+        return False
+    active_item = getattr(window, "active_item", None) or {}
+    active_item_id = str(active_item.get("row") or active_item.get("id") or "").strip()
+    expected_item_id = str((job or {}).get("item_id") or "").strip()
+    return bool(active_item_id and expected_item_id and active_item_id == expected_item_id)
+
+
 def _is_buy_now_text(value):
     return _chat_command_text(value) == "즉구"
 
@@ -3105,7 +3118,9 @@ def _patch_main_window():
         jobs = getattr(self, "_crewart_assignment_jobs", None)
         if jobs is None:
             return False
+        sheets = getattr(self, "sheets", None)
         jobs.put({
+            "channel_id": str(getattr(sheets, "channel_id", "") or ""),
             "item_id": str(item_id or ""),
             "bidder_key": str(bid.get("bidder_key") or bid.get("name") or ""),
             "name": str(bid.get("name") or ""),
@@ -3120,6 +3135,12 @@ def _patch_main_window():
         while True:
             job = self._crewart_assignment_jobs.get()
             try:
+                if not _crewart_assignment_job_is_current(self, job):
+                    _append_chat_debug_log(
+                        "crewart assignment dropped at item/channel boundary "
+                        f"channel={job.get('channel_id')!r} item={job.get('item_id')!r}"
+                    )
+                    continue
                 result = None
                 error = None
                 for attempt in range(2):
@@ -3138,18 +3159,23 @@ def _patch_main_window():
                         error = exc
                         if attempt == 0:
                             time.sleep(0.25)
+                if not _crewart_assignment_job_is_current(self, job):
+                    _append_chat_debug_log(
+                        "crewart assignment acknowledgement suppressed after boundary "
+                        f"channel={job.get('channel_id')!r} item={job.get('item_id')!r}"
+                    )
+                    continue
                 if result and result.get("isNewRandom"):
                     suffix = "🎲 신규 배정"
                 elif result and str(result.get("houseKey") or "").upper() in house_icons:
                     suffix = house_icons[str(result.get("houseKey")).upper()]
                 else:
-                    suffix = "⚪ 기숙사 확인 중"
-                message = _format_crewart_assignment_chat(job["name"], job["amount"], suffix)
-                self._queue_chat_send(message, "기숙사 입찰 확인 전송 실패")
-                if error:
                     _append_chat_debug_log(
                         f"crewart assignment unavailable bidder={job['bidder_key']!r} error={error}"
                     )
+                    continue
+                message = _format_crewart_assignment_chat(job["name"], job["amount"], suffix)
+                self._queue_chat_send(message, "기숙사 입찰 확인 전송 실패")
             finally:
                 self._crewart_assignment_jobs.task_done()
 
