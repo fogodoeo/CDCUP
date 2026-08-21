@@ -90,7 +90,7 @@ class AuctionCountdownTests(unittest.TestCase):
 
     def test_countdown_contract_has_fixed_five_slots_and_expected_timing(self):
         self.assertEqual(sum(ms for _, ms in app.AUCTION_COUNTDOWN_INITIAL_STAGES), 39600)
-        self.assertEqual(sum(ms for _, ms in app.AUCTION_COUNTDOWN_RESUME_STAGES), 27600)
+        self.assertEqual(sum(ms for _, ms in app.AUCTION_COUNTDOWN_RESUME_STAGES), 33600)
         self.assertEqual(app.AUCTION_COUNTDOWN_FIRST_MESSAGE_DELAY_MS, 1020)
         self.assertEqual(app.AUCTION_COUNTDOWN_RESUME_DELAY_MS, 840)
         self.assertEqual(
@@ -106,6 +106,15 @@ class AuctionCountdownTests(unittest.TestCase):
                 "🟧🟧⬜⬜⬜ (2/5)",
                 "🟥⬜⬜⬜⬜ (1/5)",
             ],
+        )
+        self.assertEqual(
+            app.AUCTION_COUNTDOWN_RESUME_STAGES,
+            (
+                (None, 6000),
+                ("🟨🟨🟨⬜⬜ (3/5)", 8400),
+                ("🟧🟧⬜⬜⬜ (2/5)", 9600),
+                ("🟥⬜⬜⬜⬜ (1/5)", 9600),
+            ),
         )
         self.assertEqual(app.AUCTION_COUNTDOWN_LOCK_MESSAGE, "⬜⬜⬜⬜⬜ (0/5) 마감")
 
@@ -283,7 +292,7 @@ class AuctionCountdownTests(unittest.TestCase):
         self.assertEqual(window._auction_countdown_sequence, app.AUCTION_COUNTDOWN_RESUME_STAGES)
         self.assertEqual(window.auction_card.btn_countdown.text(), "카운트 취소")
 
-    def test_bid_during_initial_green_keeps_current_countdown_position(self):
+    def test_bid_during_initial_green_restarts_at_silent_green_four(self):
         window = _CountdownWindow()
         app._core.MainWindow._begin_auction_countdown(window, resume=False, announce=False)
         window._auction_countdown_timer.stop()
@@ -296,10 +305,10 @@ class AuctionCountdownTests(unittest.TestCase):
 
         app._core.MainWindow._restart_countdown_after_accepted_bid(window, previous_top)
 
-        self.assertEqual(window._auction_countdown_sequence, app.AUCTION_COUNTDOWN_INITIAL_STAGES)
-        self.assertEqual(window._auction_countdown_stage_index, 1)
+        self.assertEqual(window._auction_countdown_sequence, app.AUCTION_COUNTDOWN_RESUME_STAGES)
+        self.assertEqual(window._auction_countdown_stage_index, 0)
 
-    def test_bid_after_green_restarts_from_yellow(self):
+    def test_bid_after_green_waits_silently_before_yellow(self):
         window = _CountdownWindow()
         app._core.MainWindow._begin_auction_countdown(window, resume=False, announce=False)
         window._auction_countdown_timer.stop()
@@ -316,6 +325,16 @@ class AuctionCountdownTests(unittest.TestCase):
 
         self.assertEqual(window._auction_countdown_sequence, app.AUCTION_COUNTDOWN_RESUME_STAGES)
         self.assertEqual(window._auction_countdown_stage_index, 0)
+
+        sent_before_wait = list(window.sent)
+        app._core.MainWindow._advance_auction_countdown(window)
+        window._auction_countdown_timer.stop()
+        self.assertEqual(window.sent, sent_before_wait)
+        self.assertEqual(window._auction_countdown_stage_index, 1)
+
+        app._core.MainWindow._advance_auction_countdown(window)
+        window._auction_countdown_timer.stop()
+        self.assertEqual(window.sent[-1][0], "🟨🟨🟨⬜⬜ (3/5)")
 
     def test_manual_ok_without_changed_top_stays_locked(self):
         window = _CountdownWindow()

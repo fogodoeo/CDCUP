@@ -124,8 +124,11 @@ AUCTION_COUNTDOWN_INITIAL_STAGES = (
     ("🟧🟧⬜⬜⬜ (2/5)", 9600),
     ("🟥⬜⬜⬜⬜ (1/5)", 9600),
 )
-AUCTION_COUNTDOWN_GREEN_STAGE_COUNT = 2
-AUCTION_COUNTDOWN_RESUME_STAGES = AUCTION_COUNTDOWN_INITIAL_STAGES[2:]
+# A new highest bid restarts at the four-slot green timing boundary, but the
+# green marker itself stays silent so the chat only changes again at yellow.
+AUCTION_COUNTDOWN_RESUME_STAGES = (
+    (None, AUCTION_COUNTDOWN_INITIAL_STAGES[1][1]),
+) + AUCTION_COUNTDOWN_INITIAL_STAGES[2:]
 AUCTION_COUNTDOWN_FIRST_MESSAGE_DELAY_MS = 1020
 AUCTION_COUNTDOWN_RESUME_DELAY_MS = 840
 AUCTION_COUNTDOWN_IDLE = "idle"
@@ -3269,7 +3272,8 @@ def _patch_main_window():
 
         message, duration_ms = sequence[index]
         self._auction_countdown_stage_index = index + 1
-        self._queue_chat_send(message, "마감 카운트 전송 실패")
+        if message:
+            self._queue_chat_send(message, "마감 카운트 전송 실패")
         self._auction_countdown_timer.start(int(duration_ms))
 
     def _lock_auction_bidding(self):
@@ -3440,20 +3444,10 @@ def _patch_main_window():
         current_top = _countdown_current_top_signature(self)
         if current_top is None or current_top == previous_top:
             return
-        sequence = getattr(self, "_auction_countdown_sequence", ())
-        stage_index = int(getattr(self, "_auction_countdown_stage_index", 0) or 0)
-        if (
-            sequence == AUCTION_COUNTDOWN_INITIAL_STAGES
-            and stage_index <= AUCTION_COUNTDOWN_GREEN_STAGE_COUNT
-        ):
-            _append_chat_debug_log(
-                "countdown kept in green after bid "
-                f"stage={stage_index} previous={previous_top!r} current={current_top!r}"
-            )
-            return
         _begin_auction_countdown(self, resume=True, announce=False)
         _append_chat_debug_log(
-            f"countdown reset to yellow previous={previous_top!r} current={current_top!r}"
+            "countdown reset to silent green-four boundary "
+            f"previous={previous_top!r} current={current_top!r}"
         )
 
     def _on_chat_send_done(self, payload):
