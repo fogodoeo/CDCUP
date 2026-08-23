@@ -27,9 +27,9 @@
   "quiz_answer_secret": "",
   "quick_messages": [],
   "templates": {
-    "start": "",
-    "sold": "",
-    "unsold": "",
-    "highest": ""
+    "start": "📢 #{num} {name} 시작 · {price}만",
+    "sold": "📢 {winner} {sold_price}만원 낙찰",
+    "unsold": "📢 #{num} {name} 유찰",
+    "highest": "📢 {winner} {sold_price}만원 입찰"
   }
 }

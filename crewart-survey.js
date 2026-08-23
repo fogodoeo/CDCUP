@@ -5,6 +5,8 @@
     const SURVEY_URL = 'https://creok.onrender.com/crewart-survey.html';
     const DEFAULT_BAND_URL = 'https://www.band.us/band/101992972/post';
     const BAND_MEMBER_API = '/api/band-membership';
+    const REFERRAL_API = '/api/crewart-survey/shares';
+    const REFERRAL_STORAGE_KEY = 'crewart_referral_source_v1';
     const KAKAO_JS_KEY = 'db7ffc8d6b9b7601b792ed69be4658fc';
     const TYPE_CHARACTER_ROOT = 'assets/crewart-types/';
     const TYPE_CHARACTER_VERSION = '20260815-character-webp-v2';
@@ -99,6 +101,61 @@
     let preparedKakaoShareFile = null;
     let preparedKakaoShareUrl = '';
     let resultExperienceCleanup = null;
+    let referralId = '';
+
+    function validReferralId(value) {
+        const normalized = String(value || '').trim();
+        return /^[a-zA-Z0-9_-]{16,64}$/.test(normalized) ? normalized : '';
+    }
+
+    function createReferralId() {
+        if (globalThis.crypto?.randomUUID) return crypto.randomUUID().replace(/-/g, '');
+        if (globalThis.crypto?.getRandomValues) {
+            const bytes = new Uint8Array(18);
+            globalThis.crypto.getRandomValues(bytes);
+            return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+        return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 24)}`;
+    }
+
+    function referralShareUrl(id) {
+        const url = new URL(SURVEY_URL);
+        url.searchParams.set('src', 'kakao');
+        url.searchParams.set('sid', id);
+        return url.toString();
+    }
+
+    function trackReferral(eventName, options = {}) {
+        const id = validReferralId(options.id || referralId);
+        if (!id) return;
+        const headers = { 'Content-Type': 'application/json' };
+        if (options.authenticated && bandAuthToken) headers.Authorization = `Bearer ${bandAuthToken}`;
+        void fetch(REFERRAL_API, {
+            method: 'POST',
+            cache: 'no-store',
+            keepalive: true,
+            headers,
+            body: JSON.stringify({ shareId: id, event: eventName, source: 'kakao' })
+        }).catch(() => undefined);
+    }
+
+    function createTrackedShareUrl() {
+        const id = createReferralId();
+        trackReferral('share', { id });
+        return referralShareUrl(id);
+    }
+
+    function initializeReferral() {
+        const params = new URLSearchParams(window.location.search);
+        const incoming = params.get('src') === 'kakao' ? validReferralId(params.get('sid')) : '';
+        if (incoming) {
+            referralId = incoming;
+            try { sessionStorage.setItem(REFERRAL_STORAGE_KEY, incoming); } catch (_) { }
+            trackReferral('landing');
+            return;
+        }
+        try { referralId = validReferralId(sessionStorage.getItem(REFERRAL_STORAGE_KEY)); } catch (_) { }
+    }
 
     function element(id) {
         return document.getElementById(id);
@@ -1545,6 +1602,7 @@
                 if (bandAuthPhoneMask) sessionStorage.setItem(MEMBERSHIP_PHONE_STORAGE_KEY, bandAuthPhoneMask);
             } catch (_) { }
         }
+        trackReferral('verified', { authenticated: true });
         if (status) {
             status.hidden = true;
             status.textContent = '';
@@ -2204,6 +2262,7 @@
         const title = `${result.code} · ${result.typeName}`;
         const text = `나는 크레 앞에서 어떤 유형일까?\n${Core.QUESTIONS.length}문항 약 3분`;
         setShareButtonBusy(button, true, '공유 준비 중');
+        const shareUrl = createTrackedShareUrl();
 
         try {
             const shareFile = preparedKakaoShareFile || await createResultShareFile();
@@ -2212,27 +2271,27 @@
                 await navigator.share({
                     files: [shareFile],
                     title,
-                    text: `${text}\n${SURVEY_URL}`
+                    text: `${text}\n${shareUrl}`
                 });
                 return;
             }
             if (navigator.share) {
                 downloadShareFile(shareFile);
                 toast('이미지는 저장했어요. 공유 앱에서 카카오톡을 선택해주세요.');
-                await navigator.share({ title, text, url: SURVEY_URL });
+                await navigator.share({ title, text, url: shareUrl });
                 return;
             }
             downloadShareFile(shareFile);
-            await navigator.clipboard.writeText(`${text}\n${SURVEY_URL}`);
+            await navigator.clipboard.writeText(`${text}\n${shareUrl}`);
             toast('이미지 저장과 링크 복사를 완료했어요.');
         } catch (error) {
             if (error?.name === 'AbortError') return;
             console.error('[Crewart result share]', error);
             try {
-                await navigator.clipboard.writeText(`${text}\n${SURVEY_URL}`);
+                await navigator.clipboard.writeText(`${text}\n${shareUrl}`);
                 toast('공유 링크를 복사했어요.');
             } catch (_) {
-                window.prompt('아래 내용을 복사해주세요.', `${text}\n${SURVEY_URL}`);
+                window.prompt('아래 내용을 복사해주세요.', `${text}\n${shareUrl}`);
             }
         } finally {
             setShareButtonBusy(button, false);
@@ -2245,6 +2304,7 @@
         const text = `나는 크레 앞에서 어떤 유형일까?\n${Core.QUESTIONS.length}문항 약 3분`;
         let shareFile = null;
         setShareButtonBusy(button, true, '카카오톡 여는 중');
+        const shareUrl = createTrackedShareUrl();
 
         try {
             shareFile = await createKakaoShareFile();
@@ -2258,11 +2318,11 @@
                     imageUrl,
                     imageWidth: 1200,
                     imageHeight: 800,
-                    link: { mobileWebUrl: SURVEY_URL, webUrl: SURVEY_URL }
+                    link: { mobileWebUrl: shareUrl, webUrl: shareUrl }
                 },
                 buttons: [{
                     title: '나도 알아보기',
-                    link: { mobileWebUrl: SURVEY_URL, webUrl: SURVEY_URL }
+                    link: { mobileWebUrl: shareUrl, webUrl: shareUrl }
                 }]
             });
             return;
@@ -2321,6 +2381,9 @@
             setTimeout(() => syncMemberKeyboardState({ ensureVisible: false }), 80);
         });
         element('member-join-link')?.addEventListener('click', handleMemberJoinReturn);
+        document.addEventListener('click', event => {
+            if (event.target.closest?.('[data-band-join], [data-band-prompt]')) trackReferral('band_click');
+        });
         element('question-back').addEventListener('click', previousQuestion);
         element('mbti-unknown').addEventListener('click', () => {
             selectedMbti = '';
@@ -2384,6 +2447,7 @@
             return;
         }
         setupIntroVideo();
+        initializeReferral();
         try { LEGACY_RESULT_STORAGE_KEYS.forEach(key => localStorage.removeItem(key)); } catch (_) { }
         bindEvents();
         const urlParams = new URLSearchParams(window.location.search);

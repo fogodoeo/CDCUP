@@ -102,6 +102,7 @@ sys.excepthook = _crash_report_excepthook
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 LABEL_SPOOL_PATH = os.path.join(APP_DIR, "print_outputs", "label_print_spool.json")
 ACTIVE_AUCTION_SESSION_PATH = os.path.join(APP_DIR, "print_outputs", "active_auction_session.json")
+PRINTER_TELEMETRY_PATH = os.path.join(APP_DIR, "print_outputs", "printer_telemetry.json")
 _LABEL_SPOOL = LabelSpool(LABEL_SPOOL_PATH)
 BID_SAVE_MIN_INTERVAL_SEC = 2.0
 MAX_SEEN_CHAT_KEYS = 4000
@@ -112,11 +113,55 @@ CHAT_POLL_ACTIVE_DOM_MS = 700
 CHAT_POLL_IDLE_WS_MS = 900
 CHAT_POLL_IDLE_DOM_MS = 1800
 CHAT_DOM_RECOVERY_INTERVAL_SEC = 0.9
+CHAT_TRANSPORT_DUPLICATE_TTL_SEC = 8.0
 AUCTION_COUNTDOWN_ANNOUNCEMENT = (
-    "⏳ 마감 카운트를 시작합니다. ⬜⬜⬜⬜⬜ (0/5) 마감 표시 이후의 입찰은 반영되지 않습니다."
+    "📢 마감 카운트 시작"
 )
 AUCTION_COUNTDOWN_LOCK_MESSAGE = "⬜⬜⬜⬜⬜ (0/5) 마감"
 AUCTION_COUNTDOWN_LOCK_SEND_LABEL = "마감 잠금 표시 전송 실패"
+BUY_NOW_ANNOUNCEMENT_SEND_LABEL = "즉구 안내 전송 실패"
+BUY_NOW_IDLE = "idle"
+BUY_NOW_PENDING = "pending"
+BUY_NOW_ACTIVE = "active"
+BUY_NOW_CLAIMING = "claiming"
+BUY_NOW_CLAIMED = "claimed"
+NEW_ITEM_VENDOR_SENTINEL = "__new_vendor__"
+CHAT_TEMPLATE_DEFAULTS = {
+    "start": "📢 #{num} {name} 시작 · {price}만",
+    "sold": "📢 {winner} {sold_price}만원 낙찰",
+    "unsold": "📢 #{num} {name} 유찰",
+    "highest": "📢 {winner} {sold_price}만원 입찰",
+}
+CHAT_TEMPLATE_LEGACY = {
+    "start": {
+        "#{num} {name} 경매 시작! 시작가 {price}만",
+    },
+    "sold": {
+        "🟢 {winner} {sold_price}만원 낙찰",
+        "{name} 낙찰! {sold_price}만 ({winner})",
+        r"🦖 {name} 낙찰\n👤 {winner}\n💰 {sold_price}만원",
+        r"┃ {name} 낙찰\n┃ 낙찰자 {winner}\n┃ 낙찰금 {sold_price}만원",
+        r"🟢 {name} 낙찰\n🟢 {sold_price}만원 {winner}",
+        r"🟢{name} 낙찰\nㅤ {sold_price}만원 {winner}",
+        r"⠀⠀🟢{name} 낙찰\n⠀⠀ㅤ {sold_price}만원 {winner}",
+        r"⠀⠀🟢 낙찰 {name}\n⠀⠀ㅤ  {sold_price}만원 {winner}",
+    },
+    "unsold": {
+        "⚪ #{num} {name} 유찰",
+        "#{num} {name} 유찰",
+    },
+    "highest": {
+        "🔴 {winner} {sold_price}만원 입찰",
+        "현재 최고가 {sold_price}만 ({winner})",
+        r"🔴 실시간 입찰\n💰 현재 최고가 {sold_price}만원\n👤 {winner}",
+        r"┃ 실시간 입찰\n┃ 현재 최고가 {sold_price}만원\n┃ 입찰자 {winner}",
+        "■⠀ {sold_price}만원 {winner}⠀ ■",
+        "🔺 {sold_price}만원 {winner}",
+        "🔴 {sold_price}만원 {winner}",
+        "⠀⠀🔴 {sold_price}만원 {winner}",
+        "⠀⠀🔴 입찰 {sold_price}만원 {winner}⠀⠀",
+    },
+}
 AUCTION_COUNTDOWN_INITIAL_STAGES = (
     ("🟩🟩🟩🟩🟩 (5/5)", 6000),
     ("🟩🟩🟩🟩⬜ (4/5)", 6000),
@@ -140,6 +185,47 @@ CORE_PYC_CANDIDATES = [
     os.path.join(APP_DIR, "__pycache__", "band_monitor_app_core.cpython-313.pyc"),
 ]
 CORE_PYC = next((path for path in CORE_PYC_CANDIDATES if os.path.exists(path)), CORE_PYC_CANDIDATES[0])
+
+
+def _chat_message_parts(value):
+    """Return mobile-safe, one-line BAND messages in their send order."""
+    text = str(value or "").replace("\\r\\n", "\n").replace("\\n", "\n")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    parts = []
+    for raw in text.split("\n"):
+        # BAND mobile collapses layout padding. Keep normal word spaces only.
+        part = re.sub(r"[\u2800\u2000-\u200b\u202f\u205f\u3000\ufeff]+", " ", raw)
+        part = re.sub(r"^\s*┃\s*", "", part)
+        part = re.sub(r"\s+", " ", part).strip()
+        if part:
+            parts.append(part)
+    return tuple(parts)
+
+
+def _dispatch_chat_batch(sender, owner, parts, fail_label, sleep_fn=time.sleep, interval=0.7):
+    """Feed a mobile message batch to the core queue with BAND-safe spacing."""
+    clean_parts = tuple(str(part or "").strip() for part in parts if str(part or "").strip())
+    for index, part in enumerate(clean_parts, start=1):
+        sender(owner, part, fail_label)
+        _append_chat_debug_log(
+            f"chat batch part queued index={index}/{len(clean_parts)} label={fail_label!r}"
+        )
+        if index < len(clean_parts):
+            sleep_fn(float(interval))
+
+
+def _apply_compact_chat_templates(config):
+    """Upgrade only empty or known legacy templates; preserve custom copy."""
+    if not isinstance(config, dict):
+        return CHAT_TEMPLATE_DEFAULTS.copy()
+    source = config.get("templates")
+    templates = dict(source) if isinstance(source, dict) else {}
+    for key, default in CHAT_TEMPLATE_DEFAULTS.items():
+        current = str(templates.get(key) or "").strip()
+        if not current or current in CHAT_TEMPLATE_LEGACY.get(key, set()):
+            templates[key] = default
+    config["templates"] = templates
+    return templates
 
 
 def _load_core():
@@ -197,6 +283,48 @@ def _as_bool(value, default=False):
     return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
+def _passive_printer_connection_snapshot():
+    """Inspect OS port metadata without opening the printer or competing with a print job."""
+    try:
+        from serial.tools.list_ports import comports
+    except ImportError:
+        return {"transport": "none", "endpoint": "", "power": False}
+
+    bluetooth_endpoint = ""
+    for port in comports():
+        device = str(getattr(port, "device", "") or "").strip()
+        hwid = str(getattr(port, "hwid", "") or "").upper()
+        vid = getattr(port, "vid", None)
+        pid = getattr(port, "pid", None)
+        if (
+            vid == 0x3513
+            or "USB\\VID_3513" in hwid
+            or (vid, pid) == (0x0483, 0x5743)
+            or "USB VID:PID=0483:5743" in hwid
+            or "USB\\VID_0483&PID_5743" in hwid
+        ):
+            return {"transport": "usb", "endpoint": device, "power": True}
+        if not bluetooth_endpoint and "BTHENUM" in hwid:
+            bluetooth_endpoint = device
+
+    if bluetooth_endpoint:
+        return {"transport": "bluetooth", "endpoint": bluetooth_endpoint, "power": False}
+    return {"transport": "none", "endpoint": "", "power": False}
+
+
+def _load_cached_printer_telemetry(max_age_sec=12 * 60 * 60):
+    """Read status written by the print worker without opening the COM port."""
+    try:
+        with open(PRINTER_TELEMETRY_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        updated_at = float(data.get("updated_at", 0) or 0)
+        if updated_at <= 0 or time.time() - updated_at > max_age_sec:
+            return {}
+        return data
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return {}
+
+
 _EDITABLE_ANIMAL_CHECKLIST_KEYS = {
     "gender", "weight", "birth", "spot", "pin", "size", "wall",
     "color", "activity", "feed", "structure", "memo",
@@ -218,6 +346,13 @@ _SALE_MODE_DEFINITIONS = {
         "confirm_label": "당첨 확정",
         "empty_label": "정답 없음",
         "required_config": ("question", "answer", "settlement_amount"),
+    },
+    "buy_now": {
+        "label": "즉구",
+        "start_label": "즉구 시작",
+        "confirm_label": "즉구 완료",
+        "empty_label": "즉구 없음",
+        "required_config": ("instant_price",),
     },
 }
 _VISIBILITY_MODE_DEFINITIONS = {
@@ -339,7 +474,12 @@ def _sale_item_meta(item):
     }
 
 
-def _competition_mode(item):
+def _competition_mode(item, manager=None):
+    if manager is not None and bool(getattr(manager, "using_platform", False)):
+        channel = getattr(manager, "channel", {}) or {}
+        features = channel.get("features") if isinstance(channel, dict) else {}
+        if not isinstance(features, dict) or features.get("tournament") is not True:
+            return "single"
     values = _parse_checklist_map((item or {}).get("checklist", ""))
     stored_type = str(values.get("_auction") or "").strip().lower()
     if stored_type == "tournament" or any(values.get(key) for key in ("_slot", "_team", "_stage")):
@@ -471,6 +611,57 @@ def _quiz_item_meta(item):
         "answer_digest": str(config.get("answer_digest") or ""),
         "answer_configured": bool(config.get("answer") or config.get("answer_digest")),
         "settlement_amount": config.get("settlement_amount", ""),
+    }
+
+
+def _buy_now_item_meta(item):
+    meta = _sale_item_meta(item)
+    config = meta.get("config", {})
+    return {
+        "is_buy_now": meta.get("mode") == "buy_now",
+        "instant_price": config.get("instant_price", ""),
+    }
+
+
+def _next_item_lot_number(items):
+    """Allocate the next lot after the largest lot in the current channel."""
+    return max((_as_int(item.get("num"), 0) for item in (items or [])), default=0) + 1
+
+
+def _current_item_vendor_names(items):
+    """Return current-channel vendor names once, in lot order."""
+    ordered = sorted(
+        (dict(item) for item in (items or [])),
+        key=lambda item: (_as_int(item.get("num"), 0), str(item.get("company") or "")),
+    )
+    result = []
+    seen = set()
+    for item in ordered:
+        name = str(item.get("company") or "").strip()
+        key = name.casefold()
+        if not name or key in seen:
+            continue
+        seen.add(key)
+        result.append(name)
+    return result
+
+
+def _new_item_sale_fields(mode, start_price=None, instant_price=None):
+    """Build distinct start-price and instant-buy fields for a new item."""
+    mode = str(mode or "auction").strip().lower()
+    if mode == "buy_now":
+        instant_text = _settlement_amount_text(instant_price)
+        return {
+            "price": 0,
+            "checklist": _replace_sale_mode_checklist(
+                "",
+                "buy_now",
+                {"instant_price": instant_text},
+            ),
+        }
+    return {
+        "price": _settlement_amount_text(start_price),
+        "checklist": _replace_sale_mode_checklist("", "auction", {}),
     }
 
 
@@ -773,9 +964,139 @@ def _chat_command_text(value):
     return text.strip()
 
 
+def _chat_transport_source(message):
+    key = str((message or {}).get("messageKey") or "").strip().lower()
+    return "ws" if key.startswith("ws:") else "dom"
+
+
+def _chat_transport_fingerprint(message):
+    """Identify one visible BAND chat independently of its collection path."""
+    name = _chat_command_text(_normalize_winner_text((message or {}).get("name", ""))).casefold()
+    text = _chat_command_text((message or {}).get("text", "")).casefold()
+    return name, text
+
+
+def _is_cross_transport_chat_duplicate(owner, message, now=None, ttl=CHAT_TRANSPORT_DUPLICATE_TTL_SEC):
+    """Suppress a chat already handled through the other BAND transport.
+
+    WebSocket messages and DOM recovery nodes use unrelated message IDs.  Keep
+    their IDs for same-source ordering, then bridge only the short overlap where
+    the same visible chat is observed by the other transport.
+    """
+    current = time.monotonic() if now is None else float(now)
+    source = _chat_transport_source(message)
+    fingerprint = _chat_transport_fingerprint(message)
+    if not all(fingerprint):
+        return False
+    recent = getattr(owner, "_recent_chat_transport_fingerprints", None)
+    if not isinstance(recent, dict):
+        recent = {}
+        owner._recent_chat_transport_fingerprints = recent
+    cutoff = current - float(ttl)
+    for key, entry in list(recent.items()):
+        if float((entry or {}).get("seen_at", 0)) < cutoff:
+            recent.pop(key, None)
+    entry = recent.get(fingerprint)
+    if entry and entry.get("source") != source:
+        return True
+    recent[fingerprint] = {"source": source, "seen_at": current}
+    return False
+
+
+def _is_crewart_roulette_text(value):
+    return _chat_command_text(value) == "네"
+
+
+def _crewart_roulette_window_open(owner):
+    context = getattr(owner, "_crewart_last_sold", None)
+    return bool(
+        isinstance(context, dict)
+        and context.get("channel_id")
+        and context.get("item_id")
+        and context.get("winner_bidder_key")
+        and not getattr(owner, "active_item", None)
+    )
+
+
+def _is_recent_crewart_command_duplicate(owner, name, value, now=None, ttl=5.0):
+    """Collapse the same BAND command arriving through websocket and DOM fallback."""
+    current = time.monotonic() if now is None else float(now)
+    recent = getattr(owner, "_crewart_recent_commands", None)
+    if not isinstance(recent, dict):
+        recent = {}
+        owner._crewart_recent_commands = recent
+    cutoff = current - float(ttl)
+    for key, seen_at in list(recent.items()):
+        if seen_at < cutoff:
+            recent.pop(key, None)
+    fingerprint = (
+        _chat_command_text(_normalize_winner_text(name)).casefold(),
+        _chat_command_text(value).casefold(),
+    )
+    seen_at = recent.get(fingerprint)
+    if seen_at is not None and current - seen_at <= float(ttl):
+        return True
+    recent[fingerprint] = current
+    return False
+
+
 def _normalize_winner_text(value):
     """Prefix standalone 8-digit mobile numbers with 010."""
-    return re.sub(r"(?<!\d)(\d{8})(?!\d)", r"010\1", str(value or ""))
+    cleaned = re.sub(r"[\u200b-\u200f\u2060\ufeff]", "", str(value or ""))
+    return re.sub(r"(?<!\d)(\d{8})(?!\d)", r"010\1", cleaned).strip()
+
+
+def _crewart_identity_aliases(*values):
+    """Build stable aliases shared by BAND websocket and DOM chat transports."""
+    aliases = set()
+    for value in values:
+        raw = _chat_command_text(_normalize_winner_text(value))
+        if not raw:
+            continue
+        folded = re.sub(r"\s+", " ", raw).strip().casefold()
+        if folded:
+            aliases.add(folded)
+        parsed_name, _ = _core.parse_winner(raw)
+        parsed = re.sub(r"\s*[./|·]+\s*", " ", str(parsed_name or ""))
+        parsed = re.sub(r"\s+", " ", parsed).strip().casefold()
+        if parsed:
+            aliases.add(parsed)
+        for phone in re.findall(r"(?<!\d)(?:010)?\d{8}(?!\d)", raw):
+            digits = re.sub(r"\D", "", phone)
+            if len(digits) == 8:
+                digits = "010" + digits
+            if digits:
+                aliases.add(digits)
+    return frozenset(aliases)
+
+
+def _crewart_roulette_candidate_is_winner(context, bidder_key="", name=""):
+    expected_key = str((context or {}).get("winner_bidder_key") or "").strip()
+    candidate_key = str(bidder_key or "").strip()
+    if expected_key and candidate_key == expected_key:
+        return True
+    expected_aliases = set((context or {}).get("winner_aliases") or ())
+    if not expected_aliases:
+        expected_aliases.update(_crewart_identity_aliases(
+            expected_key,
+            (context or {}).get("winner_name"),
+        ))
+    return bool(expected_aliases.intersection(_crewart_identity_aliases(candidate_key, name)))
+
+
+def _reserve_crewart_roulette_candidate(context, bidder_key="", name=""):
+    """Reserve one winner command while allowing non-winners to be rejected normally."""
+    is_winner = _crewart_roulette_candidate_is_winner(context, bidder_key, name)
+    if not is_winner:
+        return "not-winner", str(bidder_key or ""), False
+    if is_winner and context.get("roulette_state") in {"queued", "completed"}:
+        return "duplicate", str(context.get("winner_bidder_key") or ""), True
+    canonical_key = str(
+        context.get("winner_bidder_key") if is_winner else bidder_key or ""
+    )
+    if is_winner:
+        context["roulette_state"] = "queued"
+    return "queued", canonical_key, is_winner
 
 
 def _format_crewart_assignment_chat(name, amount, suffix):
@@ -788,7 +1109,111 @@ def _format_crewart_assignment_chat(name, amount, suffix):
     price = _core.fmt_price(amount)
     if price and not price.endswith("원"):
         price += "원"
-    return f"{display_name} {price} 입찰 {str(suffix or '').strip()}".strip()
+    status = str(suffix or "").strip()
+    if status not in {"🔴", "🟢", "🔵", "🟡"} and not status.startswith("["):
+        status = ""
+    return f"📢 {display_name} {price} 입찰" + (f" {status}" if status else "")
+
+
+def _crewart_house_icon(house_key):
+    return {"R": "🔴", "G": "🟢", "B": "🔵", "Y": "🟡"}.get(
+        str(house_key or "").strip().upper(),
+        "",
+    )
+
+
+def _format_crewart_sold_chat(name, amount, house_key=""):
+    raw = _normalize_winner_text(name)
+    parsed_name, _ = _core.parse_winner(raw)
+    display_name = parsed_name or raw or "낙찰자"
+    display_name = re.sub(r"\s*[./|·]+\s*", " ", str(display_name or ""))
+    display_name = re.sub(r"\s+", " ", display_name).strip() or "낙찰자"
+    price = _core.fmt_price(amount)
+    if price and not price.endswith("원"):
+        price += "원"
+    house_icon = _crewart_house_icon(house_key)
+    return "\n".join((
+        f"📢 {display_name} {price} 낙찰" + (f" {house_icon}" if house_icon else ""),
+        "📢 룰렛 참여하려면 ‘네’ 입력",
+        "📢 룰렛 결과는 기여도만 적용",
+    ))
+
+
+def _queue_required_crewart_sold_guidance(owner, name, amount, house_key=""):
+    """Send the CREWART post-sale contract even when generic auto chat is off."""
+    message = _format_crewart_sold_chat(name, amount, house_key)
+    owner._queue_chat_send(message, "크레와트 낙찰·룰렛 안내 전송 실패")
+    _append_chat_debug_log(
+        f"crewart sold guidance queued lines={len(_chat_message_parts(message))}"
+    )
+    return message
+
+
+def _remember_crewart_house(owner, job, result):
+    house_key = str((result or {}).get("houseKey") or "").strip().upper()
+    if not _crewart_house_icon(house_key):
+        return ""
+    cache_key = (
+        str((job or {}).get("channel_id") or ""),
+        str((job or {}).get("item_id") or ""),
+        str((job or {}).get("bidder_key") or ""),
+    )
+    lock = getattr(owner, "_crewart_house_lock", None)
+    if lock is None:
+        lock = threading.Lock()
+        owner._crewart_house_lock = lock
+    with lock:
+        cache = getattr(owner, "_crewart_house_by_bidder", None)
+        if not isinstance(cache, dict):
+            cache = {}
+            owner._crewart_house_by_bidder = cache
+        cache[cache_key] = house_key
+        if len(cache) > 2000:
+            for stale_key in list(cache)[:-1000]:
+                cache.pop(stale_key, None)
+
+        active_item = getattr(owner, "active_item", None) or {}
+        active_id = str(active_item.get("row") or active_item.get("id") or "")
+        if active_id == cache_key[1]:
+            for bid in active_item.get("bids", []) or []:
+                bidder_key = str(bid.get("bidder_key") or bid.get("name") or "")
+                if bidder_key == cache_key[2]:
+                    bid["crewart_house_key"] = house_key
+    return house_key
+
+
+def _crewart_winner_house(owner, item, winning_bid):
+    bid = winning_bid or {}
+    attributes = (item or {}).get("attributes") if isinstance((item or {}).get("attributes"), dict) else {}
+    stored = str(
+        bid.get("crewart_house_key")
+        or bid.get("houseKey")
+        or bid.get("winnerHouse")
+        or attributes.get("crewart_house_key")
+        or ""
+    ).strip().upper()
+    if _crewart_house_icon(stored):
+        return stored
+    manager = getattr(owner, "sheets", None)
+    cache_key = (
+        str(getattr(manager, "channel_id", "") or ""),
+        str((item or {}).get("row") or (item or {}).get("id") or ""),
+        str(bid.get("bidder_key") or bid.get("name") or ""),
+    )
+    lock = getattr(owner, "_crewart_house_lock", None)
+    if lock is None:
+        return ""
+    with lock:
+        return str(getattr(owner, "_crewart_house_by_bidder", {}).get(cache_key) or "")
+
+
+def _format_crewart_roulette_start_chat(name):
+    raw = _normalize_winner_text(name)
+    parsed_name, _ = _core.parse_winner(raw)
+    display_name = parsed_name or raw or "낙찰자"
+    display_name = re.sub(r"\s*[./|·]+\s*", " ", str(display_name or ""))
+    display_name = re.sub(r"\s+", " ", display_name).strip() or "낙찰자"
+    return f"📢 {display_name} 룰렛 시작"
 
 
 def _crewart_assignment_job_is_current(window, job):
@@ -804,8 +1229,121 @@ def _crewart_assignment_job_is_current(window, job):
     return bool(active_item_id and expected_item_id and active_item_id == expected_item_id)
 
 
+def _crewart_competition_enabled(owner):
+    manager = getattr(owner, "sheets", None)
+    channel = getattr(manager, "channel", {}) if manager is not None else {}
+    competition = channel.get("audienceCompetition") if isinstance(channel, dict) else {}
+    return bool(
+        getattr(manager, "using_platform", False)
+        and isinstance(competition, dict)
+        and competition.get("enabled") is True
+        and competition.get("assignment") == "survey-random"
+    )
+
+
+def _restore_crewart_last_sold_context(owner, items=None):
+    """Recover the server-owned post-sale roulette window after an app reload."""
+    if not _crewart_competition_enabled(owner) or getattr(owner, "active_item", None):
+        return False
+    manager = getattr(owner, "sheets", None)
+    broadcast = getattr(manager, "broadcast_state", None)
+    if not isinstance(broadcast, dict) or str(broadcast.get("mode") or "") != "sold":
+        return False
+    item_id = str(broadcast.get("activeItemId") or "").strip()
+    if not item_id:
+        return False
+    item = next(
+        (
+            row for row in (items or [])
+            if str((row or {}).get("row") or (row or {}).get("id") or "").strip() == item_id
+            and (row or {}).get("status") == _core.S_SOLD
+        ),
+        None,
+    )
+    if not item:
+        return False
+    bids = owner._normalize_bid_entries(item.get("bids", []))
+    winning_bid = bids[0] if bids else None
+    winner_key = str(
+        (winning_bid or {}).get("bidder_key")
+        or (winning_bid or {}).get("name")
+        or ""
+    ).strip()
+    winner_name = str((winning_bid or {}).get("name") or item.get("winner") or "").strip()
+    if not winner_key:
+        return False
+    attributes = item.get("attributes") if isinstance(item.get("attributes"), dict) else {}
+    roulette_state = "completed" if attributes.get("crewart_roulette_status") == "completed" else "idle"
+    owner._crewart_last_sold = {
+        "channel_id": str(getattr(manager, "channel_id", "") or ""),
+        "item_id": item_id,
+        "winner_bidder_key": winner_key,
+        "winner_name": winner_name,
+        "winner_aliases": tuple(sorted(_crewart_identity_aliases(
+            winner_key,
+            winner_name,
+            item.get("winner"),
+        ))),
+        "roulette_state": roulette_state,
+    }
+    return True
+
+
+def _crewart_roulette_job_is_current(owner, job):
+    """Drop a queued roulette command after the post-sale lifecycle changes."""
+    if getattr(owner, "active_item", None):
+        return False
+    manager = getattr(owner, "sheets", None)
+    context = getattr(owner, "_crewart_last_sold", None)
+    return bool(
+        isinstance(context, dict)
+        and str(getattr(manager, "channel_id", "") or "") == str((job or {}).get("channel_id") or "")
+        and str(context.get("item_id") or "") == str((job or {}).get("item_id") or "")
+        and (
+            not (job or {}).get("winner_match")
+            or context.get("roulette_state") == "queued"
+        )
+    )
+
+
 def _is_buy_now_text(value):
     return _chat_command_text(value) == "즉구"
+
+
+def _buy_now_item_key(item):
+    source = item or {}
+    return str(source.get("row") or source.get("id") or source.get("num") or "").strip()
+
+
+def _format_buy_now_announcement(amount):
+    price = _core.fmt_price(amount)
+    if price and not price.endswith("원"):
+        price += "원"
+    return f"📢 첫 ‘즉구’ {price} 입찰 접수"
+
+
+def _activate_buy_now_boundary(owner, message):
+    if getattr(owner, "_buy_now_state", BUY_NOW_IDLE) != BUY_NOW_PENDING:
+        return False
+    if _chat_command_text(message) != _chat_command_text(getattr(owner, "_buy_now_marker_text", "")):
+        return False
+    item = getattr(owner, "active_item", None)
+    if not item or _buy_now_item_key(item) != getattr(owner, "_buy_now_item_key", ""):
+        return False
+    owner._buy_now_state = BUY_NOW_ACTIVE
+    return True
+
+
+def _claim_buy_now(owner):
+    item = getattr(owner, "active_item", None)
+    if (
+        getattr(owner, "_buy_now_state", BUY_NOW_IDLE) != BUY_NOW_ACTIVE
+        or not item
+        or _buy_now_item_key(item) != getattr(owner, "_buy_now_item_key", "")
+    ):
+        return False
+    owner._buy_now_state = BUY_NOW_CLAIMING
+    return True
 
 
 def _append_chat_debug_log(message):
@@ -1281,13 +1819,15 @@ def _patch_band_cdp():
             }
             function text(el) {
                 if (!el) return '';
-                return String(el.innerText || el.textContent || '').trim();
+                return String(el.innerText || el.textContent || '')
+                    .replace(/[\u200B-\u200F\u2060\uFEFF]/g, '')
+                    .trim();
             }
             function pick(root, selectors) {
                 for (var i = 0; i < selectors.length; i++) {
                     var nodes = root.querySelectorAll(selectors[i]);
                     for (var j = 0; j < nodes.length; j++) {
-                        if (visible(nodes[j])) return nodes[j];
+                        if (visible(nodes[j]) && text(nodes[j])) return nodes[j];
                     }
                 }
                 return null;
@@ -1787,32 +2327,11 @@ def _patch_settings_dialog():
             self.chk_auto_chat = _core.QCheckBox("경매 이벤트 채팅 자동 전송")
             self.chk_auto_chat.setChecked(_as_bool(config.get("auto_chat_enabled"), True))
             msg_sec["layout"].addWidget(self.chk_auto_chat)
-            tmpls = config.get("templates", {}) or {}
-            self.tpl_start = self._line(tmpls.get("start", ""))
-            sold_tpl = tmpls.get("sold", "")
-            if not sold_tpl or sold_tpl.strip() in {
-                "{name} 낙찰! {sold_price}만 ({winner})",
-                r"🦖 {name} 낙찰\n👤 {winner}\n💰 {sold_price}만원",
-                r"┃ {name} 낙찰\n┃ 낙찰자 {winner}\n┃ 낙찰금 {sold_price}만원",
-                r"🟢 {name} 낙찰\n🟢 {sold_price}만원 {winner}",
-                r"🟢{name} 낙찰\nㅤ {sold_price}만원 {winner}",
-                r"⠀⠀🟢{name} 낙찰\n⠀⠀ㅤ {sold_price}만원 {winner}",
-            }:
-                sold_tpl = r"⠀⠀🟢 낙찰 {name}\n⠀⠀ㅤ  {sold_price}만원 {winner}"
-            self.tpl_sold = self._line(sold_tpl)
-            self.tpl_unsold = self._line(tmpls.get("unsold", ""))
-            highest_tpl = tmpls.get("highest", "")
-            if not highest_tpl or highest_tpl.strip() in {
-                "현재 최고가 {sold_price}만 ({winner})",
-                r"🔴 실시간 입찰\n💰 현재 최고가 {sold_price}만원\n👤 {winner}",
-                r"┃ 실시간 입찰\n┃ 현재 최고가 {sold_price}만원\n┃ 입찰자 {winner}",
-                "■⠀ {sold_price}만원 {winner}⠀ ■",
-                "🔺 {sold_price}만원 {winner}",
-                "🔴 {sold_price}만원 {winner}",
-                "⠀⠀🔴 {sold_price}만원 {winner}",
-            }:
-                highest_tpl = "⠀⠀🔴 입찰 {sold_price}만원 {winner}⠀⠀"
-            self.tpl_highest = self._line(highest_tpl)
+            tmpls = _apply_compact_chat_templates(config)
+            self.tpl_start = self._line(tmpls["start"])
+            self.tpl_sold = self._line(tmpls["sold"])
+            self.tpl_unsold = self._line(tmpls["unsold"])
+            self.tpl_highest = self._line(tmpls["highest"])
             for label, widget in [
                 ("경매 시작", self.tpl_start),
                 ("낙찰", self.tpl_sold),
@@ -1821,7 +2340,10 @@ def _patch_settings_dialog():
             ]:
                 msg_sec["layout"].addWidget(self._label(label))
                 msg_sec["layout"].addWidget(widget)
-            hint = _core.QLabel("사용 가능 값: {num}, {name}, {price}, {sold_price}, {winner}  |  줄바꿈: \\n")
+            hint = _core.QLabel(
+                "사용 가능 값: {num}, {name}, {price}, {sold_price}, {winner}  |  "
+                "줄바꿈은 별도 메시지로 전송"
+            )
             hint.setWordWrap(True)
             hint.setStyleSheet("font-size: 12px; color: #6B7280; padding: 6px 0;")
             msg_sec["layout"].addWidget(hint)
@@ -2770,8 +3292,51 @@ def _patch_main_window():
     original_add_bid = MainWindow._add_bid
     original_on_sold = MainWindow._on_sold
     original_on_chat_send_done = MainWindow._on_chat_send_done
+    original_queue_chat_send = MainWindow._queue_chat_send
     original_normalize_bid_entries = MainWindow._normalize_bid_entries
     original_build_label_print_context = MainWindow._build_label_print_context
+
+    def _queue_chat_send(self, text, fail_label):
+        """Queue each mobile-safe line as one FIFO BAND message."""
+        parts = _chat_message_parts(text)
+        if not parts:
+            return None
+        if len(parts) == 1:
+            original_queue_chat_send(self, parts[0], fail_label)
+            return None
+        jobs = getattr(self, "_chat_message_batch_jobs", None)
+        if jobs is None:
+            lock = getattr(self, "_chat_message_batch_lock", None)
+            if lock is None:
+                lock = threading.Lock()
+                self._chat_message_batch_lock = lock
+            with lock:
+                jobs = getattr(self, "_chat_message_batch_jobs", None)
+                if jobs is None:
+                    jobs = queue.Queue()
+                    self._chat_message_batch_jobs = jobs
+
+                    def _chat_batch_worker():
+                        while True:
+                            batch_parts, batch_label = jobs.get()
+                            try:
+                                _dispatch_chat_batch(
+                                    original_queue_chat_send,
+                                    self,
+                                    batch_parts,
+                                    batch_label,
+                                    interval=float(getattr(self, "_chat_batch_interval", 0.7)),
+                                )
+                            finally:
+                                jobs.task_done()
+
+                    threading.Thread(
+                        target=_chat_batch_worker,
+                        daemon=True,
+                        name="BandChatBatch",
+                    ).start()
+        jobs.put((parts, fail_label))
+        return None
 
     def _build_label_print_context(self, item):
         """Normalize sheet/API scalar values before the frozen label formatter."""
@@ -3058,7 +3623,7 @@ def _patch_main_window():
             display_name = _quiz_display_winner(name)
             answer = bid.get("answer") or _quiz_item_meta(item).get("answer", "")
             self._queue_chat_send(
-                f"⠀⠀🔴 정답! {answer}⠀⠀\n⠀⠀ㅤ  {display_name}⠀⠀",
+                f"📢 정답 {answer} · {display_name}",
                 "퀴즈 정답 안내 전송 실패",
             )
         return True
@@ -3104,15 +3669,7 @@ def _patch_main_window():
         return True
 
     def _crewart_audience_competition_active(self):
-        sheets = getattr(self, "sheets", None)
-        channel = getattr(sheets, "channel", {}) if sheets is not None else {}
-        competition = channel.get("audienceCompetition") if isinstance(channel, dict) else {}
-        return bool(
-            getattr(sheets, "using_platform", False)
-            and isinstance(competition, dict)
-            and competition.get("enabled") is True
-            and competition.get("assignment") == "survey-random"
-        )
+        return _crewart_competition_enabled(self)
 
     def _queue_crewart_bid_confirmation(self, bid, item_id):
         jobs = getattr(self, "_crewart_assignment_jobs", None)
@@ -3165,8 +3722,9 @@ def _patch_main_window():
                         f"channel={job.get('channel_id')!r} item={job.get('item_id')!r}"
                     )
                     continue
+                _remember_crewart_house(self, job, result)
                 if result and result.get("isNewRandom"):
-                    suffix = "🎲 신규 배정"
+                    suffix = "[랜덤배정중]"
                 elif result and str(result.get("houseKey") or "").upper() in house_icons:
                     suffix = house_icons[str(result.get("houseKey")).upper()]
                 else:
@@ -3179,6 +3737,132 @@ def _patch_main_window():
             finally:
                 self._crewart_assignment_jobs.task_done()
 
+    def _queue_crewart_roulette(self, bidder_key, message_key, name=""):
+        jobs = getattr(self, "_crewart_roulette_jobs", None)
+        if jobs is None or not _crewart_audience_competition_active(self):
+            return "unavailable"
+        sheets = getattr(self, "sheets", None)
+        lock = getattr(self, "_crewart_roulette_lock", None)
+        if lock is None:
+            lock = threading.Lock()
+            self._crewart_roulette_lock = lock
+        with lock:
+            context = getattr(self, "_crewart_last_sold", None)
+            if not isinstance(context, dict):
+                return "unavailable"
+            channel_id = context.get("channel_id") or str(getattr(sheets, "channel_id", "") or "")
+            if not channel_id or not context.get("item_id") or not context.get("winner_bidder_key"):
+                return "unavailable"
+            queue_status, canonical_bidder_key, is_winner = _reserve_crewart_roulette_candidate(
+                context,
+                bidder_key,
+                name,
+            )
+            if queue_status == "duplicate":
+                _append_chat_debug_log(
+                    "crewart roulette duplicate transport suppressed "
+                    f"item={context.get('item_id')!r} name={name!r}"
+                )
+                return "duplicate"
+            if queue_status != "queued":
+                return queue_status
+        jobs.put({
+            "channel_id": channel_id,
+            "item_id": context.get("item_id", ""),
+            "winner_bidder_key": context.get("winner_bidder_key", ""),
+            "bidder_key": canonical_bidder_key,
+            "message_key": str(message_key or ""),
+            "name": str(name or ""),
+            "winner_match": is_winner,
+        })
+        return "queued"
+
+    def _crewart_roulette_worker(self):
+        while True:
+            job = self._crewart_roulette_jobs.get()
+            try:
+                if not _crewart_roulette_job_is_current(self, job):
+                    _append_chat_debug_log(
+                        f"crewart roulette dropped after lifecycle boundary item={job.get('item_id')!r}"
+                    )
+                    continue
+                sheets = getattr(self, "sheets", None)
+                if (
+                    sheets is None
+                    or str(getattr(sheets, "channel_id", "") or "") != str(job.get("channel_id") or "")
+                ):
+                    _append_chat_debug_log(
+                        f"crewart roulette dropped after channel boundary item={job.get('item_id')!r}"
+                    )
+                    continue
+                if not job.get("winner_match"):
+                    _append_chat_debug_log(
+                        f"crewart roulette rejected before request bidder={job.get('bidder_key')!r}"
+                    )
+                    continue
+                result = None
+                error = None
+                for attempt in range(3):
+                    try:
+                        result = sheets.trigger_audience_roulette(
+                            item_id=job["item_id"],
+                            bidder_key=job["bidder_key"],
+                            message_key=job["message_key"],
+                        )
+                        error = None
+                        break
+                    except Exception as exc:
+                        error = exc
+                        if attempt < 2:
+                            time.sleep(0.4 * (attempt + 1))
+                if not _crewart_roulette_job_is_current(self, job):
+                    _append_chat_debug_log(
+                        f"crewart roulette response ignored after lifecycle boundary item={job.get('item_id')!r}"
+                    )
+                    continue
+                if error is not None:
+                    lock = getattr(self, "_crewart_roulette_lock", None)
+                    if lock is not None and job.get("winner_match"):
+                        with lock:
+                            context = getattr(self, "_crewart_last_sold", None)
+                            if (
+                                isinstance(context, dict)
+                                and context.get("item_id") == job.get("item_id")
+                                and context.get("roulette_state") == "queued"
+                            ):
+                                context["roulette_state"] = "idle"
+                    _append_chat_debug_log(
+                        f"crewart roulette rejected item={job['item_id']!r} error={error}"
+                    )
+                    if self.config.get("auto_chat_enabled", True):
+                        error_text = str(error or "")
+                        if "직전 낙찰자" in error_text:
+                            notice = "📢 직전 낙찰자만 참여 가능"
+                        elif "참여 시간" in error_text or "회차" in error_text:
+                            notice = "📢 룰렛 참여 시간이 아닙니다"
+                        else:
+                            notice = "📢 룰렛 지연 · 다시 입력해주세요"
+                        self._queue_chat_send(notice, "룰렛 상태 안내 전송 실패")
+                    continue
+                _append_chat_debug_log(
+                    "crewart roulette committed "
+                    f"item={job['item_id']!r} duplicate={bool((result or {}).get('duplicate'))}"
+                )
+                lock = getattr(self, "_crewart_roulette_lock", None)
+                if lock is not None:
+                    with lock:
+                        context = getattr(self, "_crewart_last_sold", None)
+                        if isinstance(context, dict) and context.get("item_id") == job.get("item_id"):
+                            context["roulette_state"] = "completed"
+                if result and self.config.get("auto_chat_enabled", True):
+                    if not result.get("duplicate"):
+                        self._queue_chat_send(
+                            _format_crewart_roulette_start_chat(job.get("name")),
+                            "기여도 룰렛 시작 안내 전송 실패",
+                        )
+            finally:
+                self._crewart_roulette_jobs.task_done()
+
     def _format_manual_chat(self, template_key, name, amount):
         item = getattr(self, "active_item", None) or {}
         if _quiz_item_meta(item).get("is_quiz"):
@@ -3186,9 +3870,9 @@ def _patch_main_window():
             bids = self._normalize_bid_entries(item.get("bids", []))
             answer = (bids[0].get("answer") if bids else "") or _quiz_item_meta(item).get("answer", "")
             if template_key == "highest":
-                return f"⠀⠀🔴 정답! {answer}⠀⠀\n⠀⠀ㅤ  {display_name}⠀⠀"
+                return f"📢 정답 {answer} · {display_name}"
             if template_key == "sold":
-                return f"⠀⠀🟢 퀴즈 당첨 {item.get('name', '')}\n⠀⠀ㅤ  {display_name}"
+                return f"📢 퀴즈 당첨 · {display_name}"
         tpl = self.config.get("templates", {}).get(template_key, "")
         display_name = name
         if template_key in {"highest", "sold"}:
@@ -3215,11 +3899,11 @@ def _patch_main_window():
             sold_price_text = _core.fmt_price(amount)
             if sold_price_text.endswith("만"):
                 sold_price_text += "원"
-            return f"⠀⠀🟢 낙찰 {values['name']}\n⠀⠀ㅤ  {sold_price_text} {display_name}".strip()
+            return f"📢 {display_name} {sold_price_text} 낙찰"
         highest_price = _core.fmt_price(amount)
         if highest_price.endswith("만"):
             highest_price += "원"
-        return f"⠀⠀🔴 입찰 {highest_price} {display_name}⠀⠀"
+        return f"📢 {display_name} {highest_price} 입찰"
 
     def _send_current_highest_chat(self):
         top = _current_top_bid(self)
@@ -3251,23 +3935,24 @@ def _patch_main_window():
         parts = []
         if auction_meta["auction_type"] == "tournament" and auction_meta["tournament_stage"] == 4:
             company = str(item.get("company") or "").strip()
-            parts.append("┃ 실시간 경매 · 3라운드 개인전")
-            parts.append(f"┃ {raw_code or auction_meta['tournament_code']}" + (f" · {company}" if company else "") + " 진행중")
+            parts.append(
+                f"📢 3R 개인전 · {raw_code or auction_meta['tournament_code']}"
+                + (f" · {company}" if company else "")
+            )
         elif auction_meta["auction_type"] == "tournament" and code_match:
             letter, round_text = code_match.groups()
             group = ((ord(letter) - ord("A")) // 2) + 1
-            parts.append(f"┃ 실시간 경매 · {int(round_text)}라운드 {group}조")
-            parts.append(f"┃ {letter}{int(round_text)} 진행중")
+            parts.append(f"📢 {int(round_text)}R {group}조 · {letter}{int(round_text)}")
         elif raw_code:
-            parts.append(f"┃ 실시간 경매 · {raw_code} 진행중")
+            parts.append(f"📢 경매 {raw_code} 진행중")
         else:
-            parts.append("┃ 실시간 경매 · 진행중")
+            parts.append("📢 경매 진행중")
 
         bids = self._normalize_bid_entries(item.get("bids", []))
         if bids:
-            parts.append(f"┃ 현재 최고가 {_manual_amount_text(bids[0].get('amount', 0))}만원")
+            parts.append(f"📢 최고가 {_manual_amount_text(bids[0].get('amount', 0))}만원")
         else:
-            parts.append("┃ 입찰 대기")
+            parts.append("📢 입찰 대기")
 
         self._queue_chat_send("\n".join(parts), "현재 경매 정보 전송 실패")
 
@@ -3279,6 +3964,85 @@ def _patch_main_window():
 
     def _countdown_current_top_signature(self):
         return _countdown_top_signature(_countdown_current_bids(self))
+
+    def _reset_buy_now_state(self):
+        self._buy_now_state = BUY_NOW_IDLE
+        self._buy_now_item_key = ""
+        self._buy_now_marker_text = ""
+        _update_auction_countdown_button(self)
+
+    def _restore_buy_now_claim_from_item(self, item=None):
+        item = item or getattr(self, "active_item", None)
+        if not item or not _buy_now_item_meta(item).get("is_buy_now"):
+            return False
+        try:
+            bids = self._normalize_bid_entries(item.get("bids", []))
+        except Exception:
+            bids = list(item.get("bids", []) or []) if isinstance(item.get("bids", []), list) else []
+        if not bids:
+            return False
+        self._buy_now_state = BUY_NOW_CLAIMED
+        self._buy_now_item_key = _buy_now_item_key(item)
+        return True
+
+    def _begin_buy_now(self):
+        item = getattr(self, "active_item", None)
+        meta = _buy_now_item_meta(item)
+        if not item or not meta.get("is_buy_now"):
+            return False
+        if getattr(self, "_buy_now_state", BUY_NOW_IDLE) in {
+            BUY_NOW_PENDING, BUY_NOW_ACTIVE, BUY_NOW_CLAIMING, BUY_NOW_CLAIMED,
+        }:
+            return False
+        try:
+            price = _parse_settlement_amount(meta.get("instant_price"))
+        except (TypeError, ValueError):
+            self.toast.show_toast("즉시구매가가 설정되지 않았습니다. 정보 수정에서 입력해주세요.", "warning")
+            return False
+        _stop_auction_countdown(self)
+        self._buy_now_item_key = _buy_now_item_key(item)
+        self._buy_now_marker_text = _format_buy_now_announcement(price)
+        self._buy_now_state = BUY_NOW_PENDING
+        _update_auction_countdown_button(self)
+        self._queue_chat_send(self._buy_now_marker_text, BUY_NOW_ANNOUNCEMENT_SEND_LABEL)
+        _append_chat_debug_log(
+            f"buy-now marker queued item={self._buy_now_item_key!r} price={price}"
+        )
+        return True
+
+    def _complete_buy_now_claim(self, name, t="", bidder_key="", message_key="", message_time_ms=0, received_at_ms=0):
+        if not _claim_buy_now(self):
+            return False
+        item = getattr(self, "active_item", None)
+        meta = _buy_now_item_meta(item)
+        try:
+            price = _parse_settlement_amount(meta.get("instant_price"))
+        except (TypeError, ValueError):
+            self._buy_now_state = BUY_NOW_ACTIVE
+            return False
+        self._current_bid_message_meta = {
+            "message_key": str(message_key or ""),
+            "message_time_ms": _as_int(message_time_ms, 0),
+            "received_at_ms": _as_int(received_at_ms, int(time.time() * 1000)),
+        }
+        try:
+            accepted = self._add_bid(name, price, t, bidder_key)
+        finally:
+            self._current_bid_message_meta = None
+        if not accepted:
+            self._buy_now_state = BUY_NOW_ACTIVE
+            return False
+        self._buy_now_state = BUY_NOW_CLAIMED
+        _apply_auction_card_mode(self, item)
+        _update_auction_countdown_button(self)
+        self.toast.show_toast(
+            f"#{item.get('num', '')} {name}님 즉구 접수 · 명단 확인 후 확정",
+            "success",
+        )
+        _append_chat_debug_log(
+            f"buy-now claimed item={_buy_now_item_key(item)!r} bidder={name!r} price={price}"
+        )
+        return True
 
     def _countdown_is_locked(self):
         return getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE) == AUCTION_COUNTDOWN_LOCKED
@@ -3309,10 +4073,34 @@ def _patch_main_window():
             return
         item = getattr(self, "active_item", None)
         is_quiz = bool(item and _quiz_item_meta(item).get("is_quiz"))
+        is_buy_now = bool(item and _buy_now_item_meta(item).get("is_buy_now"))
         state = getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE)
         late_bids = list(getattr(self, "_auction_countdown_late_bids", []) or [])
         button.setVisible(bool(item) and not is_quiz)
         button.setEnabled(bool(item) and not is_quiz)
+        if is_buy_now:
+            buy_state = getattr(self, "_buy_now_state", BUY_NOW_IDLE)
+            if buy_state == BUY_NOW_IDLE and _restore_buy_now_claim_from_item(self, item):
+                buy_state = BUY_NOW_CLAIMED
+            if buy_state == BUY_NOW_PENDING:
+                button.setText("안내 전송 중")
+                button.setEnabled(False)
+            elif buy_state in {BUY_NOW_ACTIVE, BUY_NOW_CLAIMING}:
+                button.setText("즉구 접수 중")
+                button.setEnabled(False)
+            elif buy_state == BUY_NOW_CLAIMED:
+                button.setText("즉구 접수됨")
+                button.setEnabled(False)
+            else:
+                button.setText("📢 즉구 안내")
+                button.setToolTip("BAND에 즉구 안내를 전송하고, 첫 입력자를 입찰 명단에 접수합니다.")
+            button.setStyleSheet(
+                "QPushButton { background:#C92A2A; color:#FFFFFF; border:1px solid #A51111; "
+                "border-radius:7px; font-size:12px; font-weight:900; padding:0 7px; }"
+                "QPushButton:hover { background:#A51111; }"
+                "QPushButton:disabled { background:#7F1D1D; color:#FECACA; border-color:#7F1D1D; }"
+            )
+            return
         if state in {AUCTION_COUNTDOWN_RUNNING, AUCTION_COUNTDOWN_LOCK_PENDING}:
             button.setText("카운트 취소")
             if state == AUCTION_COUNTDOWN_LOCK_PENDING:
@@ -3348,7 +4136,7 @@ def _patch_main_window():
         self._auction_countdown_lock_marker_pending = False
         _set_auction_countdown_state(self, AUCTION_COUNTDOWN_IDLE)
         if announce and getattr(self, "active_item", None):
-            self._queue_chat_send("마감 카운트를 취소했습니다.", "카운트 취소 안내 전송 실패")
+            self._queue_chat_send("📢 마감 카운트 취소", "카운트 취소 안내 전송 실패")
 
     def _init_auction_countdown(self):
         self._auction_countdown_generation = 0
@@ -3565,6 +4353,9 @@ def _patch_main_window():
         return False
 
     def _on_auction_countdown_action(self):
+        if _buy_now_item_meta(getattr(self, "active_item", None)).get("is_buy_now"):
+            _begin_buy_now(self)
+            return
         state = getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE)
         _append_chat_debug_log(
             f"countdown button clicked state={state!r} "
@@ -3605,7 +4396,13 @@ def _patch_main_window():
         result = original_on_chat_send_done(self, payload)
         if not payload.get("ok"):
             label = payload.get("label")
-            if (
+            if label == BUY_NOW_ANNOUNCEMENT_SEND_LABEL:
+                _reset_buy_now_state(self)
+                self.toast.show_toast(
+                    "즉구 안내를 전송하지 못해 접수를 열지 않았습니다. 다시 눌러주세요.",
+                    "error",
+                )
+            elif (
                 label == AUCTION_COUNTDOWN_LOCK_SEND_LABEL
                 and getattr(self, "_auction_countdown_state", AUCTION_COUNTDOWN_IDLE)
                 == AUCTION_COUNTDOWN_LOCK_PENDING
@@ -3627,6 +4424,190 @@ def _patch_main_window():
                 )
         return result
 
+    def _open_new_item_dialog(self):
+        if getattr(self, "_new_item_create_inflight", False):
+            self.toast.show_toast("개체를 추가하고 있습니다.", "info")
+            return
+        manager = getattr(self, "sheets", None)
+        if manager is None:
+            self.toast.show_toast("데이터 연결을 먼저 확인해주세요.", "warning")
+            return
+
+        dialog = _core.QDialog(self)
+        dialog.setWindowTitle("현재 경매 채널에 개체 추가")
+        dialog.setMinimumWidth(460)
+        layout = _core.QFormLayout(dialog)
+        channel_name = str(getattr(manager, "channel", {}).get("name") or getattr(manager, "channel_id", "") or "현재 채널")
+        channel_label = _core.QLabel(channel_name, dialog)
+        channel_label.setStyleSheet("font-weight:900; color:#173E8F;")
+        lot_input = _core.QSpinBox(dialog)
+        lot_input.setRange(1, 99999)
+        current_items = list(getattr(self, "items", None) or [])
+        lot_input.setValue(_next_item_lot_number(current_items))
+        lot_input.setReadOnly(True)
+        lot_input.setButtonSymbols(_core.QAbstractSpinBox.NoButtons)
+        company_box = _core.QWidget(dialog)
+        company_layout = _core.QHBoxLayout(company_box)
+        company_layout.setContentsMargins(0, 0, 0, 0)
+        company_layout.setSpacing(7)
+        company_select = _core.QComboBox(company_box)
+        for vendor_name in _current_item_vendor_names(current_items):
+            company_select.addItem(vendor_name, vendor_name)
+        company_select.addItem("신규 업체…", NEW_ITEM_VENDOR_SENTINEL)
+        company_input = _core.QLineEdit(company_box)
+        company_input.setPlaceholderText("신규 업체명 입력")
+        company_layout.addWidget(company_select, 1)
+        company_layout.addWidget(company_input, 1)
+
+        def _sync_new_vendor_input():
+            is_new = company_select.currentData() == NEW_ITEM_VENDOR_SENTINEL
+            company_input.setVisible(is_new)
+            if is_new:
+                company_input.setFocus()
+
+        company_select.currentIndexChanged.connect(_sync_new_vendor_input)
+        _sync_new_vendor_input()
+        name_input = _core.QLineEdit(dialog)
+        name_input.setPlaceholderText("개체명")
+        mode_input = _core.QComboBox(dialog)
+        mode_input.addItem("일반 경매", "auction")
+        mode_input.addItem("즉구", "buy_now")
+        start_price_input = _core.QDoubleSpinBox(dialog)
+        start_price_input.setRange(0, 999999)
+        start_price_input.setDecimals(2)
+        start_price_input.setSuffix(" 만원")
+        start_price_input.setValue(1)
+        instant_price_input = _core.QDoubleSpinBox(dialog)
+        instant_price_input.setRange(0, 999999)
+        instant_price_input.setDecimals(2)
+        instant_price_input.setSuffix(" 만원")
+        instant_price_input.setValue(1)
+        note_input = _core.QLineEdit(dialog)
+        note_input.setPlaceholderText("비고 (선택)")
+        layout.addRow("추가 채널", channel_label)
+        layout.addRow("개체 번호", lot_input)
+        layout.addRow("업체명", company_box)
+        layout.addRow("개체명", name_input)
+        layout.addRow("진행 방식", mode_input)
+        layout.addRow("시작가", start_price_input)
+        layout.addRow("즉시구매가", instant_price_input)
+        layout.addRow("비고", note_input)
+        buttons = _core.QDialogButtonBox(
+            _core.QDialogButtonBox.Save | _core.QDialogButtonBox.Cancel,
+            parent=dialog,
+        )
+        buttons.button(_core.QDialogButtonBox.Save).setText("개체 추가")
+        buttons.button(_core.QDialogButtonBox.Cancel).setText("취소")
+        layout.addRow(buttons)
+        buttons.rejected.connect(dialog.reject)
+
+        def _sync_sale_price_inputs():
+            is_buy_now = str(mode_input.currentData() or "auction") == "buy_now"
+            start_price_input.setEnabled(not is_buy_now)
+            instant_price_input.setEnabled(is_buy_now)
+            start_price_input.setToolTip("일반 경매가 시작될 때 사용하는 가격입니다.")
+            instant_price_input.setToolTip("즉구 안내 후 첫 ‘즉구’ 입력자에게 적용되는 가격입니다.")
+
+        mode_input.currentIndexChanged.connect(_sync_sale_price_inputs)
+        _sync_sale_price_inputs()
+
+        def _submit():
+            name = name_input.text().strip()
+            if not name:
+                self.toast.show_toast("개체명을 입력해주세요.", "warning")
+                name_input.setFocus()
+                return
+            company = (
+                company_input.text().strip()
+                if company_select.currentData() == NEW_ITEM_VENDOR_SENTINEL
+                else str(company_select.currentData() or "").strip()
+            )
+            if not company:
+                self.toast.show_toast("업체명을 선택하거나 입력해주세요.", "warning")
+                company_input.setFocus()
+                return
+            mode = str(mode_input.currentData() or "auction")
+            price_input = instant_price_input if mode == "buy_now" else start_price_input
+            if price_input.value() <= 0:
+                label = "즉시구매가" if mode == "buy_now" else "시작가"
+                self.toast.show_toast(f"{label}를 입력해주세요.", "warning")
+                price_input.setFocus()
+                return
+            sale_fields = _new_item_sale_fields(
+                mode,
+                start_price=start_price_input.value(),
+                instant_price=instant_price_input.value(),
+            )
+            payload = {
+                "num": lot_input.value(),
+                "company": company,
+                "name": name,
+                "price": sale_fields["price"],
+                "note": note_input.text().strip(),
+                "status": _core.S_WAIT,
+                "checklist": sale_fields["checklist"],
+            }
+            expected_channel_id = str(getattr(manager, "channel_id", "") or "")
+            existing_items_snapshot = [
+                dict(item) for item in (getattr(self, "items", None) or [])
+            ]
+            dialog.accept()
+            self._new_item_create_inflight = True
+            button = getattr(self, "btn_add_item", None)
+            if button is not None:
+                button.setEnabled(False)
+                button.setText("추가 중…")
+
+            class CreateItemThread(_core.QThread):
+                sig_done = _core.pyqtSignal(bool, str, object)
+
+                def run(thread_self):
+                    try:
+                        creator = getattr(manager, "create_item", None)
+                        if callable(creator):
+                            ok = bool(creator(payload, expected_channel_id=expected_channel_id))
+                        else:
+                            ok = bool(manager.push_all([payload]))
+                        if not ok:
+                            raise RuntimeError(getattr(manager, "last_write_error", "") or "개체를 저장하지 못했습니다.")
+                        items = manager.read_items()
+                        if not items:
+                            created_item = getattr(manager, "last_created_item", None)
+                            if created_item:
+                                items = existing_items_snapshot + [dict(created_item)]
+                        thread_self.sig_done.emit(True, "", items)
+                    except Exception as exc:
+                        thread_self.sig_done.emit(False, str(exc), None)
+
+            thread = CreateItemThread(self)
+            threads = getattr(self, "_new_item_threads", None)
+            if threads is None:
+                threads = []
+                self._new_item_threads = threads
+            threads.append(thread)
+
+            def _done(ok, message, items):
+                self._new_item_create_inflight = False
+                if button is not None:
+                    button.setEnabled(True)
+                    button.setText("＋ 개체 추가")
+                if ok:
+                    cdp = getattr(self, "cdp", None)
+                    self.sig_connect_done.emit(items or [], None, bool(getattr(cdp, "connected", False)))
+                    created = getattr(manager, "last_created_item", None) or payload
+                    created_num = created.get("num") or payload["num"]
+                    self.toast.show_toast(f"#{created_num} {payload['name']} 개체를 추가했습니다.", "success")
+                else:
+                    self.toast.show_toast(message or "개체 추가에 실패했습니다.", "error")
+
+            thread.sig_done.connect(_done)
+            thread.finished.connect(lambda: threads.remove(thread) if thread in threads else None)
+            thread.start()
+
+        buttons.accepted.connect(_submit)
+        name_input.setFocus()
+        dialog.exec()
+
     def _configure_item_table(self):
         table = getattr(self, "item_table", None)
         if table is None:
@@ -3641,6 +4622,11 @@ def _patch_main_window():
 
     def __init__(self, *args, **kwargs):
         original_init(self, *args, **kwargs)
+        _apply_compact_chat_templates(self.config)
+        self._chat_message_batch_lock = threading.Lock()
+        self._buy_now_state = BUY_NOW_IDLE
+        self._buy_now_item_key = ""
+        self._buy_now_marker_text = ""
         _init_auction_countdown(self)
         _configure_item_table(self)
         # Replace SheetsManager with SupabaseManager if configured
@@ -3656,6 +4642,7 @@ def _patch_main_window():
         self._auction_start_mutation_seq = 0
         self._buy_now_key_last_item = {}
         self._seen_msg_order = deque()
+        self._recent_chat_transport_fingerprints = {}
         self._pending_bid_save_payloads = {}
         self._pending_bid_save_timers = {}
         self._bid_save_last_queued_at = {}
@@ -3663,13 +4650,26 @@ def _patch_main_window():
         self._bid_event_sequence = 0
         self._current_bid_message_meta = None
         self._crewart_assignment_jobs = queue.Queue()
+        self._crewart_house_lock = threading.Lock()
+        self._crewart_house_by_bidder = {}
         self._crewart_assignment_thread = threading.Thread(
             target=lambda: _crewart_assignment_worker(self),
             daemon=True,
             name="CrewartAssignment",
         )
         self._crewart_assignment_thread.start()
+        self._crewart_last_sold = None
+        _restore_crewart_last_sold_context(self, getattr(self, "items", None))
+        self._crewart_roulette_lock = threading.Lock()
+        self._crewart_roulette_jobs = queue.Queue()
+        self._crewart_roulette_thread = threading.Thread(
+            target=lambda: _crewart_roulette_worker(self),
+            daemon=True,
+            name="CrewartContributionRoulette",
+        )
+        self._crewart_roulette_thread.start()
         _install_label_reprint_button(self)
+        _install_printer_status_badge(self)
         _update_chat_poll_timer(self)
         # Safety timer: check for stuck polls every 5 seconds
         self._poll_stuck_timer = _core.QTimer(self)
@@ -3705,6 +4705,8 @@ def _patch_main_window():
             print(f"[Platform] stale active row released: {stale_row}", flush=True)
         if items is not None and not getattr(self, "active_item", None):
             _restore_active_auction_session(self, items)
+        if items is not None and not getattr(self, "active_item", None):
+            _restore_crewart_last_sold_context(self, items)
         return original_on_connect_done_inner(self, items, tabs, cdp_ok)
 
     def _sync_sheet(self):
@@ -3960,6 +4962,17 @@ def _patch_main_window():
                     # handled before this marker remains a valid bid, while
                     # messages handled after it are late and stay unreflected.
                     _confirm_auction_lock_boundary(self)
+                is_new_buy_now_marker = (
+                    getattr(self, "_buy_now_state", BUY_NOW_IDLE) == BUY_NOW_PENDING
+                    and _chat_command_text(text) == _chat_command_text(getattr(self, "_buy_now_marker_text", ""))
+                    and key not in self._seen_msgs
+                )
+                if is_new_buy_now_marker:
+                    activated = _activate_buy_now_boundary(self, text)
+                    _update_auction_countdown_button(self)
+                    _append_chat_debug_log(
+                        f"buy-now boundary observed activated={activated} key={key!r}"
+                    )
                 buy_now = _is_buy_now_text(text)
                 if buy_now:
                     _append_chat_debug_log(
@@ -3985,9 +4998,62 @@ def _patch_main_window():
                             continue
                     else:
                         continue
+                if _is_cross_transport_chat_duplicate(self, m):
+                    _remember_seen_msg(self, key)
+                    _append_chat_debug_log(
+                        "cross-transport chat duplicate suppressed "
+                        f"source={_chat_transport_source(m)!r} name={name!r} key={key!r}"
+                    )
+                    continue
                 _remember_seen_msg(self, key)
 
                 is_bid = False
+                if _is_crewart_roulette_text(text) and _crewart_roulette_window_open(self):
+                    if _is_recent_crewart_command_duplicate(self, name, text):
+                        _append_chat_debug_log(
+                            f"crewart roulette transport duplicate suppressed name={name!r} key={key!r}"
+                        )
+                        continue
+                    queue_status = _queue_crewart_roulette(self, bidder_key, key, name)
+                    _append_chat_debug_log(
+                        "crewart roulette command "
+                        f"status={queue_status!r} bidder_key={bidder_key!r} key={key!r}"
+                    )
+                    if queue_status == "duplicate":
+                        continue
+                    if queue_status == "not-winner":
+                        self.chat_w.append_msg(name, display_text, t, False)
+                        continue
+                    if queue_status != "queued" and self.config.get("auto_chat_enabled", True):
+                        self._queue_chat_send("📢 룰렛 참여 시간이 아닙니다", "룰렛 상태 안내 전송 실패")
+                    self.chat_w.append_msg(name, display_text, t, False)
+                    continue
+                if buy_now:
+                    buy_meta = _buy_now_item_meta(getattr(self, "active_item", None))
+                    if buy_meta.get("is_buy_now"):
+                        state_before = getattr(self, "_buy_now_state", BUY_NOW_IDLE)
+                        if state_before == BUY_NOW_ACTIVE:
+                            is_bid = _complete_buy_now_claim(
+                                self,
+                                name,
+                                t=t,
+                                bidder_key=bidder_key,
+                                message_key=key,
+                                message_time_ms=m.get("messageTimeMs"),
+                                received_at_ms=m.get("receivedAtMs"),
+                            )
+                            display_text = "[즉구 접수] 즉구" if is_bid else "[즉구 처리 실패] 즉구"
+                        elif state_before in {BUY_NOW_CLAIMING, BUY_NOW_CLAIMED}:
+                            display_text = "[즉구 접수 완료] 즉구"
+                        else:
+                            display_text = "[안내 전 · 미반영] 즉구"
+                        self.chat_w.append_msg(name, display_text, t, is_bid)
+                        continue
+                    _append_chat_debug_log(
+                        f"buy-now ignored outside configured mode name={name!r} active={bool(self.active_item)}"
+                    )
+                    self.chat_w.append_msg(name, "[즉구 미설정] 즉구", t, False)
+                    continue
                 quiz_meta = _quiz_item_meta(self.active_item)
                 if self.active_item and quiz_meta.get("is_quiz"):
                     if quiz_meta.get("answer_configured") and _quiz_answer_matches(quiz_meta, text):
@@ -4097,56 +5163,22 @@ def _patch_main_window():
         previous_top = _countdown_current_top_signature(self)
         crewart_audience = _crewart_audience_competition_active(self)
         auto_chat_enabled = self.config.get("auto_chat_enabled", True)
-        if str(amount) != "2.0":
-            auto_chat_was_present = "auto_chat_enabled" in self.config
+        auto_chat_was_present = "auto_chat_enabled" in self.config
+        if crewart_audience and auto_chat_enabled:
+            self.config["auto_chat_enabled"] = False
+        try:
+            result = original_add_bid(self, name, amount, t, bidder_key)
+        finally:
             if crewart_audience and auto_chat_enabled:
-                self.config["auto_chat_enabled"] = False
-            try:
-                result = original_add_bid(self, name, amount, t, bidder_key)
-            finally:
-                if crewart_audience and auto_chat_enabled:
-                    if auto_chat_was_present:
-                        self.config["auto_chat_enabled"] = True
-                    else:
-                        self.config.pop("auto_chat_enabled", None)
-            if result:
-                if crewart_audience:
-                    _finalize_crewart_accepted_bid(self, str(bidder_key or name).strip() or name)
-                _restart_countdown_after_accepted_bid(self, previous_top)
-            return result
-        if not getattr(self, "active_item", None):
-            return False
-        bidder_key = str(bidder_key or name).strip() or name
-        bids = self._normalize_bid_entries(self.active_item.get("bids", []))
-        current_top = bids[0] if bids else None
-        current_top_amount = current_top.get("amount", 0) if current_top else 0
-        current_top_key = (current_top.get("bidder_key") or current_top.get("name", "")) if current_top else ""
-        existing = next((b for b in bids if (b.get("bidder_key") or b["name"]) == bidder_key), None)
-        if existing and existing.get("amount", 0) >= amount:
-            return False
-        if current_top and current_top_key != bidder_key and amount <= current_top_amount:
-            return False
-
-        prev_top_amount = current_top_amount
-        prev_top_key = current_top_key
-        bids = [b for b in bids if (b.get("bidder_key") or b["name"]) != bidder_key]
-        bids.append({"name": name, "bidder_key": bidder_key, "amount": amount, "time": t})
-        bids.sort(key=lambda b: b["amount"], reverse=True)
-        self.active_item["bids"] = bids
-        self._persist_bid_state_async(self.active_item, bids)
-        self.auction_card.update_bids(bids)
-
-        new_top = bids[0]
-        is_new_leader = (new_top.get("bidder_key") or new_top["name"]) != prev_top_key
-        if new_top["amount"] > prev_top_amount and is_new_leader and auto_chat_enabled and not crewart_audience:
-            bid_name = new_top["name"]
-            msg = _format_manual_chat(self, "highest", bid_name, new_top["amount"])
-            if msg:
-                self._queue_chat_send(msg, "최고가 갱신 안내 전송 실패")
-        _restart_countdown_after_accepted_bid(self, previous_top)
-        if crewart_audience:
-            _finalize_crewart_accepted_bid(self, bidder_key)
-        return True
+                if auto_chat_was_present:
+                    self.config["auto_chat_enabled"] = True
+                else:
+                    self.config.pop("auto_chat_enabled", None)
+        if result:
+            if crewart_audience:
+                _finalize_crewart_accepted_bid(self, str(bidder_key or name).strip() or name)
+            _restart_countdown_after_accepted_bid(self, previous_top)
+        return result
 
     def _persist_bid_state_async(self, item, bids=None):
         row = item.get("row")
@@ -4191,8 +5223,20 @@ def _patch_main_window():
         definition = sale_meta.get("definition", _SALE_MODE_DEFINITIONS["auction"])
         quiz_meta = _quiz_item_meta(item)
         is_quiz = sale_meta.get("mode") == "quiz"
+        buy_meta = _buy_now_item_meta(item)
+        is_buy_now = buy_meta.get("is_buy_now")
+        if is_buy_now and getattr(self, "_buy_now_state", BUY_NOW_IDLE) == BUY_NOW_IDLE:
+            _restore_buy_now_claim_from_item(self, item)
+        buy_now_claimed = getattr(self, "_buy_now_state", BUY_NOW_IDLE) == BUY_NOW_CLAIMED
         if hasattr(card, "btn_sold"):
             card.btn_sold.setText(definition.get("confirm_label", "낙찰"))
+            card.btn_sold.setEnabled(not is_buy_now or buy_now_claimed)
+            if is_buy_now:
+                card.btn_sold.setToolTip(
+                    "접수된 즉구 입찰자를 확인한 뒤 낙찰을 확정합니다."
+                    if buy_now_claimed else
+                    "첫 즉구 입찰자가 접수되면 활성화됩니다."
+                )
         countdown_button = getattr(card, "btn_countdown", None)
         if countdown_button is not None:
             countdown_button.setVisible(not is_quiz and bool(getattr(self, "active_item", None)))
@@ -4202,11 +5246,11 @@ def _patch_main_window():
         for name in ("btn_manual_bid_add", "btn_manual_bid_edit"):
             button = getattr(card, name, None)
             if button is not None:
-                button.setEnabled(not is_quiz)
+                button.setEnabled(not is_quiz and not is_buy_now)
         delete_button = getattr(card, "btn_manual_bid_delete", None)
         if delete_button is not None:
             delete_button.setText("정답 취소" if is_quiz else "선택 삭제")
-            delete_button.setEnabled(True)
+            delete_button.setEnabled(not is_buy_now)
         start_label = getattr(card, "lbl_start_price", None)
         if start_label is not None:
             if is_quiz:
@@ -4216,7 +5260,25 @@ def _patch_main_window():
                     "font-size:15px; font-weight:850; color:#344054; padding:8px 10px; "
                     "background:#F8FAFC; border:1px solid #EAECF0; border-radius:8px;"
                 )
+            elif is_buy_now:
+                start_label.setText(
+                    f"즉시구매가 {_core.fmt_price(buy_meta.get('instant_price'))}원 · 첫 ‘즉구’ 입찰 명단 접수"
+                )
+                start_label.setWordWrap(False)
+                start_label.setStyleSheet(
+                    "font-size:13px; color:#991B1B; font-weight:900; padding:7px 10px; "
+                    "background:#FEF2F2; border:1px solid #FECACA; border-radius:8px;"
+                )
             else:
+                company = str((item or {}).get("company") or "").strip()
+                start_price = (item or {}).get("price") or (item or {}).get("startPrice") or ""
+                start_text = _core.fmt_price(start_price)
+                start_label.setText(
+                    " · ".join(part for part in (
+                        company,
+                        f"시작가 {start_text}원" if start_text else "",
+                    ) if part)
+                )
                 start_label.setWordWrap(False)
                 start_label.setStyleSheet("font-size:12px; color:#667085; font-weight:700; background:transparent;")
 
@@ -4261,6 +5323,12 @@ def _patch_main_window():
                     "warning",
                 )
                 return False
+        elif sale_meta.get("mode") == "buy_now":
+            try:
+                _parse_settlement_amount(_buy_now_item_meta(item).get("instant_price"))
+            except (TypeError, ValueError):
+                self.toast.show_toast("정보 수정에서 즉시구매가를 입력해주세요.", "warning")
+                return False
         try:
             _drop_pending_bid_save(self, item.get("row"))
             _prime_chat_seen_baseline(self)
@@ -4271,6 +5339,9 @@ def _patch_main_window():
         except Exception:
             pass
         result = original_start_auction(self, item)
+        if result is not False:
+            self._crewart_last_sold = None
+            _reset_buy_now_state(self)
         _save_active_auction_session(self, item)
         _apply_auction_card_mode(self, item)
         _update_auction_countdown_button(self)
@@ -4329,23 +5400,63 @@ def _patch_main_window():
     def _end_auction(self, item, status, sold_price="", winner=""):
         _drop_pending_bid_save(self, item.get("row"))
         quiz_sold = _quiz_item_meta(item).get("is_quiz") and status == _core.S_SOLD
+        crewart_sold = (
+            not quiz_sold
+            and status == _core.S_SOLD
+            and _crewart_audience_competition_active(self)
+        )
+        winning_bid = None
+        if crewart_sold:
+            bids = self._normalize_bid_entries(item.get("bids", []))
+            winning_bid = bids[0] if bids else None
         quiz_message = ""
         auto_chat_enabled = self.config.get("auto_chat_enabled", True)
-        if quiz_sold and auto_chat_enabled:
-            quiz_message = (
-                f"⠀⠀🟢 퀴즈 당첨 {item.get('name', '')}\n"
-                f"⠀⠀ㅤ  {_quiz_display_winner(winner)}"
-            )
+        if (quiz_sold or crewart_sold) and auto_chat_enabled:
+            if quiz_sold:
+                quiz_message = f"📢 퀴즈 당첨 · {_quiz_display_winner(winner)}"
             self.config["auto_chat_enabled"] = False
         sold_price = _normalize_money_text(sold_price)
         winner = _normalize_winner_text(winner)
         try:
             result = original_end_auction(self, item, status, sold_price, winner)
         finally:
-            if quiz_sold and auto_chat_enabled:
+            if (quiz_sold or crewart_sold) and auto_chat_enabled:
                 self.config["auto_chat_enabled"] = True
         if result and quiz_message:
             self._queue_chat_send(quiz_message, "퀴즈 당첨 안내 전송 실패")
+        if result and crewart_sold:
+            sheets = getattr(self, "sheets", None)
+            winner_bidder_key = str(
+                (winning_bid or {}).get("bidder_key")
+                or (winning_bid or {}).get("name")
+                or winner
+                or ""
+            ).strip()
+            winner_name = str((winning_bid or {}).get("name") or winner or "").strip()
+            self._crewart_last_sold = {
+                "channel_id": str(getattr(sheets, "channel_id", "") or ""),
+                "item_id": str(item.get("row") or item.get("id") or ""),
+                "winner_bidder_key": winner_bidder_key,
+                "winner_name": winner_name,
+                "winner_aliases": tuple(sorted(_crewart_identity_aliases(
+                    winner_bidder_key,
+                    winner_name,
+                    winner,
+                ))),
+                "roulette_state": "idle",
+            }
+            winner_house = _crewart_winner_house(self, item, winning_bid)
+            if not winner_house and sheets is not None:
+                cached_item = getattr(sheets, "get_cached_item", lambda _row: None)(
+                    item.get("row") or item.get("id")
+                )
+                winner_house = _crewart_winner_house(self, cached_item or item, winning_bid)
+            _queue_required_crewart_sold_guidance(
+                self,
+                winner,
+                sold_price,
+                winner_house,
+            )
         if result:
             _stop_auction_countdown(self)
             _clear_active_auction_session()
@@ -4391,7 +5502,35 @@ def _patch_main_window():
 
     def _on_sold(self):
         item = getattr(self, "active_item", None)
-        if not item or not _quiz_item_meta(item).get("is_quiz"):
+        if not item:
+            return original_on_sold(self)
+        if _buy_now_item_meta(item).get("is_buy_now"):
+            bids = self._normalize_bid_entries(item.get("bids", []))
+            if not bids:
+                self.toast.show_toast("접수된 즉구 입찰자가 없습니다.", "warning")
+                return
+            top = bids[0]
+            try:
+                settlement_amount = _settlement_amount_text(
+                    _buy_now_item_meta(item).get("instant_price")
+                )
+            except (TypeError, ValueError):
+                self.toast.show_toast("즉시구매가가 설정되지 않았습니다. 정보 수정에서 입력해주세요.", "warning")
+                return
+            item_ref = item
+            if self._end_auction(
+                item_ref,
+                _core.S_SOLD,
+                sold_price=settlement_amount,
+                winner=top.get("name", ""),
+            ):
+                self.toast.show_toast(
+                    f"#{item_ref.get('num', '')} {top.get('name', '')} 즉구 낙찰 완료",
+                    "success",
+                )
+                self._maybe_auto_print_label(item_ref)
+            return
+        if not _quiz_item_meta(item).get("is_quiz"):
             return original_on_sold(self)
         bids = self._normalize_bid_entries(item.get("bids", []))
         if not bids:
@@ -4456,6 +5595,7 @@ def _patch_main_window():
             ),
             "density": _as_int(cfg.get("label_density"), 3),
             "ble_scan_timeout": _as_float(cfg.get("label_ble_scan_timeout"), 1.0),
+            "allow_fallback": _as_bool(cfg.get("label_printer_fallback_enabled"), True),
             "font_key": cfg.get("label_font", "pretendard"),
             "label_layout": cfg.get("label_layout", "auction"),
         }
@@ -4505,6 +5645,99 @@ def _patch_main_window():
             self.btn_label_reprint = btn
         except Exception as exc:
             print(f"[LabelSpool] reprint button install failed: {exc}")
+
+    def _refresh_printer_status_badge(self):
+        badge = getattr(self, "lbl_printer_connection", None)
+        if badge is None:
+            return
+        snapshot = _passive_printer_connection_snapshot()
+        printing = getattr(self, "_label_print_jobs", 0) > 0
+        pending = len(getattr(self, "_pending_label_prints", []) or [])
+        transport = snapshot.get("transport")
+        endpoint = snapshot.get("endpoint") or ""
+        telemetry = _load_cached_printer_telemetry()
+        cached_endpoint = str(telemetry.get("endpoint") or "").strip().casefold()
+        if cached_endpoint and cached_endpoint != endpoint.casefold():
+            telemetry = {}
+        battery = telemetry.get("battery_level")
+        battery_max = telemetry.get("battery_max") or 4
+        remaining = telemetry.get("paper_remaining")
+
+        if printing:
+            mode = "USB" if transport == "usb" else "Bluetooth"
+            text = f"● {mode} 인쇄 중"
+            if pending:
+                text += f" · 대기 {pending}"
+            color = "#FDE68A"
+            tooltip = f"라벨 프린터가 {mode} 경로로 출력 중입니다."
+        elif transport == "usb":
+            details = []
+            if battery is not None:
+                details.append(f"배터리 {battery}/{battery_max}")
+            if remaining is not None:
+                details.append(f"용지 {remaining}장")
+            text = "● USB"
+            if details:
+                text += " · " + " · ".join(details)
+            else:
+                text += " · 전원공급"
+            color = "#86EFAC"
+            tooltip = f"D110 {endpoint} · USB 데이터 및 충전 전원 연결"
+            if remaining is not None:
+                tooltip += (
+                    f"\nRFID 롤 기준 총 {telemetry.get('paper_total')}장 · "
+                    f"사용 {telemetry.get('paper_used')}장 · 남음 {remaining}장"
+                )
+            if telemetry.get("updated_at"):
+                updated_text = time.strftime(
+                    "%H:%M:%S",
+                    time.localtime(float(telemetry["updated_at"])),
+                )
+                tooltip += f"\n최근 확인 {updated_text}"
+        elif transport == "bluetooth":
+            text = "● Bluetooth · 대기"
+            color = "#93C5FD"
+            tooltip = "USB가 없으면 등록된 Bluetooth 직렬 경로로 출력합니다."
+        else:
+            text = "● 프린터 미연결"
+            color = "#FCA5A5"
+            tooltip = "D110 USB 또는 Bluetooth 연결을 확인하세요."
+
+        badge.setText(text)
+        badge.setToolTip(tooltip)
+        badge.setStyleSheet(
+            f"color:{color}; background:transparent; font-size:11px; font-weight:800;"
+        )
+
+    def _install_printer_status_badge(self):
+        try:
+            top_bar = self.findChild(_core.QWidget, "topBar")
+            layout = top_bar.layout() if top_bar else None
+            if layout is None or getattr(self, "lbl_printer_connection", None):
+                return
+
+            badge = _core.QLabel()
+            badge.setObjectName("printerConnectionStatus")
+            badge.setMinimumWidth(210)
+            badge.setAlignment(_core.Qt.AlignVCenter | _core.Qt.AlignLeft)
+
+            insert_at = max(0, layout.count() - 2)
+            for index in range(layout.count()):
+                widget = layout.itemAt(index).widget()
+                if isinstance(widget, _core.QLabel) and widget.text().strip() == "인쇄ON":
+                    insert_at = index + 1
+                    break
+            layout.insertWidget(insert_at, badge)
+            self.lbl_printer_connection = badge
+
+            timer = _core.QTimer(self)
+            timer.setInterval(2000)
+            timer.timeout.connect(lambda: self._refresh_printer_status_badge())
+            timer.start()
+            self._printer_status_timer = timer
+            self._refresh_printer_status_badge()
+        except Exception as exc:
+            print(f"[Niimbot] printer status badge install failed: {exc}")
 
     def _open_label_reprint_dialog(self):
         spool = _LABEL_SPOOL.load()
@@ -4609,6 +5842,7 @@ def _patch_main_window():
                 self._update_label_spool_job(job_id, status="failed", last_error=str(message or ""))
         self._label_print_current_job_id = None
         self._label_print_jobs = max(0, getattr(self, "_label_print_jobs", 0) - 1)
+        self._refresh_printer_status_badge()
         _update_chat_poll_timer(self)
         if ok:
             self.toast.show_toast("라벨 인쇄 완료!", "success")
@@ -4761,6 +5995,7 @@ def _patch_main_window():
 
         self._label_print_jobs = getattr(self, "_label_print_jobs", 0) + 1
         self._label_print_current_job_id = job_id
+        self._refresh_printer_status_badge()
         _update_chat_poll_timer(self)
         thread = LabelPrintThread()
         thread._dc_label_finished = False
@@ -4780,9 +6015,12 @@ def _patch_main_window():
     MainWindow._get_label_spool_job = _get_label_spool_job
     MainWindow._update_label_spool_job = _update_label_spool_job
     MainWindow._open_label_reprint_dialog = _open_label_reprint_dialog
+    MainWindow._refresh_printer_status_badge = _refresh_printer_status_badge
     MainWindow._retry_label_job = _retry_label_job
     MainWindow._on_chat_poll_done = _on_chat_poll_done
+    MainWindow._queue_chat_send = _queue_chat_send
     MainWindow._on_chat_send_done = _on_chat_send_done
+    MainWindow._open_new_item_dialog = _open_new_item_dialog
     MainWindow._on_connect_done_inner = _on_connect_done_inner
     MainWindow._sync_sheet = _sync_sheet
     MainWindow._normalize_bid_entries = _normalize_bid_entries
@@ -4799,6 +6037,10 @@ def _patch_main_window():
     MainWindow._send_highest = _send_current_highest_chat
     MainWindow._countdown_current_bids = _countdown_current_bids
     MainWindow._countdown_current_top_signature = _countdown_current_top_signature
+    MainWindow._reset_buy_now_state = _reset_buy_now_state
+    MainWindow._restore_buy_now_claim_from_item = _restore_buy_now_claim_from_item
+    MainWindow._begin_buy_now = _begin_buy_now
+    MainWindow._complete_buy_now_claim = _complete_buy_now_claim
     MainWindow._countdown_is_locked = _countdown_is_locked
     MainWindow._update_auction_countdown_button = _update_auction_countdown_button
     MainWindow._set_auction_countdown_state = _set_auction_countdown_state
@@ -4814,6 +6056,7 @@ def _patch_main_window():
     MainWindow._choose_locked_late_bid = _choose_locked_late_bid
     MainWindow._on_auction_countdown_action = _on_auction_countdown_action
     MainWindow._restart_countdown_after_accepted_bid = _restart_countdown_after_accepted_bid
+    MainWindow._apply_auction_card_mode = _apply_auction_card_mode
     MainWindow._refresh_table = _refresh_table_sorted
     MainWindow._refresh_table_fast_for_items = _refresh_table_fast_compact
     MainWindow._start_auction = _start_auction
@@ -5243,6 +6486,24 @@ def _patch_item_detail_popup():
     ItemDetailPopup.__init__ = __init__
 
 
+def _resolve_item_detail_manager(dialog, args=(), kwargs=None):
+    """Resolve the manager passed to ItemDetailDialog without a global window lookup."""
+    kwargs = kwargs or {}
+    if len(args) > 1 and args[1] is not None:
+        return args[1]
+    for key in ("manager", "sheets"):
+        manager = kwargs.get(key)
+        if manager is not None:
+            return manager
+    parent = args[2] if len(args) > 2 else None
+    if parent is None:
+        try:
+            parent = dialog.parentWidget()
+        except Exception:
+            parent = None
+    return getattr(parent, "sheets", None)
+
+
 def _patch_item_detail_layout():
     ItemDetailDialog = _core.ItemDetailDialog
     original_init = ItemDetailDialog.__init__
@@ -5329,7 +6590,8 @@ def _patch_item_detail_layout():
 
         quiz_meta = _quiz_item_meta(getattr(self, "item", {}))
         sale_meta = _sale_item_meta(getattr(self, "item", {}))
-        competition_mode = _competition_mode(getattr(self, "item", {}))
+        active_manager = _resolve_item_detail_manager(self, args, kwargs)
+        competition_mode = _competition_mode(getattr(self, "item", {}), active_manager)
         visibility_mode = _visibility_mode(getattr(self, "item", {}))
         quiz_row = _core.QHBoxLayout()
         quiz_row.setSpacing(12)
@@ -5378,6 +6640,17 @@ def _patch_item_detail_layout():
             settlement_input.setValue(_parse_settlement_amount(quiz_meta.get("settlement_amount")))
         except (TypeError, ValueError):
             settlement_input.setValue(0)
+        buy_now_input = _core.QDoubleSpinBox(basic_card)
+        buy_now_input.setDecimals(2)
+        buy_now_input.setRange(0, 999999)
+        buy_now_input.setSingleStep(1)
+        buy_now_input.setSuffix(" 만원")
+        buy_now_input.setSpecialValueText("미설정")
+        buy_now_input.setFixedWidth(170)
+        try:
+            buy_now_input.setValue(_parse_settlement_amount(sale_meta.get("config", {}).get("instant_price")))
+        except (TypeError, ValueError):
+            buy_now_input.setValue(0)
         mode_box = labeled_field("진행 방식", mode_combo)
         mode_box.setFixedWidth(130)
         competition_box = labeled_field("대진 방식", competition_input)
@@ -5387,12 +6660,14 @@ def _patch_item_detail_layout():
         question_box = labeled_field("퀴즈 문제", question_input)
         answer_box = labeled_field("정답 (정확히 일치)", answer_input)
         settlement_box = labeled_field("당첨 처리금액", settlement_input, align_left=True)
+        buy_now_box = labeled_field("즉시구매가", buy_now_input, align_left=True)
         basic_row.addWidget(mode_box)
         basic_row.addWidget(competition_box)
         basic_row.addWidget(visibility_box)
         quiz_row.addWidget(question_box, 3)
         quiz_row.addWidget(answer_box, 2)
         quiz_row.addWidget(settlement_box)
+        quiz_row.addWidget(buy_now_box)
         basic_layout.addLayout(quiz_row)
         self._quiz_mode_combo = mode_combo
         self._visibility_mode_combo = visibility_combo
@@ -5400,13 +6675,17 @@ def _patch_item_detail_layout():
         self._quiz_answer_input = answer_input
         self._quiz_existing_answer_digest = quiz_meta.get("answer_digest", "")
         self._quiz_settlement_input = settlement_input
+        self._buy_now_price_input = buy_now_input
 
         def _sync_quiz_fields():
-            enabled = mode_combo.currentData() == "quiz"
-            question_box.setVisible(enabled)
-            answer_box.setVisible(enabled)
-            settlement_box.setVisible(enabled)
-            basic_card.setFixedHeight(196 if enabled else 116)
+            mode = mode_combo.currentData()
+            is_quiz = mode == "quiz"
+            is_buy_now = mode == "buy_now"
+            question_box.setVisible(is_quiz)
+            answer_box.setVisible(is_quiz)
+            settlement_box.setVisible(is_quiz)
+            buy_now_box.setVisible(is_buy_now)
+            basic_card.setFixedHeight(196 if (is_quiz or is_buy_now) else 116)
 
         mode_combo.currentIndexChanged.connect(lambda _index: _sync_quiz_fields())
         _sync_quiz_fields()
@@ -5552,6 +6831,7 @@ def _patch_item_detail_layout():
         question = getattr(self, "_quiz_question_input", None)
         answer = getattr(self, "_quiz_answer_input", None)
         settlement = getattr(self, "_quiz_settlement_input", None)
+        buy_now_price = getattr(self, "_buy_now_price_input", None)
         question_text = question.text().strip() if question is not None else ""
         answer_text = answer.text().strip() if answer is not None else ""
         existing_answer_digest = str(getattr(self, "_quiz_existing_answer_digest", "") or "").strip()
@@ -5572,6 +6852,12 @@ def _patch_item_detail_layout():
             if settlement is not None:
                 settlement.setFocus()
             return
+        instant_price = buy_now_price.value() if buy_now_price is not None else 0
+        if mode == "buy_now" and instant_price <= 0:
+            _core.QMessageBox.warning(self, "즉구 설정", "즉시구매가를 입력해주세요.")
+            if buy_now_price is not None:
+                buy_now_price.setFocus()
+            return
 
         original_checklist = self.item.get("checklist", "")
         original_on_save(self)
@@ -5580,6 +6866,7 @@ def _patch_item_detail_layout():
             "answer": answer_text,
             "answer_digest": existing_answer_digest,
             "settlement_amount": _settlement_amount_text(settlement_amount) if is_quiz else "",
+            "instant_price": _settlement_amount_text(instant_price) if mode == "buy_now" else "",
         }
         merged_checklist = _merge_checklist_after_edit(
             original_checklist,
@@ -5721,6 +7008,19 @@ def _patch_main_visual_hierarchy():
             if filter_bar.layout() is not None:
                 filter_bar.layout().setContentsMargins(4, 4, 4, 4)
                 filter_bar.layout().setSpacing(2)
+                if not getattr(self, "btn_add_item", None):
+                    filter_bar.layout().addStretch(1)
+                    self.btn_add_item = _core.QPushButton("＋ 개체 추가", filter_bar)
+                    self.btn_add_item.setCursor(_core.Qt.PointingHandCursor)
+                    self.btn_add_item.setFixedHeight(32)
+                    self.btn_add_item.setStyleSheet(
+                        "QPushButton { background:#173E8F; color:#FFFFFF; border:none; border-radius:6px; "
+                        "padding:4px 13px; font-size:12px; font-weight:900; }"
+                        "QPushButton:hover { background:#123575; }"
+                        "QPushButton:disabled { background:#98A2B3; }"
+                    )
+                    self.btn_add_item.clicked.connect(lambda: self._open_new_item_dialog())
+                    filter_bar.layout().addWidget(self.btn_add_item)
         _apply_filter_styles(self)
 
         table = getattr(self, "item_table", None)

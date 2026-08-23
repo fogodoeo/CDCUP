@@ -50,6 +50,7 @@ def main(argv=None):
             port=job.get("port") or None,
             density=int(job.get("density", 3) or 3),
             ble_scan_timeout=float(job.get("ble_scan_timeout", 1.0) or 0),
+            allow_fallback=bool(job.get("allow_fallback", True)),
             font_key=job.get("font_key") or None,
             label_layout=job.get("label_layout") or "auction",
         )

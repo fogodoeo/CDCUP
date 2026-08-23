@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>2026 CDCUP Tournament Film Frames</title>
+  <style>
+    @font-face{font-family:Pretendard;src:local("Pretendard");font-weight:100 900}
+    :root{--bg:#050911;--panel:#0a121e;--panel2:#0d1724;--line:#293445;--gold:#cda548;--gold2:#f0d07b;--green:#1ecb92;--text:#f7f8fa;--muted:#8290a3}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--bg);font-family:Pretendard,"Noto Sans KR",Arial,sans-serif;color:var(--text)}
+    body{position:relative;background:
+      radial-gradient(circle at 80% -20%,rgba(205,165,72,.09),transparent 38%),
+      linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px),#050911;background-size:auto,64px 64px,64px 64px,auto}
+    body:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.28),transparent 16%,transparent 84%,rgba(0,0,0,.28))}
+    .frame{position:relative;width:1920px;height:1080px;padding:58px 72px 52px;display:flex;flex-direction:column}
+    .top{height:145px;display:flex;align-items:flex-start;border-bottom:1px solid rgba(205,165,72,.32);position:relative}
+    .brand,.emblem{display:none}
+    .brand-lockup{position:fixed;display:block!important;visibility:visible!important;opacity:1!important;left:72px;top:58px;z-index:999;min-width:430px}
+    .brand-lockup .brand-kicker{display:flex;align-items:center;gap:14px;color:var(--gold2);font-size:15px;font-weight:900;letter-spacing:.24em}
+    .brand-lockup .brand-kicker:before{content:"";width:34px;height:2px;background:var(--gold)}
+    .brand-lockup strong{display:block;margin-top:16px;font-size:43px;line-height:1;font-weight:950;letter-spacing:-.04em}
+    .season-lockup{position:fixed;right:72px;top:58px;z-index:999;display:flex!important;visibility:visible!important;opacity:1!important;align-items:center;gap:18px;text-align:right}
+    .season-lockup img{width:86px;height:86px;object-fit:contain;filter:sepia(1) saturate(.7) brightness(.95)}
+    .season-lockup span{display:block;color:var(--muted);font-size:12px;font-weight:850;letter-spacing:.2em}
+    .season-lockup strong{display:block;margin-top:8px;color:var(--gold2);font-size:24px;font-weight:950}
+    .brand-kicker{display:flex;align-items:center;gap:14px;color:var(--gold2);font-size:15px;font-weight:900;letter-spacing:.24em}
+    .brand-kicker:before{content:"";width:34px;height:2px;background:var(--gold)}
+    .brand h1{margin:16px 0 0;font-size:43px;line-height:1;font-weight:950;letter-spacing:-.04em}
+    .stage-head{position:absolute;left:50%;top:0;transform:translateX(-50%);display:flex;align-items:center;gap:22px;min-width:460px;justify-content:center}
+    .stage-no{width:78px;height:78px;border:1px solid var(--gold);display:grid;place-items:center;font-size:32px;color:var(--gold2);font-weight:950;background:rgba(205,165,72,.035)}
+    .stage-copy small{display:block;color:var(--gold);font-size:14px;font-weight:900;letter-spacing:.2em}
+    .stage-copy strong{display:block;margin-top:6px;font-size:38px;line-height:1;font-weight:950}
+    .stage-copy span{display:block;margin-top:6px;color:var(--muted);font-size:16px;letter-spacing:.06em}
+    .emblem img{width:86px;height:86px;object-fit:contain;filter:sepia(1) saturate(.7) brightness(.95)}
+    .emblem span{display:block;color:var(--muted);font-size:12px;font-weight:850;letter-spacing:.2em}
+    .emblem strong{display:block;margin-top:8px;color:var(--gold2);font-size:24px;font-weight:950}
+    .content{flex:1;padding-top:30px;min-height:0}
+    .stage-grid{height:100%;display:grid;gap:16px}
+    .stage-grid.s16{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(4,1fr)}
+    .stage-grid.s8{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,1fr);gap:24px;padding:22px 74px 34px}
+    .stage-grid.s4{grid-template-columns:repeat(2,1fr);align-items:center;gap:46px;padding:92px 70px 118px}
+    .match{position:relative;border:1px solid rgba(205,165,72,.34);background:linear-gradient(135deg,rgba(17,28,42,.96),rgba(7,13,22,.97));box-shadow:inset 0 0 0 1px rgba(255,255,255,.018);overflow:hidden}
+    .match:after{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.42}
+    .match-label{position:absolute;left:16px;top:13px;color:var(--muted);font-size:12px;font-weight:850;letter-spacing:.12em}
+    .match-status{position:absolute;right:16px;top:12px;padding:4px 8px;border:1px solid rgba(30,203,146,.38);color:var(--green);font-size:10px;font-weight:900;letter-spacing:.08em}
+    .teams{height:100%;display:grid;grid-template-columns:1fr 54px 1fr;align-items:center;padding:34px 18px 10px}
+    .team{height:76%;display:grid;grid-template-columns:62px minmax(0,1fr) auto;align-items:center;gap:14px;padding:0 15px;border:1px solid rgba(130,144,163,.14);background:rgba(255,255,255,.012);opacity:.62}
+    .team.win{opacity:1;border-color:rgba(30,203,146,.42);background:linear-gradient(90deg,rgba(30,203,146,.10),rgba(255,255,255,.012))}
+    .team-logo{width:54px;height:54px;display:grid;place-items:center;background:#f5f5f3;border:1px solid rgba(255,255,255,.22);overflow:hidden}
+    .team-logo img{width:100%;height:100%;object-fit:contain}
+    .team-name{min-width:0}
+    .team-name strong{display:block;font-size:22px;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .team-name span{display:block;margin-top:4px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.08em;white-space:nowrap}
+    .team-amount{text-align:right;white-space:nowrap;color:var(--muted);font-size:12px;font-weight:800}
+    .team.win .team-amount{color:var(--gold2)}
+    .team-amount strong{font-size:24px;color:inherit;font-variant-numeric:tabular-nums}
+    .winner{display:inline-block;margin-top:5px;padding:2px 6px;background:rgba(30,203,146,.14);border:1px solid rgba(30,203,146,.38);color:var(--green);font-size:9px;font-weight:950;letter-spacing:.09em}
+    .versus{text-align:center;color:var(--gold);font-size:13px;font-weight:950;letter-spacing:.14em}
+    .s8 .match-label,.s4 .match-label{font-size:14px;left:22px;top:18px}
+    .s8 .teams{padding:54px 28px 18px;grid-template-columns:1fr 72px 1fr}
+    .s8 .team{grid-template-columns:78px minmax(0,1fr) auto;gap:20px;padding:0 22px}
+    .s8 .team-logo{width:68px;height:68px}.s8 .team-name strong{font-size:30px}.s8 .team-name span{font-size:12px}.s8 .team-amount strong{font-size:30px}.s8 .versus{font-size:16px}
+    .s8 .team.long{grid-template-columns:60px minmax(0,1fr) auto;gap:12px;padding:0 14px}.s8 .team.long .team-logo{width:56px;height:56px}.s8 .team.long .team-name strong{font-size:22px;overflow:visible}.s8 .team.long .team-name span{font-size:10px}
+    .s4 .match{height:390px}.s4 .teams{padding:70px 32px 30px;grid-template-columns:1fr 90px 1fr}.s4 .team{height:88%;display:flex;flex-direction:column;justify-content:center;text-align:center;padding:22px}.s4 .team-logo{width:92px;height:92px}.s4 .team-name strong{margin-top:12px;font-size:35px}.s4 .team-name span{font-size:13px}.s4 .team-amount{margin-top:9px;text-align:center}.s4 .versus{font-size:20px}
+    .final-layout{height:100%;display:grid;grid-template-rows:1.5fr 1fr;gap:25px;padding:16px 82px 20px}
+    .duel{position:relative;border:1px solid rgba(205,165,72,.46);background:linear-gradient(90deg,rgba(9,20,29,.98),rgba(16,22,31,.96),rgba(9,20,29,.98));display:grid;grid-template-columns:1fr 190px 1fr;align-items:center;padding:56px 56px 26px}
+    .duel.bronze{margin:0 190px;padding:44px 48px 18px;grid-template-columns:1fr 140px 1fr;border-color:rgba(205,165,72,.28)}
+    .duel-title{position:absolute;left:22px;top:18px;color:var(--gold2);font-size:14px;font-weight:950;letter-spacing:.12em}.duel-title span{margin-left:12px;color:var(--muted);font-size:11px}
+    .duel-team{display:grid;grid-template-columns:110px minmax(0,1fr);align-items:center;gap:25px;padding:20px 28px;border:1px solid rgba(205,165,72,.35);background:linear-gradient(90deg,rgba(30,203,146,.07),rgba(255,255,255,.015))}
+    .duel-team.right{grid-template-columns:minmax(0,1fr) 110px;text-align:right}.duel-team.right .team-logo{grid-column:2}.duel-team.right .duel-copy{grid-row:1;grid-column:1}
+    .duel-team .team-logo{width:100px;height:100px}.duel-copy strong{display:block;font-size:43px;font-weight:950}.duel-copy span{display:block;margin-top:7px;color:var(--muted);font-size:14px;letter-spacing:.08em}
+    .duel-vs{text-align:center;color:var(--gold2);font-size:25px;font-weight:950;letter-spacing:.08em}.duel-vs:before{content:"";display:block;margin:0 auto 13px;width:54px;height:54px;background:url('../cdcup-official-emblem.png') center/contain no-repeat;filter:sepia(1) saturate(.7)}
+    .bronze .duel-team{grid-template-columns:78px minmax(0,1fr);padding:14px 20px}.bronze .duel-team.right{grid-template-columns:minmax(0,1fr) 78px}.bronze .duel-team .team-logo{width:68px;height:68px}.bronze .duel-copy strong{font-size:30px}.bronze .duel-copy span{font-size:11px}.bronze .duel-vs{font-size:18px}.bronze .duel-vs:before{display:none}
+    .foot{position:absolute;left:72px;right:72px;bottom:24px;display:flex;justify-content:space-between;color:#4c5868;font-size:11px;font-weight:800;letter-spacing:.1em}
+  </style>
+</head>
+<body>
+  <main class="frame" id="frame"></main>
+  <script>
+    const LOGOS={
+      '베누스':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614024896_myoy5t.png','크레빌딩':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614039839_1zapyu.png','니코게코':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614045636_l4j9h8.png','어비스':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614053967_e2r308.png','미야게코':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614062614_7q4w8m.png','헤넥톤':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614068383_ajajil.png','아틀리에':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614076171_7233s4.png','크레용':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782614082189_4ch940.png','자몽':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782673018185_ho06c0.jpg','비송':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782673024625_4qnd6z.png','렙타일갤러리':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782673030103_eurlfj.png','히꼬':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782673035472_cz1i7k.jpg','아쿠':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782932057655_m0f98s.jpg','앙크레':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782932058677_v24mn4.jpg','해치랩':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782932059436_58i7f8.jpg','라이카':'https://iuwqjeecwepqyqqlzprf.supabase.co/storage/v1/object/public/banner/banner_1782933522030_612nnq.png'
+    };
+    const EN={'베누스':'VENUS GECKO','비송':'BSONG','히꼬':'HIKKO','자몽':'ZAMONG CRE','렙타일갤러리':'REPTILE GALLERY','어비스':'ABYSS','헤넥톤':'HENEKTON','니코게코':'NIKO GECKO','미야게코':'MIYA GECKO','크레빌딩':'CREBUILDING','아틀리에':'ATELIER TRI','크레용':'CREYON','라이카':'LAIKA','해치랩':'HATCH LAB STUDIO','앙크레':'ANCRE','아쿠':'ACU'};
+    const stages={
+      '16':{no:'01',ko:'16강',en:'ROUND OF 16',matches:[['자몽',67,'아틀리에',54],['니코게코',60,'아쿠',16],['비송',175,'미야게코',87],['해치랩',24,'헤넥톤',60],['베누스',321,'라이카',40],['렙타일갤러리',155,'크레빌딩',72],['히꼬',175,'크레용',51],['앙크레',23,'어비스',100]]},
+      '8':{no:'02',ko:'8강',en:'QUARTER FINAL',matches:[['히꼬',174,'어비스',91],['자몽',101,'니코게코',67],['비송',252,'헤넥톤',74],['베누스',165,'렙타일갤러리',122]]},
+      '4':{no:'03',ko:'4강',en:'SEMI FINAL',matches:[['베누스',null,'히꼬',null,'베누스'],['비송',null,'자몽',null,'비송']]}
+    };
+    const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function logo(name){return `<span class="team-logo"><img src="${LOGOS[name]}" alt=""></span>`}
+    function header(stage){return `<header class="top"><div class="brand"><div class="brand-kicker">CDCUP OFFICIAL TOURNAMENT</div><h1>2026 CDCUP</h1></div><div class="stage-head"><div class="stage-no">${stage.no}</div><div class="stage-copy"><small>TOURNAMENT STAGE</small><strong>${stage.ko}</strong><span>${stage.en}</span></div></div><div class="emblem"><div><span>TOURNAMENT SEASON</span><strong>2026 CDCUP</strong></div><img src="../cdcup-official-emblem.png" alt=""></div></header>`}
+    function team(name,amount,isWinner){return `<div class="team${isWinner?' win':''}${name.length>5?' long':''}">${logo(name)}<div class="team-name"><strong>${esc(name)}</strong><span>${esc(EN[name])}</span>${isWinner?'<i class="winner">WIN</i>':''}</div><div class="team-amount">${amount==null?'<strong>—</strong>':`<strong>${amount}</strong>만원`}</div></div>`}
+    function matchCard(m,i,stage){const explicit=m[4];const winner=explicit||(Number(m[1])>Number(m[3])?m[0]:m[2]);return `<article class="match"><div class="match-label">${stage.ko} ${i+1}경기</div><div class="match-status">경기 종료</div><div class="teams">${team(m[0],m[1],winner===m[0])}<div class="versus">VS</div>${team(m[2],m[3],winner===m[2])}</div></article>`}
+    function duelTeam(name,right=false){return `<div class="duel-team${right?' right':''}">${logo(name)}<div class="duel-copy"><strong>${esc(name)}</strong><span>${esc(EN[name])}</span></div></div>`}
+    function render(){const key=new URLSearchParams(location.search).get('stage')||'16';let body;if(key==='final'){const stage={no:'04',ko:'결승·3·4위전',en:'FINAL & BRONZE MATCH'};body=`${header(stage)}<section class="content"><div class="final-layout"><article class="duel"><div class="duel-title">결승전 <span>THE FINAL · 진행 예정</span></div>${duelTeam('베누스')}<div class="duel-vs">VS</div>${duelTeam('비송',true)}</article><article class="duel bronze"><div class="duel-title">3·4위전 <span>BRONZE MATCH · 진행 예정</span></div>${duelTeam('히꼬')}<div class="duel-vs">VS</div>${duelTeam('자몽',true)}</article></div></section>`}else{const stage=stages[key];body=`${header(stage)}<section class="content"><div class="stage-grid s${key}">${stage.matches.map((m,i)=>matchCard(m,i,stage)).join('')}</div></section>`}document.getElementById('frame').innerHTML=body+`<div class="brand-lockup"><div class="brand-kicker">CDCUP OFFICIAL TOURNAMENT</div><strong>2026 CDCUP</strong></div><div class="season-lockup"><div><span>TOURNAMENT SEASON</span><strong>2026 CDCUP</strong></div><img src="../cdcup-official-emblem.png" alt=""></div><footer class="foot"><span>16강 → 8강 → 4강 → 결승</span><span>2026 CDCUP OFFICIAL TOURNAMENT</span></footer>`}
+    render();
+  </script>
+</body>
+</html>

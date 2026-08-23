@@ -89,6 +89,7 @@ class AuctionCountdownTests(unittest.TestCase):
         cls.qt_app = app._core.QApplication.instance() or app._core.QApplication([])
 
     def test_countdown_contract_has_fixed_five_slots_and_expected_timing(self):
+        self.assertEqual(app.AUCTION_COUNTDOWN_ANNOUNCEMENT, "📢 마감 카운트 시작")
         self.assertEqual(sum(ms for _, ms in app.AUCTION_COUNTDOWN_INITIAL_STAGES), 39600)
         self.assertEqual(sum(ms for _, ms in app.AUCTION_COUNTDOWN_RESUME_STAGES), 33600)
         self.assertEqual(app.AUCTION_COUNTDOWN_FIRST_MESSAGE_DELAY_MS, 1020)

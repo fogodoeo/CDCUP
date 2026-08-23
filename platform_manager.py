@@ -88,6 +88,7 @@ class ChannelAwareManager:
         self._context_verified = False
         self._context_at = 0.0
         self._context_workspace = None
+        self.broadcast_state = {}
         self._items = {}
         self._items_channel_id = ""
         self._lock = threading.RLock()
@@ -95,6 +96,7 @@ class ChannelAwareManager:
         self._write_generation = 0
         self._stage_sequence = 0
         self._staged_item_updates = {}
+        self.last_created_item = None
         self.ws = ChannelAwareWorksheet(self)
         self.refresh_context(force=True)
 
@@ -150,6 +152,7 @@ class ChannelAwareManager:
                 self._items = {}
                 self._items_channel_id = ""
                 self._staged_item_updates = {}
+                self.broadcast_state = {}
             self.online = True
             self.last_read_error = ""
         except Exception as exc:
@@ -236,6 +239,30 @@ class ChannelAwareManager:
             timeout=3,
         )
 
+    def trigger_audience_roulette(self, item_id, bidder_key, message_key=""):
+        """Commit one previous-winner contribution roulette without changing settlement data."""
+        if not self._context_verified and not self._context_ready(force=True):
+            raise RuntimeError(self.last_read_error or "현재 운영 채널을 확인하지 못했습니다.")
+        if not self.using_platform:
+            return {}
+        competition = self.channel.get("audienceCompetition") or {}
+        if not (
+            competition.get("enabled") is True
+            and competition.get("assignment") == "survey-random"
+        ):
+            return {}
+        return self._request(
+            f"channels/{self.channel_id}/audience-roulette",
+            method="POST",
+            payload={
+                "itemId": str(item_id or ""),
+                "bidder_key": str(bidder_key or ""),
+                "message_key": str(message_key or ""),
+            },
+            admin=True,
+            timeout=3,
+        )
+
     def get_tab_list(self):
         if not self._context_ready():
             return ["items"]
@@ -285,6 +312,7 @@ class ChannelAwareManager:
             "dam_id": attrs.get("dam_id", ""),
             "damId": attrs.get("dam_id", ""),
             "bids": bids,
+            "attributes": dict(attrs),
         }
 
     def read_items(self):
@@ -295,10 +323,12 @@ class ChannelAwareManager:
         if not self.using_platform:
             self._items = {}
             self._items_channel_id = ""
+            self.broadcast_state = {}
             return self.legacy.read_items()
         try:
             workspace = self._context_workspace or self._request(f"channels/{self.channel_id}/workspace", admin=True)
             self._context_workspace = None
+            self.broadcast_state = dict(workspace.get("broadcast") or {})
             rows = workspace.get("items") or []
             with self._lock:
                 if self._write_generation != read_generation and self._items_channel_id == self.channel_id:
@@ -322,6 +352,15 @@ class ChannelAwareManager:
             self.last_read_error = str(exc)
             print(f"[Platform] read_items failed: {exc}", flush=True)
             return []
+
+    def get_cached_item(self, row):
+        """Return the latest server-confirmed item without another network round trip."""
+        key = str(row or "")
+        with self._lock:
+            if self._items_channel_id != self.channel_id:
+                return None
+            record = self._items.get(key)
+            return self._legacy_item(dict(record)) if record else None
 
     def read_parents(self):
         if not self._context_ready():
@@ -488,6 +527,61 @@ class ChannelAwareManager:
 
     def update_parent_ids(self, row, sire_id, dam_id):
         return self.write_parent_ids(row, sire_id, dam_id)
+
+    def create_item(self, data, expected_channel_id=""):
+        """Create one waiting item in the operator's currently verified channel."""
+        expected = str(expected_channel_id or "").strip()
+        if not self._context_ready(force=True):
+            self.last_write_error = self.last_read_error or "현재 운영 채널을 확인하지 못했습니다."
+            return False
+        if expected and self.channel_id != expected:
+            self.last_write_error = "현재 운영 채널이 변경되었습니다. 개체 목록을 새로고침해 주세요."
+            return False
+        if not self.using_platform:
+            created = self.legacy.push_all([dict(data or {})])
+            self.last_created_item = dict(data or {}) if created else None
+            return created
+        source = dict(data or {})
+        try:
+            record = {
+                "lotNumber": int(source.get("num") or 0),
+                "name": source.get("name") or "",
+                "vendorName": source.get("company") or "",
+                "startPrice": _to_won(source.get("price") or source.get("startPrice")),
+                "status": _status_to_platform(source.get("status") or "waiting"),
+                "note": source.get("note") or "",
+                "photoUrl": source.get("photoItem") or "",
+                "attributes": {
+                    "announce": source.get("announce") or "",
+                    "checklist": source.get("checklist") or "",
+                    "bid_log": "[]",
+                },
+            }
+            result = self._request(
+                f"channels/{self.channel_id}/items",
+                method="POST",
+                payload={
+                    "record": record,
+                    "requireActiveChannel": True,
+                    "allocateNextLot": True,
+                },
+                admin=True,
+            )
+            saved = result.get("record") or {}
+            if not saved.get("id"):
+                raise RuntimeError("생성된 개체 정보를 확인하지 못했습니다.")
+            with self._lock:
+                if self._items_channel_id == self.channel_id:
+                    self._items[str(saved["id"])] = saved
+                self._write_generation += 1
+                self._context_workspace = None
+            self.last_created_item = self._legacy_item(saved)
+            self.last_write_error = ""
+            return True
+        except Exception as exc:
+            self.last_write_error = str(exc)
+            print(f"[Platform] create_item failed: {exc}", flush=True)
+            return False
 
     def push_all(self, items):
         if not self._context_ready(force=True):

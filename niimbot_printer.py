@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import json
 import math
 import os
 import re
@@ -10,7 +11,7 @@ import traceback
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
-from print_paths import LABEL_OUTPUT_DIR, resolve_output_path
+from print_paths import LABEL_OUTPUT_DIR, PRINT_OUTPUT_DIR, resolve_output_path
 
 
 def _configure_stdio():
@@ -129,6 +130,83 @@ D110_LABEL_HEIGHT_PX = 400
 LANDSCAPE_LABEL_WIDTH_PX = 400
 LANDSCAPE_LABEL_HEIGHT_PX = 120
 D110_NAME_KEYWORDS = ("D110", "D11", "B21", "B18", "NIIM", "NIM")
+# Community-tested D110/D11 USB CDC-ACM devices use NIIMBOT's USB vendor ID.
+# The official desktop app may not list these models, but the serial transport
+# uses the same packet protocol as Bluetooth when the hardware exposes it.
+NIIMBOT_USB_VENDOR_ID = 0x3513
+# Some original D110 revisions expose the STMicroelectronics virtual-COM ID
+# also used by unrelated receipt printers. Those ports must pass a NIIMBOT
+# protocol probe before they are selected.
+NIIMBOT_D110_ST_USB_ID = (0x0483, 0x5743)
+NIIMBOT_PRINT_ERROR_LABELS = {
+    0x01: "덮개 열림",
+    0x02: "용지 없음",
+    0x03: "배터리 부족",
+    0x04: "배터리 이상",
+    0x05: "사용자 취소",
+    0x06: "인쇄 데이터 오류",
+    0x07: "프린터 과열",
+    0x08: "용지 배출 이상",
+    0x09: "프린터 사용 중",
+}
+PRINTER_TELEMETRY_PATH = PRINT_OUTPUT_DIR / "printer_telemetry.json"
+
+
+def _save_printer_telemetry(data):
+    """Atomically publish cached consumable data for the monitor header."""
+    payload = dict(data or {})
+    payload["updated_at"] = time.time()
+    PRINTER_TELEMETRY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = PRINTER_TELEMETRY_PATH.with_suffix(".tmp")
+    temp_path.write_text(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    os.replace(temp_path, PRINTER_TELEMETRY_PATH)
+
+
+def _capture_printer_telemetry(printer, transport_kind, endpoint):
+    """Read battery/RFID after printing; failures must never invalidate a print."""
+    from niimprint import InfoEnum
+
+    telemetry = {
+        "transport": "usb" if transport_kind == "serial" else "bluetooth",
+        "endpoint": str(endpoint or ""),
+        "usb_power": transport_kind == "serial",
+    }
+
+    try:
+        battery_level = printer.get_info(InfoEnum.BATTERY)
+        if battery_level is not None:
+            telemetry["battery_level"] = int(battery_level)
+            telemetry["battery_max"] = 4
+    except Exception as exc:
+        print(f"[Niimbot] 배터리 조회 실패: {exc}")
+
+    try:
+        rfid = printer.get_rfid()
+        if rfid:
+            total = rfid.get("total", rfid.get("total_len"))
+            used = rfid.get("used", rfid.get("used_len"))
+            if total is not None and used is not None:
+                total = max(0, int(total))
+                used = max(0, int(used))
+                telemetry.update(
+                    {
+                        "paper_total": total,
+                        "paper_used": used,
+                        "paper_remaining": max(0, total - used),
+                        "paper_source": "rfid",
+                    }
+                )
+    except Exception as exc:
+        print(f"[Niimbot] 용지 RFID 조회 실패: {exc}")
+
+    try:
+        _save_printer_telemetry(telemetry)
+    except Exception as exc:
+        print(f"[Niimbot] 프린터 상태 캐시 저장 실패: {exc}")
+    return telemetry
 
 
 def _configure_console_encoding():
@@ -151,6 +229,45 @@ def _safe_text(value):
 def _matches_niimbot_name(name):
     name = _safe_text(name).upper()
     return bool(name) and any(keyword in name for keyword in D110_NAME_KEYWORDS)
+
+
+def _is_niimbot_usb_serial_port(port):
+    """Return True for a possible native NIIMBOT USB serial device."""
+    vid = getattr(port, "vid", None)
+    pid = getattr(port, "pid", None)
+    hwid = _safe_text(getattr(port, "hwid", "")).upper()
+    return (
+        vid == NIIMBOT_USB_VENDOR_ID
+        or "USB\\VID_3513" in hwid
+        or (vid, pid) == NIIMBOT_D110_ST_USB_ID
+        or "USB VID:PID=0483:5743" in hwid
+        or "USB\\VID_0483&PID_5743" in hwid
+    )
+
+
+def _probe_niimbot_usb_protocol(device):
+    """Confirm a shared ST virtual-COM port answers the NIIMBOT binary protocol."""
+    transport = None
+    try:
+        from niimprint import InfoEnum, PrinterClient, SerialTransport
+
+        transport = SerialTransport(device)
+        printer = PrinterClient(transport)
+        version = printer.get_info(InfoEnum.HARDVERSION)
+        if version is None:
+            return False
+        print(f"[Niimbot] USB 프로토콜 확인: {device} (HW {version})")
+        return True
+    except Exception as exc:
+        print(f"[Niimbot] USB 프로토콜 확인 실패: {device} ({exc})")
+        return False
+    finally:
+        serial_connection = getattr(transport, "_serial", None)
+        if serial_connection is not None:
+            try:
+                serial_connection.close()
+            except Exception:
+                pass
 
 
 def _remember_successful_endpoint(kind, endpoint):
@@ -1022,9 +1139,53 @@ async def _direct_ble_print_image(mac_address, image, density=2):
     return True
 
 
-def _manual_print_image(printer, image, density=3, read_rfid=False):
+def _send_manual_image_rows(
+    printer,
+    image,
+    *,
+    use_fire_and_forget=False,
+    serial_batch_size=8,
+):
+    """Send bitmap rows without throttling native USB one packet at a time."""
     from niimprint.packet import NiimbotPacket
 
+    batch_size = max(1, int(serial_batch_size))
+    pending_packets = []
+    row_count = 0
+
+    def flush_serial_batch():
+        if not pending_packets:
+            return
+        payload = b"".join(pending_packets)
+        written = printer._transport.write(payload)
+        if isinstance(written, int) and written != len(payload):
+            raise RuntimeError(
+                f"USB 비트맵 전송이 일부만 완료되었습니다. ({written}/{len(payload)} bytes)"
+            )
+        pending_packets.clear()
+
+    for y, payload in _manual_encode_image(image):
+        packet = NiimbotPacket(0x85, payload)
+        if use_fire_and_forget:
+            printer._send(packet)
+            time.sleep(0.005)
+        else:
+            pending_packets.append(packet.to_bytes())
+            if len(pending_packets) >= batch_size:
+                flush_serial_batch()
+                time.sleep(0.002)
+
+        row_count += 1
+        if y % 40 == 0:
+            print(f"[Niimbot] 비트맵 전송 중... row {y}/{image.height}")
+
+    if not use_fire_and_forget:
+        flush_serial_batch()
+
+    return row_count
+
+
+def _manual_print_image(printer, image, density=3, read_rfid=False):
     density = max(1, min(int(density), 3))
     label_type = 1
     transport_name = type(getattr(printer, "_transport", object())).__name__.lower()
@@ -1056,55 +1217,85 @@ def _manual_print_image(printer, image, density=3, read_rfid=False):
         print("[Niimbot] BLE raw 전송 모드로 인쇄를 진행합니다.")
         _fire_and_forget_setup(printer, image, density, label_type)
     else:
-        if not printer.set_label_density(density):
-            raise RuntimeError("라벨 농도 설정 실패")
-        if not _set_label_type_raw(printer, label_type):
-            raise RuntimeError(f"라벨 타입 설정 실패: {label_type}")
-        if not printer.start_print():
-            raise RuntimeError("START_PRINT 실패")
-        if not printer.allow_print_clear():
-            raise RuntimeError("ALLOW_PRINT_CLEAR 실패")
-        if not printer.start_page_print():
-            raise RuntimeError("START_PAGE_PRINT 실패")
-        if not printer.set_dimension(image.height, image.width):
-            raise RuntimeError("SET_DIMENSION 실패")
-        if not printer.set_quantity(1):
-            raise RuntimeError("SET_QUANTITY 실패")
+        _serial_command(printer, 0x21, bytes((density,)), 16, "라벨 농도 설정")
+        _serial_command(printer, 0x23, bytes((label_type,)), 16, "라벨 타입 설정")
+        _serial_command(printer, 0x01, b"\x01", 1, "인쇄 시작")
+        _serial_command(printer, 0x20, b"\x01", 16, "인쇄 버퍼 초기화")
+        _serial_command(printer, 0x03, b"\x01", 1, "페이지 시작")
+        _serial_command(
+            printer,
+            0x13,
+            struct.pack(">HH", image.height, image.width),
+            1,
+            "페이지 크기 설정",
+        )
+        _serial_command(printer, 0x15, struct.pack(">H", 1), 1, "출력 수량 설정")
 
-    row_count = 0
-    for y, payload in _manual_encode_image(image):
-        printer._send(NiimbotPacket(0x85, payload))
-        row_count += 1
-        if y % 40 == 0:
-            print(f"[Niimbot] 비트맵 전송 중... row {y}/{image.height}")
-        time.sleep(0.005)
+    row_count = _send_manual_image_rows(
+        printer,
+        image,
+        use_fire_and_forget=use_fire_and_forget,
+    )
 
     if use_fire_and_forget:
         _finish_print_fire_and_forget(printer)
         print(f"[Niimbot] 총 {row_count}개 row 전송 완료 (BLE raw)")
         return True
 
-    if not printer.end_page_print():
-        print("[Niimbot] END_PAGE_PRINT 응답이 비정상적이지만 상태 폴링을 계속합니다.")
+    _serial_command(printer, 0xE3, b"\x01", 1, "페이지 종료")
 
     page_complete = False
     last_status = None
     for attempt in range(60):
-        last_status = printer.get_print_status()
+        packet = _serial_command(
+            printer,
+            0xA3,
+            b"\x01",
+            16,
+            "인쇄 상태 확인",
+            require_success_byte=False,
+        )
+        if len(packet.data) >= 4:
+            page, progress1, progress2 = struct.unpack(">HBB", packet.data[:4])
+            last_status = {"page": page, "progress1": progress1, "progress2": progress2}
+        else:
+            last_status = {"page": 0, "progress1": 0, "progress2": 0}
         print(f"[Niimbot] 상태 확인 {attempt + 1}/60: {last_status}")
         if last_status.get("page", 0) >= 1:
             page_complete = True
             break
         time.sleep(0.2)
 
-    if not printer.end_print():
-        print("[Niimbot] END_PRINT 응답이 비정상적이지만 세션 종료는 시도되었습니다.")
+    _serial_command(printer, 0xF3, b"\x01", 1, "인쇄 종료")
 
     if not page_complete:
         raise RuntimeError(f"인쇄 완료 상태를 확인하지 못했습니다: {last_status}")
 
     print(f"[Niimbot] 총 {row_count}개 row 전송 완료, page=1 확인")
     return True
+
+
+def _serial_command(
+    printer,
+    request,
+    data,
+    response_offset,
+    label,
+    require_success_byte=True,
+):
+    """Send one acknowledged serial command and reject NIIMBOT error packets."""
+    packet = printer._transceive(request, data, response_offset)
+    if packet is None:
+        raise RuntimeError(f"{label} 응답 없음")
+    if getattr(packet, "type", None) == 0xDB:
+        code = packet.data[0] if getattr(packet, "data", b"") else 0
+        detail = NIIMBOT_PRINT_ERROR_LABELS.get(code, f"프린터 오류 0x{code:02X}")
+        raise RuntimeError(f"{label} 실패: {detail}")
+    if not getattr(packet, "data", b""):
+        raise RuntimeError(f"{label} 실패")
+    if require_success_byte and packet.data[0] == 0:
+        raise RuntimeError(f"{label} 실패")
+    return packet
 
 
 def _run_async(coro):
@@ -1196,6 +1387,35 @@ def list_serial_candidates():
     return [device for _, device, _, _ in candidates]
 
 
+def list_niimbot_usb_serial_candidates():
+    """List native NIIMBOT USB CDC serial ports, excluding Bluetooth virtual COM ports."""
+    try:
+        from serial.tools.list_ports import comports
+    except ImportError:
+        return []
+
+    candidates = []
+    for port in comports():
+        if not _is_niimbot_usb_serial_port(port):
+            continue
+        device = _safe_text(getattr(port, "device", ""))
+        if not device:
+            continue
+
+        vid = getattr(port, "vid", None)
+        pid = getattr(port, "pid", None)
+        if (vid, pid) == NIIMBOT_D110_ST_USB_ID and not _probe_niimbot_usb_protocol(device):
+            continue
+        candidates.append(device)
+
+    candidates = sorted(set(candidates))
+    if candidates:
+        print("[Niimbot] 네이티브 USB 시리얼 포트:")
+        for device in candidates:
+            print(f"  - {device}")
+    return candidates
+
+
 def _registry_key_to_mac(key_name):
     key_name = _safe_text(key_name).replace(":", "").replace("-", "")
     if len(key_name) != 12:
@@ -1273,7 +1493,12 @@ def list_paired_niimbot_addresses():
     return results
 
 
-def _build_attempts(port=None, mac_address=None, ble_scan_timeout=1.0):
+def _build_attempts(
+    port=None,
+    mac_address=None,
+    ble_scan_timeout=1.0,
+    allow_fallback=False,
+):
     attempts = []
     seen = set()
 
@@ -1289,6 +1514,13 @@ def _build_attempts(port=None, mac_address=None, ble_scan_timeout=1.0):
 
     if port:
         add_attempt("serial", port)
+        if not allow_fallback:
+            return attempts
+
+    # A physically attached D110/D11 USB CDC port is faster and more stable
+    # than Bluetooth, so prefer it automatically when Windows exposes one.
+    for candidate in list_niimbot_usb_serial_candidates():
+        add_attempt("serial", candidate)
 
     if mac_address:
         add_attempt("ble", mac_address)
@@ -1315,7 +1547,12 @@ def _build_attempts(port=None, mac_address=None, ble_scan_timeout=1.0):
     return attempts
 
 
-def _connect_printer(port=None, mac_address=None, ble_scan_timeout=1.0):
+def _connect_printer(
+    port=None,
+    mac_address=None,
+    ble_scan_timeout=1.0,
+    allow_fallback=False,
+):
     try:
         from niimprint import BleTransport, BluetoothTransport, PrinterClient, SerialTransport
     except ImportError as exc:
@@ -1327,6 +1564,7 @@ def _connect_printer(port=None, mac_address=None, ble_scan_timeout=1.0):
         port=port,
         mac_address=mac_address,
         ble_scan_timeout=ble_scan_timeout,
+        allow_fallback=allow_fallback,
     )
     if not attempts:
         raise RuntimeError("COM 포트나 BLE 주소를 찾지 못했습니다.")
@@ -1370,6 +1608,7 @@ def print_winner_label(
     port=None,
     density=3,
     ble_scan_timeout=1.0,
+    allow_fallback=False,
     font_key=None,
     label_layout="auction",
 ):
@@ -1394,15 +1633,21 @@ def print_winner_label(
     print(f"[Niimbot] 생성된 이미지 크기: {img.size} (W x H)")
 
     try:
-        ble_targets = [
+        preferred_attempts = _build_attempts(
+            port=port,
+            mac_address=mac_address,
+            ble_scan_timeout=ble_scan_timeout,
+            allow_fallback=allow_fallback,
+        )
+        prefer_serial = bool(preferred_attempts and preferred_attempts[0][0] == "serial")
+        ble_targets = [] if prefer_serial else [
             endpoint
-            for kind, endpoint in _build_attempts(
-                port=port,
-                mac_address=mac_address,
-                ble_scan_timeout=ble_scan_timeout,
-            )
+            for kind, endpoint in preferred_attempts
             if kind == "ble"
         ]
+
+        if prefer_serial:
+            print(f"[Niimbot] USB/명시 시리얼 우선 경로 사용: {preferred_attempts[0][1]}")
 
         for ble_target in ble_targets:
             try:
@@ -1422,6 +1667,7 @@ def print_winner_label(
             port=port,
             mac_address=mac_address,
             ble_scan_timeout=0,
+            allow_fallback=allow_fallback,
         )
 
         print(
@@ -1429,9 +1675,21 @@ def print_winner_label(
         )
         _manual_print_image(printer, img, density=density)
 
-        wait_seconds = 3 if transport_kind == "ble" else 2
-        print(f"[Niimbot] 데이터 전송 완료. 장치 동작 대기 중... ({wait_seconds}초)")
-        time.sleep(wait_seconds)
+        if transport_kind == "ble":
+            wait_seconds = 3
+            print(f"[Niimbot] 데이터 전송 완료. 장치 동작 대기 중... ({wait_seconds}초)")
+            time.sleep(wait_seconds)
+        else:
+            print("[Niimbot] USB 인쇄 완료 상태를 확인했습니다.")
+            telemetry = _capture_printer_telemetry(printer, transport_kind, endpoint)
+            battery = telemetry.get("battery_level")
+            remaining = telemetry.get("paper_remaining")
+            if battery is not None or remaining is not None:
+                print(
+                    "[Niimbot] 프린터 상태: "
+                    f"battery={battery if battery is not None else '?'} / "
+                    f"paper_remaining={remaining if remaining is not None else '?'}"
+                )
 
         print("[Niimbot] OK label print completed.")
         return True

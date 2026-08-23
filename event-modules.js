@@ -124,10 +124,18 @@
     function winnerNameCandidates(value) {
         const raw = String(value || '').trim();
         if (!raw) return [];
-        const phoneMatches = raw.match(/\d{2,4}[-\s.]?\d{3,4}[-\s.]?\d{4}/g) || [];
-        const withoutPhone = raw.replace(/\d{2,4}[-\s.]?\d{3,4}[-\s.]?\d{4}/g, ' ');
-        const firstChunk = raw.split(/[,(|/]/)[0];
-        const values = [raw, withoutPhone, firstChunk, ...phoneMatches];
+        const digitsOnly = raw.replace(/\D/g, '');
+        const phoneMatches = raw.match(/010[-.\s]?\d{3,4}[-.\s]?\d{4}/g) || [];
+        const withoutPhone = raw.replace(/010[-.\s]?\d{3,4}[-.\s]?\d{4}/g, ' ');
+        const chunks = raw.split(/[\s,./_|[\]()\-]+/).filter(Boolean);
+        const values = [raw, withoutPhone, ...chunks, ...phoneMatches];
+        if (digitsOnly.length === 11 || digitsOnly.length === 10) {
+            values.push(digitsOnly);
+        } else if (digitsOnly.length === 8) {
+            values.push(digitsOnly, '010' + digitsOnly);
+        }
+        const m010 = digitsOnly.match(/010\d{8}/);
+        if (m010) values.push(m010[0]);
         return [...new Set(values.map(normalizePerson).filter(Boolean))];
     }
 
@@ -175,7 +183,8 @@
     function amountToNumber(value) {
         const raw = String(value == null ? '' : value).replace(/,/g, '');
         const match = raw.match(/-?\d+(?:\.\d+)?/);
-        return match ? Number(match[0]) || 0 : 0;
+        const num = match ? Number(match[0]) || 0 : 0;
+        return num >= 10000 ? Math.round(num / 10000) : num;
     }
 
     function isSoldItem(item) {
@@ -187,11 +196,11 @@
         try {
             if (global.getItemAuctionMeta) return global.getItemAuctionMeta(item).auctionType;
         } catch (_) {}
-        return item && item.auctionType || '';
+        return (item && item.auctionType) || (item && item.type) || 'crewart';
     }
 
     function candidateWinnerKeys(item) {
-        const values = [item && item.winner, item && item.winner_name, item && item.bidder];
+        const values = [item && item.winner, item && item.winner_name, item && item.winnerName, item && item.winnerAlias, item && item.bidder];
         try {
             const bids = JSON.parse(item && (item.bid_log || item.bidLog) || '[]');
             if (Array.isArray(bids) && bids[0]) {

@@ -75,6 +75,40 @@ class ChannelAwareManagerTests(unittest.TestCase):
         self.assertEqual(rows[0]["status"], "진행중")
         self.assertEqual(legacy.read_count, 0)
 
+    def test_platform_read_keeps_broadcast_lifecycle_and_private_item_attributes(self):
+        item = {
+            "id": "sold-one",
+            "lotNumber": 1,
+            "name": "낙찰 개체",
+            "status": "sold",
+            "soldPrice": 10000,
+            "attributes": {
+                "bid_log": '[{"name":"민우","bidder_key":"member-1","amount":1}]',
+                "crewart_roulette_status": "unused",
+            },
+        }
+        request = context_request("crewart", "platform", [item])
+        manager = ChannelAwareManager(
+            {"platform_admin_password": "test-secret"},
+            legacy=FakeLegacy(),
+            request_func=request,
+        )
+        manager._context_workspace["broadcast"] = {
+            "id": "state",
+            "mode": "sold",
+            "activeItemId": "sold-one",
+        }
+
+        rows = manager.read_items()
+
+        self.assertEqual(manager.broadcast_state["activeItemId"], "sold-one")
+        self.assertEqual(rows[0]["attributes"]["crewart_roulette_status"], "unused")
+        self.assertEqual(rows[0]["bids"][0]["bidder_key"], "member-1")
+        self.assertEqual(
+            manager.get_cached_item("sold-one")["attributes"]["crewart_roulette_status"],
+            "unused",
+        )
+
     def test_initial_context_failure_exposes_no_legacy_rows(self):
         legacy = FakeLegacy()
 
@@ -153,6 +187,46 @@ class ChannelAwareManagerTests(unittest.TestCase):
         self.assertTrue(manager.update_item({"row": "same-id", "name": "BETA updated"}))
         self.assertEqual(len(state["writes"]), 1)
         self.assertIn("/channels/beta/items/same-id", state["writes"][0][0])
+
+    def test_monitor_item_creation_is_scoped_to_expected_active_channel(self):
+        state = {"channel": "crewart", "creates": []}
+
+        def request(method, url, **kwargs):
+            if url.endswith("/api/platform/operator-context"):
+                channel_id = state["channel"]
+                return FakeResponse(200, {
+                    "activeChannelId": channel_id,
+                    "channel": {"id": channel_id, "name": channel_id.upper(), "dataAdapter": "platform"},
+                    "workspace": {"items": []}
+                })
+            if method == "POST" and url.endswith("/api/platform/channels/crewart/items"):
+                state["creates"].append(kwargs.get("json"))
+                record = {"id": "ite_new", **kwargs["json"]["record"]}
+                return FakeResponse(201, {"record": record})
+            raise AssertionError(url)
+
+        manager = ChannelAwareManager(
+            {"platform_admin_password": "test-secret"},
+            legacy=FakeLegacy(),
+            request_func=request,
+        )
+        self.assertTrue(manager.create_item({
+            "num": 7, "company": "쭌이네", "name": "신규 개체", "price": 10,
+            "status": "대기", "checklist": "sale_mode:buy_now",
+        }, expected_channel_id="crewart"))
+        self.assertEqual(len(state["creates"]), 1)
+        self.assertTrue(state["creates"][0]["requireActiveChannel"])
+        self.assertTrue(state["creates"][0]["allocateNextLot"])
+        self.assertEqual(state["creates"][0]["record"]["startPrice"], 100000)
+        self.assertEqual(state["creates"][0]["record"]["attributes"]["checklist"], "sale_mode:buy_now")
+
+        state["channel"] = "creyon"
+        self.assertFalse(manager.create_item(
+            {"num": 8, "name": "다른 채널로 가면 안 됨", "price": 1},
+            expected_channel_id="crewart",
+        ))
+        self.assertEqual(len(state["creates"]), 1)
+        self.assertIn("채널이 변경", manager.last_write_error)
 
     def test_platform_broadcast_config_update_is_scoped_to_verified_active_channel(self):
         calls = []
