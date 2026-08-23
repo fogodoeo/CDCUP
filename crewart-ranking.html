@@ -154,7 +154,9 @@
                 
                 const wName = (it.winnerAlias || it.winnerName || it.winner || '').trim();
                 const price = Number(it.soldPrice || 0);
-                const manwon = price >= 10000 ? Math.round(price / 10000) : (Number(it.sold_price) || price);
+                const contrib = Number(it.attributes && it.attributes.crewart_contribution_amount || 0);
+                const effectivePrice = contrib > 0 ? contrib : price;
+                const manwon = effectivePrice >= 10000 ? Math.round(effectivePrice / 10000) : (Number(it.sold_price) || effectivePrice);
                 if (wName && manwon > 0) {
                     winnerTotals[wName] = (winnerTotals[wName] || 0) + manwon;
                 }
@@ -163,7 +165,7 @@
             return Object.entries(winnerTotals)
                 .sort((a, b) => b[1] - a[1])
                 .map(([name, manwon]) => {
-                    const balls = Math.max(1, Math.floor(manwon / 10)); // 10만원당 공 1개
+                    const balls = Math.max(1, Math.floor(manwon / 10)); // 기여도 10점(10만원)당 공 1개
                     return `${name}*${balls}`;
                 });
         }
