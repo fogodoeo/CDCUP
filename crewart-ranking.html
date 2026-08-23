@@ -188,10 +188,27 @@
             copyToClipboard(text, btn, `✅ ${champ.name} ${entries.length}명 복사 완료!`);
         }
 
+        const HOUSE_COLOR_LABELS = {
+            Y: '🟡 노랑 (비전형)',
+            R: '🔴 빨강 (감각형)',
+            G: '🟢 초록 (관리형)',
+            B: '🔵 파랑 (분석형)'
+        };
+        const HOUSE_SIMPLE_COLORS = {
+            Y: '🟡 노랑팀',
+            R: '🔴 빨강팀',
+            G: '🟢 초록팀',
+            B: '🔵 파랑팀'
+        };
+
+        function houseColorName(h) {
+            return HOUSE_COLOR_LABELS[h.id] || h.name;
+        }
+
         function copyChampionOnly() {
             if (!currentHouses || !currentHouses[0]) return;
             const champ = currentHouses[0];
-            const text = `${champ.name}`;
+            const text = HOUSE_SIMPLE_COLORS[champ.id] || champ.name;
             const btn = document.getElementById('btn-copy-champion');
             copyToClipboard(text, btn, `✅ '${text}' 복사 완료!`);
         }
@@ -199,7 +216,8 @@
         function copyChampionNotice() {
             if (!currentHouses || !currentHouses[0]) return;
             const champ = currentHouses[0];
-            const text = `🏆 [크레와트 기숙사 대항전 최종 우승] 🏆\n👑 우승 기숙사: ${champ.name}\n📊 최종 성적: ${Math.round(champ.points)}점 (${champ.soldCount}건 낙찰 · 총 ${money(champ.amount)}만원)\n🎉 축하합니다! ${champ.name} 소속 회원분들께 우승 혜택이 적용됩니다!`;
+            const label = HOUSE_COLOR_LABELS[champ.id] || champ.name;
+            const text = `🏆 [크레와트 기숙사 대항전 최종 우승] 🏆\n👑 우승: ${label}\n📊 최종 성적: ${Math.round(champ.points)}점 (${champ.soldCount}건 낙찰 · 총 ${money(champ.amount)}만원)\n🎉 축하합니다! ${label} 소속 회원분들께 우승 혜택이 적용됩니다!`;
             const btn = document.getElementById('btn-copy-notice');
             copyToClipboard(text, btn, '✅ 우승 공지 복사 완료!');
         }
@@ -210,7 +228,8 @@
             const medals = ['🥇 1위', '🥈 2위', '🥉 3위', '4위'];
             currentHouses.forEach((h, idx) => {
                 const medal = medals[idx] || `${idx + 1}위`;
-                lines.push(`${medal}: ${h.name} (${Math.round(h.points)}점 · ${h.soldCount}건 · ${money(h.amount)}만원)`);
+                const label = HOUSE_COLOR_LABELS[h.id] || h.name;
+                lines.push(`${medal}: ${label} (${Math.round(h.points)}점 · ${h.soldCount}건 · ${money(h.amount)}만원)`);
             });
             const text = lines.join('\n');
             const btn = document.getElementById('btn-copy-ranking');
