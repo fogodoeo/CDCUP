@@ -273,8 +273,8 @@
             const row = byId[houseId];
             row.amount += amount;
             row.points += crewartPointsForAmount(amount, config);
-            row.soldCount += 1;
-            if (item.winner) row.winners.push(String(item.winner));
+            const winnerName = String(item.winner || item.winnerName || item.winnerAlias || '').trim();
+            if (winnerName) row.winners.push(winnerName);
         });
 
         rows.sort((a, b) => b.points - a.points || b.amount - a.amount || a.name.localeCompare(b.name, 'ko'));

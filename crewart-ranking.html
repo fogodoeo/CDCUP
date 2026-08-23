@@ -60,9 +60,10 @@
                 <p>설문 배정표와 낙찰 내역을 기준으로 자동 집계합니다.</p>
             </div>
             <div class="cw-actions">
-                <button class="cw-btn highlight" id="btn-copy-champion" type="button" onclick="copyChampionOnly()">🏆 우승팀 복사</button>
+                <button class="cw-btn highlight" id="btn-open-pinball" type="button" onclick="openChampionPinball()">🎯 우승팀 핀볼 추첨</button>
+                <button class="cw-btn" id="btn-copy-pinball-entries" type="button" onclick="copyChampionPinballEntries()">📋 핀볼 명단 복사</button>
                 <button class="cw-btn" id="btn-copy-notice" type="button" onclick="copyChampionNotice()">📢 우승 공지 복사</button>
-                <button class="cw-btn" id="btn-copy-ranking" type="button" onclick="copyAllRanking()">📋 전체 순위 복사</button>
+                <button class="cw-btn" id="btn-copy-champion" type="button" onclick="copyChampionOnly()">🏆 우승팀명 복사</button>
                 <button class="cw-btn" type="button" onclick="loadRanking()">새로고침</button>
                 <a class="cw-btn primary" href="broadcast-router.html?event=crewart&amp;page=3" target="_blank" rel="noopener">크레와트 3P 송출</a>
             </div>
@@ -77,9 +78,14 @@
                     <div class="cw-champ-stats" id="champ-stats-display">142점 · 5건 낙찰 · 142만원</div>
                 </div>
             </div>
-            <button class="cw-btn highlight" type="button" onclick="copyChampionOnly()" style="font-size:14px;padding:10px 18px;">
-                📋 우승팀명 복사
-            </button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="cw-btn highlight" type="button" onclick="openChampionPinball()" style="font-size:13px;padding:9px 15px;">
+                    🎯 우승팀 핀볼 추첨 열기
+                </button>
+                <button class="cw-btn" type="button" onclick="copyChampionPinballEntries()" style="font-size:13px;padding:9px 15px;">
+                    📋 핀볼 명단 복사
+                </button>
+            </div>
         </section>
 
         <section id="scoreboard-wrap" style="min-height:520px;border:1px solid var(--cw-line);overflow:hidden;"></section>
@@ -98,6 +104,8 @@
 
     <script>
         let currentHouses = [];
+        let currentItems = [];
+        let currentConfig = {};
 
         function money(value) {
             return Number(value || 0).toLocaleString('ko-KR');
@@ -129,6 +137,55 @@
             } catch (err) {
                 alert('복사 실패: ' + err);
             }
+        }
+
+        function getChampionRouletteEntries() {
+            if (!currentHouses || !currentHouses[0] || !currentItems) return [];
+            const champ = currentHouses[0];
+            const participantMap = parseCrewartParticipants(currentConfig && currentConfig.crewart_participants, currentHouses);
+            const winnerTotals = {};
+            
+            currentItems.forEach(it => {
+                const status = String(it.status || '').trim().toLowerCase();
+                if (!['sold', '낙찰', '완료'].includes(status)) return;
+                const keys = candidateWinnerKeys(it);
+                const hid = keys.map(k => participantMap[k]).find(Boolean);
+                if (hid !== champ.id) return;
+                
+                const wName = (it.winnerAlias || it.winnerName || it.winner || '').trim();
+                const price = Number(it.soldPrice || 0);
+                const manwon = price >= 10000 ? Math.round(price / 10000) : (Number(it.sold_price) || price);
+                if (wName && manwon > 0) {
+                    winnerTotals[wName] = (winnerTotals[wName] || 0) + manwon;
+                }
+            });
+            
+            return Object.entries(winnerTotals)
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, manwon]) => {
+                    const balls = Math.max(1, Math.floor(manwon / 10)); // 10만원당 공 1개
+                    return `${name}*${balls}`;
+                });
+        }
+
+        function openChampionPinball() {
+            const entries = getChampionRouletteEntries();
+            const champ = currentHouses[0] || { name: 'CREWARTS' };
+            const baseUrl = `https://creok.onrender.com/roulette/?theme=academy&channel=crewart&channelName=${encodeURIComponent(champ.name)}`;
+            const fullUrl = entries.length ? `${baseUrl}&entries=${encodeURIComponent(entries.join('\n'))}` : baseUrl;
+            window.open(fullUrl, '_blank');
+        }
+
+        function copyChampionPinballEntries() {
+            const entries = getChampionRouletteEntries();
+            const champ = currentHouses[0] || { name: '우승팀' };
+            if (!entries.length) {
+                alert('우승 기숙사 소속 낙찰자가 아직 없습니다.');
+                return;
+            }
+            const text = entries.join('\n');
+            const btn = document.getElementById('btn-copy-pinball-entries');
+            copyToClipboard(text, btn, `✅ ${champ.name} ${entries.length}명 복사 완료!`);
         }
 
         function copyChampionOnly() {
@@ -166,9 +223,11 @@
                 getBroadcastItemsCached(false, 60000)
             ]);
             const config = { ...(cfg || {}), active_event_module: 'crewart' };
+            currentConfig = config;
+            currentItems = items || [];
             applyAuctionEventModule(config);
-            document.getElementById('scoreboard-wrap').innerHTML = renderCrewartHouseBoardHTML(items || [], config);
-            const result = buildCrewartHouseScores(items || [], config);
+            document.getElementById('scoreboard-wrap').innerHTML = renderCrewartHouseBoardHTML(currentItems, config);
+            const result = buildCrewartHouseScores(currentItems, config);
             currentHouses = result.houses || [];
 
             if (currentHouses.length > 0) {
