@@ -5349,9 +5349,22 @@
 
         async function loadEventModuleContext() {
             try {
-                const cfg = await getConfigMap();
-                window._eventConfigMap = { ...(cfg || {}), active_event_module: 'cdcup' };
+                const [cfg, items] = await Promise.all([getConfigMap(), getItems()]);
+                const params = new URLSearchParams(location.search);
+                const queryModule = params.get('module') || (params.get('channel') === 'crewart' ? 'crewart' : '');
+                const activeModule = queryModule || cfg?.active_event_module || 'cdcup';
+                window._eventConfigMap = { ...(cfg || {}), active_event_module: activeModule };
+                window._eventItems = items || [];
                 applyAuctionEventModule(window._eventConfigMap);
+                applyTournamentCompanyOptions(window._eventConfigMap, window._eventItems);
+                if (activeModule === 'crewart') {
+                    const sel = document.getElementById('f-auction-type');
+                    if (sel) sel.value = 'crewart';
+                    const titleEl = document.querySelector('title');
+                    if (titleEl) titleEl.textContent = '크레와트 개체 관리';
+                    const headSmall = document.querySelector('.vendor-head small');
+                    if (headSmall) headSmall.textContent = 'CREWARTS';
+                }
             } catch (e) {
                 console.warn('event module context load failed', e);
             }
