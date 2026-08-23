@@ -628,6 +628,7 @@
     global.renderCrewartHouseBoardHTML = renderCrewartHouseBoardHTML;
     global.resolveCrewartWinnerHouse = resolveCrewartWinnerHouse;
     global.resolveCrewartItemResult = resolveCrewartItemResult;
+    global.candidateWinnerKeys = candidateWinnerKeys;
     global.crewartPointsForAmount = crewartPointsForAmount;
     global.initAuctionNavDropdowns = initNavDropdowns;
 
