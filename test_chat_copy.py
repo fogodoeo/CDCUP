@@ -1,4 +1,5 @@
 import queue
+import inspect
 import threading
 import time
 import unittest
@@ -8,6 +9,15 @@ import band_monitor_app as app
 
 
 class ChatCopyTests(unittest.TestCase):
+    def test_dom_chat_recovers_band_role_when_profile_name_is_invisible(self):
+        source = inspect.getsource(app._patch_band_cdp)
+
+        self.assertIn("'.writerPhoto .gSrOnly'", source)
+        self.assertLess(
+            source.index("'em.mainText'"),
+            source.index("'.writerPhoto .gSrOnly'"),
+        )
+
     def test_same_chat_from_websocket_and_dom_is_processed_once(self):
         owner = SimpleNamespace(_recent_chat_transport_fingerprints={})
         websocket = {

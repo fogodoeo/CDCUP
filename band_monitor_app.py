@@ -1922,6 +1922,7 @@ def _patch_band_cdp():
             ];
             var nameSelectors = [
                 'em.mainText',
+                '.writerPhoto .gSrOnly',
                 '.writerInfo .mainText',
                 '[class*="writerInfo"] [class*="mainText"]',
                 '[class*="nickname"]',
