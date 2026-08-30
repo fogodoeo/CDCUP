@@ -31,6 +31,7 @@ import uuid
 from auction_contract import checklist_meta as _auction_checklist_meta
 from auction_contract import parse_checklist as _parse_auction_checklist
 from capture_client import CaptureClient, build_capture_payload
+from label_print_bridge import start_label_print_bridge
 from label_spool import LabelSpool, label_display_text
 
 
@@ -4671,6 +4672,7 @@ def _patch_main_window():
         self._crewart_roulette_thread.start()
         _install_label_reprint_button(self)
         _install_printer_status_badge(self)
+        _start_external_label_print_bridge(self)
         _update_chat_poll_timer(self)
         # Safety timer: check for stuck polls every 5 seconds
         self._poll_stuck_timer = _core.QTimer(self)
@@ -5613,6 +5615,106 @@ def _patch_main_window():
         _LABEL_SPOOL.append(job, max_jobs=300)
         return job
 
+    def _make_external_label_spool_job(self, label_payload):
+        """Attach configured D10 transport settings to a web shipping label."""
+        cfg = getattr(self, "config", {}) or {}
+        payload = dict(label_payload or {})
+        payload.update({
+            "mac_address": (
+                cfg.get("label_printer_mac")
+                or cfg.get("niimbot_mac")
+                or cfg.get("printer_mac")
+                or ""
+            ),
+            "port": (
+                cfg.get("label_printer_port")
+                or cfg.get("niimbot_port")
+                or cfg.get("printer_port")
+                or ""
+            ),
+            "density": _as_int(cfg.get("label_density"), 3),
+            "ble_scan_timeout": _as_float(cfg.get("label_ble_scan_timeout"), 1.0),
+            "allow_fallback": _as_bool(cfg.get("label_printer_fallback_enabled"), True),
+            "font_key": cfg.get("label_font", "pretendard"),
+            "label_layout": "contact",
+        })
+        now = _now_text()
+        job = {
+            "id": f"{int(time.time() * 1000)}_{uuid.uuid4().hex[:8]}",
+            "created_at": now,
+            "updated_at": now,
+            "status": "queued",
+            "attempts": 0,
+            "last_error": "",
+            "payload": payload,
+        }
+        _LABEL_SPOOL.append(job, max_jobs=300)
+        return job
+
+    def _drain_external_label_print_jobs(self):
+        incoming = getattr(self, "_external_label_print_jobs", None)
+        if incoming is None:
+            return
+        prepared = []
+        for _ in range(120):
+            try:
+                payload = incoming.get_nowait()
+            except queue.Empty:
+                break
+            try:
+                prepared.append(self._make_external_label_spool_job(payload))
+            except Exception as exc:
+                _append_label_print_log(self, f"web shipping label setup failed: {exc}")
+            finally:
+                incoming.task_done()
+        if not prepared:
+            return
+
+        pending = getattr(self, "_pending_label_prints", [])
+        jobs = [(job["id"], "배송 라벨 D10 인쇄 시작...") for job in prepared]
+        if getattr(self, "_label_print_jobs", 0) > 0:
+            pending.extend(jobs)
+            self.toast.show_toast(f"배송 라벨 {len(jobs)}장을 D10 대기열에 추가했습니다.", "info")
+            return
+
+        first_job_id, first_message = jobs.pop(0)
+        pending.extend(jobs)
+        self._start_label_print(None, first_message, job_id=first_job_id)
+
+    def _start_external_label_print_bridge(self):
+        self._external_label_print_jobs = queue.Queue()
+
+        def enqueue(labels):
+            for label in labels:
+                self._external_label_print_jobs.put(dict(label))
+            return len(labels)
+
+        def status():
+            return {
+                "ready": True,
+                "printing": bool(getattr(self, "_label_print_jobs", 0)),
+                "queued": self._external_label_print_jobs.qsize()
+                + len(getattr(self, "_pending_label_prints", []) or []),
+            }
+
+        try:
+            self._external_label_print_bridge = start_label_print_bridge(enqueue, status)
+        except OSError as exc:
+            self._external_label_print_bridge = None
+            _append_label_print_log(self, f"D10 web label bridge unavailable: {exc}")
+            return
+
+        timer = _core.QTimer(self)
+        timer.setInterval(150)
+        timer.timeout.connect(lambda: self._drain_external_label_print_jobs())
+        timer.start()
+        self._external_label_print_timer = timer
+
+        app = _core.QApplication.instance()
+        if app is not None:
+            bridge = self._external_label_print_bridge
+            app.aboutToQuit.connect(lambda: bridge.shutdown())
+
     def _get_label_spool_job(self, job_id):
         return _LABEL_SPOOL.find(job_id)
 
@@ -6013,6 +6115,9 @@ def _patch_main_window():
     MainWindow._chat_message_seen_key = _chat_message_seen_key
     MainWindow._prime_chat_seen_baseline = _prime_chat_seen_baseline
     MainWindow._make_label_spool_job = _make_label_spool_job
+    MainWindow._make_external_label_spool_job = _make_external_label_spool_job
+    MainWindow._drain_external_label_print_jobs = _drain_external_label_print_jobs
+    MainWindow._start_external_label_print_bridge = _start_external_label_print_bridge
     MainWindow._get_label_spool_job = _get_label_spool_job
     MainWindow._update_label_spool_job = _update_label_spool_job
     MainWindow._open_label_reprint_dialog = _open_label_reprint_dialog

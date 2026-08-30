@@ -13,6 +13,7 @@ class DesktopArchitectureTests(unittest.TestCase):
             "band_monitor_app_core.pyc",
             "auction_contract.py",
             "capture_client.py",
+            "label_print_bridge.py",
             "label_spool.py",
             "platform_manager.py",
             "supabase_manager.py",
@@ -51,6 +52,13 @@ class DesktopArchitectureTests(unittest.TestCase):
         self.assertIn('(getattr(self, "btn_print", None), "라벨 출력", 68)', source)
         self.assertIn('button.setToolTip("현재 선택한 개체의 낙찰 라벨 출력")', source)
         self.assertIn('_core.QPushButton("라벨 재출력")', source)
+
+    def test_web_shipping_labels_use_the_same_desktop_d10_queue(self):
+        source = (ROOT / "band_monitor_app.py").read_text(encoding="utf-8")
+        self.assertIn("start_label_print_bridge", source)
+        self.assertIn("_start_external_label_print_bridge(self)", source)
+        self.assertIn('"label_layout": "contact"', source)
+        self.assertIn("self._start_label_print(None, first_message, job_id=first_job_id)", source)
 
 
 if __name__ == "__main__":
