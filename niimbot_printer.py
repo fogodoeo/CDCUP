@@ -924,10 +924,12 @@ def _create_contact_landscape_label(num, item_name, winner_name, sold_price, win
     safe_x0 = 20
     safe_x1 = width - 20
     safe_y0 = 6
-    safe_y1 = height - 12
-    item_box = (safe_x0, safe_y0 + 4, safe_x1, safe_y0 + 40)
-    buyer_box = (safe_x0, safe_y0 + 46, safe_x1, safe_y0 + 72)
-    phone_box = (safe_x0, safe_y0 + 76, safe_x1, safe_y1 - 4)
+    safe_y1 = height - 16
+    item_box = (safe_x0, safe_y0 + 2, safe_x1, safe_y0 + 36)
+    buyer_box = (safe_x0, safe_y0 + 40, safe_x1, safe_y0 + 66)
+    # D10 has a narrow physical feed margin at the label's trailing edge.
+    # Keep the contact row above it so the bottom half of the digits cannot clip.
+    phone_box = (safe_x0, safe_y0 + 69, safe_x1, safe_y1 - 6)
 
     item_font, item_lines = _fit_wrapped_lines_to_box(
         draw,
@@ -962,9 +964,6 @@ def _create_contact_landscape_label(num, item_name, winner_name, sold_price, win
     buyer_text = _fit_text(draw, buyer_text, buyer_font, (buyer_box[2] - buyer_box[0]) - 2)
     phone_text = _fit_text(draw, phone_text, phone_font, (phone_box[2] - phone_box[0]) - 2)
 
-    draw.rectangle((safe_x0, safe_y0, safe_x1, safe_y1), outline=0, width=2)
-    draw.line([(safe_x0, safe_y0 + 43), (safe_x1, safe_y0 + 43)], fill=0, width=1)
-    draw.line([(safe_x0, safe_y0 + 74), (safe_x1, safe_y0 + 74)], fill=0, width=1)
     _draw_multiline_text_in_box(draw, item_lines, item_font, item_box, fill=0, align="center", line_gap=0)
     _draw_text_in_box(draw, buyer_text, buyer_font, buyer_box, fill=0, align="center")
     _draw_text_in_box(draw, phone_text, phone_font, phone_box, fill=0, align="center")
