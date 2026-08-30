@@ -46,6 +46,12 @@ class DesktopArchitectureTests(unittest.TestCase):
         self.assertIn("[Platform] stale active row released", source)
         self.assertIn("MainWindow._sync_sheet = _sync_sheet", source)
 
+    def test_current_item_label_print_is_visible_on_the_operator_card(self):
+        source = (ROOT / "band_monitor_app.py").read_text(encoding="utf-8")
+        self.assertIn('(getattr(self, "btn_print", None), "라벨 출력", 68)', source)
+        self.assertIn('button.setToolTip("현재 선택한 개체의 낙찰 라벨 출력")', source)
+        self.assertIn('_core.QPushButton("라벨 재출력")', source)
+
 
 if __name__ == "__main__":
     unittest.main()

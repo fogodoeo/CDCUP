@@ -7293,15 +7293,17 @@ def _patch_main_visual_hierarchy():
             "QPushButton:hover { background:#F2F4F7; color:#173E8F; }"
         )
         compact_actions = (
-            (getattr(self, "btn_capture", None), "캡처"),
-            (getattr(self, "btn_print", None), "라벨"),
-            (getattr(self, "btn_gear", None), "상세"),
+            (getattr(self, "btn_capture", None), "캡처", 50),
+            (getattr(self, "btn_print", None), "라벨 출력", 68),
+            (getattr(self, "btn_gear", None), "상세", 50),
         )
-        for button, label in compact_actions:
+        for button, label, width in compact_actions:
             if button is not None:
                 button.setText(label)
-                button.setFixedSize(50, 34)
+                button.setFixedSize(width, 34)
                 button.setStyleSheet(icon_style)
+                if button is getattr(self, "btn_print", None):
+                    button.setToolTip("현재 선택한 개체의 낙찰 라벨 출력")
 
         manual_style = (
             "QPushButton { background:#FFFFFF; color:#475467; border:1px solid #DDE1E7; "
