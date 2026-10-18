@@ -4124,6 +4124,19 @@ def _patch_main_window():
     def _set_auction_countdown_state(self, state):
         self._auction_countdown_state = state
         _update_auction_countdown_button(self)
+        manager = getattr(self, "sheets", None)
+        sender = getattr(manager, "publish_countdown_display", None)
+        publisher = getattr(self, "_countdown_display_publisher", None)
+        if callable(sender) and getattr(manager, "using_platform", False):
+            if publisher is None:
+                from countdown_display import CountdownDisplay
+                publisher = CountdownDisplay(sender)
+                self._countdown_display_publisher = publisher
+            item = getattr(self, "active_item", None) or {}
+            publisher.set(getattr(manager, "channel_id", ""), item.get("row", ""),
+                          state == AUCTION_COUNTDOWN_RUNNING)
+        elif publisher is not None:
+            publisher.set("", "", False)
 
     def _stop_auction_countdown(self, announce=False):
         timer = getattr(self, "_auction_countdown_timer", None)

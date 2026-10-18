@@ -181,6 +181,13 @@ class ChannelAwareManager:
             return False
         return self.write_enabled if self.using_platform else self.legacy.connect_write()
 
+    def publish_countdown_display(self, channel_id, payload):
+        # Explicit captured channel: a delayed worker must never switch targets.
+        return self._request(
+            f"channels/{channel_id}/countdown-display", method="PUT",
+            payload=payload, admin=True, timeout=4,
+        )
+
     def update_broadcast_config(self, patch):
         """Update only the currently verified platform channel's overlay config."""
         if not self._context_ready(force=True):
